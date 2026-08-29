@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Light mode — white/light backgrounds, black foreground, gray hierarchy */
+  --canvas: 255 255 255;
+  --surface: 250 250 250;
+  --surface-raised: 255 255 255;
+  --ink: 17 17 17;
+  --ink-muted: 107 107 112;
+  --ink-faint: 163 163 168;
+  --border: 228 228 231;
+
+  /* Accent exists only to carry meaning: selection, status, notifications */
+  --accent: 37 99 235;
+
+  --font-display: 'Relay Display', system-ui, sans-serif;
+  --font-body: 'Relay Body', system-ui, sans-serif;
+  --font-mono: 'Relay Mono', ui-monospace, monospace;
+}
+
+.dark {
+  /* Dark mode — black/deep backgrounds, white foreground, gray hierarchy */
+  --canvas: 10 10 11;
+  --surface: 18 18 20;
+  --surface-raised: 26 26 29;
+  --ink: 245 245 246;
+  --ink-muted: 161 161 168;
+  --ink-faint: 96 96 102;
+  --border: 40 40 44;
+
+  --accent: 96 165 250;
+}
+
+* {
+  border-color: rgb(var(--border));
+}
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background-color: rgb(var(--canvas));
+  color: rgb(var(--ink));
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
+}
