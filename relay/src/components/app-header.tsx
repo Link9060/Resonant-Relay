@@ -1,10 +1,19 @@
 import { ThemeToggle } from '@/components/theme-toggle';
-import type { Profile } from '@/lib/types/database';
+import { NotificationBell } from '@/components/notifications/notification-bell';
+import type { Notification, Profile } from '@/lib/types/database';
 import { formatRelayNumber } from '@/lib/utils';
 import { UserPlus } from 'lucide-react';
 import Link from 'next/link';
 
-export function AppHeader({ profile }: { profile: Profile | null }) {
+export function AppHeader({
+  profile,
+  currentUserId,
+  notifications,
+}: {
+  profile: Profile | null;
+  currentUserId: string;
+  notifications: Notification[];
+}) {
   return (
     <header className="flex items-center justify-between border-b border-border px-4 py-3 md:px-6">
       <div>
@@ -24,6 +33,7 @@ export function AppHeader({ profile }: { profile: Profile | null }) {
         >
           <UserPlus size={18} />
         </Link>
+        <NotificationBell currentUserId={currentUserId} initial={notifications} />
         <ThemeToggle />
         <Link
           href="/profile"

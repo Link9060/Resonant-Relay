@@ -1,10 +1,11 @@
 import { AddPersonDialog } from '@/components/contacts/add-person-dialog';
 import { RequestsList } from '@/components/contacts/requests-list';
 import { ContactsList } from '@/components/contacts/contacts-list';
+import { PageHeader } from '@/components/ui/page-header';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function ContactsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -37,10 +38,7 @@ export default async function ContactsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-medium tracking-tight text-ink">Contacts</h1>
-        <AddPersonDialog />
-      </div>
+      <PageHeader title="Contacts" action={<AddPersonDialog />} />
 
       <RequestsList incoming={incoming.data ?? []} outgoing={outgoing.data ?? []} />
 

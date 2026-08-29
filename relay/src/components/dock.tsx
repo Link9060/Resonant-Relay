@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { CalendarDays, MessageCircle, Network, SquareCheck, Users, Mail } from 'lucide-react';
+import { CalendarDays, MessageCircle, Network, SquareCheck, Users, Mail, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -60,7 +60,7 @@ function DockLink({
   active,
   variant,
 }: {
-  item: { href: string; label: string; icon: React.ComponentType<{ size?: number }> };
+  item: { href: string; label: string; icon: LucideIcon };
   active: boolean;
   variant: 'rail' | 'tab';
 }) {

@@ -30,14 +30,22 @@ export function RequestsList({
           <div className="flex gap-2">
             <button
               disabled={isPending}
-              onClick={() => startTransition(() => acceptConnectionRequest(req.id))}
+              onClick={() =>
+                startTransition(async () => {
+                  await acceptConnectionRequest(req.id);
+                })
+              }
               className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-canvas"
             >
               Accept
             </button>
             <button
               disabled={isPending}
-              onClick={() => startTransition(() => declineConnectionRequest(req.id))}
+              onClick={() =>
+                startTransition(async () => {
+                  await declineConnectionRequest(req.id);
+                })
+              }
               className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted"
             >
               Decline
@@ -57,7 +65,11 @@ export function RequestsList({
           </div>
           <button
             disabled={isPending}
-            onClick={() => startTransition(() => cancelConnectionRequest(req.id))}
+            onClick={() =>
+              startTransition(async () => {
+                await cancelConnectionRequest(req.id);
+              })
+            }
             className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted"
           >
             Cancel

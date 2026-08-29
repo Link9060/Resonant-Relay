@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { formatRelayNumber } from '@/lib/utils';
 import { SignOutButton } from '@/components/profile/sign-out-button';
+import { PushToggle } from '@/components/notifications/push-toggle';
 
 export default async function ProfilePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -39,6 +40,11 @@ export default async function ProfilePage() {
         <p className="mt-2 text-xs text-ink-faint">
           Share this so people can add you. It doesn&apos;t reveal anything else about your account.
         </p>
+      </div>
+
+      <div className="mt-8">
+        <p className="mb-2 text-xs uppercase tracking-wide text-ink-faint">Notifications</p>
+        <PushToggle />
       </div>
 
       <div className="mt-8">

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { normalizeRelayNumber } from '@/lib/utils';
+import { notify } from '@/lib/notifications/notify';
 import { revalidatePath } from 'next/cache';
 
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
@@ -23,7 +24,7 @@ export async function lookupRelayNumber(rawInput: string): Promise<ActionResult<
     return { ok: false, error: 'Relay Numbers are 7 digits — check for a typo.' };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.rpc('find_by_relay_number', { p_relay_number: relayNumber });
 
   if (error) {
@@ -33,11 +34,11 @@ export async function lookupRelayNumber(rawInput: string): Promise<ActionResult<
     return { ok: false, error: "No one has that Relay Number." };
   }
 
-  return { ok: true, data: data[0] };
+  return { ok: true, data: data[0]! };
 }
 
 export async function sendConnectionRequest(recipientId: string): Promise<ActionResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -52,21 +53,54 @@ export async function sendConnectionRequest(recipientId: string): Promise<Action
     return { ok: false, error: message };
   }
 
+  const { data: senderProfile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single();
+  await notify({
+    userId: recipientId,
+    type: 'connection_request',
+    title: 'New connection request',
+    body: `${senderProfile?.display_name ?? 'Someone'} wants to connect.`,
+    link: '/contacts',
+  }).catch(() => {
+    // Notification delivery failing shouldn't undo an already-sent request.
+  });
+
   revalidatePath('/contacts');
   return { ok: true, data: undefined };
 }
 
 export async function acceptConnectionRequest(requestId: string): Promise<ActionResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'Not signed in.' };
+
+  const { data: request } = await supabase
+    .from('connection_requests')
+    .select('sender_id')
+    .eq('id', requestId)
+    .single();
+
   const { error } = await supabase.rpc('accept_connection_request', { p_request_id: requestId });
   if (error) return { ok: false, error: error.message };
+
+  if (request) {
+    const { data: accepterProfile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single();
+    await notify({
+      userId: request.sender_id,
+      type: 'connection_accepted',
+      title: 'Connection accepted',
+      body: `${accepterProfile?.display_name ?? 'Someone'} accepted your request.`,
+      link: '/contacts',
+    }).catch(() => {});
+  }
 
   revalidatePath('/contacts');
   return { ok: true, data: undefined };
 }
 
 export async function declineConnectionRequest(requestId: string): Promise<ActionResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase
     .from('connection_requests')
     .update({ status: 'declined', responded_at: new Date().toISOString() })
@@ -78,7 +112,7 @@ export async function declineConnectionRequest(requestId: string): Promise<Actio
 }
 
 export async function cancelConnectionRequest(requestId: string): Promise<ActionResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase
     .from('connection_requests')
     .update({ status: 'canceled', responded_at: new Date().toISOString() })
