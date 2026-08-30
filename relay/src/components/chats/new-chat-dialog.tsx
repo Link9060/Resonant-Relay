@@ -6,6 +6,7 @@ import * as Tabs from '@radix-ui/react-tabs';
 import { Loader2, MessageCirclePlus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { staticDetailPath } from '@/lib/config';
 
 type Contact = { id: string; display_name: string; avatar_url: string | null };
 
@@ -48,7 +49,7 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
       return;
     }
     setOpen(false);
-    router.push(`/chats/${result.data.conversationId}`);
+    router.push(staticDetailPath('chats', result.data.conversationId));
   }
 
   async function handleCreateGroup() {
@@ -69,7 +70,7 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
       return;
     }
     setOpen(false);
-    router.push(`/chats/${result.data.conversationId}`);
+    router.push(staticDetailPath('chats', result.data.conversationId));
   }
 
   return (

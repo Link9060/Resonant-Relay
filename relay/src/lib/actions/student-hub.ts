@@ -1,17 +1,7 @@
-'use server';
-
-import { createClient } from '@/lib/supabase/server';
-import { disconnectGoogleIntegration } from '@/lib/google/tokens';
+import { createClient } from '@/lib/supabase/client';
 import type { GoogleService } from '@/lib/google/scopes';
-import { revalidatePath } from 'next/cache';
 
 export async function disconnectGoogle(service: GoogleService) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  await disconnectGoogleIntegration(user.id, service);
-  revalidatePath(service === 'calendar' ? '/calendar' : '/email');
+  const { error } = await createClient().functions.invoke('google-hub', { body: { action: 'disconnect', service } });
+  if (error) throw error;
 }

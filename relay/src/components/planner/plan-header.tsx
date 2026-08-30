@@ -2,6 +2,7 @@
 
 import { deletePlan } from '@/lib/actions/planner';
 import { Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const REPEAT_LABEL: Record<string, string> = {
   never: 'One time',
@@ -19,6 +20,7 @@ export function PlanHeader({
   groupName: string;
   canDelete: boolean;
 }) {
+  const router = useRouter();
   return (
     <div className="flex items-start justify-between">
       <div>
@@ -29,19 +31,16 @@ export function PlanHeader({
         {plan.notes && <p className="mt-3 text-sm text-ink-muted">{plan.notes}</p>}
       </div>
       {canDelete && (
-        <form
-          action={async () => {
-            await deletePlan(plan.id);
-          }}
-        >
+        <div>
           <button
-            type="submit"
+            type="button"
+            onClick={async () => { if (window.confirm('Delete this plan?')) { const result = await deletePlan(plan.id); if (result.ok) router.push('/planner'); } }}
             aria-label="Delete plan"
             className="flex h-8 w-8 items-center justify-center rounded-md text-ink-faint hover:bg-surface hover:text-red-500"
           >
             <Trash2 size={16} />
           </button>
-        </form>
+        </div>
       )}
     </div>
   );

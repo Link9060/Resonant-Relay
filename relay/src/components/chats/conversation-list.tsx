@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { staticDetailPath } from '@/lib/config';
 
 type Participant = { user_id: string; profile: { id: string; display_name: string; avatar_url: string | null } };
 type ConversationRow = {
@@ -40,7 +41,7 @@ export function ConversationList({
 
         return (
           <li key={conversation.id}>
-            <Link href={`/chats/${conversation.id}`} className="flex items-center gap-3 px-3 py-3 hover:bg-surface">
+            <Link href={staticDetailPath('chats', conversation.id)} className="flex items-center gap-3 px-3 py-3 hover:bg-surface">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-sm font-medium text-ink">
                 {initial}
               </div>

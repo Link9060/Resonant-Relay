@@ -3,6 +3,7 @@
 import { removePushSubscription, savePushSubscription } from '@/lib/actions/notifications';
 import { Bell, BellOff, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { appUrl, VAPID_PUBLIC_KEY } from '@/lib/config';
 
 type Status = 'checking' | 'unsupported' | 'denied' | 'off' | 'on';
 
@@ -29,7 +30,7 @@ export function PushToggle() {
   async function enable() {
     setLoading(true);
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
+      const registration = await navigator.serviceWorker.register(appUrl('/sw.js'), { scope: appUrl('/') });
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         setStatus(permission === 'denied' ? 'denied' : 'off');
@@ -38,7 +39,7 @@ export function PushToggle() {
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToArrayBuffer(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
+        applicationServerKey: urlBase64ToArrayBuffer(VAPID_PUBLIC_KEY),
       });
 
       const json = subscription.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };

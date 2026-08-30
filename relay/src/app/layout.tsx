@@ -1,11 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
-
-const body = Inter({ subsets: ['latin'], variable: '--font-body' });
-// Space Grotesk's geometric numerals are why it's the display face — Relay
-// Numbers, dates, and headings all lean on it as the one typographic accent.
-const display = Space_Grotesk({ subsets: ['latin'], variable: '--font-display' });
 
 export const metadata: Metadata = {
   title: 'Relay',
@@ -26,7 +20,7 @@ const themeInitScript = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${body.variable} ${display.variable}`}>
+    <html lang="en">
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

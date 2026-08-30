@@ -1,15 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
-  },
-  images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
-    ],
-  },
+  output: 'export',
+  basePath: '/Resonant-Relay',
+  assetPrefix: '/Resonant-Relay',
+  trailingSlash: true,
+  images: { unoptimized: true },
 };
 
 module.exports = nextConfig;

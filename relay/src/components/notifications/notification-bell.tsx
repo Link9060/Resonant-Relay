@@ -7,6 +7,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { normalizeAppLink } from '@/lib/config';
 
 export function NotificationBell({ currentUserId, initial }: { currentUserId: string; initial: Notification[] }) {
   const [notifications, setNotifications] = useState(initial);
@@ -37,7 +38,7 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
       setNotifications((prev) => prev.map((n) => (n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n)));
       markNotificationRead(notification.id);
     }
-    if (notification.link) router.push(notification.link);
+    if (notification.link) router.push(normalizeAppLink(notification.link));
   }
 
   async function handleMarkAllRead() {

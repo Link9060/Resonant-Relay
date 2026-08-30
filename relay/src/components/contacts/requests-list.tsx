@@ -32,7 +32,7 @@ export function RequestsList({
               disabled={isPending}
               onClick={() =>
                 startTransition(async () => {
-                  await acceptConnectionRequest(req.id);
+                  const result = await acceptConnectionRequest(req.id); if (result.ok) window.location.reload();
                 })
               }
               className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-canvas"
@@ -43,7 +43,7 @@ export function RequestsList({
               disabled={isPending}
               onClick={() =>
                 startTransition(async () => {
-                  await declineConnectionRequest(req.id);
+                  const result = await declineConnectionRequest(req.id); if (result.ok) window.location.reload();
                 })
               }
               className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted"
@@ -67,7 +67,7 @@ export function RequestsList({
             disabled={isPending}
             onClick={() =>
               startTransition(async () => {
-                await cancelConnectionRequest(req.id);
+                const result = await cancelConnectionRequest(req.id); if (result.ok) window.location.reload();
               })
             }
             className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted"

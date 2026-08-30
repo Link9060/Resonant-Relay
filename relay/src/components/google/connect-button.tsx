@@ -1,7 +1,8 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import { GOOGLE_SCOPES, type GoogleService } from '@/lib/google/scopes';
+import type { GoogleService } from '@/lib/google/scopes';
+import { useState } from 'react';
 
 const LABEL: Record<GoogleService, string> = {
   calendar: 'Connect Google Calendar',
@@ -9,26 +10,35 @@ const LABEL: Record<GoogleService, string> = {
 };
 
 export function ConnectGoogleButton({ service, next }: { service: GoogleService; next: string }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   async function handleConnect() {
+    setLoading(true);
+    setError(null);
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?connect=${service}&next=${encodeURIComponent(next)}`,
-        scopes: `openid email profile ${GOOGLE_SCOPES[service]}`,
-        // Both are required to get a refresh token back from Google — see
-        // supabase/migrations/0004_student_hub.sql for why we need one.
-        queryParams: { access_type: 'offline', prompt: 'consent' },
-      },
+    const { data, error: invokeError } = await supabase.functions.invoke('google-hub', {
+      body: { action: 'connect_start', service, returnTo: next },
     });
+
+    if (invokeError || !data?.url) {
+      setError(data?.error ?? 'Google connection is not configured yet.');
+      setLoading(false);
+      return;
+    }
+    window.location.assign(data.url);
   }
 
   return (
-    <button
-      onClick={handleConnect}
-      className="rounded-md bg-ink px-4 py-2.5 text-sm font-medium text-canvas transition-all hover:opacity-90 active:scale-[0.97]"
-    >
-      {LABEL[service]}
-    </button>
+    <div className="text-right">
+      <button
+        onClick={handleConnect}
+        disabled={loading}
+        className="rounded-md bg-ink px-4 py-2.5 text-sm font-medium text-canvas transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-50"
+      >
+        {loading ? 'Connecting…' : LABEL[service]}
+      </button>
+      {error && <p className="mt-2 max-w-xs text-xs text-red-500">{error}</p>}
+    </div>
   );
 }

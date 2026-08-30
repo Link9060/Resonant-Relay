@@ -6,6 +6,7 @@ import { leaveGroup } from '@/lib/actions/chats';
 import { ArrowLeft, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type Message = { id: string; conversation_id: string; sender_id: string; body: string; created_at: string };
 type ProfileMap = Record<string, { id: string; display_name: string; avatar_url: string | null }>;
@@ -29,6 +30,7 @@ export function MessageThread({
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const supabase = createClient();
@@ -69,19 +71,16 @@ export function MessageThread({
           <h1 className="font-display text-lg font-medium tracking-tight text-ink">{title}</h1>
         </div>
         {isGroup && groupId && (
-          <form
-            action={async () => {
-              await leaveGroup(groupId);
-            }}
-          >
+          <div>
             <button
-              type="submit"
+              type="button"
+              onClick={async () => { const result = await leaveGroup(groupId); if (result.ok) router.push('/chats'); }}
               className="flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
             >
               <LogOut size={14} />
               Leave
             </button>
-          </form>
+          </div>
         )}
       </header>
 

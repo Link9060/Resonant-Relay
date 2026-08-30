@@ -5,6 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { CalendarPlus, Loader2, Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { staticDetailPath } from '@/lib/config';
 
 type Group = { id: string; name: string };
 type ResponseType = 'rsvp' | 'select_option';
@@ -71,7 +72,7 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
       return;
     }
     setOpen(false);
-    router.push(`/planner/${result.data.planId}`);
+    router.push(staticDetailPath('planner', result.data.planId));
   }
 
   return (

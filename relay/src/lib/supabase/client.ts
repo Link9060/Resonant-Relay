@@ -1,5 +1,8 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { Database } from '@/lib/types/database';
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
+
+let client: ReturnType<typeof createBrowserClient<Database>> | undefined;
 
 /**
  * Client-side Supabase instance. Uses the public anon key only — RLS policies
@@ -7,8 +10,6 @@ import type { Database } from '@/lib/types/database';
  * this client's presence or absence.
  */
 export function createClient() {
-  return createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  client ??= createBrowserClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  return client;
 }

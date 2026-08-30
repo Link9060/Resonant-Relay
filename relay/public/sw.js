@@ -6,7 +6,7 @@
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
-  let payload = { title: 'Relay', body: '', link: '/' };
+  let payload = { title: 'Relay', body: '', link: '/Resonant-Relay/' };
   try {
     payload = { ...payload, ...event.data.json() };
   } catch {
@@ -16,16 +16,15 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: '/icon.png',
-      badge: '/icon.png',
-      data: { link: payload.link || '/' },
+      data: { link: payload.link || '/Resonant-Relay/' },
     })
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const link = event.notification.data?.link || '/';
+  const rawLink = event.notification.data?.link || '/';
+  const link = rawLink.startsWith('/Resonant-Relay/') ? rawLink : `/Resonant-Relay${rawLink}`;
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {

@@ -26,8 +26,9 @@ export function PlanInstanceCard({
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [localResponses, setLocalResponses] = useState(responses);
 
-  const responseByUser = new Map(responses.map((r) => [r.user_id, r]));
+  const responseByUser = new Map(localResponses.map((r) => [r.user_id, r]));
   const myResponse = responseByUser.get(currentUserId);
 
   function respondWithOption(optionId: string) {
@@ -35,6 +36,7 @@ export function PlanInstanceCard({
     startTransition(async () => {
       const result = await submitPlanResponse(instance.id, { optionId });
       if (!result.ok) setError(result.error);
+      else setLocalResponses((prev) => [...prev.filter((r) => r.user_id !== currentUserId), { user_id: currentUserId, option_id: optionId, rsvp_status: null }]);
     });
   }
 
@@ -43,6 +45,7 @@ export function PlanInstanceCard({
     startTransition(async () => {
       const result = await submitPlanResponse(instance.id, { rsvpStatus: status });
       if (!result.ok) setError(result.error);
+      else setLocalResponses((prev) => [...prev.filter((r) => r.user_id !== currentUserId), { user_id: currentUserId, option_id: null, rsvp_status: status }]);
     });
   }
 

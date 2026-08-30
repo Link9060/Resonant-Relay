@@ -1,6 +1,7 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
+import { appUrl } from '@/lib/config';
 
 export default function LoginPage() {
   async function handleGoogleSignIn() {
@@ -8,7 +9,7 @@ export default function LoginPage() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}${appUrl('/auth/callback/')}`,
         // Identity only — no Calendar/Gmail scopes here. Those are requested
         // later, only when the student actually connects those features.
         scopes: 'openid email profile',
