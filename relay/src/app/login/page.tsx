@@ -4,6 +4,9 @@ import { createClient } from '@/lib/supabase/client';
 import { appUrl } from '@/lib/config';
 import { FormEvent, useState } from 'react';
 
+// Keep the Google flow ready for later without showing a broken option.
+const SHOW_GOOGLE_SIGN_IN = false;
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -44,7 +47,7 @@ export default function LoginPage() {
     setMessage(
       error
         ? error.message
-        : 'Check your email for a secure sign-in link. You can close this tab after opening it.',
+        : 'Email requested. Check Spam and search All Mail for noreply@mail.app.supabase.io if it is not in your inbox.',
     );
     setBusy(false);
   }
@@ -57,22 +60,29 @@ export default function LoginPage() {
           The place you open to figure out your day.
         </p>
 
-        <button
-          onClick={handleGoogleSignIn}
-          disabled={busy}
-          className="mt-10 flex w-full items-center justify-center gap-3 rounded-md border border-border bg-surface-raised px-4 py-3 text-sm font-medium text-ink transition-colors hover:bg-surface"
+        {SHOW_GOOGLE_SIGN_IN && (
+          <>
+            <button
+              onClick={handleGoogleSignIn}
+              disabled={busy}
+              className="mt-10 flex w-full items-center justify-center gap-3 rounded-md border border-border bg-surface-raised px-4 py-3 text-sm font-medium text-ink transition-colors hover:bg-surface"
+            >
+              <GoogleIcon />
+              Continue with Google
+            </button>
+
+            <div className="my-5 flex items-center gap-3 text-xs text-ink-faint" aria-hidden="true">
+              <span className="h-px flex-1 bg-border" />
+              or
+              <span className="h-px flex-1 bg-border" />
+            </div>
+          </>
+        )}
+
+        <form
+          onSubmit={handleEmailSignIn}
+          className={`${SHOW_GOOGLE_SIGN_IN ? '' : 'mt-10 '}space-y-3 text-left`}
         >
-          <GoogleIcon />
-          Continue with Google
-        </button>
-
-        <div className="my-5 flex items-center gap-3 text-xs text-ink-faint" aria-hidden="true">
-          <span className="h-px flex-1 bg-border" />
-          or
-          <span className="h-px flex-1 bg-border" />
-        </div>
-
-        <form onSubmit={handleEmailSignIn} className="space-y-3 text-left">
           <label htmlFor="email" className="block text-xs font-medium text-ink-muted">
             Email address
           </label>
