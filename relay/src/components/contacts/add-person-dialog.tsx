@@ -2,9 +2,8 @@
 
 import { lookupRelayNumber, sendConnectionRequest } from '@/lib/actions/contacts';
 import { formatRelayNumber } from '@/lib/utils';
-import * as Dialog from '@radix-ui/react-dialog';
 import { Loader2, UserPlus, X } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 type Preview = { id: string; display_name: string; avatar_url: string | null; school: string | null };
 type Step = 'input' | 'preview' | 'sent';
@@ -17,13 +16,27 @@ export function AddPersonDialog() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function reset() {
+  const reset = useCallback(() => {
     setStep('input');
     setRelayNumber('');
     setPreview(null);
     setError(null);
     setLoading(false);
-  }
+  }, []);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    reset();
+  }, [reset]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') close();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [close, open]);
 
   async function handleLookup() {
     setError(null);
@@ -51,27 +64,29 @@ export function AddPersonDialog() {
   }
 
   return (
-    <Dialog.Root
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) reset();
-      }}
-    >
-      <Dialog.Trigger asChild>
-        <button className="flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-sm font-medium text-canvas transition-all hover:opacity-90 active:scale-[0.97]">
+    <>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-sm font-medium text-canvas transition-all hover:opacity-90 active:scale-[0.97]"
+        >
           <UserPlus size={16} />
           Add person
         </button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-30 bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-40 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-surface-raised p-5 shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+      {open && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 p-4" onMouseDown={close}>
+        <section
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-person-title"
+          className="z-40 w-full max-w-sm rounded-lg border border-border bg-surface-raised p-5 shadow-xl"
+          onMouseDown={(event) => event.stopPropagation()}
+        >
           <div className="flex items-center justify-between">
-            <Dialog.Title className="font-display text-lg font-medium text-ink">Add person</Dialog.Title>
-            <Dialog.Close className="text-ink-faint hover:text-ink">
+            <h2 id="add-person-title" className="font-display text-lg font-medium text-ink">Add person</h2>
+            <button type="button" aria-label="Close" onClick={close} className="text-ink-faint hover:text-ink">
               <X size={18} />
-            </Dialog.Close>
+            </button>
           </div>
 
           {step === 'input' && (
@@ -142,15 +157,16 @@ export function AddPersonDialog() {
                 Request sent to <span className="font-medium">{preview.display_name}</span>.
               </p>
               <button
-                onClick={() => setOpen(false)}
+                onClick={close}
                 className="mt-4 w-full rounded-md bg-ink py-2.5 text-sm font-medium text-canvas"
               >
                 Done
               </button>
             </div>
           )}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        </section>
+        </div>
+      )}
+    </>
   );
 }
