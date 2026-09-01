@@ -1,10 +1,9 @@
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationBell } from '@/components/notifications/notification-bell';
-import { appUrl } from '@/lib/config';
+import { appPageUrl } from '@/lib/config';
 import type { Notification, Profile } from '@/lib/types/database';
 import { formatRelayNumber } from '@/lib/utils';
 import { UserPlus } from 'lucide-react';
-import Link from 'next/link';
 
 export function AppHeader({
   profile,
@@ -28,7 +27,7 @@ export function AppHeader({
         {/* Contacts is a full rail item on desktop; on mobile it's a header
             shortcut so the bottom bar can stay focused on the five daily tabs. */}
         <a
-          href={appUrl('/contacts/')}
+          href={appPageUrl('/contacts')}
           aria-label="Contacts"
           className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink md:hidden"
         >
@@ -36,8 +35,8 @@ export function AppHeader({
         </a>
         <NotificationBell currentUserId={currentUserId} initial={notifications} />
         <ThemeToggle />
-        <Link
-          href="/profile"
+        <a
+          href={appPageUrl('/profile')}
           className="ml-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-surface-raised text-xs font-medium text-ink"
         >
           {profile?.avatar_url ? (
@@ -46,7 +45,7 @@ export function AppHeader({
           ) : (
             profile?.display_name?.[0]?.toUpperCase() ?? '?'
           )}
-        </Link>
+        </a>
       </div>
     </header>
   );

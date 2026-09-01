@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { Notification } from '@/lib/types/database';
 import { Bell } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { appUrl, normalizeAppLink } from '@/lib/config';
+import { appPageUrl, normalizeAppLink } from '@/lib/config';
 
 export function NotificationBell({ currentUserId, initial }: { currentUserId: string; initial: Notification[] }) {
   const [notifications, setNotifications] = useState(initial);
@@ -37,7 +37,7 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
       await markNotificationRead(notification.id);
     }
     setOpen(false);
-    if (notification.link) window.location.assign(appUrl(normalizeAppLink(notification.link)));
+    if (notification.link) window.location.assign(appPageUrl(normalizeAppLink(notification.link)));
   }
 
   async function handleMarkAllRead() {
