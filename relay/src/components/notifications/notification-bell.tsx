@@ -3,15 +3,13 @@
 import { markAllNotificationsRead, markNotificationRead } from '@/lib/actions/notifications';
 import { createClient } from '@/lib/supabase/client';
 import type { Notification } from '@/lib/types/database';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Bell } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { normalizeAppLink } from '@/lib/config';
+import { appUrl, normalizeAppLink } from '@/lib/config';
 
 export function NotificationBell({ currentUserId, initial }: { currentUserId: string; initial: Notification[] }) {
   const [notifications, setNotifications] = useState(initial);
-  const router = useRouter();
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -36,21 +34,25 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
   async function handleSelect(notification: Notification) {
     if (!notification.read_at) {
       setNotifications((prev) => prev.map((n) => (n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n)));
-      markNotificationRead(notification.id);
+      await markNotificationRead(notification.id);
     }
-    if (notification.link) router.push(normalizeAppLink(notification.link));
+    setOpen(false);
+    if (notification.link) window.location.assign(appUrl(normalizeAppLink(notification.link)));
   }
 
   async function handleMarkAllRead() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })));
-    markAllNotificationsRead();
+      await markAllNotificationsRead();
   }
 
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
+    <div className="relative">
         <button
+          type="button"
           aria-label="Notifications"
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          onClick={() => setOpen((current) => !current)}
           className="relative flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink"
         >
           <Bell size={18} />
@@ -58,13 +60,19 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
             <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
           )}
         </button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="end"
-          sideOffset={8}
-          className="z-40 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-surface-raised p-1.5 shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
-        >
+      {open && (
+        <>
+          <button
+            type="button"
+            aria-label="Close notifications"
+            className="fixed inset-0 z-30 cursor-default"
+            onClick={() => setOpen(false)}
+          />
+          <div
+            role="dialog"
+            aria-label="Notifications"
+            className="fixed left-4 right-4 top-16 z-40 rounded-lg border border-border bg-surface-raised p-1.5 shadow-xl md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-80"
+          >
           <div className="flex items-center justify-between px-2 py-1.5">
             <p className="text-sm font-medium text-ink">Notifications</p>
             {unreadCount > 0 && (
@@ -79,10 +87,11 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
           ) : (
             <div className="max-h-96 overflow-y-auto">
               {notifications.map((notification) => (
-                <DropdownMenu.Item
+                <button
+                  type="button"
                   key={notification.id}
-                  onSelect={() => handleSelect(notification)}
-                  className="cursor-pointer rounded-md px-2 py-2 outline-none data-[highlighted]:bg-surface"
+                  onClick={() => void handleSelect(notification)}
+                  className="w-full cursor-pointer rounded-md px-2 py-2 text-left outline-none hover:bg-surface focus-visible:bg-surface"
                 >
                   <div className="flex items-start gap-2">
                     {!notification.read_at && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />}
@@ -92,13 +101,14 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
                       <p className="mt-1 text-[11px] text-ink-faint">{relativeTime(notification.created_at)}</p>
                     </div>
                   </div>
-                </DropdownMenu.Item>
+                </button>
               ))}
             </div>
           )}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
