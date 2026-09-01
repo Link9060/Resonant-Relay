@@ -1,11 +1,9 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import { appUrl } from '@/lib/config';
+import { appUrl, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
 import { FormEvent, useEffect, useState } from 'react';
 
-// Keep the Google flow ready for later without showing a broken option.
-const SHOW_GOOGLE_SIGN_IN = false;
 const EMAIL_RATE_LIMIT_COOLDOWN_MS = 60 * 60 * 1000;
 const REQUEST_COOLDOWN_MS = 60 * 1000;
 
@@ -21,6 +19,26 @@ export default function LoginPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    void fetch(`${SUPABASE_URL}/auth/v1/settings`, {
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY },
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((settings) => {
+        if (active) setGoogleEnabled(settings?.external?.google === true);
+      })
+      .catch(() => {
+        // Email sign-in remains available if provider discovery is unavailable.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!retryAfter) return;
@@ -112,7 +130,7 @@ export default function LoginPage() {
           The place you open to figure out your day.
         </p>
 
-        {SHOW_GOOGLE_SIGN_IN && (
+        {googleEnabled && (
           <>
             <button
               onClick={handleGoogleSignIn}
@@ -133,7 +151,7 @@ export default function LoginPage() {
 
         <form
           onSubmit={handleEmailSignIn}
-          className={`${SHOW_GOOGLE_SIGN_IN ? '' : 'mt-10 '}space-y-3 text-left`}
+          className={`${googleEnabled ? '' : 'mt-10 '}space-y-3 text-left`}
         >
           <label htmlFor="email" className="block text-xs font-medium text-ink-muted">
             Email address
