@@ -1,5 +1,6 @@
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationBell } from '@/components/notifications/notification-bell';
+import { appUrl } from '@/lib/config';
 import type { Notification, Profile } from '@/lib/types/database';
 import { formatRelayNumber } from '@/lib/utils';
 import { UserPlus } from 'lucide-react';
@@ -26,13 +27,13 @@ export function AppHeader({
       <div className="flex items-center gap-1">
         {/* Contacts is a full rail item on desktop; on mobile it's a header
             shortcut so the bottom bar can stay focused on the five daily tabs. */}
-        <Link
-          href="/contacts"
+        <a
+          href={appUrl('/contacts/')}
           aria-label="Contacts"
           className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink md:hidden"
         >
           <UserPlus size={18} />
-        </Link>
+        </a>
         <NotificationBell currentUserId={currentUserId} initial={notifications} />
         <ThemeToggle />
         <Link
