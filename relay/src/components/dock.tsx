@@ -70,7 +70,7 @@ function DockLink({
   if (variant === 'tab') {
     return (
       <Link
-        href={appPageUrl(item.href)}
+        href={item.href}
         prefetch
         className={cn(
           'flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] transition-colors',
@@ -86,7 +86,7 @@ function DockLink({
   return (
     <li>
       <Link
-        href={appPageUrl(item.href)}
+        href={item.href}
         prefetch
         className={cn(
           'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',

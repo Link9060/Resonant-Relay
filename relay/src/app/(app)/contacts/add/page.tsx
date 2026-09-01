@@ -1,7 +1,6 @@
 'use client';
 
 import { lookupRelayNumber, sendConnectionRequest } from '@/lib/actions/contacts';
-import { appPageUrl } from '@/lib/config';
 import { formatRelayNumber } from '@/lib/utils';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { FormEvent, useState } from 'react';
@@ -49,7 +48,7 @@ export default function AddContactPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-8 md:px-6">
-      <Link href={appPageUrl('/contacts')} prefetch className="inline-flex items-center gap-2 text-sm text-ink-muted hover:text-ink">
+      <Link href="/contacts" prefetch className="inline-flex items-center gap-2 text-sm text-ink-muted hover:text-ink">
         <ArrowLeft size={16} />
         Contacts
       </Link>
@@ -105,7 +104,7 @@ export default function AddContactPage() {
       {preview && sent && (
         <div className="mt-8 rounded-md border border-border p-5 text-center">
           <p className="text-sm text-ink">Request sent to <span className="font-medium">{preview.display_name}</span>.</p>
-          <Link href={appPageUrl('/contacts')} prefetch className="mt-4 inline-flex w-full items-center justify-center rounded-md bg-ink py-3 text-sm font-medium text-canvas">Back to contacts</Link>
+          <Link href="/contacts" prefetch className="mt-4 inline-flex w-full items-center justify-center rounded-md bg-ink py-3 text-sm font-medium text-canvas">Back to contacts</Link>
         </div>
       )}
     </div>

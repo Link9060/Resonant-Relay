@@ -28,7 +28,7 @@ export function AppHeader({
         {/* Contacts is a full rail item on desktop; on mobile it's a header
             shortcut so the bottom bar can stay focused on the five daily tabs. */}
         <Link
-          href={appPageUrl('/contacts/add')}
+          href="/contacts/add"
           aria-label="Add person"
           prefetch
           className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink md:hidden"
