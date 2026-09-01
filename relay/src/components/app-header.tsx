@@ -4,6 +4,7 @@ import { appPageUrl } from '@/lib/config';
 import type { Notification, Profile } from '@/lib/types/database';
 import { formatRelayNumber } from '@/lib/utils';
 import { UserPlus } from 'lucide-react';
+import Link from 'next/link';
 
 export function AppHeader({
   profile,
@@ -26,13 +27,14 @@ export function AppHeader({
       <div className="flex items-center gap-1">
         {/* Contacts is a full rail item on desktop; on mobile it's a header
             shortcut so the bottom bar can stay focused on the five daily tabs. */}
-        <a
-          href={appPageUrl('/contacts')}
-          aria-label="Contacts"
+        <Link
+          href={appPageUrl('/contacts/add')}
+          aria-label="Add person"
+          prefetch
           className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink md:hidden"
         >
           <UserPlus size={18} />
-        </a>
+        </Link>
         <NotificationBell currentUserId={currentUserId} initial={notifications} />
         <ThemeToggle />
         <a

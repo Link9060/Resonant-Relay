@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { appPageUrl } from '@/lib/config';
 import { CalendarDays, MessageCircle, Network, SquareCheck, Users, Mail, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 const DOCK_ITEMS = [
   { href: '/chats', label: 'Chats', icon: MessageCircle },
@@ -68,8 +69,9 @@ function DockLink({
 
   if (variant === 'tab') {
     return (
-      <a
+      <Link
         href={appPageUrl(item.href)}
+        prefetch
         className={cn(
           'flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] transition-colors',
           active ? 'text-ink' : 'text-ink-faint'
@@ -77,14 +79,15 @@ function DockLink({
       >
         <Icon size={20} />
         {item.label}
-      </a>
+      </Link>
     );
   }
 
   return (
     <li>
-      <a
+      <Link
         href={appPageUrl(item.href)}
+        prefetch
         className={cn(
           'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
           active ? 'bg-surface-raised text-ink' : 'text-ink-muted hover:bg-surface-raised hover:text-ink'
@@ -92,7 +95,7 @@ function DockLink({
       >
         <Icon size={18} />
         {item.label}
-      </a>
+      </Link>
     </li>
   );
 }
