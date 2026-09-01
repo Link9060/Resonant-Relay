@@ -2,15 +2,36 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { appUrl } from '@/lib/config';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 // Keep the Google flow ready for later without showing a broken option.
 const SHOW_GOOGLE_SIGN_IN = false;
+const EMAIL_RATE_LIMIT_COOLDOWN_MS = 60 * 60 * 1000;
+const REQUEST_COOLDOWN_MS = 60 * 1000;
+
+function retryTime(timestamp: number) {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(timestamp);
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [retryAfter, setRetryAfter] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!retryAfter) return;
+
+    const timer = window.setTimeout(() => {
+      setRetryAfter(null);
+      setMessage(null);
+    }, Math.max(0, retryAfter - Date.now()) + 250);
+
+    return () => window.clearTimeout(timer);
+  }, [retryAfter]);
 
   async function handleGoogleSignIn() {
     setBusy(true);
@@ -33,6 +54,14 @@ export default function LoginPage() {
 
   async function handleEmailSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (retryAfter) {
+      setMessage(
+        `Relay has temporarily reached its sign-in email limit. Try again after ${retryTime(retryAfter)}.`,
+      );
+      return;
+    }
+
     setBusy(true);
     setMessage(null);
 
@@ -44,11 +73,34 @@ export default function LoginPage() {
       },
     });
 
-    setMessage(
-      error
-        ? error.message
-        : 'Email requested. Check Spam and search All Mail for noreply@mail.app.supabase.io if it is not in your inbox.',
-    );
+    if (error) {
+      const isEmailLimit =
+        error.code === 'over_email_send_rate_limit' ||
+        error.message.toLowerCase().includes('email rate limit');
+      const isRateLimit = error.status === 429 || isEmailLimit;
+
+      if (isRateLimit) {
+        const cooldown = isEmailLimit
+          ? EMAIL_RATE_LIMIT_COOLDOWN_MS
+          : REQUEST_COOLDOWN_MS;
+        const nextAttempt = Date.now() + cooldown;
+
+        setRetryAfter(nextAttempt);
+        setMessage(
+          isEmailLimit
+            ? `Relay has temporarily reached its sign-in email limit. Try again after ${retryTime(nextAttempt)}.`
+            : `That email was requested too recently. Try again after ${retryTime(nextAttempt)}.`,
+        );
+      } else {
+        setMessage(`Relay couldn't send the sign-in email: ${error.message}`);
+      }
+    } else {
+      setRetryAfter(null);
+      setMessage(
+        'Sign-in link sent. Check your inbox and spam folder, then open the newest Relay email in this browser.',
+      );
+    }
+
     setBusy(false);
   }
 
@@ -98,10 +150,12 @@ export default function LoginPage() {
           />
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || Boolean(retryAfter)}
             className="w-full rounded-md bg-ink px-4 py-3 text-sm font-medium text-canvas transition-opacity disabled:opacity-50"
           >
-            Email me a sign-in link
+            {retryAfter
+              ? `Try again after ${retryTime(retryAfter)}`
+              : 'Email me a sign-in link'}
           </button>
         </form>
 
