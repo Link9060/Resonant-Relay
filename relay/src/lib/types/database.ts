@@ -393,6 +393,10 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      send_connection_request: {
+        Args: { p_recipient_id: string };
+        Returns: void;
+      };
       find_by_relay_number: {
         Args: { p_relay_number: string };
         Returns: {
@@ -403,6 +407,14 @@ export interface Database {
         }[];
       };
       accept_connection_request: {
+        Args: { p_request_id: string };
+        Returns: void;
+      };
+      decline_connection_request: {
+        Args: { p_request_id: string };
+        Returns: void;
+      };
+      cancel_connection_request: {
         Args: { p_request_id: string };
         Returns: void;
       };
