@@ -61,9 +61,13 @@ export async function updateContactPreference(
     nickname: cleanNickname || null,
     color_key: colorKey,
   };
-  const { error } = await supabase.from('contact_preferences').upsert(preference, { onConflict: 'owner_id,contact_id' });
-  if (error) return { ok: false, error: 'Your contact settings could not be saved.' };
-  return { ok: true, data: { nickname: preference.nickname, color_key: colorKey } };
+  const { data, error } = await supabase
+    .from('contact_preferences')
+    .upsert(preference, { onConflict: 'owner_id,contact_id' })
+    .select('nickname,color_key')
+    .single();
+  if (error || !data) return { ok: false, error: 'Your contact settings could not be saved.' };
+  return { ok: true, data: { nickname: data.nickname, color_key: data.color_key as ContactColorKey } };
 }
 
 export async function blockContact(contactId: string): Promise<ActionResult> {

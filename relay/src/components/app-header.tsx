@@ -3,7 +3,7 @@ import { NotificationBell } from '@/components/notifications/notification-bell';
 import { appPageUrl } from '@/lib/config';
 import type { Notification, Profile } from '@/lib/types/database';
 import { formatRelayNumber } from '@/lib/utils';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Users } from 'lucide-react';
 
 export function AppHeader({
   profile,
@@ -24,11 +24,20 @@ export function AppHeader({
         )}
       </div>
       <div className="flex items-center gap-1">
-        {/* Contacts is a full rail item on desktop; on mobile it's a header
-            shortcut so the bottom bar can stay focused on the five daily tabs. */}
+        {/* Contacts is a full rail item on desktop. On mobile, keep Contacts and
+            Add Friend together in the top bar so both are always discoverable. */}
+        <a
+          href={appPageUrl('/contacts')}
+          aria-label="Contacts"
+          title="Contacts"
+          className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink md:hidden"
+        >
+          <Users size={18} />
+        </a>
         <a
           href={appPageUrl('/contacts/add')}
-          aria-label="Add person"
+          aria-label="Add friend"
+          title="Add friend"
           className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink md:hidden"
         >
           <UserPlus size={18} />
