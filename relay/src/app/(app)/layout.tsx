@@ -28,5 +28,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   if (!state) return <PageLoading />;
-  return <div className="flex min-h-screen bg-canvas"><Dock /><div className="flex min-h-screen flex-1 flex-col"><AppHeader profile={state.profile} currentUserId={state.userId} notifications={state.notifications} /><main className="flex-1 pb-16 md:pb-0">{children}</main></div></div>;
+  return <div className="relay-app-shell flex min-h-screen bg-canvas"><Dock /><div className="flex min-h-screen flex-1 flex-col"><AppHeader profile={state.profile} currentUserId={state.userId} notifications={state.notifications} /><main className="flex-1 pb-16 md:pb-0">{children}</main></div></div>;
 }

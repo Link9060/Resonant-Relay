@@ -52,6 +52,137 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+.relay-app-shell :where(button:not(:disabled), a[href]) {
+  -webkit-tap-highlight-color: transparent;
+  transition-property: transform, opacity, color, background-color, border-color, box-shadow;
+  transition-duration: 170ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) {
+  .relay-app-shell :where(button:not(:disabled), a[href]):hover {
+    transform: translateY(-1px);
+  }
+}
+
+.relay-app-shell :where(button:not(:disabled), a[href]):active {
+  transform: scale(0.965);
+  opacity: 0.82;
+  transition-duration: 80ms;
+}
+
+.relay-route-enter {
+  min-height: 100%;
+  animation: relay-route-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.relay-popover {
+  transform-origin: top right;
+  animation: relay-popover-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.relay-loading {
+  display: flex;
+  min-height: 55vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  color: rgb(var(--ink-faint));
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.relay-loading-signal {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.relay-loading-core,
+.relay-loading-ring,
+.relay-loading-particle {
+  position: absolute;
+  border-radius: 9999px;
+}
+
+.relay-loading-core {
+  inset: 1.9rem;
+  background: rgb(var(--ink));
+  box-shadow: 0 0 20px rgb(var(--ink) / 0.28);
+  animation: relay-loader-core 1.45s ease-in-out infinite;
+}
+
+.relay-loading-ring {
+  inset: 0.75rem;
+  border: 1px solid rgb(var(--ink) / 0.24);
+  animation: relay-loader-ring 1.8s ease-out infinite;
+}
+
+.relay-loading-ring-two { animation-delay: 0.6s; }
+
+.relay-loading-particle {
+  width: 0.28rem;
+  height: 0.28rem;
+  background: rgb(var(--ink-muted));
+  animation: relay-loader-orbit 1.6s linear infinite;
+}
+
+.relay-loading-particle-one { left: 50%; top: 0.35rem; transform-origin: 0 1.9rem; }
+.relay-loading-particle-two { bottom: 0.65rem; left: 0.75rem; animation-delay: -0.55s; transform-origin: 1.5rem -1.15rem; }
+.relay-loading-particle-three { bottom: 0.75rem; right: 0.65rem; animation-delay: -1.05s; transform-origin: -1.5rem -1.05rem; }
+
+.relay-typing-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
+  border-radius: 9999px;
+  background: rgb(var(--surface-raised));
+  padding: 0.45rem 0.6rem;
+}
+
+.relay-typing-bubble i {
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 9999px;
+  background: rgb(var(--ink-faint));
+  animation: relay-typing-dot 1s ease-in-out infinite;
+}
+
+.relay-typing-bubble i:nth-child(2) { animation-delay: 120ms; }
+.relay-typing-bubble i:nth-child(3) { animation-delay: 240ms; }
+
+@keyframes relay-route-enter {
+  from { opacity: 0; transform: translateY(0.45rem) scale(0.995); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes relay-popover-in {
+  from { opacity: 0; transform: translateY(-0.35rem) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes relay-loader-core {
+  0%, 100% { transform: scale(0.75); opacity: 0.45; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+@keyframes relay-loader-ring {
+  0% { transform: scale(0.45); opacity: 0; }
+  30% { opacity: 0.7; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+@keyframes relay-loader-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes relay-typing-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
+  30% { transform: translateY(-0.16rem); opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

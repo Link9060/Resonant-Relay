@@ -2,15 +2,36 @@
 
 import { sendMessage } from '@/lib/actions/chats';
 import { Send } from 'lucide-react';
-import { useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 const MAX_MESSAGE_LENGTH = 4000;
 
-export function MessageComposer({ conversationId }: { conversationId: string }) {
+export function MessageComposer({ conversationId, onTypingChange }: { conversationId: string; onTypingChange?: (typing: boolean) => void }) {
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
+  const stopTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingSignal = useRef(0);
+
+  useEffect(() => () => {
+    if (stopTypingTimer.current) clearTimeout(stopTypingTimer.current);
+    onTypingChange?.(false);
+  }, [onTypingChange]);
+
+  function signalTyping(nextValue: string) {
+    if (stopTypingTimer.current) clearTimeout(stopTypingTimer.current);
+    if (!nextValue.trim()) {
+      onTypingChange?.(false);
+      return;
+    }
+    const now = Date.now();
+    if (now - lastTypingSignal.current > 1400) {
+      onTypingChange?.(true);
+      lastTypingSignal.current = now;
+    }
+    stopTypingTimer.current = setTimeout(() => onTypingChange?.(false), 2200);
+  }
 
   function handleSend() {
     const body = value.trim();
@@ -21,6 +42,7 @@ export function MessageComposer({ conversationId }: { conversationId: string }) 
     }
     setValue('');
     setError(null);
+    onTypingChange?.(false);
 
     startTransition(async () => {
       const result = await sendMessage(conversationId, body);
@@ -41,7 +63,8 @@ export function MessageComposer({ conversationId }: { conversationId: string }) 
           ref={inputRef}
           value={value}
           maxLength={MAX_MESSAGE_LENGTH}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => { setValue(e.target.value); signalTyping(e.target.value); }}
+          onBlur={() => onTypingChange?.(false)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();

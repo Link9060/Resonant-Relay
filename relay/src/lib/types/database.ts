@@ -278,7 +278,7 @@ export interface Database {
           sender_id: string;
           body: string;
         };
-        Update: never;
+        Update: Partial<{ body: string }>;
         Relationships: [
           {
             foreignKeyName: 'messages_conversation_id_fkey';

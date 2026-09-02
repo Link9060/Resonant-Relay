@@ -27,3 +27,32 @@ export async function sendMessage(conversationId: string, body: string): Promise
   const { error } = await supabase.from('messages').insert({ conversation_id: conversationId, sender_id: user.id, body: trimmed });
   return error ? { ok: false, error: 'Could not send that message right now.' } : { ok: true, data: undefined };
 }
+
+export async function editMessage(messageId: string, body: string): Promise<ActionResult<{
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+  edited_at: string | null;
+}>> {
+  const trimmed = body.trim();
+  if (!trimmed) return { ok: false, error: 'Message is empty.' };
+  if (trimmed.length > 4000) return { ok: false, error: 'Messages must be 4,000 characters or fewer.' };
+
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'Not signed in.' };
+
+  const { data, error } = await supabase
+    .from('messages')
+    .update({ body: trimmed })
+    .eq('id', messageId)
+    .eq('sender_id', user.id)
+    .select('id,conversation_id,sender_id,body,created_at,edited_at')
+    .single();
+
+  return error || !data
+    ? { ok: false, error: 'That message can no longer be edited.' }
+    : { ok: true, data };
+}
