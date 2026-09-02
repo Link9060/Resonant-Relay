@@ -57,6 +57,40 @@ export interface Database {
           },
         ];
       };
+      todos: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          due_on: string;
+          completed: boolean;
+          position: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          title: string;
+          due_on: string;
+          completed?: boolean;
+          position?: number;
+        };
+        Update: Partial<{
+          title: string;
+          due_on: string;
+          completed: boolean;
+          position: number;
+        }>;
+        Relationships: [
+          {
+            foreignKeyName: 'todos_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_blocks: {
         Row: { blocker_id: string; blocked_id: string; created_at: string };
         Insert: never;
@@ -531,6 +565,7 @@ export type PublicProfilePreview = Database['public']['Functions']['find_by_rela
 export type Group = Database['public']['Tables']['groups']['Row'];
 export type Conversation = Database['public']['Tables']['conversations']['Row'];
 export type Message = Database['public']['Tables']['messages']['Row'];
+export type Todo = Database['public']['Tables']['todos']['Row'];
 
 export type PlanResponseType = 'rsvp' | 'select_option';
 export type PlanRepeatRule = 'never' | 'daily' | 'weekly' | 'custom';

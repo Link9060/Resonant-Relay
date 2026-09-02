@@ -2,15 +2,17 @@
 
 import { cn } from '@/lib/utils';
 import { appPageUrl } from '@/lib/config';
-import { CalendarDays, MessageCircle, Network, SquareCheck, Users, Mail, type LucideIcon } from 'lucide-react';
+import { CalendarDays, House, ListTodo, Mail, MessageCircle, Network, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 const DOCK_ITEMS = [
+  { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
   { href: '/chats', label: 'Chats', icon: MessageCircle },
-  { href: '/planner', label: 'Planner', icon: SquareCheck },
+  { href: '/todo', label: 'To Do', icon: ListTodo },
+  { href: '/planner', label: 'Planner', mobileLabel: 'Plans', icon: SquareCheck },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
   { href: '/email', label: 'Email', icon: Mail },
-  { href: '/obsidian', label: 'Obsidian', icon: Network },
+  { href: '/obsidian', label: 'Obsidian', mobileLabel: 'Brain', icon: Network },
 ] as const;
 
 export function Dock() {
@@ -28,7 +30,7 @@ export function Dock() {
         </a>
         <ul className="flex flex-1 flex-col gap-1">
           {DOCK_ITEMS.map((item) => (
-            <DockLink key={item.href} item={item} active={pathname.startsWith(item.href)} variant="rail" />
+            <DockLink key={item.href} item={item} active={item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)} variant="rail" />
           ))}
         </ul>
         <ul className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
@@ -40,15 +42,14 @@ export function Dock() {
         </ul>
       </nav>
 
-      {/* Mobile: bottom tab bar. Contacts lives in the top bar on mobile
-          (see AppShell header) to keep the five most-used tabs reachable
-          with one thumb tap. */}
+      {/* Mobile: all daily tools stay one tap away. Contacts and Add Friend
+          remain together in the top bar. */}
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-20 flex border-t border-border bg-surface/95 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-7 border-t border-border bg-surface/95 backdrop-blur md:hidden"
       >
         {DOCK_ITEMS.map((item) => (
-          <DockLink key={item.href} item={item} active={pathname.startsWith(item.href)} variant="tab" />
+          <DockLink key={item.href} item={item} active={item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)} variant="tab" />
         ))}
       </nav>
     </>
@@ -60,7 +61,7 @@ function DockLink({
   active,
   variant,
 }: {
-  item: { href: string; label: string; icon: LucideIcon };
+  item: { href: string; label: string; mobileLabel?: string; icon: LucideIcon };
   active: boolean;
   variant: 'rail' | 'tab';
 }) {
@@ -71,12 +72,12 @@ function DockLink({
       <a
         href={appPageUrl(item.href)}
         className={cn(
-          'flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] transition-colors',
+          'flex min-w-0 flex-col items-center gap-1 py-2.5 text-[10px] transition-colors',
           active ? 'text-ink' : 'text-ink-faint'
         )}
       >
         <Icon size={20} />
-        {item.label}
+        <span className="truncate">{item.mobileLabel ?? item.label}</span>
       </a>
     );
   }
