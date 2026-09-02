@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { StartupSequence } from '@/components/startup-sequence';
 
 export const metadata: Metadata = {
   title: 'Relay',
@@ -24,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="font-body">{children}</body>
+      <body className="font-body"><StartupSequence />{children}</body>
     </html>
   );
 }

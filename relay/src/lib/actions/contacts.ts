@@ -16,20 +16,27 @@ export async function sendConnectionRequest(recipientId: string): Promise<Action
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Not signed in.' };
-  const { error } = await supabase.from('connection_requests').insert({ sender_id: user.id, recipient_id: recipientId });
-  if (error) return { ok: false, error: error.code === '23505' ? 'You already have a pending request with this person.' : error.message };
+  const { error } = await supabase.rpc('send_connection_request', { p_recipient_id: recipientId });
+  if (error) {
+    const message = error.message.toLowerCase();
+    if (message.includes('too many')) return { ok: false, error: 'You have sent a few requests recently. Try again in a few minutes.' };
+    if (message.includes('pending') || message.includes('already connected')) return { ok: false, error: 'You already have an active connection request with this person.' };
+    return { ok: false, error: 'This person is unavailable right now.' };
+  }
   return { ok: true, data: undefined };
 }
 
 export async function acceptConnectionRequest(requestId: string): Promise<ActionResult> {
   const { error } = await createClient().rpc('accept_connection_request', { p_request_id: requestId });
-  return error ? { ok: false, error: error.message } : { ok: true, data: undefined };
+  return error ? { ok: false, error: 'That request is no longer available.' } : { ok: true, data: undefined };
 }
 
-export async function declineConnectionRequest(requestId: string): Promise<ActionResult> { return updateRequest(requestId, 'declined'); }
-export async function cancelConnectionRequest(requestId: string): Promise<ActionResult> { return updateRequest(requestId, 'canceled'); }
+export async function declineConnectionRequest(requestId: string): Promise<ActionResult> {
+  const { error } = await createClient().rpc('decline_connection_request', { p_request_id: requestId });
+  return error ? { ok: false, error: 'That request is no longer available.' } : { ok: true, data: undefined };
+}
 
-async function updateRequest(requestId: string, status: 'declined' | 'canceled'): Promise<ActionResult> {
-  const { error } = await createClient().from('connection_requests').update({ status, responded_at: new Date().toISOString() }).eq('id', requestId);
-  return error ? { ok: false, error: error.message } : { ok: true, data: undefined };
+export async function cancelConnectionRequest(requestId: string): Promise<ActionResult> {
+  const { error } = await createClient().rpc('cancel_connection_request', { p_request_id: requestId });
+  return error ? { ok: false, error: 'That request is no longer available.' } : { ok: true, data: undefined };
 }
