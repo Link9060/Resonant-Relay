@@ -1,5 +1,6 @@
 'use client';
 
+import { BASE_PATH } from '@/lib/config';
 import { useEffect, useRef, useState } from 'react';
 
 export const STARTUP_SESSION_KEY = 'relay-startup-seen';
@@ -133,11 +134,24 @@ function ParticleWordmark({ active, onFormed }: { active: boolean; onFormed: () 
 }
 
 export function StartupSequence() {
+  const startupAudioRef = useRef<HTMLAudioElement | null>(null);
   const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(false);
   const [activated, setActivated] = useState(false);
   const [formed, setFormed] = useState(false);
   const [finished, setFinished] = useState(false);
+
+  useEffect(() => {
+    const audio = new Audio(`${BASE_PATH}/audio/startup-humordome.mp3`);
+    audio.preload = 'auto';
+    audio.volume = 0.28;
+    startupAudioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      startupAudioRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -164,11 +178,19 @@ export function StartupSequence() {
   if (!ready || !visible) return null;
 
   const skip = () => {
+    startupAudioRef.current?.pause();
     sessionStorage.setItem(STARTUP_SESSION_KEY, '1');
     setVisible(false);
   };
 
   const activate = () => {
+    const audio = startupAudioRef.current;
+    if (audio) {
+      audio.currentTime = 0;
+      void audio.play().catch(() => {
+        // The intro starts from a click, but keep the animation usable if audio is blocked.
+      });
+    }
     setActivated(true);
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setFormed(true);
   };
@@ -181,6 +203,7 @@ export function StartupSequence() {
       <button
         type="button"
         aria-label="Start Relay intro"
+        data-relay-sound="none"
         disabled={activated}
         onClick={activate}
         className="absolute inset-0 z-10 flex items-center justify-center disabled:cursor-default"
