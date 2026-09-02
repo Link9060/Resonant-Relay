@@ -2,12 +2,14 @@
 
 import { PageLoading } from '@/components/page-loading';
 import { createTodo, setTodoCompleted } from '@/lib/actions/todos';
+import { markNotificationRead } from '@/lib/actions/notifications';
 import { appPageUrl, normalizeAppLink } from '@/lib/config';
 import { localDateKey } from '@/lib/date';
 import { createClient } from '@/lib/supabase/client';
 import type { Notification, Todo } from '@/lib/types/database';
 import { ArrowRight, CalendarDays, Check, ListTodo, Mail, MessageCircle, Plus } from 'lucide-react';
 import { FormEvent, ReactNode, useEffect, useState } from 'react';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 type DashboardEvent = {
   id: string;
@@ -51,23 +53,24 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let active = true;
+    const supabase = createClient();
+    let notificationChannel: RealtimeChannel | null = null;
     void (async () => {
-      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !active) return;
       const today = localDateKey();
 
-      const [profileResult, todoResult, notificationResult, membershipResult, gmailStatus, calendarStatus] = await Promise.all([
+      const [profileResult, todoResult, notificationResult, membershipResult, emailAccounts, calendarStatus] = await Promise.all([
         supabase.from('profiles').select('display_name').eq('id', user.id).single(),
         supabase.from('todos').select('*').eq('user_id', user.id).eq('due_on', today).order('completed').order('position').order('created_at'),
         supabase.from('notifications').select('*').eq('user_id', user.id).eq('type', 'new_message').order('created_at', { ascending: false }).limit(4),
         supabase.from('group_members').select('group_id').eq('user_id', user.id),
-        supabase.functions.invoke('google-hub', { body: { action: 'status', service: 'gmail' } }),
+        supabase.functions.invoke('mail-hub', { body: { action: 'accounts' } }),
         supabase.functions.invoke('google-hub', { body: { action: 'status', service: 'calendar' } }),
       ]);
 
       const groupIds = (membershipResult.data ?? []).map((membership) => membership.group_id);
-      const gmailConnected = !gmailStatus.error && Boolean(gmailStatus.data?.connected);
+      const gmailConnected = !emailAccounts.error && (emailAccounts.data?.accounts?.length ?? 0) > 0;
       const calendarConnected = !calendarStatus.error && Boolean(calendarStatus.data?.connected);
 
       const [planResult, gmailResult, calendarResult] = await Promise.all([
@@ -75,7 +78,7 @@ export default function DashboardPage() {
           ? supabase.from('plans').select('id,name,group:groups(name),instances:plan_instances(id,occurs_on)').in('group_id', groupIds)
           : Promise.resolve({ data: [], error: null }),
         gmailConnected
-          ? supabase.functions.invoke('google-hub', { body: { action: 'gmail_messages', service: 'gmail' } })
+          ? supabase.functions.invoke('mail-hub', { body: { action: 'messages' } })
           : Promise.resolve({ data: { messages: [] }, error: null }),
         calendarConnected
           ? supabase.functions.invoke('google-hub', { body: { action: 'calendar_events', service: 'calendar' } })
@@ -115,9 +118,22 @@ export default function DashboardPage() {
         calendarConnected,
         taskError: Boolean(todoResult.error),
       });
+      notificationChannel = supabase.channel(`dashboard-notifications:${user.id}`).on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload) => {
+        const incoming = payload.new as Notification;
+        if (!incoming?.id || incoming.type !== 'new_message') return;
+        setState((current) => current ? { ...current, chatNotifications: current.chatNotifications.some((item) => item.id === incoming.id) ? current.chatNotifications.map((item) => item.id === incoming.id ? incoming : item) : [incoming, ...current.chatNotifications].slice(0, 4) } : current);
+      }).subscribe();
     })();
-    return () => { active = false; };
+    return () => { active = false; if (notificationChannel) void supabase.removeChannel(notificationChannel); };
   }, []);
+
+  function openNotification(notification: Notification) {
+    if (!notification.read_at) {
+      const readAt = new Date().toISOString();
+      setState((current) => current ? { ...current, chatNotifications: current.chatNotifications.map((item) => item.id === notification.id ? { ...item, read_at: readAt } : item) } : current);
+      void markNotificationRead(notification.id);
+    }
+  }
 
   async function addTodayTask(event: FormEvent) {
     event.preventDefault();
@@ -194,7 +210,7 @@ export default function DashboardPage() {
         </DashboardCard>
 
         <DashboardCard icon={<Mail size={18} />} title="Recent email" href="/email" linkLabel="Inbox">
-          {!state.gmailConnected ? <EmptyState>Connect Gmail to bring your latest messages here.</EmptyState> : state.emails.length === 0 ? <EmptyState>Your inbox is clear.</EmptyState> : (
+          {!state.gmailConnected ? <EmptyState>Connect Google or Microsoft email to bring your latest messages here.</EmptyState> : state.emails.length === 0 ? <EmptyState>Your inbox is clear.</EmptyState> : (
             <ul className="divide-y divide-border">
               {state.emails.map((email) => (
                 <li key={email.id} className="flex items-start gap-3 py-3">
@@ -212,7 +228,7 @@ export default function DashboardPage() {
             <ul className="divide-y divide-border">
               {state.chatNotifications.map((notification) => (
                 <li key={notification.id}>
-                  <a href={appPageUrl(normalizeAppLink(notification.link ?? '/chats'))} className="flex items-start gap-3 py-3 hover:opacity-70">
+                  <a href={appPageUrl(normalizeAppLink(notification.link ?? '/chats'))} onClick={() => openNotification(notification)} className="flex items-start gap-3 py-3 hover:opacity-70">
                     <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read_at ? 'bg-border' : 'bg-blue-500'}`} />
                     <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-ink">{notification.title}</p><p className="mt-1 truncate text-xs text-ink-faint">{notification.body}</p></div>
                     <time className="shrink-0 text-xs text-ink-muted">{formatRelative(notification.created_at)}</time>

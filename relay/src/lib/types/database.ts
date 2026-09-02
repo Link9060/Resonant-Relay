@@ -272,11 +272,13 @@ export interface Database {
           body: string;
           created_at: string;
           edited_at: string | null;
+          attachments: MessageAttachment[];
         };
         Insert: {
           conversation_id: string;
           sender_id: string;
           body: string;
+          attachments?: MessageAttachment[];
         };
         Update: Partial<{ body: string }>;
         Relationships: [
@@ -555,6 +557,10 @@ export interface Database {
         Args: { p_plan_id: string };
         Returns: void;
       };
+      mark_conversation_read: {
+        Args: { p_conversation_id: string };
+        Returns: void;
+      };
     };
   };
 }
@@ -565,6 +571,7 @@ export type PublicProfilePreview = Database['public']['Functions']['find_by_rela
 export type Group = Database['public']['Tables']['groups']['Row'];
 export type Conversation = Database['public']['Tables']['conversations']['Row'];
 export type Message = Database['public']['Tables']['messages']['Row'];
+export interface MessageAttachment { path: string; name: string; type: string; size: number }
 export type Todo = Database['public']['Tables']['todos']['Row'];
 
 export type PlanResponseType = 'rsvp' | 'select_option';
@@ -624,4 +631,5 @@ export interface Notification {
   link: string | null;
   created_at: string;
   read_at: string | null;
+  pushed_at?: string | null;
 }

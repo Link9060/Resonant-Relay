@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { appPageUrl } from '@/lib/config';
-import { CalendarDays, House, ListTodo, Mail, MessageCircle, Network, SquareCheck, Users, type LucideIcon } from 'lucide-react';
+import { CalendarDays, House, ListTodo, Mail, MessageCircle, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 const DOCK_ITEMS = [
@@ -12,7 +12,6 @@ const DOCK_ITEMS = [
   { href: '/planner', label: 'Planner', mobileLabel: 'Plans', icon: SquareCheck },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
   { href: '/email', label: 'Email', icon: Mail },
-  { href: '/obsidian', label: 'Obsidian', mobileLabel: 'Brain', icon: Network },
 ] as const;
 
 export function Dock() {
@@ -46,7 +45,7 @@ export function Dock() {
           remain together in the top bar. */}
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-7 border-t border-border bg-surface/95 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-6 border-t border-border bg-surface/95 backdrop-blur md:hidden"
       >
         {DOCK_ITEMS.map((item) => (
           <DockLink key={item.href} item={item} active={item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)} variant="tab" />

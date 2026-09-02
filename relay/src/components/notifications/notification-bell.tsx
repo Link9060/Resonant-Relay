@@ -15,8 +15,13 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
     const supabase = createClient();
     const channel = supabase
       .channel(`notifications:${currentUserId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUserId}` }, (payload) => {
-        setNotifications((prev) => [payload.new as Notification, ...prev].slice(0, 20));
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUserId}` }, (payload) => {
+        const incoming = payload.new as Notification;
+        if (!incoming?.id) return;
+        setNotifications((prev) => {
+          const exists = prev.some((notification) => notification.id === incoming.id);
+          return exists ? prev.map((notification) => notification.id === incoming.id ? incoming : notification) : [incoming, ...prev].slice(0, 20);
+        });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };

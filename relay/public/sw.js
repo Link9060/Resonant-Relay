@@ -16,6 +16,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
+      tag: payload.id || undefined,
+      renotify: Boolean(payload.id),
       data: { link: payload.link || '/Resonant-Relay/' },
     })
   );
@@ -24,7 +26,7 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const rawLink = event.notification.data?.link || '/';
-  const link = rawLink.startsWith('/Resonant-Relay/') ? rawLink : `/Resonant-Relay${rawLink}`;
+  const link = new URL(rawLink.startsWith('/Resonant-Relay/') ? rawLink : `/Resonant-Relay${rawLink}`, self.location.origin).toString();
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {

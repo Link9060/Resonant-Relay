@@ -5,8 +5,9 @@ import { LeaveGroupButton } from '@/components/groups/leave-group-button';
 import { contactColor, contactDisplayName, type ContactColorKey } from '@/lib/contact-colors';
 import { editMessage } from '@/lib/actions/chats';
 import { createClient } from '@/lib/supabase/client';
+import type { MessageAttachment } from '@/lib/types/database';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import { ArrowLeft, Check, Pencil, Users, X } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeft, Check, FileText, Pencil, Users, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -18,6 +19,7 @@ type Message = {
   body: string;
   created_at: string;
   edited_at: string | null;
+  attachments: MessageAttachment[];
 };
 type ProfileMap = Record<string, { id: string; display_name: string; avatar_url: string | null }>;
 type PreferenceMap = Record<string, { nickname: string | null; color_key: ContactColorKey }>;
@@ -31,6 +33,7 @@ export function MessageThread({ conversationId, title, isGroup, groupId, current
   const [editError, setEditError] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
+  const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
 
@@ -76,6 +79,17 @@ export function MessageThread({ conversationId, title, isGroup, groupId, current
       if (typingChannel) void supabase.removeChannel(typingChannel);
     };
   }, [conversationId, currentUserId, participantsById]);
+
+  useEffect(() => {
+    const paths = messages.flatMap((message) => message.attachments ?? []).map((attachment) => attachment.path).filter((path) => !attachmentUrls[path]);
+    if (!paths.length) return;
+    let active = true;
+    void createClient().storage.from('chat-attachments').createSignedUrls(paths, 60 * 60).then(({ data }) => {
+      if (!active || !data) return;
+      setAttachmentUrls((current) => ({ ...current, ...Object.fromEntries(data.filter((item) => item.signedUrl).map((item) => [item.path, item.signedUrl])) }));
+    });
+    return () => { active = false; };
+  }, [attachmentUrls, messages]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -176,7 +190,7 @@ export function MessageThread({ conversationId, title, isGroup, groupId, current
               const color = contactColor(preference?.color_key);
               const senderName = sender ? contactDisplayName(sender, preference) : 'Contact';
               const customizedGroupMessage = isGroup && !isMine;
-              const canEdit = isMine && clock - new Date(message.created_at).getTime() <= 15 * 60_000;
+              const canEdit = isMine && Boolean(message.body) && clock - new Date(message.created_at).getTime() <= 15 * 60_000;
 
               if (editingId === message.id) {
                 return <li key={message.id} className="flex justify-end"><form onSubmit={(event) => saveEdit(event, message)} className="w-full max-w-[85%] rounded-lg border border-border bg-surface-raised p-3"><textarea autoFocus value={editValue} onChange={(event) => setEditValue(event.target.value)} maxLength={4000} rows={3} className="w-full resize-none rounded-md border border-border bg-canvas px-3 py-2 text-sm text-ink outline-none focus:border-ink-muted" />{editError && <p className="mt-2 text-xs text-red-500">{editError}</p>}<div className="mt-2 flex justify-end gap-2"><button type="button" disabled={editSaving} onClick={cancelEdit} className="rounded-md px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-surface">Cancel</button><button type="submit" disabled={editSaving || !editValue.trim()} className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-canvas disabled:opacity-40"><Check size={13} />Save edit</button></div></form></li>;
@@ -188,8 +202,9 @@ export function MessageThread({ conversationId, title, isGroup, groupId, current
                     {customizedGroupMessage && <span className="flex items-center gap-1.5 px-1 text-[11px] font-medium" style={{ color }}><i className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />{senderName}</span>}
                     <div className="flex items-center gap-1.5">
                       {isMine && canEdit && <button type="button" onClick={() => beginEdit(message)} aria-label="Edit message" className="flex h-8 w-8 items-center justify-center rounded-full text-ink-faint opacity-60 hover:bg-surface hover:text-ink sm:opacity-0 sm:group-hover:opacity-100"><Pencil size={14} /></button>}
-                      <div className={`rounded-lg px-3 py-2 text-sm ${isMine ? 'bg-ink text-canvas' : customizedGroupMessage ? 'text-ink' : 'bg-surface-raised text-ink'}`} style={customizedGroupMessage ? { backgroundColor: `${color}1c`, borderLeft: `3px solid ${color}` } : undefined}>{message.body}</div>
+                      {message.body && <div className={`rounded-lg px-3 py-2 text-sm ${isMine ? 'bg-ink text-canvas' : customizedGroupMessage ? 'text-ink' : 'bg-surface-raised text-ink'}`} style={customizedGroupMessage ? { backgroundColor: `${color}1c`, borderLeft: `3px solid ${color}` } : undefined}>{message.body}</div>}
                     </div>
+                    {(message.attachments ?? []).length > 0 && <AttachmentList attachments={message.attachments} urls={attachmentUrls} isMine={isMine} />}
                     {message.edited_at && <span className="px-1 text-[10px] text-ink-faint">edited</span>}
                   </div>
                 </li>
@@ -209,3 +224,13 @@ function TypingIndicator({ names }: { names: string[] }) {
   const label = names.length === 1 ? `${names[0]} is typing` : names.length === 2 ? `${names[0]} and ${names[1]} are typing` : `${names[0]} and ${names.length - 1} others are typing`;
   return <div className="mt-3 flex items-center gap-2 text-xs text-ink-faint"><span className="relay-typing-bubble" aria-hidden="true"><i /><i /><i /></span><span>{label}</span></div>;
 }
+
+function AttachmentList({ attachments, urls, isMine }: { attachments: MessageAttachment[]; urls: Record<string, string>; isMine: boolean }) {
+  return <div className={`grid max-w-full gap-1.5 ${attachments.length > 1 ? 'sm:grid-cols-2' : ''}`}>{attachments.map((attachment) => {
+    const url = urls[attachment.path];
+    if (attachment.type.startsWith('image/')) return <a key={attachment.path} href={url} target="_blank" rel="noreferrer" aria-label={`Open ${attachment.name}`} className="block overflow-hidden rounded-lg border border-border bg-surface">{url ? <Image src={url} alt={attachment.name} width={720} height={480} unoptimized className="max-h-72 w-full object-cover" /> : <span className="block h-36 w-60 animate-pulse bg-surface" />}</a>;
+    return <a key={attachment.path} href={url} download={attachment.name} target="_blank" rel="noreferrer" className={`flex min-w-52 items-center gap-3 rounded-lg border px-3 py-2.5 ${isMine ? 'border-ink-faint/40 bg-ink text-canvas' : 'border-border bg-surface-raised text-ink'}`}><FileText size={19} className="shrink-0 opacity-70" /><span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium">{attachment.name}</span><span className="block text-[10px] opacity-60">{formatBytes(attachment.size)}</span></span><ArrowDownToLine size={15} className="shrink-0 opacity-60" /></a>;
+  })}</div>;
+}
+
+function formatBytes(size: number) { return size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / (1024 * 1024)).toFixed(1)} MB`; }
