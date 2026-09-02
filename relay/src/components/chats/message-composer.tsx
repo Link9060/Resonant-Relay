@@ -4,6 +4,8 @@ import { sendMessage } from '@/lib/actions/chats';
 import { Send } from 'lucide-react';
 import { useRef, useState, useTransition } from 'react';
 
+const MAX_MESSAGE_LENGTH = 4000;
+
 export function MessageComposer({ conversationId }: { conversationId: string }) {
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -12,7 +14,11 @@ export function MessageComposer({ conversationId }: { conversationId: string }) 
 
   function handleSend() {
     const body = value.trim();
-    if (!body) return;
+    if (!body || isPending) return;
+    if (body.length > MAX_MESSAGE_LENGTH) {
+      setError(`Messages must be ${MAX_MESSAGE_LENGTH.toLocaleString()} characters or fewer.`);
+      return;
+    }
     setValue('');
     setError(null);
 
@@ -20,7 +26,7 @@ export function MessageComposer({ conversationId }: { conversationId: string }) 
       const result = await sendMessage(conversationId, body);
       if (!result.ok) {
         setError(result.error);
-        setValue(body); // give the text back so nothing is lost
+        setValue(body);
       }
     });
 
@@ -34,6 +40,7 @@ export function MessageComposer({ conversationId }: { conversationId: string }) 
         <input
           ref={inputRef}
           value={value}
+          maxLength={MAX_MESSAGE_LENGTH}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
