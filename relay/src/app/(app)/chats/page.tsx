@@ -20,8 +20,11 @@ export default function ChatsPage() {
       supabase.from('connections').select('other:profiles!connections_user_b_fkey(id,display_name,avatar_url)').eq('user_a',user.id),
       supabase.from('connections').select('other:profiles!connections_user_a_fkey(id,display_name,avatar_url)').eq('user_b',user.id),
     ]);
-    setState({ userId:user.id, conversations, previews, contacts:[...(asA.data??[]),...(asB.data??[])].map((r:any)=>r.other) });
+    const contacts=[...(asA.data??[]),...(asB.data??[])].map((r:any)=>r.other).filter(Boolean);
+    const{data:preferences}=contacts.length?await supabase.from('contact_preferences').select('contact_id,nickname,color_key').eq('owner_id',user.id).in('contact_id',contacts.map((contact:any)=>contact.id)):{data:[]};
+    const preferencesById=Object.fromEntries((preferences??[]).map((preference:any)=>[preference.contact_id,preference]));
+    setState({ userId:user.id, conversations, previews, contacts:contacts.map((contact:any)=>({...contact,preference:preferencesById[contact.id]??null})), preferencesById });
   })(); }, []);
   if (!state) return <PageLoading />;
-  return <div className="mx-auto max-w-2xl px-4 py-8 md:px-6"><PageHeader title="Chats" action={<NewChatDialog contacts={state.contacts} />} /><div className="mt-6"><ConversationList conversations={state.conversations} currentUserId={state.userId} previewByConversation={state.previews} /></div></div>;
+  return <div className="mx-auto max-w-2xl px-4 py-8 md:px-6"><PageHeader title="Chats" action={<NewChatDialog contacts={state.contacts} />} /><div className="mt-6"><ConversationList conversations={state.conversations} currentUserId={state.userId} previewByConversation={state.previews} preferencesById={state.preferencesById} /></div></div>;
 }

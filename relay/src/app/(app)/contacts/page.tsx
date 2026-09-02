@@ -11,20 +11,22 @@ import { useEffect, useState } from 'react';
 export default function ContactsPage() {
   const [state,setState]=useState<any>(null);
   useEffect(()=>{ let active=true; void (async()=>{ const supabase=createClient(); const {data:{user}}=await supabase.auth.getUser(); if(!user)return;
-    const [a,b,incoming,outgoing]=await Promise.all([
-      supabase.from('connections').select('id,created_at,other:profiles!connections_user_b_fkey(id,display_name,avatar_url,school)').eq('user_a',user.id),
-      supabase.from('connections').select('id,created_at,other:profiles!connections_user_a_fkey(id,display_name,avatar_url,school)').eq('user_b',user.id),
+    const [a,b,incoming,outgoing,preferences]=await Promise.all([
+      supabase.from('connections').select('id,created_at,other:profiles!connections_user_b_fkey(id,display_name,avatar_url,school,bio)').eq('user_a',user.id),
+      supabase.from('connections').select('id,created_at,other:profiles!connections_user_a_fkey(id,display_name,avatar_url,school,bio)').eq('user_b',user.id),
       supabase.from('connection_requests').select('id,created_at,sender:profiles!connection_requests_sender_id_fkey(id,display_name,avatar_url,school)').eq('recipient_id',user.id).eq('status','pending'),
       supabase.from('connection_requests').select('id,created_at,recipient:profiles!connection_requests_recipient_id_fkey(id,display_name,avatar_url,school)').eq('sender_id',user.id).eq('status','pending'),
+      supabase.from('contact_preferences').select('contact_id,nickname,color_key').eq('owner_id',user.id),
     ]);
-    const failed = [a,b,incoming,outgoing].find((result)=>result.error)?.error;
+    const failed = [a,b,incoming,outgoing,preferences].find((result)=>result.error)?.error;
     if (!active) return;
     if (failed) {
       setState({ error: failed.message });
       return;
     }
+    const preferenceByContact = new Map((preferences.data ?? []).map((preference:any)=>[preference.contact_id,preference]));
     setState({
-      contacts:[...(a.data??[]),...(b.data??[])].filter((row:any)=>row.other).sort((x,y)=>new Date(y.created_at).getTime()-new Date(x.created_at).getTime()),
+      contacts:[...(a.data??[]),...(b.data??[])].filter((row:any)=>row.other).map((row:any)=>({...row,preference:preferenceByContact.get(row.other.id)??null})).sort((x,y)=>new Date(y.created_at).getTime()-new Date(x.created_at).getTime()),
       incoming:(incoming.data??[]).filter((row:any)=>row.sender),
       outgoing:(outgoing.data??[]).filter((row:any)=>row.recipient),
     });

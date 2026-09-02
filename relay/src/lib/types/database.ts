@@ -14,12 +14,69 @@ export interface Database {
           avatar_url: string | null;
           relay_number: string;
           school: string | null;
+          bio: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: Partial<Database['public']['Tables']['profiles']['Row']> & { id: string };
         Update: Partial<Database['public']['Tables']['profiles']['Row']>;
         Relationships: [];
+      };
+      contact_preferences: {
+        Row: {
+          owner_id: string;
+          contact_id: string;
+          nickname: string | null;
+          color_key: 'slate' | 'blue' | 'violet' | 'rose' | 'orange' | 'green' | 'cyan' | 'pink';
+          updated_at: string;
+        };
+        Insert: {
+          owner_id: string;
+          contact_id: string;
+          nickname?: string | null;
+          color_key?: 'slate' | 'blue' | 'violet' | 'rose' | 'orange' | 'green' | 'cyan' | 'pink';
+        };
+        Update: Partial<{
+          nickname: string | null;
+          color_key: 'slate' | 'blue' | 'violet' | 'rose' | 'orange' | 'green' | 'cyan' | 'pink';
+        }>;
+        Relationships: [
+          {
+            foreignKeyName: 'contact_preferences_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'contact_preferences_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_blocks: {
+        Row: { blocker_id: string; blocked_id: string; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: 'user_blocks_blocker_id_fkey';
+            columns: ['blocker_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_blocks_blocked_id_fkey';
+            columns: ['blocked_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       connections: {
         Row: {
@@ -416,6 +473,14 @@ export interface Database {
       };
       cancel_connection_request: {
         Args: { p_request_id: string };
+        Returns: void;
+      };
+      block_user: {
+        Args: { p_blocked_id: string };
+        Returns: void;
+      };
+      unblock_user: {
+        Args: { p_blocked_id: string };
         Returns: void;
       };
       get_or_create_direct_conversation: {

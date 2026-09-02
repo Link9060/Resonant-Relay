@@ -7,8 +7,9 @@ import { Loader2, MessageCirclePlus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { staticDetailPath } from '@/lib/config';
+import { contactColor, contactDisplayName, type ContactColorKey } from '@/lib/contact-colors';
 
-type Contact = { id: string; display_name: string; avatar_url: string | null };
+type Contact = { id: string; display_name: string; avatar_url: string | null; preference?: { nickname: string | null; color_key: ContactColorKey } | null };
 
 export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
   const [open, setOpen] = useState(false);
@@ -118,20 +119,20 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
                 <EmptyContacts />
               ) : (
                 <ul className="max-h-64 space-y-1 overflow-y-auto">
-                  {contacts.map((c) => (
+                  {contacts.map((c) => { const displayName=contactDisplayName(c,c.preference); const color=contactColor(c.preference?.color_key); return (
                     <li key={c.id}>
                       <button
                         disabled={loading}
                         onClick={() => handleStartDirect(c.id)}
                         className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-surface"
                       >
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-xs font-medium text-ink">
-                          {c.display_name[0]?.toUpperCase()}
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium" style={{color,backgroundColor:`${color}1f`}}>
+                          {displayName[0]?.toUpperCase()}
                         </div>
-                        <span className="text-sm text-ink">{c.display_name}</span>
+                        <span className="text-sm text-ink">{displayName}</span>
                       </button>
                     </li>
-                  ))}
+                  )})}
                 </ul>
               )}
             </Tabs.Content>
@@ -148,7 +149,7 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
                     className="w-full rounded-md border border-border bg-canvas px-3 py-2 text-sm text-ink outline-none focus-visible:border-accent"
                   />
                   <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto">
-                    {contacts.map((c) => (
+                    {contacts.map((c) => { const displayName=contactDisplayName(c,c.preference); const color=contactColor(c.preference?.color_key); return (
                       <li key={c.id}>
                         <label className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-surface">
                           <input
@@ -157,13 +158,13 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
                             onChange={() => toggleSelected(c.id)}
                             className="h-4 w-4 rounded border-border"
                           />
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-xs font-medium text-ink">
-                            {c.display_name[0]?.toUpperCase()}
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium" style={{color,backgroundColor:`${color}1f`}}>
+                            {displayName[0]?.toUpperCase()}
                           </div>
-                          <span className="text-sm text-ink">{c.display_name}</span>
+                          <span className="text-sm text-ink">{displayName}</span>
                         </label>
                       </li>
-                    ))}
+                    )})}
                   </ul>
                   <button
                     onClick={handleCreateGroup}

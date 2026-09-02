@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
+import { CONTACT_COLORS, type ContactColorKey } from '@/lib/contact-colors';
 import { normalizeRelayNumber } from '@/lib/utils';
 
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
@@ -39,4 +40,35 @@ export async function declineConnectionRequest(requestId: string): Promise<Actio
 export async function cancelConnectionRequest(requestId: string): Promise<ActionResult> {
   const { error } = await createClient().rpc('cancel_connection_request', { p_request_id: requestId });
   return error ? { ok: false, error: 'That request is no longer available.' } : { ok: true, data: undefined };
+}
+
+export async function updateContactPreference(
+  contactId: string,
+  nickname: string,
+  colorKey: ContactColorKey,
+): Promise<ActionResult<{ nickname: string | null; color_key: ContactColorKey }>> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'Not signed in.' };
+
+  const cleanNickname = nickname.trim();
+  if (cleanNickname.length > 32) return { ok: false, error: 'Nicknames can be up to 32 characters.' };
+  if (!(colorKey in CONTACT_COLORS)) return { ok: false, error: 'Choose one of the available colors.' };
+
+  const preference = {
+    owner_id: user.id,
+    contact_id: contactId,
+    nickname: cleanNickname || null,
+    color_key: colorKey,
+  };
+  const { error } = await supabase.from('contact_preferences').upsert(preference, { onConflict: 'owner_id,contact_id' });
+  if (error) return { ok: false, error: 'Your contact settings could not be saved.' };
+  return { ok: true, data: { nickname: preference.nickname, color_key: colorKey } };
+}
+
+export async function blockContact(contactId: string): Promise<ActionResult> {
+  const { error } = await createClient().rpc('block_user', { p_blocked_id: contactId });
+  return error
+    ? { ok: false, error: 'This person could not be blocked right now.' }
+    : { ok: true, data: undefined };
 }
