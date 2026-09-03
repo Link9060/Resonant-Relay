@@ -1,46 +1,34 @@
 'use client';
 
+import { BASE_PATH } from '@/lib/config';
 import { useEffect, useRef } from 'react';
 
 const TAU = Math.PI * 2;
 
 export function PageLoading({ label = 'Loading your space' }: { label?: string }) {
-  const coreRef = useRef<HTMLSpanElement>(null);
+  const logoRef = useRef<HTMLImageElement>(null);
   const ringOneRef = useRef<HTMLSpanElement>(null);
   const ringTwoRef = useRef<HTMLSpanElement>(null);
-  const particleRefs = useRef<Array<HTMLSpanElement | null>>([]);
 
   useEffect(() => {
     let frame = 0;
     const startedAt = performance.now();
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const draw = (now: number) => {
       const elapsed = (now - startedAt) / 1000;
-      const pulse = (Math.sin(elapsed * TAU / 1.45 - Math.PI / 2) + 1) / 2;
+      const pulse = (Math.sin(elapsed * TAU / 1.7 - Math.PI / 2) + 1) / 2;
 
-      if (coreRef.current) {
-        const scale = reducedMotion ? 1 : 0.76 + pulse * 0.42;
-        coreRef.current.style.transform = `scale(${scale})`;
-        coreRef.current.style.opacity = String(0.5 + pulse * 0.5);
+      if (logoRef.current) {
+        logoRef.current.style.transform = `scale(${0.92 + pulse * 0.08})`;
+        logoRef.current.style.opacity = String(0.72 + pulse * 0.28);
+        logoRef.current.style.filter = `drop-shadow(0 0 ${5 + pulse * 12}px rgb(var(--ink) / ${0.08 + pulse * 0.12}))`;
       }
 
       [ringOneRef.current, ringTwoRef.current].forEach((ring, index) => {
         if (!ring) return;
-        const cycle = ((elapsed + index * 0.72) % 1.8) / 1.8;
-        const scale = reducedMotion ? 1 : 0.48 + cycle * 0.9;
-        ring.style.transform = `scale(${scale})`;
-        ring.style.opacity = String(Math.sin(cycle * Math.PI) * 0.7);
-      });
-
-      particleRefs.current.forEach((particle, index) => {
-        if (!particle) return;
-        const angle = elapsed * (reducedMotion ? 0.65 : 2.7) + index * TAU / 3;
-        const radius = 25 + Math.sin(elapsed * 1.8 + index * 1.4) * 5;
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius * 0.78;
-        particle.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-        particle.style.opacity = String(0.55 + ((Math.sin(angle * 1.5) + 1) / 2) * 0.45);
+        const cycle = ((elapsed + index * 0.78) % 2.15) / 2.15;
+        ring.style.transform = `scale(${0.7 + cycle * 0.62})`;
+        ring.style.opacity = String(Math.sin(cycle * Math.PI) * 0.34);
       });
 
       frame = window.requestAnimationFrame(draw);
@@ -52,17 +40,11 @@ export function PageLoading({ label = 'Loading your space' }: { label?: string }
 
   return (
     <div className="relay-loading" role="status" aria-live="polite">
-      <div className="relay-loading-signal" aria-hidden="true">
+      <div className="relay-loading-signal relay-loading-brand" aria-hidden="true">
         <span ref={ringOneRef} className="relay-loading-ring" />
         <span ref={ringTwoRef} className="relay-loading-ring" />
-        <span ref={coreRef} className="relay-loading-core" />
-        {[0, 1, 2].map((index) => (
-          <span
-            key={index}
-            ref={(element) => { particleRefs.current[index] = element; }}
-            className="relay-loading-particle"
-          />
-        ))}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img ref={logoRef} src={`${BASE_PATH}/relay-icon.svg`} alt="" className="relay-loading-logo dark:invert" />
       </div>
       <p>{label}</p>
       <span className="sr-only">Please wait.</span>
