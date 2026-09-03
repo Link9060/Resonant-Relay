@@ -1,6 +1,6 @@
 'use client';
 
-import { appPageUrl, appPathname } from '@/lib/config';
+import { appPageUrl, appPathname, BASE_PATH } from '@/lib/config';
 import { cn } from '@/lib/utils';
 import { CalendarDays, House, ListTodo, Mail, MessageCircle, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -25,8 +25,10 @@ export function Dock() {
         aria-label="Main"
         className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col overflow-y-auto border-r border-border bg-surface px-3 py-6 md:flex"
       >
-        <a href={appPageUrl('/')} className="px-3 pb-8 font-display text-lg font-medium tracking-tight text-ink">
-          Relay
+        <a href={appPageUrl('/')} className="relay-brand-lockup px-3 pb-8 font-display text-lg font-medium tracking-tight text-ink" aria-label="Relay home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 dark:invert" />
+          <span>Relay</span>
         </a>
         <ul className="flex flex-1 flex-col gap-1">
           {DOCK_ITEMS.map((item) => (
