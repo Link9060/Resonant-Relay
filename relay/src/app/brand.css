@@ -1,0 +1,87 @@
+/* Relay brand system overrides */
+
+.relay-loading-brand {
+  width: 5.25rem;
+  height: 5.25rem;
+}
+
+.relay-loading-logo {
+  position: absolute;
+  inset: 1.2rem;
+  width: 2.85rem;
+  height: 2.85rem;
+  object-fit: contain;
+  will-change: transform, opacity, filter;
+}
+
+.relay-loading-brand .relay-loading-ring {
+  inset: 0.42rem;
+  border-color: rgb(var(--ink) / 0.16);
+}
+
+.startup-particle-canvas {
+  transition: opacity 300ms cubic-bezier(0.22, 1, 0.36, 1), filter 300ms ease;
+}
+
+.startup-particle-canvas-merged {
+  opacity: 0;
+  filter: blur(1px);
+  transition-delay: 90ms;
+}
+
+.startup-copy {
+  transition: opacity 330ms cubic-bezier(0.22, 1, 0.36, 1), transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform: scale(0.985);
+}
+
+.startup-copy-formed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.startup-brand-lockup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.8rem, 2.6vw, 1.35rem);
+}
+
+.startup-brand-icon {
+  width: clamp(3.35rem, 14.7vw, 5.3rem);
+  height: clamp(3.35rem, 14.7vw, 5.3rem);
+  object-fit: contain;
+  flex: none;
+}
+
+.startup-copy-title {
+  font-size: clamp(3.625rem, 16vw, 5.75rem);
+  font-weight: 600;
+  letter-spacing: -0.065em;
+  line-height: 0.9;
+}
+
+.startup-welcome {
+  margin-top: 2.7rem;
+}
+
+.relay-brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: rgb(var(--ink));
+}
+
+.relay-brand-lockup img {
+  display: block;
+  flex: none;
+}
+
+@media (max-width: 520px) {
+  .startup-brand-lockup {
+    gap: 0.7rem;
+  }
+
+  .startup-welcome {
+    margin-top: 2.35rem;
+  }
+}
