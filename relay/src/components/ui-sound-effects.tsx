@@ -20,7 +20,7 @@ function restart(audio: HTMLAudioElement) {
 export function UiSoundEffects() {
   useEffect(() => {
     const clickSounds = Array.from({ length: 3 }, () => {
-      const audio = new Audio(`${BASE_PATH}/audio/ui-click-soundshelfstudio.mp3`);
+      const audio = new Audio(`${BASE_PATH}/audio/ui-click-floraphonic.mp3`);
       audio.preload = 'auto';
       audio.volume = 0.2;
       return audio;

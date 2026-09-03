@@ -1,6 +1,6 @@
 # Relay interface sounds
 
-- `ui-click-soundshelfstudio.mp3` — button click sound by SoundShelfStudio.
+- `ui-click-floraphonic.mp3` — button click sound by Floraphonic.
 - `startup-humordome.mp3` — startup sequence sound by HumorDome.
 - `ui-hover-denielcz.mp3` — button hover sound by DenielCZ.
 
