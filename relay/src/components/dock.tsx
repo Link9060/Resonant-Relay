@@ -71,7 +71,7 @@ function DockLink({
       <a
         href={appPageUrl(item.href)}
         className={cn(
-          'flex min-w-0 flex-col items-center gap-1 py-2.5 text-[10px] transition-colors',
+          'relay-dock-link flex min-w-0 flex-col items-center gap-1 rounded-md py-2.5 text-[10px] transition-colors',
           active ? 'text-ink' : 'text-ink-faint'
         )}
       >
@@ -86,8 +86,8 @@ function DockLink({
       <a
         href={appPageUrl(item.href)}
         className={cn(
-          'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
-          active ? 'bg-surface-raised text-ink' : 'text-ink-muted hover:bg-surface-raised hover:text-ink'
+          'relay-dock-link flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+          active ? 'bg-surface-raised text-ink' : 'text-ink-muted'
         )}
       >
         <Icon size={18} />

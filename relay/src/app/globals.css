@@ -63,6 +63,11 @@ body {
   .relay-app-shell :where(button:not(:disabled), a[href]):hover {
     transform: translateY(-1px);
   }
+
+  .relay-app-shell .relay-dock-link:hover {
+    background-color: rgb(var(--ink));
+    color: rgb(var(--canvas));
+  }
 }
 
 .relay-app-shell :where(button:not(:disabled), a[href]):active {
