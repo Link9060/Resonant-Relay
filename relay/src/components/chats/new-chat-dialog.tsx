@@ -4,9 +4,8 @@ import { createGroup, startDirectConversation } from '@/lib/actions/chats';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Loader2, MessageCirclePlus, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { staticDetailPath } from '@/lib/config';
+import { appPageUrl, staticDetailPath } from '@/lib/config';
 import { contactColor, contactDisplayName, type ContactColorKey } from '@/lib/contact-colors';
 
 type Contact = { id: string; display_name: string; avatar_url: string | null; preference?: { nickname: string | null; color_key: ContactColorKey } | null };
@@ -18,7 +17,6 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   function toggleSelected(id: string) {
     setSelected((prev) => {
@@ -50,7 +48,7 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
       return;
     }
     setOpen(false);
-    router.push(staticDetailPath('chats', result.data.conversationId));
+    window.location.assign(appPageUrl(staticDetailPath('chats', result.data.conversationId)));
   }
 
   async function handleCreateGroup() {
@@ -71,7 +69,7 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
       return;
     }
     setOpen(false);
-    router.push(staticDetailPath('chats', result.data.conversationId));
+    window.location.assign(appPageUrl(staticDetailPath('chats', result.data.conversationId)));
   }
 
   return (

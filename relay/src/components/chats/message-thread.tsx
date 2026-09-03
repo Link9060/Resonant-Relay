@@ -3,13 +3,13 @@
 import { MessageComposer } from '@/components/chats/message-composer';
 import { LeaveGroupButton } from '@/components/groups/leave-group-button';
 import { contactColor, contactDisplayName, type ContactColorKey } from '@/lib/contact-colors';
+import { appPageUrl } from '@/lib/config';
 import { addGroupMember, editMessage, hideMessage, promoteGroupMember, removeGroupMember, renameGroup, setConversationPreferences, setMessagePinned, submitReport, toggleReaction, unsendMessage } from '@/lib/actions/chats';
 import { createClient } from '@/lib/supabase/client';
 import type { MessageAttachment } from '@/lib/types/database';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { ArrowDownToLine, ArrowLeft, Bell, BellOff, Check, CornerUpLeft, FileText, Flag, MoreHorizontal, Pencil, Pin, PinOff, Shield, Trash2, Users, X } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type Message = { id: string; conversation_id: string; sender_id: string; body: string; created_at: string; edited_at: string | null; attachments: MessageAttachment[]; reply_to_id: string | null };
@@ -80,7 +80,7 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
 
   return <div className="flex h-[calc(100vh-57px)] flex-col md:h-screen">
     <header className="relative flex items-center justify-between border-b border-border px-4 py-3">
-      <div className="flex min-w-0 items-center gap-2"><Link href="/chats" className="text-ink-muted hover:text-ink md:hidden"><ArrowLeft size={18} /></Link><div className="min-w-0"><h1 className="truncate font-display text-lg font-medium tracking-tight text-ink">{title}</h1>{isGroup && <p className="text-[11px] text-ink-faint">{members.length} members · {Object.values(rolesById).filter((role) => role === 'admin').length} admin{Object.values(rolesById).filter((role) => role === 'admin').length === 1 ? '' : 's'}</p>}</div></div>
+      <div className="flex min-w-0 items-center gap-2"><a href={appPageUrl('/chats')} className="text-ink-muted hover:text-ink md:hidden"><ArrowLeft size={18} /></a><div className="min-w-0"><h1 className="truncate font-display text-lg font-medium tracking-tight text-ink">{title}</h1>{isGroup && <p className="text-[11px] text-ink-faint">{members.length} members · {Object.values(rolesById).filter((role) => role === 'admin').length} admin{Object.values(rolesById).filter((role) => role === 'admin').length === 1 ? '' : 's'}</p>}</div></div>
       <div className="flex items-center gap-1"><button type="button" onClick={() => void toggleMute()} aria-label={muted ? 'Unmute conversation' : 'Mute conversation'} title={muted ? 'Unmute' : 'Mute'} className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted hover:bg-surface hover:text-ink">{muted ? <BellOff size={16} /> : <Bell size={16} />}</button>{isGroup && groupId ? <><button type="button" onClick={() => setMembersOpen((open) => !open)} className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm text-ink-muted hover:bg-surface hover:text-ink"><Users size={16} /><span className="hidden sm:inline">Manage</span></button><LeaveGroupButton groupId={groupId} /></> : <button type="button" onClick={() => { const other = members.find((member) => member.id !== currentUserId); if (other) setReportTarget({ userId: other.id, label: other.display_name }); }} aria-label="Report account" className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted hover:bg-surface hover:text-ink"><Flag size={15} /></button>}</div>
       {membersOpen && <GroupControls title={title} members={members} availableContacts={availableContacts} currentUserId={currentUserId} currentIsAdmin={currentIsAdmin} rolesById={rolesById} preferencesById={preferencesById} error={adminError} onClose={() => setMembersOpen(false)} onRename={rename} onAdd={add} onPromote={promote} onRemove={remove} onReport={(member) => setReportTarget({ userId: member.id, label: member.display_name })} />}
     </header>

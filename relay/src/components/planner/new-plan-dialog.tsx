@@ -3,9 +3,8 @@
 import { createPlan } from '@/lib/actions/planner';
 import * as Dialog from '@radix-ui/react-dialog';
 import { CalendarPlus, Loader2, Plus, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { staticDetailPath } from '@/lib/config';
+import { appPageUrl, staticDetailPath } from '@/lib/config';
 
 type Group = { id: string; name: string };
 type ResponseType = 'rsvp' | 'select_option';
@@ -26,7 +25,6 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
   const [customDates, setCustomDates] = useState<string[]>([today()]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   function reset() {
     setGroupId(groups[0]?.id ?? '');
@@ -72,7 +70,7 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
       return;
     }
     setOpen(false);
-    router.push(staticDetailPath('planner', result.data.planId));
+    window.location.assign(appPageUrl(staticDetailPath('planner', result.data.planId)));
   }
 
   return (

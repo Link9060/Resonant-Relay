@@ -114,7 +114,27 @@ stubbed as honest placeholders — no fake buttons pretending they work.
   than a blank flash while Server Components fetch
 - Subtle press feedback (`active:scale-[0.97]`) on primary buttons
 
-## What's NOT built yet (on purpose)
+## Product boundaries and rollout
+
+Relay is intentionally shipping in stages. The foundation is authentication,
+the persistent app shell, navigation, contacts, conversations, pagination,
+RLS, and responsive messaging. Planner, Calendar, Email, and notifications
+follow as integrations around that core; storage management and monetization
+come only after messaging is stable.
+
+Two boundaries are deliberate:
+
+- **No Study tab or study timer.** Relay is for students to message, plan, and
+  coordinate during school. If a productivity control ever becomes useful,
+  it belongs much later as simple notification quiet hours—not a study suite.
+- **Storage Cell is deferred and singular.** When the Storage stage begins,
+  “Storage Cell” will be the visual name for one account-level attachment
+  quota, not a set of user-facing containers. The meter and its usage must be
+  calculated and enforced server-side from actual attachment bytes. Management
+  should operate on selected content with compress, delete, or export/archive
+  actions; export means a real HTML/JSON/zip file that can be kept somewhere
+  reliable, never an “ejected” local app state. Relay+ automatic optimization
+  and larger quota can be evaluated in that later stage with real numbers.
 
 Obsidian is a placeholder page only. It needs its own research phase before
 implementation — see the note below.

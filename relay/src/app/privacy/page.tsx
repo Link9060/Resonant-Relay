@@ -1,5 +1,4 @@
 import { appPageUrl } from '@/lib/config';
-import Link from 'next/link';
 
 export default function PrivacyPage() {
   return <LegalPage title="Relay Privacy Policy" effective="September 3, 2026">
@@ -15,4 +14,4 @@ export default function PrivacyPage() {
   </LegalPage>;
 }
 
-function LegalPage({ title, effective, children }: { title: string; effective: string; children: React.ReactNode }) { return <main className="min-h-screen bg-canvas px-5 py-10"><article className="mx-auto max-w-2xl"><Link href={appPageUrl('/')} className="text-sm text-ink-muted hover:text-ink">← Relay</Link><h1 className="mt-8 font-display text-3xl font-medium tracking-tight text-ink">{title}</h1><p className="mt-2 text-xs text-ink-faint">Effective {effective}</p><div className="legal-copy mt-8 space-y-5 text-sm leading-7 text-ink-muted">{children}</div><footer className="mt-10 border-t border-border pt-5 text-xs text-ink-faint"><Link href={appPageUrl('/terms')} className="underline underline-offset-4">Terms of Use</Link></footer></article></main>; }
+function LegalPage({ title, effective, children }: { title: string; effective: string; children: React.ReactNode }) { return <main className="min-h-screen bg-canvas px-5 py-10"><article className="mx-auto max-w-2xl"><a href={appPageUrl('/')} className="text-sm text-ink-muted hover:text-ink">← Relay</a><h1 className="mt-8 font-display text-3xl font-medium tracking-tight text-ink">{title}</h1><p className="mt-2 text-xs text-ink-faint">Effective {effective}</p><div className="legal-copy mt-8 space-y-5 text-sm leading-7 text-ink-muted">{children}</div><footer className="mt-10 border-t border-border pt-5 text-xs text-ink-faint"><a href={appPageUrl('/terms')} className="underline underline-offset-4">Terms of Use</a></footer></article></main>; }

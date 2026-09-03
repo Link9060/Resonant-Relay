@@ -4,6 +4,12 @@ export const SUPABASE_URL = 'https://cnorozrjugxpanpfmssa.supabase.co';
 export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_yVNPiB7opT0WRvBfKTZ2BA_s5bOQLRg';
 export const VAPID_PUBLIC_KEY = 'BCTFsU2mbSt5UPCIY9Sc2NoclRYl4wv826kVqwkdgEdgdxsT8YoGBvM9IZQfNQHYCTt5HMEhwxAH86ZKN9CC38I';
 
+export function appPathname(pathname: string) {
+  if (pathname === BASE_PATH) return '/';
+  if (pathname.startsWith(`${BASE_PATH}/`)) return pathname.slice(BASE_PATH.length) || '/';
+  return pathname || '/';
+}
+
 export function appUrl(path = '/') {
   let normalized = path.startsWith('/') ? path : `/${path}`;
   if (normalized === BASE_PATH) normalized = '/';

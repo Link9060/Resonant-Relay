@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { staticDetailPath } from '@/lib/config';
+import { appPageUrl, staticDetailPath } from '@/lib/config';
 
 type PlanRow = {
   id: string;
@@ -49,7 +48,7 @@ export function PlanList({
 
         return (
           <li key={plan.id}>
-            <Link href={staticDetailPath('planner', plan.id)} className="flex items-center justify-between px-3 py-3 hover:bg-surface">
+            <a href={appPageUrl(staticDetailPath('planner', plan.id))} className="flex items-center justify-between px-3 py-3 hover:bg-surface">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-ink">{plan.name}</p>
                 <p className="mt-0.5 text-xs text-ink-faint">
@@ -62,7 +61,7 @@ export function PlanList({
                   {responseCount}/{memberCount} responded
                 </span>
               )}
-            </Link>
+            </a>
           </li>
         );
       })}

@@ -1,7 +1,7 @@
 'use client';
 
+import { appPageUrl, appPathname } from '@/lib/config';
 import { cn } from '@/lib/utils';
-import { appPageUrl } from '@/lib/config';
 import { CalendarDays, House, ListTodo, Mail, MessageCircle, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -16,26 +16,27 @@ const DOCK_ITEMS = [
 
 export function Dock() {
   const pathname = usePathname();
+  const currentPath = appPathname(pathname);
 
   return (
     <>
-      {/* Desktop: persistent left rail */}
+      {/* Desktop: a persistent rail that never scrolls away with page content. */}
       <nav
         aria-label="Main"
-        className="hidden md:flex md:w-60 md:flex-col md:border-r md:border-border md:bg-surface md:px-3 md:py-6"
+        className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col overflow-y-auto border-r border-border bg-surface px-3 py-6 md:flex"
       >
         <a href={appPageUrl('/')} className="px-3 pb-8 font-display text-lg font-medium tracking-tight text-ink">
           Relay
         </a>
         <ul className="flex flex-1 flex-col gap-1">
           {DOCK_ITEMS.map((item) => (
-            <DockLink key={item.href} item={item} active={item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)} variant="rail" />
+            <DockLink key={item.href} item={item} active={isDockPathActive(currentPath, item.href)} variant="rail" />
           ))}
         </ul>
         <ul className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
           <DockLink
             item={{ href: '/contacts', label: 'Contacts', icon: Users }}
-            active={pathname.startsWith('/contacts')}
+            active={isDockPathActive(currentPath, '/contacts')}
             variant="rail"
           />
         </ul>
@@ -45,10 +46,10 @@ export function Dock() {
           remain together in the top bar. */}
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-6 border-t border-border bg-surface/95 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-t border-border bg-surface/95 backdrop-blur md:hidden"
       >
         {DOCK_ITEMS.map((item) => (
-          <DockLink key={item.href} item={item} active={item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)} variant="tab" />
+          <DockLink key={item.href} item={item} active={isDockPathActive(currentPath, item.href)} variant="tab" />
         ))}
       </nav>
     </>
@@ -70,6 +71,7 @@ function DockLink({
     return (
       <a
         href={appPageUrl(item.href)}
+        aria-current={active ? 'page' : undefined}
         className={cn(
           'relay-dock-link flex min-w-0 flex-col items-center gap-1 rounded-md py-2.5 text-[10px] transition-colors',
           active ? 'text-ink' : 'text-ink-faint'
@@ -85,6 +87,7 @@ function DockLink({
     <li>
       <a
         href={appPageUrl(item.href)}
+        aria-current={active ? 'page' : undefined}
         className={cn(
           'relay-dock-link flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
           active ? 'bg-surface-raised text-ink' : 'text-ink-muted'
@@ -95,4 +98,8 @@ function DockLink({
       </a>
     </li>
   );
+}
+
+function isDockPathActive(pathname: string, href: string) {
+  return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 }
