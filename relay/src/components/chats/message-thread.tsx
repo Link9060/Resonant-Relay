@@ -3,29 +3,28 @@
 import { MessageComposer } from '@/components/chats/message-composer';
 import { LeaveGroupButton } from '@/components/groups/leave-group-button';
 import { contactColor, contactDisplayName, type ContactColorKey } from '@/lib/contact-colors';
-import { editMessage } from '@/lib/actions/chats';
+import { addGroupMember, editMessage, hideMessage, promoteGroupMember, removeGroupMember, renameGroup, setConversationPreferences, setMessagePinned, submitReport, toggleReaction, unsendMessage } from '@/lib/actions/chats';
 import { createClient } from '@/lib/supabase/client';
 import type { MessageAttachment } from '@/lib/types/database';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import { ArrowDownToLine, ArrowLeft, Check, FileText, Pencil, Users, X } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeft, Bell, BellOff, Check, CornerUpLeft, FileText, Flag, MoreHorizontal, Pencil, Pin, PinOff, Shield, Trash2, Users, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-type Message = {
-  id: string;
-  conversation_id: string;
-  sender_id: string;
-  body: string;
-  created_at: string;
-  edited_at: string | null;
-  attachments: MessageAttachment[];
-};
+type Message = { id: string; conversation_id: string; sender_id: string; body: string; created_at: string; edited_at: string | null; attachments: MessageAttachment[]; reply_to_id: string | null };
+type Reaction = { message_id: string; user_id: string; emoji: string; created_at: string };
 type ProfileMap = Record<string, { id: string; display_name: string; avatar_url: string | null }>;
 type PreferenceMap = Record<string, { nickname: string | null; color_key: ContactColorKey }>;
+type ReportTarget = { messageId?: string; userId?: string; label: string };
+const REACTIONS = ['👍', '❤️', '😂', '‼️', '❓', '🎉'];
 
-export function MessageThread({ conversationId, title, isGroup, groupId, currentUserId, participantsById, preferencesById, initialMessages }: { conversationId: string; title: string; isGroup: boolean; groupId: string | null; currentUserId: string; participantsById: ProfileMap; preferencesById: PreferenceMap; initialMessages: Message[] }) {
+export function MessageThread({ conversationId, title: initialTitle, isGroup, groupId, currentUserId, participantsById, preferencesById, rolesById, initialMessages, initialReactions, initialPinnedIds, initialMuted }: { conversationId: string; title: string; isGroup: boolean; groupId: string | null; currentUserId: string; participantsById: ProfileMap; preferencesById: PreferenceMap; rolesById: Record<string, 'admin' | 'member'>; initialMessages: Message[]; initialReactions: Reaction[]; initialPinnedIds: string[]; initialMuted: boolean }) {
+  const [title, setTitle] = useState(initialTitle);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [reactions, setReactions] = useState<Reaction[]>(initialReactions);
+  const [pinnedIds, setPinnedIds] = useState(new Set(initialPinnedIds));
+  const [muted, setMuted] = useState(initialMuted);
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
   const [membersOpen, setMembersOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -34,203 +33,70 @@ export function MessageThread({ conversationId, title, isGroup, groupId, current
   const [editSaving, setEditSaving] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
+  const [adminError, setAdminError] = useState<string | null>(null);
+  const [availableContacts, setAvailableContacts] = useState<ProfileMap[string][]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
+  const currentIsAdmin = rolesById[currentUserId] === 'admin';
 
   useEffect(() => {
-    const supabase = createClient();
-    let active = true;
-    let typingChannel: RealtimeChannel | null = null;
-    const messageChannel = supabase
-      .channel(`messages:${conversationId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
-        const incoming = payload.new as Message;
-        setMessages((current) => current.some((message) => message.id === incoming.id) ? current : [...current, incoming]);
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
-        const updated = payload.new as Message;
-        setMessages((current) => current.map((message) => message.id === updated.id ? updated : message));
-      })
+    const supabase = createClient(); let active = true; let typingChannel: RealtimeChannel | null = null;
+    const messageChannel = supabase.channel(`messages:${conversationId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => { const incoming = payload.new as Message; setMessages((current) => current.some((message) => message.id === incoming.id) ? current : [...current, incoming]); })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => { const updated = payload.new as Message; setMessages((current) => current.map((message) => message.id === updated.id ? updated : message)); })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, (payload) => { const removed = payload.old as { id?: string }; if (removed.id) setMessages((current) => current.filter((message) => message.id !== removed.id)); })
       .subscribe();
-
-    void (async () => {
-      await supabase.realtime.setAuth();
-      if (!active) return;
-      typingChannel = supabase
-        .channel(`typing:${conversationId}`, { config: { private: true } })
-        .on('broadcast', { event: 'typing' }, ({ payload }) => {
-          const signal = payload as { userId?: string; typing?: boolean };
-          if (!signal.userId || signal.userId === currentUserId || !participantsById[signal.userId]) return;
-          setTypingUsers((current) => {
-            const next = { ...current };
-            if (signal.typing) next[signal.userId!] = Date.now() + 3500;
-            else delete next[signal.userId!];
-            return next;
-          });
-        })
-        .subscribe();
-      typingChannelRef.current = typingChannel;
-    })();
-
-    return () => {
-      active = false;
-      typingChannelRef.current = null;
-      void supabase.removeChannel(messageChannel);
-      if (typingChannel) void supabase.removeChannel(typingChannel);
-    };
+    const reactionChannel = supabase.channel(`reactions:${conversationId}`).on('postgres_changes', { event: '*', schema: 'public', table: 'message_reactions' }, (payload) => {
+      const oldRow = payload.old as Reaction; const newRow = payload.new as Reaction;
+      setReactions((current) => payload.eventType === 'DELETE' ? current.filter((item) => !(item.message_id === oldRow.message_id && item.user_id === oldRow.user_id && item.emoji === oldRow.emoji)) : [...current.filter((item) => !(item.message_id === newRow.message_id && item.user_id === newRow.user_id && item.emoji === newRow.emoji)), newRow]);
+    }).subscribe();
+    void (async () => { await supabase.realtime.setAuth(); if (!active) return; typingChannel = supabase.channel(`typing:${conversationId}`, { config: { private: true } }).on('broadcast', { event: 'typing' }, ({ payload }) => { const signal = payload as { userId?: string; typing?: boolean }; if (!signal.userId || signal.userId === currentUserId || !participantsById[signal.userId]) return; setTypingUsers((current) => { const next = { ...current }; if (signal.typing) next[signal.userId!] = Date.now() + 3500; else delete next[signal.userId!]; return next; }); }).subscribe(); typingChannelRef.current = typingChannel; })();
+    return () => { active = false; typingChannelRef.current = null; void supabase.removeChannel(messageChannel); void supabase.removeChannel(reactionChannel); if (typingChannel) void supabase.removeChannel(typingChannel); };
   }, [conversationId, currentUserId, participantsById]);
 
-  useEffect(() => {
-    const paths = messages.flatMap((message) => message.attachments ?? []).map((attachment) => attachment.path).filter((path) => !attachmentUrls[path]);
-    if (!paths.length) return;
-    let active = true;
-    void createClient().storage.from('chat-attachments').createSignedUrls(paths, 60 * 60).then(({ data }) => {
-      if (!active || !data) return;
-      setAttachmentUrls((current) => ({ ...current, ...Object.fromEntries(data.filter((item) => item.signedUrl).map((item) => [item.path, item.signedUrl])) }));
-    });
-    return () => { active = false; };
-  }, [attachmentUrls, messages]);
+  useEffect(() => { const paths = messages.flatMap((message) => message.attachments ?? []).map((attachment) => attachment.path).filter((path) => !attachmentUrls[path]); if (!paths.length) return; let active = true; void createClient().storage.from('chat-attachments').createSignedUrls(paths, 3600).then(({ data }) => { if (active && data) setAttachmentUrls((current) => ({ ...current, ...Object.fromEntries(data.filter((item) => item.signedUrl).map((item) => [item.path, item.signedUrl])) })); }); return () => { active = false; }; }, [attachmentUrls, messages]);
+  useEffect(() => { const timer = window.setInterval(() => { const now = Date.now(); setClock(now); setTypingUsers((current) => Object.fromEntries(Object.entries(current).filter(([, expiresAt]) => expiresAt > now))); }, 15_000); return () => window.clearInterval(timer); }, []);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages.length]);
+  useEffect(() => { if (!membersOpen || !currentIsAdmin) return; void (async () => { const supabase = createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [asA, asB] = await Promise.all([supabase.from('connections').select('other:profiles!connections_user_b_fkey(id,display_name,avatar_url)').eq('user_a', user.id), supabase.from('connections').select('other:profiles!connections_user_a_fkey(id,display_name,avatar_url)').eq('user_b', user.id)]); setAvailableContacts([...(asA.data ?? []), ...(asB.data ?? [])].map((row: any) => row.other).filter((profile: any) => profile && !participantsById[profile.id])); })(); }, [currentIsAdmin, membersOpen, participantsById]);
 
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      const now = Date.now();
-      setTypingUsers((current) => {
-        const active = Object.entries(current).filter(([, expiresAt]) => expiresAt > now);
-        return active.length === Object.keys(current).length ? current : Object.fromEntries(active);
-      });
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, []);
+  const sendTypingSignal = useCallback((typing: boolean) => { void typingChannelRef.current?.send({ type: 'broadcast', event: 'typing', payload: { userId: currentUserId, typing } }); }, [currentUserId]);
+  const typingNames = useMemo(() => Object.keys(typingUsers).map((userId) => participantsById[userId] ? contactDisplayName(participantsById[userId], preferencesById[userId]) : null).filter((name): name is string => Boolean(name)), [participantsById, preferencesById, typingUsers]);
+  const members = useMemo(() => Object.values(participantsById).sort((a, b) => rolesById[b.id] === 'admin' && rolesById[a.id] !== 'admin' ? 1 : a.id === currentUserId ? -1 : a.display_name.localeCompare(b.display_name)), [currentUserId, participantsById, rolesById]);
+  const messageById = useMemo(() => Object.fromEntries(messages.map((message) => [message.id, message])), [messages]);
 
-  useEffect(() => {
-    const timer = window.setInterval(() => setClock(Date.now()), 30_000);
-    return () => window.clearInterval(timer);
-  }, []);
+  async function saveEdit(event: FormEvent, message: Message) { event.preventDefault(); setEditSaving(true); setEditError(null); const result = await editMessage(message.id, editValue); setEditSaving(false); if (!result.ok) { setEditError(result.error); return; } setMessages((current) => current.map((item) => item.id === message.id ? { ...result.data, reply_to_id: message.reply_to_id } : item)); setEditingId(null); }
+  async function changeReaction(messageId: string, emoji: string) { const active = reactions.some((item) => item.message_id === messageId && item.user_id === currentUserId && item.emoji === emoji); const before = reactions; setReactions(active ? reactions.filter((item) => !(item.message_id === messageId && item.user_id === currentUserId && item.emoji === emoji)) : [...reactions, { message_id: messageId, user_id: currentUserId, emoji, created_at: new Date().toISOString() }]); const result = await toggleReaction(messageId, emoji, active); if (!result.ok) setReactions(before); setOpenMenuId(null); }
+  async function togglePin(messageId: string) { const next = !pinnedIds.has(messageId); const result = await setMessagePinned(messageId, next); if (!result.ok) return; setPinnedIds((current) => { const copy = new Set(current); if (next) copy.add(messageId); else copy.delete(messageId); return copy; }); setOpenMenuId(null); }
+  async function deleteForMe(messageId: string) { if (!confirm('Hide this message for you? Other people will still see it.')) return; const result = await hideMessage(messageId); if (result.ok) setMessages((current) => current.filter((message) => message.id !== messageId)); setOpenMenuId(null); }
+  async function unsend(messageId: string) { if (!confirm('Unsend this message for everyone? Its uploaded files will also be permanently deleted.')) return; const result = await unsendMessage(messageId); if (!result.ok) { alert(result.error); return; } setMessages((current) => current.filter((message) => message.id !== messageId)); setOpenMenuId(null); }
+  async function toggleMute() { const next = !muted; const result = await setConversationPreferences(conversationId, { muted: next }); if (result.ok) setMuted(next); }
+  async function rename() { const value = prompt('New group name', title)?.trim(); if (!value || !groupId) return; const result = await renameGroup(groupId, value); if (result.ok) setTitle(value); else setAdminError(result.error); }
+  async function promote(userId: string) { if (!groupId) return; const result = await promoteGroupMember(groupId, userId); if (result.ok) window.location.reload(); else setAdminError(result.error); }
+  async function remove(userId: string) { if (!groupId || !confirm('Remove this person from the group?')) return; const result = await removeGroupMember(groupId, userId); if (result.ok) window.location.reload(); else setAdminError(result.error); }
+  async function add(userId: string) { if (!groupId) return; const result = await addGroupMember(groupId, userId); if (result.ok) window.location.reload(); else setAdminError(result.error); }
 
-  const sendTypingSignal = useCallback((typing: boolean) => {
-    void typingChannelRef.current?.send({ type: 'broadcast', event: 'typing', payload: { userId: currentUserId, typing } });
-  }, [currentUserId]);
+  return <div className="flex h-[calc(100vh-57px)] flex-col md:h-screen">
+    <header className="relative flex items-center justify-between border-b border-border px-4 py-3">
+      <div className="flex min-w-0 items-center gap-2"><Link href="/chats" className="text-ink-muted hover:text-ink md:hidden"><ArrowLeft size={18} /></Link><div className="min-w-0"><h1 className="truncate font-display text-lg font-medium tracking-tight text-ink">{title}</h1>{isGroup && <p className="text-[11px] text-ink-faint">{members.length} members · {Object.values(rolesById).filter((role) => role === 'admin').length} admin{Object.values(rolesById).filter((role) => role === 'admin').length === 1 ? '' : 's'}</p>}</div></div>
+      <div className="flex items-center gap-1"><button type="button" onClick={() => void toggleMute()} aria-label={muted ? 'Unmute conversation' : 'Mute conversation'} title={muted ? 'Unmute' : 'Mute'} className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted hover:bg-surface hover:text-ink">{muted ? <BellOff size={16} /> : <Bell size={16} />}</button>{isGroup && groupId ? <><button type="button" onClick={() => setMembersOpen((open) => !open)} className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm text-ink-muted hover:bg-surface hover:text-ink"><Users size={16} /><span className="hidden sm:inline">Manage</span></button><LeaveGroupButton groupId={groupId} /></> : <button type="button" onClick={() => { const other = members.find((member) => member.id !== currentUserId); if (other) setReportTarget({ userId: other.id, label: other.display_name }); }} aria-label="Report account" className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted hover:bg-surface hover:text-ink"><Flag size={15} /></button>}</div>
+      {membersOpen && <GroupControls title={title} members={members} availableContacts={availableContacts} currentUserId={currentUserId} currentIsAdmin={currentIsAdmin} rolesById={rolesById} preferencesById={preferencesById} error={adminError} onClose={() => setMembersOpen(false)} onRename={rename} onAdd={add} onPromote={promote} onRemove={remove} onReport={(member) => setReportTarget({ userId: member.id, label: member.display_name })} />}
+    </header>
 
-  const typingNames = useMemo(() => Object.keys(typingUsers).map((userId) => {
-    const profile = participantsById[userId];
-    return profile ? contactDisplayName(profile, preferencesById[userId]) : null;
-  }).filter((name): name is string => Boolean(name)), [participantsById, preferencesById, typingUsers]);
-
-  const members = useMemo(() => Object.values(participantsById).sort((a, b) => {
-    if (a.id === currentUserId) return -1;
-    if (b.id === currentUserId) return 1;
-    return a.display_name.localeCompare(b.display_name);
-  }), [currentUserId, participantsById]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length, typingNames.length]);
-
-  function beginEdit(message: Message) {
-    setEditingId(message.id);
-    setEditValue(message.body);
-    setEditError(null);
-  }
-
-  function cancelEdit() {
-    setEditingId(null);
-    setEditValue('');
-    setEditError(null);
-  }
-
-  async function saveEdit(event: FormEvent, message: Message) {
-    event.preventDefault();
-    setEditSaving(true);
-    setEditError(null);
-    const result = await editMessage(message.id, editValue);
-    setEditSaving(false);
-    if (!result.ok) { setEditError(result.error); return; }
-    setMessages((current) => current.map((item) => item.id === message.id ? result.data : item));
-    cancelEdit();
-  }
-
-  return (
-    <div className="flex h-[calc(100vh-57px)] flex-col md:h-screen">
-      <header className="relative flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <Link href="/chats" className="text-ink-muted hover:text-ink md:hidden"><ArrowLeft size={18} /></Link>
-          <div className="min-w-0"><h1 className="truncate font-display text-lg font-medium tracking-tight text-ink">{title}</h1>{isGroup && <p className="text-[11px] text-ink-faint">{members.length} member{members.length === 1 ? '' : 's'}</p>}</div>
-        </div>
-        {isGroup && groupId && (
-          <div className="flex items-center gap-1.5">
-            <button type="button" onClick={() => setMembersOpen((open) => !open)} aria-expanded={membersOpen} aria-haspopup="dialog" className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm text-ink-muted hover:bg-surface hover:text-ink"><Users size={16} /><span className="hidden sm:inline">Members</span></button>
-            <LeaveGroupButton groupId={groupId} />
-          </div>
-        )}
-        {membersOpen && (
-          <>
-            <button type="button" aria-label="Close members" className="fixed inset-0 z-30 cursor-default" onClick={() => setMembersOpen(false)} />
-            <div role="dialog" aria-label={`${title} members`} className="relay-popover absolute right-4 top-[calc(100%+0.5rem)] z-40 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border bg-surface-raised shadow-xl">
-              <div className="flex items-center justify-between border-b border-border px-4 py-3"><div><p className="text-sm font-medium text-ink">People in {title}</p><p className="text-xs text-ink-faint">{members.length} total</p></div><button type="button" onClick={() => setMembersOpen(false)} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:bg-surface"><X size={16} /></button></div>
-              <ul className="max-h-80 overflow-y-auto p-2">
-                {members.map((member) => {
-                  const preference = preferencesById[member.id];
-                  const name = member.id === currentUserId ? member.display_name : contactDisplayName(member, preference);
-                  const color = member.id === currentUserId ? 'rgb(var(--ink))' : contactColor(preference?.color_key);
-                  return <li key={member.id} className="flex items-center gap-3 rounded-md px-2 py-2"><div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-semibold" style={{ color, backgroundColor: `${color}1f`, boxShadow: `inset 0 0 0 1px ${color}45` }}>{member.avatar_url ? <Image src={member.avatar_url} alt="" fill sizes="36px" className="object-cover" unoptimized /> : name[0]?.toUpperCase()}</div><div className="min-w-0"><p className="truncate text-sm font-medium text-ink">{name}{member.id === currentUserId && <span className="ml-1 font-normal text-ink-faint">(you)</span>}</p>{preference?.nickname && <p className="truncate text-xs text-ink-faint">{member.display_name}</p>}</div></li>;
-                })}
-              </ul>
-            </div>
-          </>
-        )}
-      </header>
-
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        {messages.length === 0 ? <p className="mt-10 text-center text-sm text-ink-faint">Say hi.</p> : (
-          <ul className="space-y-3">
-            {messages.map((message) => {
-              const isMine = message.sender_id === currentUserId;
-              const sender = participantsById[message.sender_id];
-              const preference = preferencesById[message.sender_id];
-              const color = contactColor(preference?.color_key);
-              const senderName = sender ? contactDisplayName(sender, preference) : 'Contact';
-              const customizedGroupMessage = isGroup && !isMine;
-              const canEdit = isMine && Boolean(message.body) && clock - new Date(message.created_at).getTime() <= 15 * 60_000;
-
-              if (editingId === message.id) {
-                return <li key={message.id} className="flex justify-end"><form onSubmit={(event) => saveEdit(event, message)} className="w-full max-w-[85%] rounded-lg border border-border bg-surface-raised p-3"><textarea autoFocus value={editValue} onChange={(event) => setEditValue(event.target.value)} maxLength={4000} rows={3} className="w-full resize-none rounded-md border border-border bg-canvas px-3 py-2 text-sm text-ink outline-none focus:border-ink-muted" />{editError && <p className="mt-2 text-xs text-red-500">{editError}</p>}<div className="mt-2 flex justify-end gap-2"><button type="button" disabled={editSaving} onClick={cancelEdit} className="rounded-md px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-surface">Cancel</button><button type="submit" disabled={editSaving || !editValue.trim()} className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-canvas disabled:opacity-40"><Check size={13} />Save edit</button></div></form></li>;
-              }
-
-              return (
-                <li key={message.id} className={`group flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`flex max-w-[78%] flex-col gap-0.5 ${isMine ? 'items-end' : 'items-start'}`}>
-                    {customizedGroupMessage && <span className="flex items-center gap-1.5 px-1 text-[11px] font-medium" style={{ color }}><i className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />{senderName}</span>}
-                    <div className="flex items-center gap-1.5">
-                      {isMine && canEdit && <button type="button" onClick={() => beginEdit(message)} aria-label="Edit message" className="flex h-8 w-8 items-center justify-center rounded-full text-ink-faint opacity-60 hover:bg-surface hover:text-ink sm:opacity-0 sm:group-hover:opacity-100"><Pencil size={14} /></button>}
-                      {message.body && <div className={`rounded-lg px-3 py-2 text-sm ${isMine ? 'bg-ink text-canvas' : customizedGroupMessage ? 'text-ink' : 'bg-surface-raised text-ink'}`} style={customizedGroupMessage ? { backgroundColor: `${color}1c`, borderLeft: `3px solid ${color}` } : undefined}>{message.body}</div>}
-                    </div>
-                    {(message.attachments ?? []).length > 0 && <AttachmentList attachments={message.attachments} urls={attachmentUrls} isMine={isMine} />}
-                    {message.edited_at && <span className="px-1 text-[10px] text-ink-faint">edited</span>}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        {typingNames.length > 0 && <TypingIndicator names={typingNames} />}
-        <div ref={bottomRef} />
-      </div>
-      <MessageComposer conversationId={conversationId} onTypingChange={sendTypingSignal} />
-    </div>
-  );
+    <div className="flex-1 overflow-y-auto px-4 py-4">{messages.length === 0 ? <p className="mt-10 text-center text-sm text-ink-faint">Say hi.</p> : <ul className="space-y-3">{messages.map((message) => { const isMine = message.sender_id === currentUserId; const sender = participantsById[message.sender_id]; const preference = preferencesById[message.sender_id]; const color = contactColor(preference?.color_key); const senderName = sender ? contactDisplayName(sender, preference) : 'Contact'; const customized = isGroup && !isMine; const canEdit = isMine && Boolean(message.body) && clock - new Date(message.created_at).getTime() <= 15 * 60_000; const canUnsend = isMine && clock - new Date(message.created_at).getTime() <= 2 * 60_000; const reply = message.reply_to_id ? messageById[message.reply_to_id] : null; const messageReactions = REACTIONS.map((emoji) => ({ emoji, rows: reactions.filter((item) => item.message_id === message.id && item.emoji === emoji) })).filter((group) => group.rows.length);
+      if (editingId === message.id) return <li key={message.id} className="flex justify-end"><form onSubmit={(event) => saveEdit(event, message)} className="w-full max-w-[85%] rounded-lg border border-border bg-surface-raised p-3"><textarea autoFocus value={editValue} onChange={(event) => setEditValue(event.target.value)} maxLength={4000} rows={3} className="profile-input resize-none" />{editError && <p className="mt-2 text-xs text-red-500">{editError}</p>}<div className="mt-2 flex justify-end gap-2"><button type="button" onClick={() => setEditingId(null)} className="rounded-md px-3 py-1.5 text-xs text-ink-muted">Cancel</button><button type="submit" disabled={editSaving || !editValue.trim()} className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-canvas"><Check size={13} />Save</button></div></form></li>;
+      return <li key={message.id} className={`group flex ${isMine ? 'justify-end' : 'justify-start'}`}><div className={`relative flex max-w-[82%] flex-col gap-1 ${isMine ? 'items-end' : 'items-start'}`}>{customized && <span className="px-1 text-[11px] font-medium" style={{ color }}>{senderName}</span>}{reply && <div className="max-w-full truncate rounded-md border-l-2 border-accent bg-surface px-2.5 py-1.5 text-[11px] text-ink-faint"><span className="font-medium text-ink-muted">{reply.sender_id === currentUserId ? 'You' : participantsById[reply.sender_id]?.display_name}</span> · {reply.body || 'Attachment'}</div>}<div className="flex items-center gap-1.5">{isMine && <MessageMenuButton open={openMenuId === message.id} onToggle={() => setOpenMenuId((value) => value === message.id ? null : message.id)} />}{message.body && <div className={`whitespace-pre-wrap rounded-lg px-3 py-2 text-sm ${isMine ? 'bg-ink text-canvas' : customized ? 'text-ink' : 'bg-surface-raised text-ink'}`} style={customized ? { backgroundColor: `${color}1c`, borderLeft: `3px solid ${color}` } : undefined}>{message.body}</div>}{!isMine && <MessageMenuButton open={openMenuId === message.id} onToggle={() => setOpenMenuId((value) => value === message.id ? null : message.id)} />}</div>{openMenuId === message.id && <div className={`relay-popover z-10 flex max-w-xs flex-wrap items-center gap-1 rounded-lg border border-border bg-surface-raised p-1.5 shadow-lg ${isMine ? 'self-end' : 'self-start'}`}><button type="button" onClick={() => { setReplyTo(message); setOpenMenuId(null); }} className="message-action"><CornerUpLeft size={13} />Reply</button>{REACTIONS.map((emoji) => <button key={emoji} type="button" onClick={() => void changeReaction(message.id, emoji)} className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface">{emoji}</button>)}<button type="button" onClick={() => void togglePin(message.id)} className="message-action">{pinnedIds.has(message.id) ? <PinOff size={13} /> : <Pin size={13} />}{pinnedIds.has(message.id) ? 'Unpin' : 'Pin'}</button>{canEdit && <button type="button" onClick={() => { setEditingId(message.id); setEditValue(message.body); setOpenMenuId(null); }} className="message-action"><Pencil size={13} />Edit</button>}{canUnsend && <button type="button" onClick={() => void unsend(message.id)} className="message-action text-red-500"><Trash2 size={13} />Unsend</button>}<button type="button" onClick={() => void deleteForMe(message.id)} className="message-action"><X size={13} />Delete for me</button>{!isMine && <button type="button" onClick={() => { setReportTarget({ messageId: message.id, userId: message.sender_id, label: senderName }); setOpenMenuId(null); }} className="message-action text-red-500"><Flag size={13} />Report</button>}</div>}{(message.attachments ?? []).length > 0 && <AttachmentList attachments={message.attachments} urls={attachmentUrls} isMine={isMine} />}{messageReactions.length > 0 && <div className="flex flex-wrap gap-1">{messageReactions.map((group) => <button type="button" key={group.emoji} onClick={() => void changeReaction(message.id, group.emoji)} className={`rounded-full border px-2 py-0.5 text-xs ${group.rows.some((row) => row.user_id === currentUserId) ? 'border-accent bg-blue-50 dark:bg-blue-950' : 'border-border bg-surface'}`}>{group.emoji} {group.rows.length}</button>)}</div>}<div className="flex items-center gap-1 px-1 text-[10px] text-ink-faint">{pinnedIds.has(message.id) && <><Pin size={10} />pinned</>}{message.edited_at && <span>edited</span>}</div></div></li>;
+    })}</ul>}{typingNames.length > 0 && <TypingIndicator names={typingNames} />}<div ref={bottomRef} /></div>
+    <MessageComposer conversationId={conversationId} onTypingChange={sendTypingSignal} replyTo={replyTo ? { id: replyTo.id, label: replyTo.sender_id === currentUserId ? 'yourself' : participantsById[replyTo.sender_id]?.display_name ?? 'message', body: replyTo.body } : null} onCancelReply={() => setReplyTo(null)} />
+    {reportTarget && <ReportDialog target={reportTarget} onClose={() => setReportTarget(null)} />}
+  </div>;
 }
 
-function TypingIndicator({ names }: { names: string[] }) {
-  const label = names.length === 1 ? `${names[0]} is typing` : names.length === 2 ? `${names[0]} and ${names[1]} are typing` : `${names[0]} and ${names.length - 1} others are typing`;
-  return <div className="mt-3 flex items-center gap-2 text-xs text-ink-faint"><span className="relay-typing-bubble" aria-hidden="true"><i /><i /><i /></span><span>{label}</span></div>;
-}
-
-function AttachmentList({ attachments, urls, isMine }: { attachments: MessageAttachment[]; urls: Record<string, string>; isMine: boolean }) {
-  return <div className={`grid max-w-full gap-1.5 ${attachments.length > 1 ? 'sm:grid-cols-2' : ''}`}>{attachments.map((attachment) => {
-    const url = urls[attachment.path];
-    if (attachment.type.startsWith('image/')) return <a key={attachment.path} href={url} target="_blank" rel="noreferrer" aria-label={`Open ${attachment.name}`} className="block overflow-hidden rounded-lg border border-border bg-surface">{url ? <Image src={url} alt={attachment.name} width={720} height={480} unoptimized className="max-h-72 w-full object-cover" /> : <span className="block h-36 w-60 animate-pulse bg-surface" />}</a>;
-    return <a key={attachment.path} href={url} download={attachment.name} target="_blank" rel="noreferrer" className={`flex min-w-52 items-center gap-3 rounded-lg border px-3 py-2.5 ${isMine ? 'border-ink-faint/40 bg-ink text-canvas' : 'border-border bg-surface-raised text-ink'}`}><FileText size={19} className="shrink-0 opacity-70" /><span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium">{attachment.name}</span><span className="block text-[10px] opacity-60">{formatBytes(attachment.size)}</span></span><ArrowDownToLine size={15} className="shrink-0 opacity-60" /></a>;
-  })}</div>;
-}
-
+function GroupControls({ title, members, availableContacts, currentUserId, currentIsAdmin, rolesById, preferencesById, error, onClose, onRename, onAdd, onPromote, onRemove, onReport }: { title: string; members: ProfileMap[string][]; availableContacts: ProfileMap[string][]; currentUserId: string; currentIsAdmin: boolean; rolesById: Record<string, 'admin' | 'member'>; preferencesById: PreferenceMap; error: string | null; onClose: () => void; onRename: () => void; onAdd: (id: string) => void; onPromote: (id: string) => void; onRemove: (id: string) => void; onReport: (member: ProfileMap[string]) => void }) { return <><button type="button" aria-label="Close group controls" className="fixed inset-0 z-30 cursor-default" onClick={onClose} /><div role="dialog" aria-label={`${title} group controls`} className="relay-popover absolute right-4 top-[calc(100%+0.5rem)] z-40 w-[min(25rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border bg-surface-raised shadow-xl"><div className="flex items-center justify-between border-b border-border px-4 py-3"><div><p className="text-sm font-medium text-ink">Group controls</p><p className="text-xs text-ink-faint">Admins are clearly marked below.</p></div><button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-md text-ink-muted"><X size={16} /></button></div>{currentIsAdmin && <div className="border-b border-border px-4 py-3"><div className="flex items-center justify-between"><button type="button" onClick={onRename} className="text-xs font-medium text-ink-muted hover:text-ink">Rename group</button>{availableContacts.length > 0 && <select defaultValue="" onChange={(event) => { if (event.target.value) onAdd(event.target.value); }} aria-label="Add a contact to group" className="rounded-md border border-border bg-canvas px-2 py-1.5 text-xs text-ink"><option value="" disabled>Add contact…</option>{availableContacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.display_name}</option>)}</select>}</div></div>}{error && <p className="px-4 pt-3 text-xs text-red-500">{error}</p>}<ul className="max-h-80 overflow-y-auto p-2">{members.map((member) => { const preference = preferencesById[member.id]; const name = member.id === currentUserId ? member.display_name : contactDisplayName(member, preference); const isAdmin = rolesById[member.id] === 'admin'; return <li key={member.id} className="flex items-center gap-3 rounded-md px-2 py-2"><div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface text-xs font-semibold">{member.avatar_url ? <Image src={member.avatar_url} alt="" fill sizes="36px" className="object-cover" unoptimized /> : name[0]?.toUpperCase()}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-ink">{name}{member.id === currentUserId && <span className="ml-1 font-normal text-ink-faint">(you)</span>}</p><p className="flex items-center gap-1 text-[11px] text-ink-faint">{isAdmin ? <><Shield size={11} />Admin</> : 'Member'}</p></div>{member.id !== currentUserId && <div className="flex gap-1">{currentIsAdmin && !isAdmin && <button type="button" onClick={() => onPromote(member.id)} className="rounded-md px-2 py-1 text-[11px] text-ink-muted hover:bg-surface">Make admin</button>}{currentIsAdmin && <button type="button" onClick={() => onRemove(member.id)} className="rounded-md px-2 py-1 text-[11px] text-red-500 hover:bg-surface">Remove</button>}<button type="button" onClick={() => onReport(member)} aria-label={`Report ${name}`} className="flex h-7 w-7 items-center justify-center rounded-md text-ink-faint hover:bg-surface"><Flag size={13} /></button></div>}</li>; })}</ul></div></>; }
+function MessageMenuButton({ open, onToggle }: { open: boolean; onToggle: () => void }) { return <button type="button" onClick={onToggle} aria-expanded={open} aria-label="Message actions" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-faint opacity-70 hover:bg-surface hover:text-ink sm:opacity-0 sm:group-hover:opacity-100"><MoreHorizontal size={15} /></button>; }
+function ReportDialog({ target, onClose }: { target: ReportTarget; onClose: () => void }) { const [reason, setReason] = useState(target.messageId ? 'inappropriate_message' : 'account'); const [details, setDetails] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null); async function send(event: FormEvent) { event.preventDefault(); setBusy(true); const result = await submitReport({ reason, messageId: target.messageId, reportedUserId: target.userId, details }); setBusy(false); if (!result.ok) { setError(result.error); return; } alert('Report submitted.'); onClose(); } return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"><form onSubmit={send} role="dialog" aria-modal="true" aria-label="Report content" className="w-full max-w-md rounded-xl border border-border bg-surface-raised p-5 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><h2 className="font-medium text-ink">Report {target.messageId ? 'message' : 'account'}</h2><p className="mt-1 text-xs text-ink-faint">Relay keeps your report private. Reporting {target.label} won&apos;t notify them.</p></div><button type="button" onClick={onClose} className="text-ink-faint"><X size={17} /></button></div><label className="mt-5 block text-xs font-medium text-ink-muted">Reason<select value={reason} onChange={(event) => setReason(event.target.value)} className="profile-input mt-1.5"><option value="spam">Spam</option><option value="inappropriate_message">Inappropriate message</option><option value="harassment">Harassment</option><option value="account">Account concern</option><option value="other">Other</option></select></label><label className="mt-4 block text-xs font-medium text-ink-muted">Details (optional)<textarea value={details} onChange={(event) => setDetails(event.target.value)} maxLength={500} rows={3} className="profile-input mt-1.5 resize-none" /></label>{error && <p className="mt-3 text-xs text-red-500">{error}</p>}<button type="submit" disabled={busy} className="mt-5 w-full rounded-md bg-ink px-4 py-2.5 text-sm font-medium text-canvas disabled:opacity-50">{busy ? 'Submitting…' : 'Submit report'}</button></form></div>; }
+function TypingIndicator({ names }: { names: string[] }) { const label = names.length === 1 ? `${names[0]} is typing` : names.length === 2 ? `${names[0]} and ${names[1]} are typing` : `${names[0]} and ${names.length - 1} others are typing`; return <div className="mt-3 flex items-center gap-2 text-xs text-ink-faint"><span className="relay-typing-bubble"><i /><i /><i /></span><span>{label}</span></div>; }
+function AttachmentList({ attachments, urls, isMine }: { attachments: MessageAttachment[]; urls: Record<string, string>; isMine: boolean }) { return <div className={`grid max-w-full gap-1.5 ${attachments.length > 1 ? 'sm:grid-cols-2' : ''}`}>{attachments.map((attachment) => { const url = urls[attachment.path]; if (attachment.type.startsWith('image/')) return <a key={attachment.path} href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-border bg-surface">{url ? <Image src={url} alt={attachment.name} width={720} height={480} unoptimized className="max-h-72 w-full object-cover" /> : <span className="block h-36 w-60 animate-pulse bg-surface" />}</a>; return <a key={attachment.path} href={url} download={attachment.name} target="_blank" rel="noreferrer" className={`flex min-w-52 items-center gap-3 rounded-lg border px-3 py-2.5 ${isMine ? 'border-ink-faint/40 bg-ink text-canvas' : 'border-border bg-surface-raised text-ink'}`}><FileText size={19} className="shrink-0 opacity-70" /><span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium">{attachment.name}</span><span className="block text-[10px] opacity-60">{formatBytes(attachment.size)}</span></span><ArrowDownToLine size={15} /></a>; })}</div>; }
 function formatBytes(size: number) { return size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / (1024 * 1024)).toFixed(1)} MB`; }

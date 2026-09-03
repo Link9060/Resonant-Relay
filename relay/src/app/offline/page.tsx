@@ -1,0 +1,3 @@
+import { appPageUrl } from '@/lib/config';
+
+export default function OfflinePage() { return <main className="flex min-h-screen items-center justify-center bg-canvas px-6 text-center"><div className="max-w-sm"><div className="mx-auto h-3 w-3 rounded-full bg-ink shadow-[0_0_32px_rgb(var(--ink)/0.35)]" /><h1 className="mt-6 font-display text-3xl font-medium tracking-tight text-ink">Relay is offline</h1><p className="mt-3 text-sm leading-6 text-ink-muted">The app shell is ready, but messages, mail, and calendar data need a connection. Reconnect and try again.</p><a href={appPageUrl('/')} className="mt-6 inline-flex rounded-md bg-ink px-4 py-2.5 text-sm font-medium text-canvas">Try again</a></div></main>; }

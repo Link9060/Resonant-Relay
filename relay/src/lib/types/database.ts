@@ -273,12 +273,14 @@ export interface Database {
           created_at: string;
           edited_at: string | null;
           attachments: MessageAttachment[];
+          reply_to_id: string | null;
         };
         Insert: {
           conversation_id: string;
           sender_id: string;
           body: string;
           attachments?: MessageAttachment[];
+          reply_to_id?: string | null;
         };
         Update: Partial<{ body: string }>;
         Relationships: [
@@ -297,6 +299,36 @@ export interface Database {
             referencedColumns: ['id'];
           },
         ];
+      };
+      hidden_messages: {
+        Row: { message_id: string; user_id: string; hidden_at: string };
+        Insert: { message_id: string; user_id: string; hidden_at?: string };
+        Update: never;
+        Relationships: [];
+      };
+      message_reactions: {
+        Row: { message_id: string; user_id: string; emoji: string; created_at: string };
+        Insert: { message_id: string; user_id: string; emoji: string; created_at?: string };
+        Update: never;
+        Relationships: [];
+      };
+      message_pins: {
+        Row: { message_id: string; user_id: string; pinned_at: string };
+        Insert: { message_id: string; user_id: string; pinned_at?: string };
+        Update: never;
+        Relationships: [];
+      };
+      conversation_preferences: {
+        Row: { conversation_id: string; user_id: string; muted: boolean; pinned_at: string | null; updated_at: string };
+        Insert: { conversation_id: string; user_id: string; muted?: boolean; pinned_at?: string | null; updated_at?: string };
+        Update: Partial<{ muted: boolean; pinned_at: string | null; updated_at: string }>;
+        Relationships: [];
+      };
+      reports: {
+        Row: { id: string; reporter_id: string; reported_user_id: string | null; message_id: string | null; reason: string; details: string | null; status: string; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
       };
       plans: {
         Row: {
@@ -561,6 +593,17 @@ export interface Database {
         Args: { p_conversation_id: string };
         Returns: void;
       };
+      submit_report: {
+        Args: { p_reason: string; p_message_id: string | null; p_reported_user_id: string | null; p_details: string | null };
+        Returns: string;
+      };
+      search_my_messages: {
+        Args: { p_query: string };
+        Returns: { message_id: string; conversation_id: string; sender_id: string; body: string; attachment_names: string; created_at: string }[];
+      };
+      rename_group: { Args: { p_group_id: string; p_name: string }; Returns: void };
+      promote_group_member: { Args: { p_group_id: string; p_user_id: string }; Returns: void };
+      remove_group_member: { Args: { p_group_id: string; p_user_id: string }; Returns: void };
     };
   };
 }

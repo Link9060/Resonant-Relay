@@ -1,12 +1,12 @@
 'use client';
 
 import { sendMessage } from '@/lib/actions/chats';
-import { Paperclip, Send, X } from 'lucide-react';
+import { CornerUpLeft, Paperclip, Send, X } from 'lucide-react';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
 const MAX_MESSAGE_LENGTH = 4000;
 
-export function MessageComposer({ conversationId, onTypingChange }: { conversationId: string; onTypingChange?: (typing: boolean) => void }) {
+export function MessageComposer({ conversationId, onTypingChange, replyTo, onCancelReply }: { conversationId: string; onTypingChange?: (typing: boolean) => void; replyTo?: { id: string; label: string; body: string } | null; onCancelReply?: () => void }) {
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -48,11 +48,13 @@ export function MessageComposer({ conversationId, onTypingChange }: { conversati
     onTypingChange?.(false);
 
     startTransition(async () => {
-      const result = await sendMessage(conversationId, body, pendingFiles);
+      const result = await sendMessage(conversationId, body, pendingFiles, replyTo?.id ?? null);
       if (!result.ok) {
         setError(result.error);
         setValue(body);
         setFiles(pendingFiles);
+      } else {
+        onCancelReply?.();
       }
     });
 
@@ -61,6 +63,7 @@ export function MessageComposer({ conversationId, onTypingChange }: { conversati
 
   return (
     <div className="border-t border-border px-4 py-3">
+      {replyTo && <div className="mb-2 flex items-center gap-2 rounded-md border-l-2 border-accent bg-surface px-3 py-2"><CornerUpLeft size={14} className="shrink-0 text-ink-faint" /><div className="min-w-0 flex-1"><p className="text-[11px] font-medium text-ink-muted">Replying to {replyTo.label}</p><p className="truncate text-xs text-ink-faint">{replyTo.body || 'Attachment'}</p></div><button type="button" onClick={onCancelReply} aria-label="Cancel reply" className="text-ink-faint hover:text-ink"><X size={14} /></button></div>}
       {error && <p className="mb-2 text-xs text-red-500">{error}</p>}
       {files.length > 0 && <ul className="mb-2 flex flex-wrap gap-2">{files.map((file, index) => <li key={`${file.name}-${index}`} className="flex max-w-52 items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-ink"><Paperclip size={13} className="shrink-0" /><span className="truncate">{file.name}</span><button type="button" aria-label={`Remove ${file.name}`} onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="text-ink-faint hover:text-ink"><X size={13} /></button></li>)}</ul>}
       <div className="flex items-center gap-2">

@@ -66,12 +66,12 @@ export default function DashboardPage() {
         supabase.from('notifications').select('*').eq('user_id', user.id).eq('type', 'new_message').order('created_at', { ascending: false }).limit(4),
         supabase.from('group_members').select('group_id').eq('user_id', user.id),
         supabase.functions.invoke('mail-hub', { body: { action: 'accounts' } }),
-        supabase.functions.invoke('google-hub', { body: { action: 'status', service: 'calendar' } }),
+        supabase.functions.invoke('mail-hub', { body: { action: 'calendar_events' } }),
       ]);
 
       const groupIds = (membershipResult.data ?? []).map((membership) => membership.group_id);
       const gmailConnected = !emailAccounts.error && (emailAccounts.data?.accounts?.length ?? 0) > 0;
-      const calendarConnected = !calendarStatus.error && Boolean(calendarStatus.data?.connected);
+      const calendarConnected = !emailAccounts.error && (emailAccounts.data?.accounts?.length ?? 0) > 0;
 
       const [planResult, gmailResult, calendarResult] = await Promise.all([
         groupIds.length
@@ -81,7 +81,7 @@ export default function DashboardPage() {
           ? supabase.functions.invoke('mail-hub', { body: { action: 'messages' } })
           : Promise.resolve({ data: { messages: [] }, error: null }),
         calendarConnected
-          ? supabase.functions.invoke('google-hub', { body: { action: 'calendar_events', service: 'calendar' } })
+          ? Promise.resolve(calendarStatus)
           : Promise.resolve({ data: { events: [] }, error: null }),
       ]);
 
@@ -97,10 +97,10 @@ export default function DashboardPage() {
           }))
       );
       const googleEvents: DashboardEvent[] = (calendarResult.data?.events ?? []).map((event: any) => ({
-        id: `google-${event.id}`,
+        id: `calendar-${event.id}`,
         title: event.summary,
         startsAt: event.isAllDay ? `${event.start}T12:00:00` : event.start,
-        source: 'Google Calendar',
+        source: event.accountEmail ?? `${event.provider === 'microsoft' ? 'Microsoft' : 'Google'} Calendar`,
         href: event.htmlLink || null,
         external: true,
       }));

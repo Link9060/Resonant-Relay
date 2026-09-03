@@ -191,6 +191,19 @@ body {
 .profile-input:focus { border-color: rgb(var(--ink-muted)); }
 .profile-input::placeholder { color: rgb(var(--ink-faint)); }
 
+.message-action {
+  display: inline-flex;
+  height: 2rem;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 0.375rem;
+  padding: 0 0.5rem;
+  font-size: 0.6875rem;
+  color: rgb(var(--ink-muted));
+}
+.message-action:hover { background: rgb(var(--surface)); color: rgb(var(--ink)); }
+.legal-copy h2 { padding-top: 0.5rem; font-size: 1rem; font-weight: 600; color: rgb(var(--ink)); }
+
 .startup-shell {
   position: fixed;
   inset: 0;

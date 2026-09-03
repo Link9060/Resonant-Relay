@@ -3,6 +3,8 @@
 import { PushToggle } from '@/components/notifications/push-toggle';
 import { PageLoading } from '@/components/page-loading';
 import { SignOutButton } from '@/components/profile/sign-out-button';
+import { AccountDataControls } from '@/components/profile/account-data-controls';
+import { appPageUrl } from '@/lib/config';
 import { STARTUP_SESSION_KEY } from '@/components/startup-sequence';
 import { createClient } from '@/lib/supabase/client';
 import { formatRelayNumber } from '@/lib/utils';
@@ -132,6 +134,10 @@ export default function ProfilePage() {
           </button>
         </div>
       </section>
+
+      <section className="mt-8 border-t border-border pt-6"><h2 className="text-sm font-medium text-ink">Privacy and terms</h2><div className="mt-3 flex gap-3 text-sm"><a href={appPageUrl('/privacy')} className="text-ink-muted underline underline-offset-4 hover:text-ink">Privacy policy</a><a href={appPageUrl('/terms')} className="text-ink-muted underline underline-offset-4 hover:text-ink">Terms</a></div></section>
+
+      <AccountDataControls />
 
       <div className="mt-8"><SignOutButton /></div>
     </div>

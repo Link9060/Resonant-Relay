@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import { appUrl, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
+import { appPageUrl, appUrl, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
 import { FormEvent, useEffect, useState } from 'react';
 
 const EMAIL_RATE_LIMIT_COOLDOWN_MS = 60 * 60 * 1000;
@@ -186,6 +186,7 @@ export default function LoginPage() {
         <p className="mt-6 text-xs text-ink-faint">
           You&apos;ll get a Relay Number as soon as you sign in — that&apos;s how people find you.
         </p>
+        <p className="mt-4 text-[11px] text-ink-faint">By continuing, you agree to Relay&apos;s <a href={appPageUrl('/terms')} className="underline underline-offset-2">Terms</a> and acknowledge the <a href={appPageUrl('/privacy')} className="underline underline-offset-2">Privacy Policy</a>.</p>
       </div>
     </main>
   );

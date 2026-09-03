@@ -5,15 +5,15 @@ type Provider = 'google' | 'microsoft';
 const APP_ORIGIN = 'https://link9060.github.io';
 const APP_URL = `${APP_ORIGIN}/Resonant-Relay`;
 const ALLOWED_ORIGINS = new Set([APP_ORIGIN, 'http://localhost:3000']);
-const GOOGLE_SCOPE = 'openid email profile https://www.googleapis.com/auth/gmail.readonly';
-const MICROSOFT_SCOPE = 'openid profile email offline_access User.Read Mail.Read';
+const GOOGLE_SCOPE = 'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.events.readonly';
+const MICROSOFT_SCOPE = 'openid profile email offline_access User.Read Mail.Read Calendars.Read';
 
 function cors(req: Request) {
   const origin = req.headers.get('Origin');
   return { ...(origin && ALLOWED_ORIGINS.has(origin) ? { 'Access-Control-Allow-Origin': origin } : {}), 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', Vary: 'Origin' };
 }
 function json(req: Request, value: unknown, status = 200) { return new Response(JSON.stringify(value), { status, headers: { ...cors(req), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }); }
-function redirect(provider: Provider, result: 'connected' | 'error', reason?: string) { const url = new URL(`${APP_URL}/email/`); url.searchParams.set(provider, result); if (reason) url.searchParams.set('reason', reason); return new Response(null, { status: 302, headers: { Location: url.toString(), 'Cache-Control': 'no-store' } }); }
+function redirect(provider: Provider, result: 'connected' | 'error', reason?: string, returnPath = '/email') { const safePath = returnPath === '/calendar' ? '/calendar/' : '/email/'; const url = new URL(`${APP_URL}${safePath}`); url.searchParams.set(provider, result); if (reason) url.searchParams.set('reason', reason); return new Response(null, { status: 302, headers: { Location: url.toString(), 'Cache-Control': 'no-store' } }); }
 function base64url(bytes: Uint8Array) { return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
 function randomValue(size = 32) { return base64url(crypto.getRandomValues(new Uint8Array(size))); }
 async function sha256(value: string) { return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))); }
@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
 
     if (body.action === 'accounts') {
-      const { data } = await admin.from('email_integrations').select('id,provider,email_address,display_name,connected_at').eq('user_id', user.id).order('connected_at');
+      const { data } = await admin.from('email_integrations').select('id,provider,email_address,display_name,connected_at,granted_scope').eq('user_id', user.id).order('connected_at');
       return json(req, { accounts: data ?? [] });
     }
     if (body.action === 'connect_start') {
@@ -50,7 +50,8 @@ Deno.serve(async (req: Request) => {
       const state = randomValue();
       const verifier = randomValue(64);
       await admin.from('email_oauth_states').delete().lt('expires_at', new Date().toISOString());
-      const { error: stateError } = await admin.from('email_oauth_states').insert({ state_hash: await hashHex(state), user_id: user.id, provider, code_verifier: verifier, expires_at: new Date(Date.now() + 10 * 60_000).toISOString() });
+      const returnPath = body.next === '/calendar' ? '/calendar' : '/email';
+      const { error: stateError } = await admin.from('email_oauth_states').insert({ state_hash: await hashHex(state), user_id: user.id, provider, code_verifier: verifier, return_path: returnPath, expires_at: new Date(Date.now() + 10 * 60_000).toISOString() });
       if (stateError) throw stateError;
       const callbackUrl = `${supabaseUrl}/functions/v1/mail-hub/callback`;
       const challenge = base64url(await sha256(verifier));
@@ -82,6 +83,14 @@ Deno.serve(async (req: Request) => {
       }));
       return json(req, { messages: groups.flat().sort((a, b) => new Date(b.receivedAt ?? 0).getTime() - new Date(a.receivedAt ?? 0).getTime()).slice(0, 30) });
     }
+    if (body.action === 'calendar_events') {
+      const { data: accounts } = await admin.from('email_integrations').select('*').eq('user_id', user.id).order('connected_at');
+      const results = await Promise.all((accounts ?? []).map(async (account: any) => {
+        try { const token = await accessToken(admin, account); if (!token) return { events: [], error: account.email_address }; return { events: await eventsFor(account, token), error: null }; }
+        catch (error) { console.error(error); return { events: [], error: account.email_address }; }
+      }));
+      return json(req, { events: results.flatMap((result) => result.events).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()).slice(0, 60), accountErrors: results.map((result) => result.error).filter(Boolean) });
+    }
     return json(req, { error: 'Unknown action.' }, 400);
   } catch (error) { console.error(error); return json(req, { error: 'Relay could not complete that email request.' }, 500); }
 });
@@ -97,18 +106,18 @@ async function callback(url: URL, admin: any, supabaseUrl: string) {
   if (!state) return redirect('google', 'error', 'invalid_state');
   await admin.from('email_oauth_states').delete().eq('state_hash', state.state_hash);
   const provider = state.provider as Provider;
-  if (new Date(state.expires_at).getTime() <= Date.now()) return redirect(provider, 'error', 'expired');
-  if (!configured(provider)) return redirect(provider, 'error', 'not_configured');
+  if (new Date(state.expires_at).getTime() <= Date.now()) return redirect(provider, 'error', 'expired', state.return_path);
+  if (!configured(provider)) return redirect(provider, 'error', 'not_configured', state.return_path);
   const callbackUrl = `${supabaseUrl}/functions/v1/mail-hub/callback`;
   const tokenUrl = provider === 'google' ? 'https://oauth2.googleapis.com/token' : 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
   const tokenResponse = await fetch(tokenUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: clientId(provider), client_secret: clientSecret(provider), code, code_verifier: state.code_verifier, grant_type: 'authorization_code', redirect_uri: callbackUrl, ...(provider === 'microsoft' ? { scope: MICROSOFT_SCOPE } : {}) }) });
-  if (!tokenResponse.ok) return redirect(provider, 'error', 'token_exchange');
+  if (!tokenResponse.ok) return redirect(provider, 'error', 'token_exchange', state.return_path);
   const tokens = await tokenResponse.json();
-  if (!tokens.refresh_token) return redirect(provider, 'error', 'missing_refresh_token');
+  if (!tokens.refresh_token) return redirect(provider, 'error', 'missing_refresh_token', state.return_path);
   const identity = await identityFor(provider, tokens.access_token);
   const { error } = await admin.from('email_integrations').upsert({ user_id: state.user_id, provider, provider_account_id: identity.id, email_address: identity.email, display_name: identity.name, refresh_token: tokens.refresh_token, access_token: tokens.access_token, access_token_expires_at: new Date(Date.now() + Number(tokens.expires_in ?? 3600) * 1000).toISOString(), granted_scope: tokens.scope ?? (provider === 'google' ? GOOGLE_SCOPE : MICROSOFT_SCOPE), connected_at: new Date().toISOString() }, { onConflict: 'user_id,provider,provider_account_id' });
-  if (error) return redirect(provider, 'error', error.message.includes('three') ? 'account_limit' : 'save_failed');
-  return redirect(provider, 'connected');
+  if (error) return redirect(provider, 'error', error.message.includes('three') ? 'account_limit' : 'save_failed', state.return_path);
+  return redirect(provider, 'connected', undefined, state.return_path);
 }
 
 async function identityFor(provider: Provider, token: string) {
@@ -121,7 +130,7 @@ async function identityFor(provider: Provider, token: string) {
 async function accessToken(admin: any, account: any) {
   if (account.access_token && account.access_token_expires_at && new Date(account.access_token_expires_at).getTime() > Date.now() + 60_000) return account.access_token;
   const provider = account.provider as Provider;
-  const response = await fetch(provider === 'google' ? 'https://oauth2.googleapis.com/token' : 'https://login.microsoftonline.com/common/oauth2/v2.0/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: clientId(provider), client_secret: clientSecret(provider), refresh_token: account.refresh_token, grant_type: 'refresh_token', ...(provider === 'microsoft' ? { scope: MICROSOFT_SCOPE } : {}) }) });
+  const response = await fetch(provider === 'google' ? 'https://oauth2.googleapis.com/token' : 'https://login.microsoftonline.com/common/oauth2/v2.0/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: clientId(provider), client_secret: clientSecret(provider), refresh_token: account.refresh_token, grant_type: 'refresh_token', ...(provider === 'microsoft' ? { scope: account.granted_scope || MICROSOFT_SCOPE } : {}) }) });
   if (!response.ok) { if (response.status === 400) await admin.from('email_integrations').delete().eq('id', account.id); return null; }
   const value = await response.json();
   await admin.from('email_integrations').update({ access_token: value.access_token, access_token_expires_at: new Date(Date.now() + Number(value.expires_in ?? 3600) * 1000).toISOString(), ...(value.refresh_token ? { refresh_token: value.refresh_token } : {}) }).eq('id', account.id);
@@ -145,4 +154,21 @@ async function messagesFor(account: any, token: string) {
     const data = await response.json(); const header = (name: string) => data.payload.headers.find((item: any) => item.name === name)?.value ?? '';
     return { id: `${account.id}:${data.id}`, subject: header('Subject') || '(No subject)', from: header('From'), snippet: data.snippet ?? '', receivedAt: header('Date') || null, isUnread: data.labelIds?.includes('UNREAD') ?? false, href: `https://mail.google.com/mail/u/${encodeURIComponent(account.email_address)}/#inbox/${data.id}`, accountId: account.id, accountEmail: account.email_address, provider: account.provider };
   }))).filter(Boolean);
+}
+
+async function eventsFor(account: any, token: string) {
+  const timeMin = new Date().toISOString();
+  const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60_000).toISOString();
+  if (account.provider === 'microsoft') {
+    const query = new URLSearchParams({ startDateTime: timeMin, endDateTime: timeMax, '$top': '30', '$orderby': 'start/dateTime', '$select': 'id,subject,start,end,isAllDay,webLink' });
+    const response = await fetch(`https://graph.microsoft.com/v1.0/me/calendarView?${query}`, { headers: { Authorization: `Bearer ${token}`, Prefer: 'outlook.timezone="UTC"' } });
+    if (!response.ok) throw new Error(`Microsoft calendar error (${response.status}).`);
+    const data = await response.json();
+    return (data.value ?? []).map((event: any) => ({ id: `${account.id}:${event.id}`, summary: event.subject || '(Untitled event)', start: event.start?.dateTime, end: event.end?.dateTime, isAllDay: Boolean(event.isAllDay), htmlLink: event.webLink ?? null, accountId: account.id, accountEmail: account.email_address, provider: account.provider }));
+  }
+  const query = new URLSearchParams({ singleEvents: 'true', orderBy: 'startTime', timeMin, timeMax, maxResults: '30' });
+  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${query}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) throw new Error(`Google calendar error (${response.status}).`);
+  const data = await response.json();
+  return (data.items ?? []).map((event: any) => ({ id: `${account.id}:${event.id}`, summary: event.summary || '(Untitled event)', start: event.start?.dateTime ?? event.start?.date, end: event.end?.dateTime ?? event.end?.date, isAllDay: Boolean(event.start?.date), htmlLink: event.htmlLink ?? null, accountId: account.id, accountEmail: account.email_address, provider: account.provider }));
 }
