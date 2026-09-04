@@ -43,8 +43,8 @@ as $$
 $$;
 
 -- Users may update their own profile, but never self-promote.
--- This trigger protects role changes even when an existing broad profile UPDATE
--- policy is used by the client.
+-- Trusted database/service operations have no auth.uid(), which keeps a
+-- deliberate SQL-editor bootstrap path for the first owner account.
 create or replace function public.protect_profile_role()
 returns trigger
 language plpgsql
@@ -52,7 +52,9 @@ security definer
 set search_path = public
 as $$
 begin
-  if old.role is distinct from new.role and not public.has_staff_role('owner') then
+  if old.role is distinct from new.role
+     and auth.uid() is not null
+     and not public.has_staff_role('owner') then
     raise exception 'only an owner can change account roles';
   end if;
   return new;
@@ -86,7 +88,7 @@ create policy "audit_no_client_write"
   with check (false);
 
 -- Owner-only role assignment. Owners cannot demote themselves, preventing
--- accidental lockout of the only full-control account.
+-- accidental lockout of the current owner account.
 create or replace function public.set_user_role(p_user_id uuid, p_role public.app_role)
 returns void
 language plpgsql
