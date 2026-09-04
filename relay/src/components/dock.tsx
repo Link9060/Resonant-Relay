@@ -2,7 +2,7 @@
 
 import { appPageUrl, appPathname, BASE_PATH } from '@/lib/config';
 import { cn } from '@/lib/utils';
-import { CalendarDays, House, ListTodo, Mail, MessageCircle, SquareCheck, Users, type LucideIcon } from 'lucide-react';
+import { CalendarDays, House, ListTodo, Mail, MessageCircle, Shield, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 const DOCK_ITEMS = [
@@ -14,9 +14,12 @@ const DOCK_ITEMS = [
   { href: '/email', label: 'Email', icon: Mail },
 ] as const;
 
-export function Dock() {
+type AppRole = 'user' | 'moderator' | 'admin' | 'owner';
+
+export function Dock({ role = 'user' }: { role?: AppRole }) {
   const pathname = usePathname();
   const currentPath = appPathname(pathname);
+  const canOpenAdmin = role === 'admin' || role === 'owner';
 
   return (
     <>
@@ -36,6 +39,13 @@ export function Dock() {
           ))}
         </ul>
         <ul className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
+          {canOpenAdmin && (
+            <DockLink
+              item={{ href: '/admin', label: role === 'owner' ? 'Owner Console' : 'Admin Console', icon: Shield }}
+              active={isDockPathActive(currentPath, '/admin')}
+              variant="rail"
+            />
+          )}
           <DockLink
             item={{ href: '/contacts', label: 'Contacts', icon: Users }}
             active={isDockPathActive(currentPath, '/contacts')}
