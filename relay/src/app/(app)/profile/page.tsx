@@ -6,6 +6,7 @@ import { SignOutButton } from '@/components/profile/sign-out-button';
 import { AccountDataControls } from '@/components/profile/account-data-controls';
 import { appPageUrl } from '@/lib/config';
 import { STARTUP_SESSION_KEY } from '@/components/startup-sequence';
+import { AppRole, getRolePreview, setRolePreview } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
 import { formatRelayNumber } from '@/lib/utils';
 import { Check, Loader2, Play, UserRound } from 'lucide-react';
@@ -19,10 +20,12 @@ type EditableProfile = {
   relay_number: string;
   school: string | null;
   bio: string | null;
+  role: AppRole;
 };
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<EditableProfile | null>(null);
+  const [previewRole, setPreviewRoleState] = useState<AppRole>('owner');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,8 +35,12 @@ export default function ProfilePage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from('profiles').select('id,display_name,avatar_url,relay_number,school,bio').eq('id', user.id).single();
-      setProfile(data);
+      const { data } = await supabase.from('profiles').select('id,display_name,avatar_url,relay_number,school,bio,role').eq('id', user.id).single();
+      if (data) {
+        const typed = data as EditableProfile;
+        setProfile(typed);
+        setPreviewRoleState(getRolePreview(typed.role));
+      }
     })();
   }, []);
 
@@ -86,6 +93,11 @@ export default function ProfilePage() {
     window.location.reload();
   }
 
+  function changePreviewRole(role: AppRole) {
+    setPreviewRole(role);
+    setPreviewRoleState(role);
+  }
+
   return (
     <div className="mx-auto max-w-lg px-4 py-8 md:px-6">
       <div className="flex items-center justify-between gap-4">
@@ -134,6 +146,22 @@ export default function ProfilePage() {
           </button>
         </div>
       </section>
+
+      {profile.role === 'owner' && (
+        <section className="mt-8 border-t border-border pt-6">
+          <h2 className="text-sm font-medium text-ink">Owner Tools</h2>
+          <div className="mt-3 rounded-md border border-border p-4">
+            <label className="block text-sm font-medium text-ink" htmlFor="role-preview">Preview interface as</label>
+            <p className="mt-1 text-xs text-ink-faint">This only changes what Relay looks like on this device. Your real account stays Owner.</p>
+            <select id="role-preview" value={previewRole} onChange={(event) => changePreviewRole(event.target.value as AppRole)} className="mt-3 w-full rounded-md border border-border bg-canvas px-3 py-2 text-sm text-ink">
+              <option value="user">Normal User</option>
+              <option value="moderator">Moderator</option>
+              <option value="admin">Admin</option>
+              <option value="owner">Owner</option>
+            </select>
+          </div>
+        </section>
+      )}
 
       <section className="mt-8 border-t border-border pt-6"><h2 className="text-sm font-medium text-ink">Privacy and terms</h2><div className="mt-3 flex gap-3 text-sm"><a href={appPageUrl('/privacy')} className="text-ink-muted underline underline-offset-4 hover:text-ink">Privacy policy</a><a href={appPageUrl('/terms')} className="text-ink-muted underline underline-offset-4 hover:text-ink">Terms</a></div></section>
 
