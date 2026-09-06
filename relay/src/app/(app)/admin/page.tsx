@@ -43,7 +43,9 @@ export default function AdminPage() {
   const role = actualRole === 'owner' ? previewRole : actualRole;
 
   async function load() {
-    const supabase = createClient();
+    // The checked-in Supabase types lag the admin-role migration. Keep the
+    // runtime client typed loosely here until database.ts is regenerated.
+    const supabase = createClient() as any;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -103,7 +105,7 @@ export default function AdminPage() {
     if (role !== 'owner') return;
     setBusyUser(userId);
     setError(null);
-    const supabase = createClient();
+    const supabase = createClient() as any;
     const { error: roleError } = await supabase.rpc('set_user_role', {
       p_user_id: userId,
       p_role: nextRole,
