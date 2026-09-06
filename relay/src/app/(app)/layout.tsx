@@ -6,22 +6,40 @@ import { PageLoading } from '@/components/page-loading';
 import { appPageUrl } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT, setRolePreview } from '@/lib/role-preview';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 const DOCK_COLLAPSED_KEY = 'relay-dock-collapsed';
+const DOCK_COLLAPSED_EVENT = 'relay-dock-collapsed-change';
+
+function subscribeDockCollapsed(onStoreChange: () => void) {
+  window.addEventListener('storage', onStoreChange);
+  window.addEventListener(DOCK_COLLAPSED_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener('storage', onStoreChange);
+    window.removeEventListener(DOCK_COLLAPSED_EVENT, onStoreChange);
+  };
+}
+
+function getDockCollapsedSnapshot() {
+  try {
+    return window.localStorage.getItem(DOCK_COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function getServerDockCollapsedSnapshot() {
+  return false;
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<{ userId: string; profile: any; notifications: any[] } | null>(null);
   const [previewRole, setPreviewRoleState] = useState<AppRole>('user');
-  const [dockCollapsed, setDockCollapsed] = useState(false);
-
-  useEffect(() => {
-    try {
-      setDockCollapsed(window.localStorage.getItem(DOCK_COLLAPSED_KEY) === '1');
-    } catch {
-      // Storage can be unavailable in strict/private browser contexts.
-    }
-  }, []);
+  const dockCollapsed = useSyncExternalStore(
+    subscribeDockCollapsed,
+    getDockCollapsedSnapshot,
+    getServerDockCollapsedSnapshot,
+  );
 
   useEffect(() => {
     let active = true;
@@ -55,11 +73,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   function handleDockCollapsedChange(next: boolean) {
-    setDockCollapsed(next);
     try {
       window.localStorage.setItem(DOCK_COLLAPSED_KEY, next ? '1' : '0');
+      window.dispatchEvent(new Event(DOCK_COLLAPSED_EVENT));
     } catch {
-      // Keep the current page working even if persistence is blocked.
+      // Storage can be unavailable in strict/private browser contexts.
     }
   }
 
