@@ -1,11 +1,12 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import { appPageUrl, appUrl, BASE_PATH, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
+import { appPageUrl, BASE_PATH, siteUrl, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
 import { FormEvent, useEffect, useState } from 'react';
 
 const EMAIL_RATE_LIMIT_COOLDOWN_MS = 60 * 60 * 1000;
 const REQUEST_COOLDOWN_MS = 60 * 1000;
+const AUTH_CALLBACK_URL = siteUrl('/auth/callback/');
 
 function retryTime(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, {
@@ -58,7 +59,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}${appUrl('/auth/callback/')}`,
+        redirectTo: AUTH_CALLBACK_URL,
         scopes: 'openid email profile',
       },
     });
@@ -85,7 +86,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        emailRedirectTo: `${window.location.origin}${appUrl('/auth/callback/')}`,
+        emailRedirectTo: AUTH_CALLBACK_URL,
       },
     });
 
