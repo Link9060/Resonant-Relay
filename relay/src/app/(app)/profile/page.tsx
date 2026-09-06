@@ -32,7 +32,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     void (async () => {
-      const supabase = createClient();
+      // The committed Supabase type file has not caught up to the role migration yet.
+      const supabase = createClient() as any;
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase.from('profiles').select('id,display_name,avatar_url,relay_number,school,bio,role').eq('id', user.id).single();
@@ -78,7 +79,7 @@ export default function ProfilePage() {
       school: currentProfile.school?.trim() || null,
       avatar_url: avatarUrl,
     };
-    const { error: updateError } = await createClient().from('profiles').update(changes).eq('id', currentProfile.id);
+    const { error: updateError } = await (createClient() as any).from('profiles').update(changes).eq('id', currentProfile.id);
     setSaving(false);
     if (updateError) {
       setError('Your profile could not be saved.');
@@ -94,7 +95,7 @@ export default function ProfilePage() {
   }
 
   function changePreviewRole(role: AppRole) {
-    setPreviewRole(role);
+    setRolePreview(role);
     setPreviewRoleState(role);
   }
 
