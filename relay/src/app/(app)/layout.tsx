@@ -8,15 +8,25 @@ import { createClient } from '@/lib/supabase/client';
 import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT, setRolePreview } from '@/lib/role-preview';
 import { useEffect, useState } from 'react';
 
+const DOCK_COLLAPSED_KEY = 'relay-dock-collapsed';
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<{ userId: string; profile: any; notifications: any[] } | null>(null);
   const [previewRole, setPreviewRoleState] = useState<AppRole>('user');
   const [dockCollapsed, setDockCollapsed] = useState(false);
 
   useEffect(() => {
+    try {
+      setDockCollapsed(window.localStorage.getItem(DOCK_COLLAPSED_KEY) === '1');
+    } catch {
+      // Storage can be unavailable in strict/private browser contexts.
+    }
+  }, []);
+
+  useEffect(() => {
     let active = true;
-    // The runtime schema includes profiles.role, while the checked-in generated
-    // types still lag that migration. Loosen this client until types are regenerated.
+    // The runtime schema includes profiles.role and moderation fields, while the
+    // checked-in generated types still lag those migrations.
     const supabase = createClient() as any;
     void (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -44,7 +54,41 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  function handleDockCollapsedChange(next: boolean) {
+    setDockCollapsed(next);
+    try {
+      window.localStorage.setItem(DOCK_COLLAPSED_KEY, next ? '1' : '0');
+    } catch {
+      // Keep the current page working even if persistence is blocked.
+    }
+  }
+
+  async function leaveDisabledAccount() {
+    try {
+      await createClient().auth.signOut();
+    } finally {
+      window.location.replace(appPageUrl('/login'));
+    }
+  }
+
   if (!state) return <PageLoading />;
+
+  if (state.profile?.banned_at) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-canvas px-6">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-7 text-center">
+          <div className="font-display text-2xl font-medium tracking-tight text-ink">Relay account disabled</div>
+          <p className="mt-3 text-sm text-ink-muted">This account has been banned from Relay and cannot use the app right now.</p>
+          {state.profile?.ban_reason && (
+            <div className="mt-4 rounded-lg border border-border bg-canvas px-4 py-3 text-left text-sm text-ink-muted">
+              Reason: {state.profile.ban_reason}
+            </div>
+          )}
+          <button type="button" onClick={() => void leaveDisabledAccount()} className="mt-5 rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-surface-raised">Sign out</button>
+        </div>
+      </main>
+    );
+  }
 
   const actualRole = (state.profile?.role ?? 'user') as AppRole;
   const effectiveRole = actualRole === 'owner' ? previewRole : actualRole;
@@ -57,7 +101,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
-      <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} />
+      <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={handleDockCollapsedChange} />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         {isPreviewing && (
           <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 text-xs text-ink md:px-6">
