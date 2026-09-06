@@ -26,7 +26,7 @@ function clamp(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
-function ParticleWordmark({ active, formed, onFormed }: { active: boolean; formed: boolean; onFormed: () => void }) {
+function ParticleWordmark({ active, onFormed }: { active: boolean; onFormed: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const onFormedRef = useRef(onFormed);
 
@@ -40,114 +40,179 @@ function ParticleWordmark({ active, formed, onFormed }: { active: boolean; forme
     if (!context) return;
 
     let animationFrame = 0;
+    let cancelled = false;
     let formationReported = false;
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const density = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.floor(width * density);
-    canvas.height = Math.floor(height * density);
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    context.setTransform(density, 0, 0, density, 0, 0);
 
-    const textCanvas = document.createElement('canvas');
-    textCanvas.width = width;
-    textCanvas.height = height;
-    const textContext = textCanvas.getContext('2d', { willReadFrequently: true });
-    if (!textContext) return;
+    const buildAnimation = async () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const density = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(width * density);
+      canvas.height = Math.floor(height * density);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      context.setTransform(density, 0, 0, density, 0, 0);
 
-    const relaySize = Math.max(58, Math.min(92, width * 0.16));
-    const logoSize = relaySize * 0.92;
-    const gap = relaySize * 0.22;
-    textContext.fillStyle = '#ffffff';
-    textContext.strokeStyle = '#ffffff';
-    textContext.textAlign = 'left';
-    textContext.textBaseline = 'middle';
-    textContext.font = `600 ${relaySize}px system-ui, -apple-system, sans-serif`;
-    const textWidth = textContext.measureText('Relay').width;
-    const groupWidth = logoSize + gap + textWidth;
-    const groupLeft = width / 2 - groupWidth / 2;
-    const centerY = height / 2;
-    const logoX = groupLeft + logoSize / 2;
-    const textX = groupLeft + logoSize + gap;
+      const targetCanvas = document.createElement('canvas');
+      targetCanvas.width = width;
+      targetCanvas.height = height;
+      const targetContext = targetCanvas.getContext('2d', { willReadFrequently: true });
+      if (!targetContext) return;
 
-    // A six-segment swirl guides the particles into the same silhouette as the final mark.
-    textContext.lineCap = 'round';
-    textContext.lineWidth = Math.max(7, logoSize * 0.13);
-    for (let index = 0; index < 6; index += 1) {
-      const angle = index * (Math.PI / 3) - Math.PI / 2;
-      textContext.beginPath();
-      textContext.arc(logoX, centerY, logoSize * 0.3, angle, angle + Math.PI * 0.72);
-      textContext.stroke();
-    }
-    textContext.fillText('Relay', textX, centerY + relaySize * 0.01);
+      // These values mirror the final startup lockup sizing so the particles and
+      // the finished mark occupy the exact same pixels throughout the transition.
+      const relaySize = Math.max(58, Math.min(92, width * 0.16));
+      const logoSize = relaySize * 0.92;
+      const gap = Math.max(12.8, Math.min(21.6, width * 0.026));
+      const letterSpacing = relaySize * -0.065;
+      const font = `600 ${relaySize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      const centerY = height / 2;
+      const word = 'Relay';
 
-    const pixels = textContext.getImageData(0, 0, width, height).data;
-    const destinations: Array<{ x: number; y: number }> = [];
-    const sampleStep = width < 520 ? 4 : 5;
-    for (let y = 0; y < height; y += sampleStep) {
-      for (let x = 0; x < width; x += sampleStep) {
-        if ((pixels[(y * width + x) * 4 + 3] ?? 0) > 120) destinations.push({ x, y });
+      targetContext.fillStyle = '#ffffff';
+      targetContext.textAlign = 'left';
+      targetContext.textBaseline = 'middle';
+      targetContext.font = font;
+
+      const glyphWidths = Array.from(word, (character) => targetContext.measureText(character).width);
+      const textWidth = glyphWidths.reduce((total, glyphWidth) => total + glyphWidth, 0) + letterSpacing * (glyphWidths.length - 1);
+      const groupWidth = logoSize + gap + textWidth;
+      const groupLeft = width / 2 - groupWidth / 2;
+      const textX = groupLeft + logoSize + gap;
+
+      // Render the real Relay icon into the same offscreen canvas used as the
+      // particle destination. Recoloring by alpha makes the result consistently
+      // white regardless of the current browser color scheme.
+      let logoRendered = false;
+      try {
+        const logoImage = new Image();
+        logoImage.src = `${BASE_PATH}/relay-icon.svg`;
+        await logoImage.decode();
+        if (cancelled) return;
+
+        const iconCanvas = document.createElement('canvas');
+        iconCanvas.width = 512;
+        iconCanvas.height = 512;
+        const iconContext = iconCanvas.getContext('2d');
+        if (iconContext) {
+          iconContext.drawImage(logoImage, 0, 0, 512, 512);
+          iconContext.globalCompositeOperation = 'source-in';
+          iconContext.fillStyle = '#ffffff';
+          iconContext.fillRect(0, 0, 512, 512);
+          iconContext.globalCompositeOperation = 'source-over';
+          targetContext.drawImage(iconCanvas, groupLeft, centerY - logoSize / 2, logoSize, logoSize);
+          logoRendered = true;
+        }
+      } catch {
+        // Keep the intro usable if the SVG is not cached or fails to decode.
       }
-    }
 
-    for (let index = destinations.length - 1; index > 0; index -= 1) {
-      const swapIndex = Math.floor(Math.random() * (index + 1));
-      const current = destinations[index]!;
-      destinations[index] = destinations[swapIndex]!;
-      destinations[swapIndex] = current;
-    }
+      if (!logoRendered) {
+        const logoX = groupLeft + logoSize / 2;
+        targetContext.strokeStyle = '#ffffff';
+        targetContext.lineCap = 'round';
+        targetContext.lineWidth = Math.max(6, logoSize * 0.11);
+        for (let index = 0; index < 6; index += 1) {
+          const angle = index * (Math.PI / 3) - Math.PI / 2;
+          targetContext.beginPath();
+          targetContext.arc(logoX, centerY, logoSize * 0.3, angle, angle + Math.PI * 0.72);
+          targetContext.stroke();
+        }
+      }
 
-    const limit = width < 520 ? 700 : 1050;
-    const particles: Particle[] = destinations.slice(0, limit).map((destination, index) => {
-      const angle = Math.random() * Math.PI * 2;
-      const distance = 52 + Math.random() * Math.min(200, width * 0.25);
-      return {
-        targetX: destination.x,
-        targetY: destination.y,
-        burstX: width / 2 + Math.cos(angle) * distance,
-        burstY: centerY + Math.sin(angle) * distance,
-        radius: 0.85 + Math.random() * 1.15,
-        delay: (index % 23) * 7 + Math.random() * 75,
+      let cursorX = textX;
+      Array.from(word).forEach((character, index) => {
+        targetContext.fillText(character, cursorX, centerY);
+        cursorX += glyphWidths[index]! + letterSpacing;
+      });
+
+      const pixels = targetContext.getImageData(0, 0, width, height).data;
+      const destinations: Array<{ x: number; y: number }> = [];
+      const sampleStep = width < 520 ? 4 : 4;
+      for (let y = 0; y < height; y += sampleStep) {
+        for (let x = 0; x < width; x += sampleStep) {
+          if ((pixels[(y * width + x) * 4 + 3] ?? 0) > 110) destinations.push({ x, y });
+        }
+      }
+
+      for (let index = destinations.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        const current = destinations[index]!;
+        destinations[index] = destinations[swapIndex]!;
+        destinations[swapIndex] = current;
+      }
+
+      const limit = width < 520 ? 1000 : 1650;
+      const particles: Particle[] = destinations.slice(0, limit).map((destination, index) => {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 52 + Math.random() * Math.min(200, width * 0.25);
+        return {
+          targetX: destination.x,
+          targetY: destination.y,
+          burstX: width / 2 + Math.cos(angle) * distance,
+          burstY: centerY + Math.sin(angle) * distance,
+          radius: 0.7 + Math.random() * 0.9,
+          delay: (index % 19) * 6 + Math.random() * 55,
+        };
+      });
+
+      const startedAt = performance.now();
+      const draw = (now: number) => {
+        const elapsed = now - startedAt;
+        context.clearRect(0, 0, width, height);
+        context.fillStyle = '#ffffff';
+
+        const solidProgress = easeInOutCubic(clamp((elapsed - 1780) / 260));
+
+        for (const particle of particles) {
+          const burstProgress = easeOutCubic(clamp(elapsed / 430));
+          const settleProgress = easeInOutCubic(clamp((elapsed - 260 - particle.delay) / 1320));
+          const burstX = width / 2 + (particle.burstX - width / 2) * burstProgress;
+          const burstY = centerY + (particle.burstY - centerY) * burstProgress;
+          const x = burstX + (particle.targetX - burstX) * settleProgress;
+          const y = burstY + (particle.targetY - burstY) * settleProgress;
+          const alpha = Math.min(1, elapsed / 130) * (0.48 + settleProgress * 0.52) * (1 - solidProgress);
+          const radius = particle.radius * (1 - settleProgress * 0.12);
+
+          context.globalAlpha = alpha;
+          context.beginPath();
+          context.arc(x, y, radius, 0, Math.PI * 2);
+          context.fill();
+        }
+
+        // Instead of swapping to a separate DOM wordmark, fade the exact target
+        // raster in underneath the settled dots. This makes the dots genuinely
+        // become the final Relay mark with zero jump in position or scale.
+        if (solidProgress > 0) {
+          context.globalAlpha = solidProgress;
+          context.drawImage(targetCanvas, 0, 0);
+        }
+
+        context.globalAlpha = 1;
+        if (!formationReported && elapsed >= 2050) {
+          formationReported = true;
+          onFormedRef.current();
+        }
+
+        if (elapsed < 2350 && !cancelled) {
+          animationFrame = window.requestAnimationFrame(draw);
+        } else if (!cancelled) {
+          context.clearRect(0, 0, width, height);
+          context.drawImage(targetCanvas, 0, 0);
+        }
       };
-    });
 
-    const startedAt = performance.now();
-    const draw = (now: number) => {
-      const elapsed = now - startedAt;
-      context.clearRect(0, 0, width, height);
-      context.fillStyle = '#ffffff';
-
-      for (const particle of particles) {
-        const burstProgress = easeOutCubic(clamp(elapsed / 430));
-        const settleProgress = easeInOutCubic(clamp((elapsed - 280 - particle.delay) / 1350));
-        const mergeProgress = easeInOutCubic(clamp((elapsed - 1575 - particle.delay * 0.12) / 500));
-        const burstX = width / 2 + (particle.burstX - width / 2) * burstProgress;
-        const burstY = centerY + (particle.burstY - centerY) * burstProgress;
-        const x = burstX + (particle.targetX - burstX) * settleProgress;
-        const y = burstY + (particle.targetY - burstY) * settleProgress;
-        const alpha = Math.min(1, elapsed / 130) * (0.5 + settleProgress * 0.5);
-        const radius = particle.radius + mergeProgress * 2.15;
-
-        context.globalAlpha = alpha;
-        context.beginPath();
-        context.arc(x, y, radius, 0, Math.PI * 2);
-        context.fill();
-      }
-
-      context.globalAlpha = 1;
-      if (!formationReported && elapsed >= 2200) {
-        formationReported = true;
-        onFormedRef.current();
-      }
-      if (elapsed < 3200) animationFrame = window.requestAnimationFrame(draw);
+      if (!cancelled) animationFrame = window.requestAnimationFrame(draw);
     };
 
-    animationFrame = window.requestAnimationFrame(draw);
-    return () => window.cancelAnimationFrame(animationFrame);
+    void buildAnimation();
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(animationFrame);
+    };
   }, [active]);
 
-  return <canvas ref={canvasRef} className={`startup-particle-canvas ${active ? 'startup-particle-canvas-active' : ''} ${formed ? 'startup-particle-canvas-merged' : ''}`} aria-hidden="true" />;
+  return <canvas ref={canvasRef} className={`startup-particle-canvas ${active ? 'startup-particle-canvas-active' : ''}`} aria-hidden="true" />;
 }
 
 export function StartupSequence() {
@@ -230,13 +295,8 @@ export function StartupSequence() {
           {!activated && <span className="startup-prompt">tap to begin</span>}
         </span>
       </button>
-      <ParticleWordmark active={activated} formed={formed} onFormed={() => setFormed(true)} />
+      <ParticleWordmark active={activated} onFormed={() => setFormed(true)} />
       <div className={`startup-copy ${formed ? 'startup-copy-formed' : ''}`} aria-hidden={!formed}>
-        <div className="startup-brand-lockup">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="startup-brand-icon invert" />
-          <span className="startup-copy-title">Relay</span>
-        </div>
         <p className="startup-welcome">welcome.</p>
       </div>
     </div>
