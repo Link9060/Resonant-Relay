@@ -1,5 +1,6 @@
 name: Deploy Relay Beta to GitHub Pages
 
+# Beta branch publishes to GitHub Pages; main stays production on Render.
 on:
   push:
     branches: [beta]
