@@ -24,6 +24,12 @@ export function appUrl(path = '/') {
   return `${BASE_PATH}${normalized === '/' ? '/' : normalized}`;
 }
 
+export function siteUrl(path = '/') {
+  const base = SITE_URL.replace(/\/+$/, '');
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${normalized}`;
+}
+
 // GitHub Pages serves every exported route from a directory index. Linking to
 // the trailing-slash URL avoids an extra redirect and is more reliable in
 // installed/mobile browsers, while appUrl remains available for assets such as
