@@ -1,5 +1,9 @@
 const isGitHubPages = process.env.NEXT_PUBLIC_RELAY_DEPLOY_TARGET === 'github-pages';
 
+export const APP_VERSION = '1.0.0';
+export const IS_BETA = isGitHubPages;
+export const RELEASE_LABEL = IS_BETA ? `Beta ${APP_VERSION}` : APP_VERSION;
+export const APP_TITLE = IS_BETA ? `Relay · Beta ${APP_VERSION}` : `Relay · ${APP_VERSION}`;
 export const BASE_PATH = isGitHubPages ? '/Resonant-Relay' : '';
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL
   ?? (isGitHubPages ? 'https://link9060.github.io/Resonant-Relay' : 'https://resonantrelay.org');

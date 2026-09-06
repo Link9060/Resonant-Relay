@@ -1,8 +1,8 @@
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationBell } from '@/components/notifications/notification-bell';
-import { appPageUrl } from '@/lib/config';
+import { appPageUrl, IS_BETA, RELEASE_LABEL } from '@/lib/config';
 import type { Notification, Profile } from '@/lib/types/database';
-import { formatRelayNumber } from '@/lib/utils';
+import { cn, formatRelayNumber } from '@/lib/utils';
 import { UserPlus, Users } from 'lucide-react';
 
 export function AppHeader({
@@ -16,12 +16,22 @@ export function AppHeader({
 }) {
   return (
     <header className="flex items-center justify-between border-b border-border px-4 py-3 md:px-6">
-      <div>
+      <div className="flex min-w-0 items-center gap-2">
         {profile && (
-          <p className="text-xs text-ink-faint">
+          <p className="truncate text-xs text-ink-faint">
             Your Relay: <span className="font-mono text-ink-muted">{formatRelayNumber(profile.relay_number)}</span>
           </p>
         )}
+        <span
+          className={cn(
+            'shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-medium leading-none',
+            IS_BETA
+              ? 'border-ink-muted bg-ink text-canvas'
+              : 'hidden border-border bg-surface-raised text-ink-faint sm:inline-flex'
+          )}
+        >
+          {RELEASE_LABEL}
+        </span>
       </div>
       <div className="flex items-center gap-1">
         {/* Contacts is a full rail item on desktop. On mobile, keep Contacts and

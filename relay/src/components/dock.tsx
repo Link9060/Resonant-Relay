@@ -1,6 +1,6 @@
 'use client';
 
-import { appPageUrl, appPathname, BASE_PATH } from '@/lib/config';
+import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, IS_BETA, RELEASE_LABEL } from '@/lib/config';
 import { cn } from '@/lib/utils';
 import { CalendarDays, ChevronLeft, ChevronRight, House, ListTodo, Mail, MessageCircle, Shield, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -45,12 +45,26 @@ export function Dock({
             'relay-brand-lockup pb-8 font-display text-lg font-medium tracking-tight text-ink',
             collapsed ? 'justify-center px-0' : 'px-3'
           )}
-          aria-label="Relay home"
-          title={collapsed ? 'Relay home' : undefined}
+          aria-label={`${APP_TITLE} home`}
+          title={collapsed ? APP_TITLE : undefined}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 shrink-0 dark:invert" />
-          {!collapsed && <span>Relay</span>}
+          {!collapsed && (
+            <>
+              <span>Relay</span>
+              <span
+                className={cn(
+                  'rounded-full border px-1.5 py-0.5 text-[9px] font-medium leading-none tracking-normal',
+                  IS_BETA
+                    ? 'border-ink-muted bg-ink text-canvas'
+                    : 'border-border bg-surface-raised text-ink-faint'
+                )}
+              >
+                {RELEASE_LABEL}
+              </span>
+            </>
+          )}
         </a>
 
         <ul className="flex flex-1 flex-col gap-1">
