@@ -4,13 +4,16 @@ import './brand.css';
 import { StartupSequence } from '@/components/startup-sequence';
 import { UiSoundEffects } from '@/components/ui-sound-effects';
 import { PwaRegister } from '@/components/pwa-register';
+import { APP_TITLE, BASE_PATH, IS_BETA } from '@/lib/config';
 
 export const metadata: Metadata = {
-  title: 'Relay',
-  description: 'The place you open to figure out your day.',
-  manifest: '/Resonant-Relay/manifest.webmanifest',
-  appleWebApp: { capable: true, title: 'Relay', statusBarStyle: 'black-translucent' },
-  icons: { icon: '/Resonant-Relay/relay-icon.svg', apple: '/Resonant-Relay/relay-icon.svg' },
+  title: APP_TITLE,
+  description: IS_BETA
+    ? 'Relay Beta — the place you open to figure out your day.'
+    : 'The place you open to figure out your day.',
+  manifest: `${BASE_PATH}/manifest.webmanifest`,
+  appleWebApp: { capable: true, title: IS_BETA ? 'Relay Beta' : 'Relay', statusBarStyle: 'black-translucent' },
+  icons: { icon: `${BASE_PATH}/relay-icon.svg`, apple: `${BASE_PATH}/relay-icon.svg` },
 };
 
 export const viewport: Viewport = { themeColor: '#0a0a0b' };
