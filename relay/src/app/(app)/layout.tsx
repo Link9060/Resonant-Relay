@@ -14,7 +14,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    const supabase = createClient();
+    // The runtime schema includes profiles.role, while the checked-in generated
+    // types still lag that migration. Loosen this client until types are regenerated.
+    const supabase = createClient() as any;
     void (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!active) return;
