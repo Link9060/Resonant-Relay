@@ -2,7 +2,7 @@
 
 import { appPageUrl, appPathname, BASE_PATH } from '@/lib/config';
 import { cn } from '@/lib/utils';
-import { CalendarDays, House, ListTodo, Mail, MessageCircle, Shield, SquareCheck, Users, type LucideIcon } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, House, ListTodo, Mail, MessageCircle, Shield, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 const DOCK_ITEMS = [
@@ -16,46 +16,90 @@ const DOCK_ITEMS = [
 
 type AppRole = 'user' | 'moderator' | 'admin' | 'owner';
 
-export function Dock({ role = 'user' }: { role?: AppRole }) {
+export function Dock({
+  role = 'user',
+  collapsed = false,
+  onCollapsedChange,
+}: {
+  role?: AppRole;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
+}) {
   const pathname = usePathname();
   const currentPath = appPathname(pathname);
   const canOpenAdmin = role === 'admin' || role === 'owner';
 
   return (
     <>
-      {/* Desktop: a persistent rail that never scrolls away with page content. */}
+      {/* Desktop/Mac: persistent rail, optionally collapsed to icons only. */}
       <nav
         aria-label="Main"
-        className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col overflow-y-auto border-r border-border bg-surface px-3 py-6 md:flex"
+        className={cn(
+          'fixed inset-y-0 left-0 z-30 hidden flex-col overflow-y-auto border-r border-border bg-surface py-6 transition-[width,padding] duration-200 md:flex',
+          collapsed ? 'w-16 px-2' : 'w-60 px-3'
+        )}
       >
-        <a href={appPageUrl('/')} className="relay-brand-lockup px-3 pb-8 font-display text-lg font-medium tracking-tight text-ink" aria-label="Relay home">
+        <a
+          href={appPageUrl('/')}
+          className={cn(
+            'relay-brand-lockup pb-8 font-display text-lg font-medium tracking-tight text-ink',
+            collapsed ? 'justify-center px-0' : 'px-3'
+          )}
+          aria-label="Relay home"
+          title={collapsed ? 'Relay home' : undefined}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 dark:invert" />
-          <span>Relay</span>
+          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 shrink-0 dark:invert" />
+          {!collapsed && <span>Relay</span>}
         </a>
+
         <ul className="flex flex-1 flex-col gap-1">
           {DOCK_ITEMS.map((item) => (
-            <DockLink key={item.href} item={item} active={isDockPathActive(currentPath, item.href)} variant="rail" />
+            <DockLink
+              key={item.href}
+              item={item}
+              active={isDockPathActive(currentPath, item.href)}
+              variant="rail"
+              collapsed={collapsed}
+            />
           ))}
         </ul>
+
         <ul className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
           {canOpenAdmin && (
             <DockLink
               item={{ href: '/admin', label: role === 'owner' ? 'Owner Console' : 'Admin Console', icon: Shield }}
               active={isDockPathActive(currentPath, '/admin')}
               variant="rail"
+              collapsed={collapsed}
             />
           )}
           <DockLink
             item={{ href: '/contacts', label: 'Contacts', icon: Users }}
             active={isDockPathActive(currentPath, '/contacts')}
             variant="rail"
+            collapsed={collapsed}
           />
         </ul>
+
+        <div className="mt-3 border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={() => onCollapsedChange?.(!collapsed)}
+            className={cn(
+              'relay-dock-link flex w-full items-center rounded-md py-2 text-sm text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink',
+              collapsed ? 'justify-center px-0' : 'gap-3 px-3'
+            )}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : undefined}
+          >
+            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+            {!collapsed && <span>Collapse</span>}
+          </button>
+        </div>
       </nav>
 
-      {/* Mobile: all daily tools stay one tap away. Contacts and Add Friend
-          remain together in the top bar. */}
+      {/* Mobile: unchanged bottom navigation. */}
       <nav
         aria-label="Main"
         className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-t border-border bg-surface/95 backdrop-blur md:hidden"
@@ -72,10 +116,12 @@ function DockLink({
   item,
   active,
   variant,
+  collapsed = false,
 }: {
   item: { href: string; label: string; mobileLabel?: string; icon: LucideIcon };
   active: boolean;
   variant: 'rail' | 'tab';
+  collapsed?: boolean;
 }) {
   const Icon = item.icon;
 
@@ -100,13 +146,16 @@ function DockLink({
       <a
         href={appPageUrl(item.href)}
         aria-current={active ? 'page' : undefined}
+        aria-label={collapsed ? item.label : undefined}
+        title={collapsed ? item.label : undefined}
         className={cn(
-          'relay-dock-link flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+          'relay-dock-link flex items-center rounded-md py-2 text-sm transition-colors',
+          collapsed ? 'justify-center px-0' : 'gap-3 px-3',
           active ? 'bg-surface-raised text-ink' : 'text-ink-muted'
         )}
       >
-        <Icon size={18} />
-        {item.label}
+        <Icon size={18} className="shrink-0" />
+        {!collapsed && <span>{item.label}</span>}
       </a>
     </li>
   );
