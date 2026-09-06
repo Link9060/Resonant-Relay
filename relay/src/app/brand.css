@@ -19,26 +19,44 @@
   border-color: rgb(var(--ink) / 0.16);
 }
 
+/* The particle canvas now becomes the final logo itself, so it stays perfectly
+   anchored instead of cross-fading to a second wordmark in another position. */
 .startup-particle-canvas {
-  transition: opacity 300ms cubic-bezier(0.22, 1, 0.36, 1), filter 300ms ease;
-}
-
-.startup-particle-canvas-merged {
-  opacity: 0;
-  filter: blur(1px);
-  transition-delay: 90ms;
+  transition: opacity 140ms ease;
 }
 
 .startup-copy {
-  transition: opacity 330ms cubic-bezier(0.22, 1, 0.36, 1), transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
-  transform: scale(0.985);
+  display: block;
+  opacity: 1;
+  transform: none;
+  transition: none;
 }
 
 .startup-copy-formed {
   opacity: 1;
-  transform: scale(1);
+  transform: none;
 }
 
+.startup-welcome {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + clamp(4.15rem, 10vw, 5.6rem));
+  margin: 0;
+  opacity: 0;
+  transform: translate(-50%, 0.5rem);
+  white-space: nowrap;
+}
+
+.startup-copy-formed .startup-welcome {
+  animation: startup-welcome-lockup 480ms 120ms ease-out forwards;
+}
+
+@keyframes startup-welcome-lockup {
+  from { opacity: 0; transform: translate(-50%, 0.5rem); }
+  to { opacity: 0.72; transform: translate(-50%, 0); }
+}
+
+/* Retained for the shared Relay brand lockup used elsewhere in the app. */
 .startup-brand-lockup {
   display: flex;
   align-items: center;
@@ -54,14 +72,11 @@
 }
 
 .startup-copy-title {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: clamp(3.625rem, 16vw, 5.75rem);
   font-weight: 600;
   letter-spacing: -0.065em;
-  line-height: 0.9;
-}
-
-.startup-welcome {
-  margin-top: 2.7rem;
+  line-height: 1;
 }
 
 .relay-brand-lockup {
@@ -82,6 +97,6 @@
   }
 
   .startup-welcome {
-    margin-top: 2.35rem;
+    top: calc(50% + 4.15rem);
   }
 }
