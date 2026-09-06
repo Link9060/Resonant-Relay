@@ -27,7 +27,7 @@ export function Dock({
 }) {
   const pathname = usePathname();
   const currentPath = appPathname(pathname);
-  const canOpenAdmin = role === 'admin' || role === 'owner';
+  const canOpenStaff = role !== 'user';
 
   return (
     <>
@@ -80,9 +80,9 @@ export function Dock({
         </ul>
 
         <ul className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
-          {canOpenAdmin && (
+          {canOpenStaff && (
             <DockLink
-              item={{ href: '/admin', label: role === 'owner' ? 'Owner Console' : 'Admin Console', icon: Shield }}
+              item={{ href: '/admin', label: staffConsoleLabel(role), icon: Shield }}
               active={isDockPathActive(currentPath, '/admin')}
               variant="rail"
               collapsed={collapsed}
@@ -173,6 +173,12 @@ function DockLink({
       </a>
     </li>
   );
+}
+
+function staffConsoleLabel(role: AppRole) {
+  if (role === 'owner') return 'Owner Console';
+  if (role === 'admin') return 'Admin Console';
+  return 'Moderator Console';
 }
 
 function isDockPathActive(pathname: string, href: string) {
