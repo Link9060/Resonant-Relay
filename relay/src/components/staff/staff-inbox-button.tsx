@@ -3,7 +3,7 @@
 import { appPageUrl } from '@/lib/config';
 import type { AppRole } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
-import { ArrowRight, Inbox, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Inbox, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type RequestType = 'bug_report' | 'role_application' | 'feature_request' | 'safety_report' | 'general_feedback' | 'privacy_request';
@@ -17,15 +17,80 @@ type StaffRequest = {
   requested_role: AppRole | null;
 };
 
+type StaffReport = {
+  report_id: string;
+  reason: string;
+  status: 'submitted' | 'reviewing' | 'resolved' | 'dismissed';
+  created_at: string;
+  reporter_name: string;
+  reported_name: string | null;
+};
+
+type AttentionItem = {
+  id: string;
+  kind: 'request' | 'report';
+  label: string;
+  subject: string;
+  detail: string;
+  createdAt: string;
+  href: string;
+  isNew: boolean;
+};
+
 export function StaffInboxButton({ role }: { role: AppRole }) {
   const [open, setOpen] = useState(false);
   const [requests, setRequests] = useState<StaffRequest[]>([]);
+  const [reports, setReports] = useState<StaffReport[]>([]);
   const [loaded, setLoaded] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const visible = useMemo(() => requests.filter((request) => visibleToRole(role, request.request_type)), [requests, role]);
-  const openRequests = useMemo(() => visible.filter((request) => request.status === 'new' || request.status === 'reviewing'), [visible]);
-  const newCount = useMemo(() => visible.filter((request) => request.status === 'new').length, [visible]);
+  const visibleRequests = useMemo(
+    () => requests.filter((request) => visibleToRole(role, request.request_type)),
+    [requests, role],
+  );
+  const openRequests = useMemo(
+    () => visibleRequests.filter((request) => request.status === 'new' || request.status === 'reviewing'),
+    [visibleRequests],
+  );
+  const openReports = useMemo(
+    () => reports.filter((report) => report.status === 'submitted' || report.status === 'reviewing'),
+    [reports],
+  );
+  const newCount = useMemo(
+    () => visibleRequests.filter((request) => request.status === 'new').length
+      + reports.filter((report) => report.status === 'submitted').length,
+    [reports, visibleRequests],
+  );
+  const openCount = openRequests.length + openReports.length;
+
+  const attentionItems = useMemo<AttentionItem[]>(() => {
+    const requestItems: AttentionItem[] = openRequests.map((request) => ({
+      id: request.request_id,
+      kind: 'request',
+      label: typeLabel(request.request_type),
+      subject: request.subject,
+      detail: `${request.requester_name}${request.requested_role ? ` · ${capitalize(request.requested_role)}` : ''}`,
+      createdAt: request.created_at,
+      href: '/admin/requests',
+      isNew: request.status === 'new',
+    }));
+
+    const reportItems: AttentionItem[] = openReports.map((report) => ({
+      id: report.report_id,
+      kind: 'report',
+      label: 'Moderation',
+      subject: humanReason(report.reason),
+      detail: `${report.reported_name ?? 'Removed account'} · reported by ${report.reporter_name}`,
+      createdAt: report.created_at,
+      href: '/admin?section=moderation',
+      isNew: report.status === 'submitted',
+    }));
+
+    return [...requestItems, ...reportItems]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 8);
+  }, [openReports, openRequests]);
+
   const identity = role === 'owner'
     ? { mark: '◆', label: 'Owner' }
     : role === 'admin'
@@ -35,16 +100,21 @@ export function StaffInboxButton({ role }: { role: AppRole }) {
   const load = useCallback(async () => {
     if (role === 'user') return;
     const supabase = createClient() as any;
-    const { data, error } = await supabase.rpc('staff_list_requests', {
-      p_status: null,
-      p_limit: 30,
-      p_offset: 0,
-    });
-    if (error) {
-      setLoaded(true);
-      return;
-    }
-    setRequests((data ?? []) as StaffRequest[]);
+    const [requestResult, reportResult] = await Promise.all([
+      supabase.rpc('staff_list_requests', {
+        p_status: null,
+        p_limit: 40,
+        p_offset: 0,
+      }),
+      supabase.rpc('staff_list_reports', {
+        p_status: null,
+        p_limit: 40,
+        p_offset: 0,
+      }),
+    ]);
+
+    if (!requestResult.error) setRequests((requestResult.data ?? []) as StaffRequest[]);
+    if (!reportResult.error) setReports((reportResult.data ?? []) as StaffReport[]);
     setLoaded(true);
   }, [role]);
 
@@ -56,12 +126,9 @@ export function StaffInboxButton({ role }: { role: AppRole }) {
     if (role === 'user') return;
     const supabase = createClient() as any;
     const channel = supabase
-      .channel(`staff-request-inbox-${role}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'staff_requests' },
-        () => void load(),
-      )
+      .channel(`staff-attention-${role}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_requests' }, () => void load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => void load())
       .subscribe();
 
     return () => {
@@ -71,19 +138,20 @@ export function StaffInboxButton({ role }: { role: AppRole }) {
 
   useEffect(() => {
     if (!loaded || role === 'user') return;
-    const newest = visible.find((request) => request.status === 'new');
+    const newest = attentionItems.find((item) => item.isNew);
     if (!newest) return;
 
-    const key = `relay-staff-inbox-seen-${role}`;
+    const key = `relay-staff-attention-seen-${role}`;
+    const value = `${newest.kind}:${newest.id}`;
     try {
-      if (window.sessionStorage.getItem(key) !== newest.request_id) {
+      if (window.sessionStorage.getItem(key) !== value) {
         setOpen(true);
-        window.sessionStorage.setItem(key, newest.request_id);
+        window.sessionStorage.setItem(key, value);
       }
     } catch {
       // Session storage is optional. The badge still works without it.
     }
-  }, [loaded, role, visible]);
+  }, [attentionItems, loaded, role]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -99,8 +167,8 @@ export function StaffInboxButton({ role }: { role: AppRole }) {
     <div ref={wrapperRef} className="relative">
       <button
         type="button"
-        aria-label="Staff inbox"
-        title="Staff inbox"
+        aria-label={`Staff attention; ${openCount} open`}
+        title="Staff attention"
         onClick={() => setOpen((value) => !value)}
         className="relative flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink"
       >
@@ -113,57 +181,60 @@ export function StaffInboxButton({ role }: { role: AppRole }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 z-50 w-[min(23rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-xl">
+        <div className="absolute right-0 top-11 z-50 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-xl">
           <div className="relative overflow-hidden border-b border-border px-4 py-3.5">
             <div className="pointer-events-none absolute inset-0 opacity-[0.025] [background-image:linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] [background-size:22px_22px]" />
             <div className="relative flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <div className="text-sm font-semibold text-ink">Staff Inbox</div>
+                  <div className="text-sm font-semibold text-ink">Needs Attention</div>
                   <span className="rounded-full border border-border bg-canvas px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-ink-muted">{identity.mark} {identity.label}</span>
                 </div>
                 <div className="mt-1 flex items-center gap-1.5 text-[11px] text-ink-faint">
                   <span className="h-1.5 w-1.5 rounded-full bg-ink" />
-                  Live routing · {openRequests.length} open · {newCount} new
+                  Live routing · {openCount} open · {newCount} new
                 </div>
               </div>
-              <a href={appPageUrl('/admin/requests')} className="rounded-md border border-border bg-canvas px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised">Open inbox</a>
+              <a href={appPageUrl('/admin')} className="rounded-md border border-border bg-canvas px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised">Control Center</a>
             </div>
           </div>
 
-          <div className="max-h-80 overflow-y-auto p-2">
+          <div className="max-h-96 overflow-y-auto p-2">
             {!loaded ? (
-              <div className="px-3 py-6 text-center text-xs text-ink-muted">Loading requests…</div>
-            ) : openRequests.length === 0 ? (
+              <div className="px-3 py-6 text-center text-xs text-ink-muted">Loading staff attention…</div>
+            ) : attentionItems.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border px-3 py-7 text-center">
                 <Inbox className="mx-auto text-ink-faint" size={20} />
-                <div className="mt-2 text-xs font-medium text-ink">Inbox clear</div>
-                <div className="mt-1 text-[11px] text-ink-muted">Nothing routed to your role needs attention.</div>
+                <div className="mt-2 text-xs font-medium text-ink">All clear</div>
+                <div className="mt-1 text-[11px] text-ink-muted">No routed requests or moderation reports need your role right now.</div>
               </div>
-            ) : openRequests.slice(0, 6).map((request) => (
-              <a key={request.request_id} href={appPageUrl('/admin/requests')} className="group block rounded-xl px-3 py-2.5 hover:bg-surface-raised">
+            ) : attentionItems.map((item) => (
+              <a key={`${item.kind}:${item.id}`} href={appPageUrl(item.href)} className="group block rounded-xl px-3 py-2.5 hover:bg-surface-raised">
                 <div className="flex items-center justify-between gap-3">
                   <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-ink-faint">
-                    {request.status === 'new' && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
-                    {typeLabel(request.request_type)}
+                    {item.isNew && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
+                    {item.kind === 'report' && <ShieldAlert size={11} />}
+                    {item.label}
                   </span>
-                  <span className="text-[10px] text-ink-faint">{timeAgo(request.created_at)}</span>
+                  <span className="text-[10px] text-ink-faint">{timeAgo(item.createdAt)}</span>
                 </div>
                 <div className="mt-1 flex items-center gap-2">
-                  <div className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{request.subject}</div>
+                  <div className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{item.subject}</div>
                   <ArrowRight size={12} className="shrink-0 text-ink-faint opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" />
                 </div>
-                <div className="mt-0.5 truncate text-xs text-ink-muted">
-                  {request.requester_name}{request.requested_role ? ` · ${capitalize(request.requested_role)}` : ''}
-                </div>
+                <div className="mt-0.5 truncate text-xs text-ink-muted">{item.detail}</div>
               </a>
             ))}
           </div>
 
-          <a href={appPageUrl('/admin')} className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink">
-            <span className="flex items-center gap-2"><ShieldCheck size={14} />Relay Control Center</span>
-            <ArrowRight size={13} />
-          </a>
+          <div className="grid grid-cols-2 border-t border-border">
+            <a href={appPageUrl('/admin/requests')} className="flex items-center justify-center gap-2 border-r border-border px-3 py-3 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink">
+              <Inbox size={13} />Requests
+            </a>
+            <a href={appPageUrl('/admin?section=moderation')} className="flex items-center justify-center gap-2 px-3 py-3 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink">
+              <ShieldCheck size={13} />Moderation
+            </a>
+          </div>
         </div>
       )}
     </div>
@@ -184,6 +255,10 @@ function typeLabel(type: RequestType) {
   if (type === 'safety_report') return 'Safety';
   if (type === 'general_feedback') return 'Feedback';
   return 'Privacy';
+}
+
+function humanReason(value: string) {
+  return value.split('_').map(capitalize).join(' ');
 }
 
 function capitalize(value: string) {
