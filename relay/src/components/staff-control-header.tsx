@@ -109,9 +109,10 @@ export function StaffControlHeader({ role, active }: { role: StaffRole; active: 
   );
 }
 
-export function StaffRequestsShortcut() {
+export function StaffRequestsShortcut({ openReports }: { openReports?: number }) {
+  const ariaLabel = openReports == null ? 'Open requests inbox' : `Open requests inbox; ${openReports} moderation reports open`;
   return (
-    <a href={appPageUrl('/admin/requests')} className="group flex items-center justify-between gap-4 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-raised">
+    <a aria-label={ariaLabel} href={appPageUrl('/admin/requests')} className="group flex items-center justify-between gap-4 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-raised">
       <div>
         <div className="flex items-center gap-2 text-sm font-semibold text-ink"><Inbox size={15} /> Requests inbox</div>
         <p className="mt-1 text-xs leading-5 text-ink-muted">Bug reports, role applications, feature ideas, and routed support requests live here.</p>
