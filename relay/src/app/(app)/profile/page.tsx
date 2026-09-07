@@ -8,8 +8,8 @@ import { appPageUrl } from '@/lib/config';
 import { STARTUP_SESSION_KEY } from '@/components/startup-sequence';
 import { AppRole, getRolePreview, setRolePreview } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
-import { formatRelayNumber } from '@/lib/utils';
-import { Check, Loader2, Play, UserRound } from 'lucide-react';
+import { cn, formatRelayNumber } from '@/lib/utils';
+import { ArrowRight, Check, Eye, Loader2, Play, ShieldCheck, UserRound } from 'lucide-react';
 import Image from 'next/image';
 import { FormEvent, useEffect, useState } from 'react';
 
@@ -22,6 +22,13 @@ type EditableProfile = {
   bio: string | null;
   role: AppRole;
 };
+
+const PREVIEW_ROLES: { role: AppRole; label: string; mark: string }[] = [
+  { role: 'owner', label: 'Owner', mark: '◆' },
+  { role: 'admin', label: 'Admin', mark: '◇' },
+  { role: 'moderator', label: 'Moderator', mark: '●' },
+  { role: 'user', label: 'User', mark: '○' },
+];
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<EditableProfile | null>(null);
@@ -150,16 +157,53 @@ export default function ProfilePage() {
 
       {profile.role === 'owner' && (
         <section className="mt-8 border-t border-border pt-6">
-          <h2 className="text-sm font-medium text-ink">Owner Tools</h2>
-          <div className="mt-3 rounded-md border border-border p-4">
-            <label className="block text-sm font-medium text-ink" htmlFor="role-preview">Preview interface as</label>
-            <p className="mt-1 text-xs text-ink-faint">This only changes what Relay looks like on this device. Your real account stays Owner.</p>
-            <select id="role-preview" value={previewRole} onChange={(event) => changePreviewRole(event.target.value as AppRole)} className="mt-3 w-full rounded-md border border-border bg-canvas px-3 py-2 text-sm text-ink">
-              <option value="user">Normal User</option>
-              <option value="moderator">Moderator</option>
-              <option value="admin">Admin</option>
-              <option value="owner">Owner</option>
-            </select>
+          <div className="relative overflow-hidden rounded-2xl border border-border bg-surface p-5">
+            <div className="pointer-events-none absolute inset-0 opacity-[0.03] [background-image:linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] [background-size:24px_24px]" />
+            <div className="relative">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full border border-border bg-canvas px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink">◆ Owner</span>
+                    <span className="flex items-center gap-1.5 text-[11px] text-ink-faint"><span className="h-1.5 w-1.5 rounded-full bg-ink" />Full access</span>
+                  </div>
+                  <h2 className="mt-3 text-base font-semibold text-ink">Owner Tools</h2>
+                  <p className="mt-1 text-xs leading-5 text-ink-muted">Preview lower permission levels without changing your real account or losing Owner access.</p>
+                </div>
+                <ShieldCheck size={19} className="shrink-0 text-ink-faint" />
+              </div>
+
+              <div className="mt-4">
+                <div className="mb-2 flex items-center gap-2 text-xs font-medium text-ink-muted"><Eye size={13} />Preview interface as</div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {PREVIEW_ROLES.map((option) => (
+                    <button
+                      key={option.role}
+                      type="button"
+                      onClick={() => changePreviewRole(option.role)}
+                      className={cn(
+                        'rounded-lg border px-3 py-2.5 text-left transition-colors',
+                        previewRole === option.role
+                          ? 'border-ink bg-ink text-canvas'
+                          : 'border-border bg-canvas text-ink-muted hover:bg-surface-raised hover:text-ink'
+                      )}
+                    >
+                      <div className="text-sm font-semibold">{option.mark}</div>
+                      <div className="mt-1 text-[10px] font-medium uppercase tracking-wide">{option.label}</div>
+                    </button>
+                  ))}
+                </div>
+                {previewRole !== 'owner' && (
+                  <div className="mt-3 rounded-lg border border-border bg-canvas px-3 py-2 text-xs text-ink-muted">
+                    Preview mode is active. Your real account remains <strong className="text-ink">Owner</strong>.
+                  </div>
+                )}
+              </div>
+
+              <a href={appPageUrl('/admin')} className="mt-4 flex items-center justify-between rounded-xl border border-border bg-canvas px-4 py-3 text-sm font-medium text-ink transition-colors hover:bg-surface-raised">
+                <span className="flex items-center gap-2"><ShieldCheck size={15} />Open Relay Control Center</span>
+                <ArrowRight size={14} className="text-ink-faint" />
+              </a>
+            </div>
           </div>
         </section>
       )}
