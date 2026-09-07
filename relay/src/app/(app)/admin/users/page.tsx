@@ -38,7 +38,6 @@ export default function StaffUsersPage() {
   const [error, setError] = useState<string | null>(null);
 
   async function load(preferredId?: string | null) {
-    setError(null);
     const supabase = createClient() as any;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -75,6 +74,7 @@ export default function StaffUsersPage() {
   async function changeRole(nextRole: AppRole) {
     if (role !== 'owner' || !selected) return;
     if (selected.id === currentUserId) return;
+    setError(null);
     setBusy(true);
     const supabase = createClient() as any;
     const { error: actionError } = await supabase.rpc('set_user_role', { p_user_id: selected.id, p_role: nextRole });
@@ -90,6 +90,7 @@ export default function StaffUsersPage() {
       reason = window.prompt(`Optional reason for banning ${selected.display_name}:`, '') ?? null;
       if (reason === null) return;
     } else if (!window.confirm(`Unban ${selected.display_name}?`)) return;
+    setError(null);
     setBusy(true);
     const { error: actionError } = await (createClient() as any).rpc('owner_set_user_ban', { p_user_id: selected.id, p_banned: banning, p_reason: reason || null });
     if (actionError) setError(actionError.message); else await load(selected.id);
@@ -99,6 +100,7 @@ export default function StaffUsersPage() {
   async function forceSignOut() {
     if (role !== 'owner' || !selected || selected.role === 'owner' || selected.id === currentUserId) return;
     if (!window.confirm(`Force ${selected.display_name} to sign out on all devices?`)) return;
+    setError(null);
     setBusy(true);
     const { error: actionError } = await (createClient() as any).rpc('owner_force_sign_out', { p_user_id: selected.id });
     if (actionError) setError(actionError.message); else await load(selected.id);
@@ -109,6 +111,7 @@ export default function StaffUsersPage() {
     if (role !== 'owner' || !selected || selected.role === 'owner' || selected.id === currentUserId) return;
     const confirmation = window.prompt(`Permanently remove ${selected.display_name} and their Relay data? Type REMOVE to confirm.`);
     if (confirmation !== 'REMOVE') return;
+    setError(null);
     setBusy(true);
     const { error: actionError } = await (createClient() as any).rpc('owner_delete_user', { p_user_id: selected.id });
     if (actionError) setError(actionError.message); else await load(null);
