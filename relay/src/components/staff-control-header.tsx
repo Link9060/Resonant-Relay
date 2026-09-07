@@ -35,10 +35,10 @@ type NavItem = {
 const ITEMS: NavItem[] = [
   { id: 'overview', label: 'Overview', description: 'Open the staff command overview', icon: Gauge, href: '/admin?section=overview', roles: ['moderator', 'admin', 'owner'] },
   { id: 'requests', label: 'Requests', description: 'Review bugs, applications, and feedback', icon: Inbox, href: '/admin/requests', roles: ['moderator', 'admin', 'owner'] },
-  { id: 'users', label: 'Users', description: 'Search and inspect Relay accounts', icon: Users, href: '/admin?section=users', roles: ['admin', 'owner'] },
-  { id: 'moderation', label: 'Moderation', description: 'Work through the moderation queue', icon: ShieldCheck, href: '/admin?section=moderation', roles: ['moderator', 'admin', 'owner'] },
-  { id: 'analytics', label: 'Analytics', description: 'Inspect detailed Relay usage metrics', icon: BarChart3, href: '/admin?section=analytics', roles: ['owner'] },
-  { id: 'system', label: 'System', description: 'View verified operational data', icon: Settings2, href: '/admin?section=system', roles: ['owner'] },
+  { id: 'users', label: 'Users', description: 'Search and inspect Relay accounts', icon: Users, href: '/admin/users', roles: ['admin', 'owner'] },
+  { id: 'moderation', label: 'Moderation', description: 'Work through the moderation queue', icon: ShieldCheck, href: '/admin/moderation', roles: ['moderator', 'admin', 'owner'] },
+  { id: 'analytics', label: 'Analytics', description: 'Inspect detailed Relay usage metrics', icon: BarChart3, href: '/admin/analytics', roles: ['owner'] },
+  { id: 'system', label: 'System', description: 'View verified operational data', icon: Settings2, href: '/admin/system', roles: ['owner'] },
   { id: 'activity', label: 'Activity', description: 'Open the staff audit trail', icon: Activity, href: '/admin?section=activity', roles: ['owner'] },
 ];
 
