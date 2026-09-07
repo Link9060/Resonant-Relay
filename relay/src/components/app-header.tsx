@@ -1,16 +1,20 @@
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationBell } from '@/components/notifications/notification-bell';
+import { StaffInboxButton } from '@/components/staff/staff-inbox-button';
 import { appPageUrl, IS_BETA, RELEASE_LABEL } from '@/lib/config';
+import type { AppRole } from '@/lib/role-preview';
 import type { Notification, Profile } from '@/lib/types/database';
 import { cn, formatRelayNumber } from '@/lib/utils';
-import { UserPlus, Users } from 'lucide-react';
+import { MessageSquarePlus, UserPlus, Users } from 'lucide-react';
 
 export function AppHeader({
   profile,
+  role,
   currentUserId,
   notifications,
 }: {
   profile: Profile | null;
+  role: AppRole;
   currentUserId: string;
   notifications: Notification[];
 }) {
@@ -52,6 +56,15 @@ export function AppHeader({
         >
           <UserPlus size={18} />
         </a>
+        <a
+          href={appPageUrl('/support')}
+          aria-label="Support and feedback"
+          title="Support & Feedback"
+          className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink"
+        >
+          <MessageSquarePlus size={18} />
+        </a>
+        <StaffInboxButton role={role} />
         <NotificationBell currentUserId={currentUserId} initial={notifications} />
         <ThemeToggle />
         <a
