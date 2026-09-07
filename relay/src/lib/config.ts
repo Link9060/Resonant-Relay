@@ -30,12 +30,21 @@ export function siteUrl(path = '/') {
   return `${base}${normalized}`;
 }
 
+const STAFF_WORKSPACE_REDIRECTS: Record<string, string> = {
+  '/admin?section=users': '/admin/users',
+  '/admin?section=moderation': '/admin/moderation',
+  '/admin?section=analytics': '/admin/analytics',
+  '/admin?section=system': '/admin/system',
+  '/admin?section=activity': '/admin/activity',
+};
+
 // GitHub Pages serves every exported route from a directory index. Linking to
 // the trailing-slash URL avoids an extra redirect and is more reliable in
 // installed/mobile browsers, while appUrl remains available for assets such as
 // the service worker.
 export function appPageUrl(path = '/') {
-  const url = appUrl(path);
+  const resolvedPath = STAFF_WORKSPACE_REDIRECTS[path] ?? path;
+  const url = appUrl(resolvedPath);
   const suffixIndex = url.search(/[?#]/);
   const pathname = suffixIndex === -1 ? url : url.slice(0, suffixIndex);
   const suffix = suffixIndex === -1 ? '' : url.slice(suffixIndex);
