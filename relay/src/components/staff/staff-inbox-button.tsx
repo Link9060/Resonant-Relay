@@ -3,7 +3,7 @@
 import { appPageUrl } from '@/lib/config';
 import type { AppRole } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
-import { Inbox } from 'lucide-react';
+import { ArrowRight, Inbox, ShieldCheck } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type RequestType = 'bug_report' | 'role_application' | 'feature_request' | 'safety_report' | 'general_feedback' | 'privacy_request';
@@ -26,6 +26,11 @@ export function StaffInboxButton({ role }: { role: AppRole }) {
   const visible = useMemo(() => requests.filter((request) => visibleToRole(role, request.request_type)), [requests, role]);
   const openRequests = useMemo(() => visible.filter((request) => request.status === 'new' || request.status === 'reviewing'), [visible]);
   const newCount = useMemo(() => visible.filter((request) => request.status === 'new').length, [visible]);
+  const identity = role === 'owner'
+    ? { mark: '◆', label: 'Owner' }
+    : role === 'admin'
+      ? { mark: '◇', label: 'Admin' }
+      : { mark: '●', label: 'Moderator' };
 
   const load = useCallback(async () => {
     if (role === 'user') return;
@@ -108,33 +113,57 @@ export function StaffInboxButton({ role }: { role: AppRole }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-xl">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <div>
-              <div className="text-sm font-semibold text-ink">Staff Inbox</div>
-              <div className="text-[11px] text-ink-faint">{openRequests.length} open · {newCount} new</div>
+        <div className="absolute right-0 top-11 z-50 w-[min(23rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-xl">
+          <div className="relative overflow-hidden border-b border-border px-4 py-3.5">
+            <div className="pointer-events-none absolute inset-0 opacity-[0.025] [background-image:linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] [background-size:22px_22px]" />
+            <div className="relative flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-semibold text-ink">Staff Inbox</div>
+                  <span className="rounded-full border border-border bg-canvas px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-ink-muted">{identity.mark} {identity.label}</span>
+                </div>
+                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-ink-faint">
+                  <span className="h-1.5 w-1.5 rounded-full bg-ink" />
+                  Live routing · {openRequests.length} open · {newCount} new
+                </div>
+              </div>
+              <a href={appPageUrl('/admin/requests')} className="rounded-md border border-border bg-canvas px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised">Open inbox</a>
             </div>
-            <a href={appPageUrl('/admin/requests')} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-surface-raised">Open inbox</a>
           </div>
 
           <div className="max-h-80 overflow-y-auto p-2">
             {!loaded ? (
               <div className="px-3 py-6 text-center text-xs text-ink-muted">Loading requests…</div>
             ) : openRequests.length === 0 ? (
-              <div className="px-3 py-6 text-center text-xs text-ink-muted">Nothing needs attention right now.</div>
+              <div className="rounded-xl border border-dashed border-border px-3 py-7 text-center">
+                <Inbox className="mx-auto text-ink-faint" size={20} />
+                <div className="mt-2 text-xs font-medium text-ink">Inbox clear</div>
+                <div className="mt-1 text-[11px] text-ink-muted">Nothing routed to your role needs attention.</div>
+              </div>
             ) : openRequests.slice(0, 6).map((request) => (
-              <a key={request.request_id} href={appPageUrl('/admin/requests')} className="block rounded-xl px-3 py-2.5 hover:bg-surface-raised">
+              <a key={request.request_id} href={appPageUrl('/admin/requests')} className="group block rounded-xl px-3 py-2.5 hover:bg-surface-raised">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] font-medium uppercase tracking-wide text-ink-faint">{typeLabel(request.request_type)}</span>
+                  <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-ink-faint">
+                    {request.status === 'new' && <span className="h-1.5 w-1.5 rounded-full bg-ink" />}
+                    {typeLabel(request.request_type)}
+                  </span>
                   <span className="text-[10px] text-ink-faint">{timeAgo(request.created_at)}</span>
                 </div>
-                <div className="mt-1 truncate text-sm font-medium text-ink">{request.subject}</div>
+                <div className="mt-1 flex items-center gap-2">
+                  <div className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{request.subject}</div>
+                  <ArrowRight size={12} className="shrink-0 text-ink-faint opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" />
+                </div>
                 <div className="mt-0.5 truncate text-xs text-ink-muted">
                   {request.requester_name}{request.requested_role ? ` · ${capitalize(request.requested_role)}` : ''}
                 </div>
               </a>
             ))}
           </div>
+
+          <a href={appPageUrl('/admin')} className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink">
+            <span className="flex items-center gap-2"><ShieldCheck size={14} />Relay Control Center</span>
+            <ArrowRight size={13} />
+          </a>
         </div>
       )}
     </div>
