@@ -4,7 +4,7 @@ import { appPageUrl } from '@/lib/config';
 import type { AppRole } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
 import { Inbox } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type RequestType = 'bug_report' | 'role_application' | 'feature_request' | 'safety_report' | 'general_feedback' | 'privacy_request';
 type StaffRequest = {
@@ -27,7 +27,7 @@ export function StaffInboxButton({ role }: { role: AppRole }) {
   const openRequests = useMemo(() => visible.filter((request) => request.status === 'new' || request.status === 'reviewing'), [visible]);
   const newCount = useMemo(() => visible.filter((request) => request.status === 'new').length, [visible]);
 
-  async function load() {
+  const load = useCallback(async () => {
     if (role === 'user') return;
     const supabase = createClient() as any;
     const { data, error } = await supabase.rpc('staff_list_requests', {
@@ -41,11 +41,28 @@ export function StaffInboxButton({ role }: { role: AppRole }) {
     }
     setRequests((data ?? []) as StaffRequest[]);
     setLoaded(true);
-  }
+  }, [role]);
 
   useEffect(() => {
     void load();
-  }, [role]);
+  }, [load]);
+
+  useEffect(() => {
+    if (role === 'user') return;
+    const supabase = createClient() as any;
+    const channel = supabase
+      .channel(`staff-request-inbox-${role}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'staff_requests' },
+        () => void load(),
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [load, role]);
 
   useEffect(() => {
     if (!loaded || role === 'user') return;
