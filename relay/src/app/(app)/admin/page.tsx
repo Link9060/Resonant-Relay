@@ -1,12 +1,16 @@
 'use client';
 
 import { PageLoading } from '@/components/page-loading';
-import { PageHeader } from '@/components/ui/page-header';
+import { StaffBugHint, StaffControlHeader, StaffRequestsShortcut, StaffSection } from '@/components/staff-control-header';
+import { appPageUrl } from '@/lib/config';
 import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
+import { Activity, ArrowRight, BarChart3, Database, Inbox, ShieldCheck, Users as UsersIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type Role = AppRole;
+type StaffRole = Exclude<Role, 'user'>;
+
 type UserRow = {
   id: string;
   display_name: string;
@@ -67,6 +71,9 @@ type Stats = {
 };
 
 const ROLE_ORDER: Role[] = ['user', 'moderator', 'admin', 'owner'];
+const OWNER_SECTIONS: StaffSection[] = ['overview', 'users', 'moderation', 'analytics', 'system', 'activity'];
+const ADMIN_SECTIONS: StaffSection[] = ['overview', 'users', 'moderation'];
+const MODERATOR_SECTIONS: StaffSection[] = ['overview', 'moderation'];
 
 export default function AdminPage() {
   const [actualRole, setActualRole] = useState<Role | null>(null);
@@ -80,10 +87,12 @@ export default function AdminPage() {
   const [busyUser, setBusyUser] = useState<string | null>(null);
   const [busyReport, setBusyReport] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [requestedSection, setRequestedSection] = useState<StaffSection>('overview');
 
   const role = actualRole === 'owner' ? previewRole : actualRole;
 
   async function load() {
+    setError(null);
     const supabase = createClient() as any;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -142,7 +151,10 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    void load().catch((e: any) => setError(e?.message ?? 'Staff console could not load.'));
+    const section = new URLSearchParams(window.location.search).get('section') as StaffSection | null;
+    if (section) setRequestedSection(section);
+
+    void load().catch((e: any) => setError(e?.message ?? 'Control Center could not load.'));
 
     const onPreviewChange = (event: Event) => {
       const nextRole = (event as CustomEvent<Role>).detail;
@@ -151,7 +163,8 @@ export default function AdminPage() {
       setUsers([]);
       setReports([]);
       setAuditLog([]);
-      void load().catch((e: any) => setError(e?.message ?? 'Staff console could not load.'));
+      setRequestedSection('overview');
+      void load().catch((e: any) => setError(e?.message ?? 'Control Center could not load.'));
     };
     window.addEventListener(ROLE_PREVIEW_EVENT, onPreviewChange);
     return () => window.removeEventListener(ROLE_PREVIEW_EVENT, onPreviewChange);
@@ -261,129 +274,261 @@ export default function AdminPage() {
   if (!role || !isStaffRole(role)) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8 md:px-6">
-        <PageHeader title="Staff" />
-        <div className="mt-6 rounded-xl border border-border bg-surface p-6">
-          <p className="text-sm font-medium text-ink">You do not have access to this area.</p>
+        <div className="rounded-xl border border-border bg-surface p-6">
+          <p className="text-sm font-medium text-ink">You do not have access to the Relay Control Center.</p>
           <p className="mt-1 text-sm text-ink-muted">Moderator, admin, or owner permission is required.</p>
         </div>
       </div>
     );
   }
 
-  const pageTitle = role === 'owner' ? 'Owner Console' : role === 'admin' ? 'Admin Console' : 'Moderator Console';
+  const staffRole = role as StaffRole;
+  const section = allowedSection(staffRole, requestedSection);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-      <PageHeader title={pageTitle} />
+    <div className="mx-auto max-w-7xl px-4 py-7 md:px-6 md:py-8">
+      <StaffControlHeader role={staffRole} active={section} />
 
-      <div className="mt-3 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-ink-muted">
-        {role === 'moderator'
-          ? 'Moderators review user reports and flagged messages. Account access, roles, bans, and removals stay locked to higher staff levels.'
-          : role === 'admin'
-            ? 'Admins can review reports and inspect the account directory. Owner-only actions remain protected.'
-            : 'Owner mode includes moderation, account controls, live stats, role management, and the staff audit trail.'}
+      {error && <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm text-ink">{error}</div>}
+
+      {section === 'overview' && <OverviewSection role={staffRole} stats={stats} users={users} reports={reports} auditLog={auditLog} />}
+      {section === 'users' && (staffRole === 'admin' || staffRole === 'owner') && (
+        <UsersSection
+          role={staffRole}
+          users={users}
+          filteredUsers={filteredUsers}
+          query={query}
+          onQueryChange={setQuery}
+          currentUserId={currentUserId}
+          busyUser={busyUser}
+          onRoleChange={changeRole}
+          onToggleBan={toggleBan}
+          onForceSignOut={forceSignOut}
+          onRemoveUser={removeUser}
+        />
+      )}
+      {section === 'moderation' && <ReportsSection reports={reports} busyReport={busyReport} role={staffRole} onUpdate={updateReport} />}
+      {section === 'analytics' && staffRole === 'owner' && stats && <OwnerAnalytics stats={stats} />}
+      {section === 'system' && staffRole === 'owner' && stats && <SystemSnapshot stats={stats} />}
+      {section === 'activity' && staffRole === 'owner' && <AuditSection rows={auditLog} />}
+    </div>
+  );
+}
+
+function OverviewSection({ role, stats, users, reports, auditLog }: { role: StaffRole; stats: Stats | null; users: UserRow[]; reports: ReportRow[]; auditLog: AuditRow[] }) {
+  const openReports = reports.filter((report) => report.status === 'submitted' || report.status === 'reviewing');
+  const reviewing = reports.filter((report) => report.status === 'reviewing').length;
+  const resolved = reports.filter((report) => report.status === 'resolved').length;
+  const banned = users.filter((user) => user.banned_at).length;
+
+  const cards = role === 'owner' && stats
+    ? [
+        ['Relay users', stats.users.total ?? users.length, 'Accounts currently in Relay'],
+        ['Active 7d', stats.users.active_7d ?? 0, 'Users seen in the last week'],
+        ['Open reports', openReports.length, 'Submitted or under review'],
+        ['Staff actions', auditLog.length, 'Recent audit entries loaded'],
+      ]
+    : role === 'admin'
+      ? [
+          ['Accounts', users.length, 'Accounts available to inspect'],
+          ['Open reports', openReports.length, 'Needs moderation attention'],
+          ['Reviewing', reviewing, 'Reports already being handled'],
+          ['Disabled', banned, 'Accounts currently banned'],
+        ]
+      : [
+          ['Open reports', openReports.length, 'Needs moderation attention'],
+          ['Reviewing', reviewing, 'Reports currently in progress'],
+          ['Resolved', resolved, 'Resolved reports loaded'],
+          ['Queue loaded', reports.length, 'Reports available in this view'],
+        ];
+
+  return (
+    <section className="mt-6">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map(([label, value, note]) => (
+          <div key={String(label)} className="rounded-xl border border-border bg-surface p-4">
+            <div className="text-xs font-medium text-ink-faint">{label}</div>
+            <div className="mt-2 text-2xl font-semibold tracking-tight text-ink">{Number(value).toLocaleString()}</div>
+            <div className="mt-1 text-xs text-ink-muted">{note}</div>
+          </div>
+        ))}
       </div>
 
-      {error && <div className="mt-5 rounded-lg border border-border bg-surface p-4 text-sm text-ink">{error}</div>}
-
-      {role === 'owner' && stats && <OwnerStats stats={stats} />}
-
-      <ReportsSection reports={reports} busyReport={busyReport} role={role} onUpdate={updateReport} />
-
-      {(role === 'admin' || role === 'owner') && (
-        <section className="mt-8">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+        <div className="rounded-2xl border border-border bg-surface p-5">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-ink">Accounts</h2>
-              <p className="text-sm text-ink-muted">{users.length} Relay accounts. Owner actions are intentionally separate from role changes.</p>
+              <h2 className="text-base font-semibold text-ink">Needs attention</h2>
+              <p className="mt-1 text-xs text-ink-muted">A short queue of work that deserves staff attention now.</p>
             </div>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search accounts or emails"
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink outline-none sm:w-72"
-            />
+            <a href={appPageUrl('/admin?section=moderation')} className="inline-flex items-center gap-1 text-xs font-medium text-ink-muted hover:text-ink">Open queue <ArrowRight size={12} /></a>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-border text-xs uppercase tracking-wide text-ink-faint">
-                <tr>
-                  <th className="px-4 py-3 font-medium">User</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Role</th>
-                  <th className="px-4 py-3 font-medium">Activity</th>
-                  <th className="px-4 py-3 font-medium">Usage</th>
-                  <th className="px-4 py-3 font-medium">Reports</th>
-                  <th className="px-4 py-3 font-medium">Joined</th>
-                  {role === 'owner' && <th className="px-4 py-3 font-medium">Owner tools</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredUsers.map((user) => {
-                  const protectedAccount = user.id === currentUserId || user.role === 'owner';
-                  return (
-                    <tr key={user.id}>
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-ink">{user.display_name}</div>
-                        <div className="text-xs text-ink-muted">{user.primary_email ?? 'No primary email'} · {formatRelay(user.relay_number)}</div>
-                        {user.gmail_connected && <div className="mt-1 text-xs text-ink-faint">Gmail linked</div>}
-                      </td>
-                      <td className="px-4 py-3">
-                        {user.banned_at ? (
-                          <div>
-                            <span className="rounded-full border border-ink px-2 py-1 text-xs font-medium text-ink">Banned</span>
-                            {user.ban_reason && <div className="mt-2 max-w-48 text-xs text-ink-muted">{user.ban_reason}</div>}
-                          </div>
-                        ) : (
-                          <span className="rounded-full border border-border px-2 py-1 text-xs font-medium text-ink-muted">Active</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {role === 'owner' ? (
-                          <select
-                            value={user.role}
-                            disabled={busyUser === user.id || user.id === currentUserId}
-                            onChange={(e) => void changeRole(user.id, e.target.value as Role)}
-                            className="rounded-md border border-border bg-canvas px-2 py-1.5 text-sm text-ink"
-                          >
-                            {ROLE_ORDER.map((option) => <option key={option} value={option}>{capitalize(option)}</option>)}
-                          </select>
-                        ) : <RoleBadge role={user.role} />}
-                      </td>
-                      <td className="px-4 py-3 text-ink-muted">{user.last_sign_in_at ? timeAgo(user.last_sign_in_at) : 'Never'}</td>
-                      <td className="px-4 py-3 text-ink-muted">{Number(user.message_count).toLocaleString()} msgs · {Number(user.connection_count).toLocaleString()} contacts</td>
-                      <td className="px-4 py-3 text-ink-muted">
-                        {Number(user.report_count).toLocaleString()} total
-                        {Number(user.open_report_count) > 0 && <div className="text-xs font-medium text-ink">{Number(user.open_report_count).toLocaleString()} open</div>}
-                      </td>
-                      <td className="px-4 py-3 text-ink-muted">{new Date(user.created_at).toLocaleDateString()}</td>
-                      {role === 'owner' && (
-                        <td className="px-4 py-3">
-                          {protectedAccount ? (
-                            <span className="text-xs text-ink-faint">Protected</span>
-                          ) : (
-                            <div className="flex min-w-48 flex-wrap gap-2">
-                              <OwnerButton disabled={busyUser === user.id} onClick={() => void toggleBan(user)}>
-                                {user.banned_at ? 'Unban' : 'Ban'}
-                              </OwnerButton>
-                              <OwnerButton disabled={busyUser === user.id} onClick={() => void forceSignOut(user)}>Sign out</OwnerButton>
-                              <OwnerButton disabled={busyUser === user.id} onClick={() => void removeUser(user)}>Remove</OwnerButton>
-                            </div>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="mt-4 space-y-2">
+            {openReports.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border bg-canvas px-4 py-5 text-sm text-ink-muted">Moderation queue is clear.</div>
+            ) : openReports.slice(0, 5).map((report) => (
+              <a key={report.report_id} href={appPageUrl('/admin?section=moderation')} className="flex items-center justify-between gap-4 rounded-xl border border-border bg-canvas px-4 py-3 transition-colors hover:bg-surface-raised">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium text-ink">{humanReason(report.reason)}</div>
+                  <div className="mt-0.5 truncate text-xs text-ink-muted">{report.reported_name ?? 'Removed account'} · reported {timeAgo(report.created_at)}</div>
+                </div>
+                <StatusBadge status={report.status} />
+              </a>
+            ))}
           </div>
-        </section>
+        </div>
+
+        <div className="space-y-3">
+          <StaffRequestsShortcut openReports={openReports.length} />
+          <StaffBugHint />
+          <QuickWorkspaceLink href="/admin?section=moderation" icon={ShieldCheck} title="Moderation workspace" text="Review, resolve, dismiss, and reopen reports." />
+          {(role === 'admin' || role === 'owner') && <QuickWorkspaceLink href="/admin?section=users" icon={UsersIcon} title="Account directory" text="Search users and inspect account activity." />}
+          {role === 'owner' && <QuickWorkspaceLink href="/admin?section=activity" icon={Activity} title="Audit trail" text="See recent staff actions and owner changes." />}
+        </div>
+      </div>
+
+      {role === 'owner' && auditLog.length > 0 && (
+        <div className="mt-5 rounded-2xl border border-border bg-surface p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base font-semibold text-ink">Recent staff activity</h2>
+              <p className="mt-1 text-xs text-ink-muted">Latest actions without opening the full audit trail.</p>
+            </div>
+            <a href={appPageUrl('/admin?section=activity')} className="text-xs font-medium text-ink-muted hover:text-ink">View all</a>
+          </div>
+          <div className="mt-3 divide-y divide-border">
+            {auditLog.slice(0, 5).map((row) => (
+              <div key={row.id} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm text-ink"><strong>{row.actor_name ?? 'Deleted staff account'}</strong> · {humanAction(row.action)} · <span className="text-ink-muted">{row.target_name ?? auditTarget(row)}</span></div>
+                <div className="text-xs text-ink-faint">{timeAgo(row.created_at)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
+    </section>
+  );
+}
 
-      {role === 'owner' && <AuditSection rows={auditLog} />}
-    </div>
+function QuickWorkspaceLink({ href, icon: Icon, title, text }: { href: string; icon: typeof ShieldCheck; title: string; text: string }) {
+  return (
+    <a href={appPageUrl(href)} className="flex items-start gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-raised">
+      <Icon className="mt-0.5 shrink-0 text-ink-faint" size={16} />
+      <div>
+        <div className="text-sm font-semibold text-ink">{title}</div>
+        <div className="mt-1 text-xs leading-5 text-ink-muted">{text}</div>
+      </div>
+    </a>
+  );
+}
+
+function UsersSection({
+  role,
+  users,
+  filteredUsers,
+  query,
+  onQueryChange,
+  currentUserId,
+  busyUser,
+  onRoleChange,
+  onToggleBan,
+  onForceSignOut,
+  onRemoveUser,
+}: {
+  role: 'admin' | 'owner';
+  users: UserRow[];
+  filteredUsers: UserRow[];
+  query: string;
+  onQueryChange: (value: string) => void;
+  currentUserId: string | null;
+  busyUser: string | null;
+  onRoleChange: (userId: string, role: Role) => Promise<void>;
+  onToggleBan: (user: UserRow) => Promise<void>;
+  onForceSignOut: (user: UserRow) => Promise<void>;
+  onRemoveUser: (user: UserRow) => Promise<void>;
+}) {
+  return (
+    <section className="mt-6">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2"><UsersIcon size={17} className="text-ink-faint" /><h2 className="text-lg font-semibold text-ink">Users</h2></div>
+          <p className="mt-1 text-sm text-ink-muted">{users.length} Relay accounts. Destructive owner controls stay separated from normal account inspection.</p>
+        </div>
+        <input
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          placeholder="Search accounts or emails"
+          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-ink-faint sm:w-72"
+        />
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
+        <table className="min-w-full text-left text-sm">
+          <thead className="border-b border-border bg-canvas/50 text-xs uppercase tracking-wide text-ink-faint">
+            <tr>
+              <th className="px-4 py-3 font-medium">User</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Role</th>
+              <th className="px-4 py-3 font-medium">Activity</th>
+              <th className="px-4 py-3 font-medium">Usage</th>
+              <th className="px-4 py-3 font-medium">Reports</th>
+              <th className="px-4 py-3 font-medium">Joined</th>
+              {role === 'owner' && <th className="px-4 py-3 font-medium">Owner tools</th>}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {filteredUsers.map((user) => {
+              const protectedAccount = user.id === currentUserId || user.role === 'owner';
+              return (
+                <tr key={user.id} className="transition-colors hover:bg-canvas/50">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-ink">{user.display_name}</div>
+                    <div className="text-xs text-ink-muted">{user.primary_email ?? 'No primary email'} · {formatRelay(user.relay_number)}</div>
+                    {user.gmail_connected && <div className="mt-1 text-xs text-ink-faint">Gmail linked</div>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {user.banned_at ? (
+                      <div>
+                        <span className="rounded-full border border-ink px-2 py-1 text-xs font-medium text-ink">Banned</span>
+                        {user.ban_reason && <div className="mt-2 max-w-48 text-xs text-ink-muted">{user.ban_reason}</div>}
+                      </div>
+                    ) : <span className="rounded-full border border-border px-2 py-1 text-xs font-medium text-ink-muted">Active</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {role === 'owner' ? (
+                      <select
+                        value={user.role}
+                        disabled={busyUser === user.id || user.id === currentUserId}
+                        onChange={(e) => void onRoleChange(user.id, e.target.value as Role)}
+                        className="rounded-md border border-border bg-canvas px-2 py-1.5 text-sm text-ink"
+                      >
+                        {ROLE_ORDER.map((option) => <option key={option} value={option}>{capitalize(option)}</option>)}
+                      </select>
+                    ) : <RoleBadge role={user.role} />}
+                  </td>
+                  <td className="px-4 py-3 text-ink-muted">{user.last_sign_in_at ? timeAgo(user.last_sign_in_at) : 'Never'}</td>
+                  <td className="px-4 py-3 text-ink-muted">{Number(user.message_count).toLocaleString()} msgs · {Number(user.connection_count).toLocaleString()} contacts</td>
+                  <td className="px-4 py-3 text-ink-muted">{Number(user.report_count).toLocaleString()} total{Number(user.open_report_count) > 0 && <div className="text-xs font-medium text-ink">{Number(user.open_report_count).toLocaleString()} open</div>}</td>
+                  <td className="px-4 py-3 text-ink-muted">{new Date(user.created_at).toLocaleDateString()}</td>
+                  {role === 'owner' && (
+                    <td className="px-4 py-3">
+                      {protectedAccount ? <span className="text-xs text-ink-faint">Protected</span> : (
+                        <div className="flex min-w-48 flex-wrap gap-2">
+                          <OwnerButton disabled={busyUser === user.id} onClick={() => void onToggleBan(user)}>{user.banned_at ? 'Unban' : 'Ban'}</OwnerButton>
+                          <OwnerButton disabled={busyUser === user.id} onClick={() => void onForceSignOut(user)}>Sign out</OwnerButton>
+                          <OwnerButton disabled={busyUser === user.id} onClick={() => void onRemoveUser(user)}>Remove</OwnerButton>
+                        </div>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -395,25 +540,35 @@ function ReportsSection({
 }: {
   reports: ReportRow[];
   busyReport: string | null;
-  role: Role;
+  role: StaffRole;
   onUpdate: (report: ReportRow, status: ReportRow['status']) => Promise<void>;
 }) {
+  const openCount = reports.filter((report) => report.status === 'submitted' || report.status === 'reviewing').length;
+  const reviewingCount = reports.filter((report) => report.status === 'reviewing').length;
+  const resolvedCount = reports.filter((report) => report.status === 'resolved').length;
+
   return (
-    <section className="mt-8">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-ink">Moderation queue</h2>
-        <p className="text-sm text-ink-muted">{reports.filter((report) => report.status === 'submitted' || report.status === 'reviewing').length} open · {reports.length} loaded</p>
+    <section className="mt-6">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <MiniStat label="Open" value={openCount} />
+        <MiniStat label="Reviewing" value={reviewingCount} />
+        <MiniStat label="Resolved" value={resolvedCount} />
+      </div>
+
+      <div className="mb-4 mt-6 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2"><ShieldCheck size={17} className="text-ink-faint" /><h2 className="text-lg font-semibold text-ink">Moderation queue</h2></div>
+          <p className="mt-1 text-sm text-ink-muted">Review reported users and messages, then resolve, dismiss, or reopen cases.</p>
+        </div>
       </div>
 
       <div className="space-y-3">
-        {reports.length === 0 && (
-          <div className="rounded-xl border border-border bg-surface p-5 text-sm text-ink-muted">No reports yet.</div>
-        )}
+        {reports.length === 0 && <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-ink-muted">No reports yet.</div>}
         {reports.map((report) => {
           const closed = report.status === 'resolved' || report.status === 'dismissed';
           return (
-            <article key={report.report_id} className="rounded-xl border border-border bg-surface p-4">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <article key={report.report_id} className="rounded-2xl border border-border bg-surface p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge status={report.status} />
@@ -426,15 +581,9 @@ function ReportsSection({
                     {role !== 'moderator' && report.reported_email && <span className="text-ink-muted"> · {report.reported_email}</span>}
                   </div>
                   <div className="mt-1 text-xs text-ink-muted">Reported by {report.reporter_name} · {formatRelay(report.reporter_relay_number)}</div>
-                  {report.details && <p className="mt-3 whitespace-pre-wrap text-sm text-ink-muted">{report.details}</p>}
-                  {report.message_body && (
-                    <div className="mt-3 rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-ink-muted">
-                      Reported message: “{truncate(report.message_body, 220)}”
-                    </div>
-                  )}
-                  {report.moderation_note && (
-                    <div className="mt-3 text-xs text-ink-muted">Staff note: {report.moderation_note}{report.resolved_by_name ? ` · ${report.resolved_by_name}` : ''}</div>
-                  )}
+                  {report.details && <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-ink-muted">{report.details}</p>}
+                  {report.message_body && <div className="mt-3 rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-ink-muted">Reported message: “{truncate(report.message_body, 220)}”</div>}
+                  {report.moderation_note && <div className="mt-3 text-xs text-ink-muted">Staff note: {report.moderation_note}{report.resolved_by_name ? ` · ${report.resolved_by_name}` : ''}</div>}
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
                   {closed ? (
@@ -456,9 +605,9 @@ function ReportsSection({
   );
 }
 
-function OwnerStats({ stats }: { stats: Stats }) {
+function OwnerAnalytics({ stats }: { stats: Stats }) {
   const storageBytes = Number(stats.storage.bytes_total ?? 0);
-  const sections = [
+  const sections: { title: string; items: [string, string | number][] }[] = [
     { title: 'Users', items: [['Relay users', stats.users.total], ['Auth accounts', stats.users.auth_accounts], ['Primary emails', stats.users.primary_email_accounts], ['Gmail links', stats.users.gmail_integrations], ['Calendar links', stats.users.calendar_integrations], ['Active 24h', stats.users.active_24h], ['Active 7d', stats.users.active_7d], ['Active 30d', stats.users.active_30d], ['New 24h', stats.users.new_24h], ['New 7d', stats.users.new_7d], ['New 30d', stats.users.new_30d], ['Moderators', stats.users.moderators], ['Admins', stats.users.admins], ['Owners', stats.users.owners]] },
     { title: 'Messaging', items: [['Messages', stats.messaging.messages_total], ['Messages 24h', stats.messaging.messages_24h], ['Messages 7d', stats.messaging.messages_7d], ['Conversations', stats.messaging.conversations_total], ['Direct chats', stats.messaging.direct_conversations], ['Group chats', stats.messaging.group_conversations], ['Groups', stats.messaging.groups_total], ['Connections', stats.messaging.connections_total], ['Pending requests', stats.messaging.pending_connection_requests]] },
     { title: 'Engagement', items: [['Notifications', stats.engagement.notifications_total], ['Unread notifications', stats.engagement.notifications_unread], ['Push devices', stats.engagement.push_enabled_devices], ['Users with push', stats.engagement.users_with_push], ['Number lookups 24h', stats.engagement.relay_number_lookups_24h]] },
@@ -467,17 +616,20 @@ function OwnerStats({ stats }: { stats: Stats }) {
 
   return (
     <section className="mt-6 space-y-6">
-      <div className="flex items-baseline justify-between gap-4">
-        <div><h2 className="text-lg font-semibold text-ink">Relay at a glance</h2><p className="text-sm text-ink-muted">Live aggregate operational stats. Private message contents are not exposed here.</p></div>
-        <span className="hidden text-xs text-ink-faint sm:block">Updated {new Date(stats.generated_at).toLocaleTimeString()}</span>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2"><BarChart3 size={17} className="text-ink-faint" /><h2 className="text-lg font-semibold text-ink">Analytics</h2></div>
+          <p className="mt-1 text-sm text-ink-muted">The detailed numbers live here now instead of crowding the Control Center overview.</p>
+        </div>
+        <span className="text-xs text-ink-faint">Updated {new Date(stats.generated_at).toLocaleTimeString()}</span>
       </div>
       {sections.map((section) => (
         <div key={section.title}>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-faint">{section.title}</h3>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             {section.items.map(([label, value]) => (
-              <div key={String(label)} className="rounded-xl border border-border bg-surface p-4">
-                <div className="text-xl font-semibold tracking-tight text-ink">{typeof value === 'number' ? value.toLocaleString() : value}</div>
+              <div key={label} className="rounded-xl border border-border bg-surface p-4">
+                <div className="text-xl font-semibold tracking-tight text-ink">{typeof value === 'number' ? Number(value ?? 0).toLocaleString() : value}</div>
                 <div className="mt-1 text-xs text-ink-muted">{label}</div>
               </div>
             ))}
@@ -488,31 +640,60 @@ function OwnerStats({ stats }: { stats: Stats }) {
   );
 }
 
-function AuditSection({ rows }: { rows: AuditRow[] }) {
+function SystemSnapshot({ stats }: { stats: Stats }) {
+  const storageBytes = Number(stats.storage.bytes_total ?? 0);
+  const cards = [
+    ['Storage used', formatBytes(storageBytes), 'Across Relay storage buckets'],
+    ['Stored objects', Number(stats.storage.objects_total ?? 0).toLocaleString(), 'Files currently tracked'],
+    ['Buckets in use', Number(stats.storage.buckets_used ?? 0).toLocaleString(), 'Storage buckets with data'],
+    ['Auth accounts', Number(stats.users.auth_accounts ?? 0).toLocaleString(), 'Authentication accounts'],
+  ];
+
   return (
-    <section className="mt-8">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-ink">Staff audit trail</h2>
-        <p className="text-sm text-ink-muted">Recent role changes, report decisions, bans, sign-outs, and removals.</p>
+    <section className="mt-6">
+      <div>
+        <div className="flex items-center gap-2"><Database size={17} className="text-ink-faint" /><h2 className="text-lg font-semibold text-ink">System</h2></div>
+        <p className="mt-1 text-sm text-ink-muted">Operational data we can verify from Relay right now. Service health indicators can plug into this section later when live health checks are available.</p>
       </div>
-      <div className="overflow-hidden rounded-xl border border-border bg-surface">
-        {rows.length === 0 ? (
-          <div className="p-5 text-sm text-ink-muted">No staff actions recorded yet.</div>
-        ) : rows.map((row) => {
-          const metadata = row.metadata ?? {};
-          const targetFallback = typeof metadata.display_name === 'string' ? metadata.display_name : typeof metadata.target_id === 'string' ? metadata.target_id : '—';
-          return (
-            <div key={row.id} className="flex flex-col gap-1 border-b border-border px-4 py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm text-ink">
-                <strong>{row.actor_name ?? 'Deleted staff account'}</strong> · {humanAction(row.action)} · <span className="text-ink-muted">{row.target_name ?? targetFallback}</span>
-              </div>
-              <div className="text-xs text-ink-faint">{new Date(row.created_at).toLocaleString()}</div>
-            </div>
-          );
-        })}
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map(([label, value, note]) => (
+          <div key={label} className="rounded-xl border border-border bg-surface p-4">
+            <div className="text-xs font-medium text-ink-faint">{label}</div>
+            <div className="mt-2 text-2xl font-semibold text-ink">{value}</div>
+            <div className="mt-1 text-xs text-ink-muted">{note}</div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-5 rounded-2xl border border-border bg-surface p-5">
+        <div className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Snapshot freshness</div>
+        <div className="mt-2 text-sm font-medium text-ink">Generated {new Date(stats.generated_at).toLocaleString()}</div>
+        <p className="mt-1 text-xs leading-5 text-ink-muted">This section intentionally avoids pretending a service is healthy until Relay has a real check for it.</p>
       </div>
     </section>
   );
+}
+
+function AuditSection({ rows }: { rows: AuditRow[] }) {
+  return (
+    <section className="mt-6">
+      <div className="mb-4">
+        <div className="flex items-center gap-2"><Activity size={17} className="text-ink-faint" /><h2 className="text-lg font-semibold text-ink">Staff activity</h2></div>
+        <p className="mt-1 text-sm text-ink-muted">Recent role changes, report decisions, bans, sign-outs, and removals.</p>
+      </div>
+      <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+        {rows.length === 0 ? <div className="p-5 text-sm text-ink-muted">No staff actions recorded yet.</div> : rows.map((row) => (
+          <div key={row.id} className="flex flex-col gap-1 border-b border-border px-4 py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-ink"><strong>{row.actor_name ?? 'Deleted staff account'}</strong> · {humanAction(row.action)} · <span className="text-ink-muted">{row.target_name ?? auditTarget(row)}</span></div>
+            <div className="text-xs text-ink-faint">{new Date(row.created_at).toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: number }) {
+  return <div className="rounded-xl border border-border bg-surface px-4 py-3"><div className="text-xs text-ink-faint">{label}</div><div className="mt-1 text-2xl font-semibold text-ink">{value.toLocaleString()}</div></div>;
 }
 
 function OwnerButton({ children, disabled, onClick }: { children: React.ReactNode; disabled?: boolean; onClick: () => void }) {
@@ -523,8 +704,24 @@ function StatusBadge({ status }: { status: ReportRow['status'] }) {
   return <span className="rounded-full border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-ink">{status}</span>;
 }
 
-function RoleBadge({ role }: { role: Role }) { return <span className="rounded-full border border-border px-2 py-1 text-xs font-medium text-ink">{capitalize(role)}</span>; }
-function isStaffRole(role: Role) { return role === 'moderator' || role === 'admin' || role === 'owner'; }
+function RoleBadge({ role }: { role: Role }) {
+  const mark = role === 'owner' ? '◆' : role === 'admin' ? '◇' : role === 'moderator' ? '●' : '';
+  return <span className="rounded-full border border-border px-2 py-1 text-xs font-medium text-ink">{mark ? `${mark} ` : ''}{capitalize(role)}</span>;
+}
+
+function allowedSection(role: StaffRole, requested: StaffSection): StaffSection {
+  const allowed = role === 'owner' ? OWNER_SECTIONS : role === 'admin' ? ADMIN_SECTIONS : MODERATOR_SECTIONS;
+  return allowed.includes(requested) ? requested : 'overview';
+}
+
+function auditTarget(row: AuditRow) {
+  const metadata = row.metadata ?? {};
+  if (typeof metadata.display_name === 'string') return metadata.display_name;
+  if (typeof metadata.target_id === 'string') return metadata.target_id;
+  return '—';
+}
+
+function isStaffRole(role: Role): role is StaffRole { return role === 'moderator' || role === 'admin' || role === 'owner'; }
 function capitalize(value: string) { return value.charAt(0).toUpperCase() + value.slice(1); }
 function humanReason(value: string) { return value.split('_').map(capitalize).join(' '); }
 function humanAction(value: string) { return value.split('_').map(capitalize).join(' '); }
