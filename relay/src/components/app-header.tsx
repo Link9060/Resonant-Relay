@@ -5,7 +5,7 @@ import { appPageUrl, IS_BETA, RELEASE_LABEL } from '@/lib/config';
 import type { AppRole } from '@/lib/role-preview';
 import type { Notification, Profile } from '@/lib/types/database';
 import { cn, formatRelayNumber } from '@/lib/utils';
-import { MessageSquarePlus, UserPlus, Users } from 'lucide-react';
+import { Activity, MessageSquarePlus, UserPlus, Users } from 'lucide-react';
 
 export function AppHeader({
   profile,
@@ -64,6 +64,16 @@ export function AppHeader({
         >
           <MessageSquarePlus size={18} />
         </a>
+        {role === 'owner' && (
+          <a
+            href={appPageUrl('/admin/activity')}
+            aria-label="Owner activity"
+            title="Owner Activity"
+            className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink"
+          >
+            <Activity size={18} />
+          </a>
+        )}
         <StaffInboxButton role={role} />
         <NotificationBell currentUserId={currentUserId} initial={notifications} />
         <ThemeToggle />
