@@ -61,7 +61,10 @@ export default function StaffUsersPage() {
   }
 
   useEffect(() => {
-    void load().catch((e: any) => setError(e?.message ?? 'User inspector could not load.'));
+    const timeout = window.setTimeout(() => {
+      void load().catch((e: any) => setError(e?.message ?? 'User inspector could not load.'));
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const filtered = useMemo(() => {
