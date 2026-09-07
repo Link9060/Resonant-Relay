@@ -127,7 +127,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <button type="button" onClick={returnToOwner} className="shrink-0 rounded-md border border-border px-2.5 py-1 font-medium hover:bg-surface-raised">Return to Owner View</button>
           </div>
         )}
-        <AppHeader profile={{ ...state.profile, role: effectiveRole }} currentUserId={state.userId} notifications={state.notifications} />
+        <AppHeader profile={{ ...state.profile, role: effectiveRole }} role={effectiveRole} currentUserId={state.userId} notifications={state.notifications} />
         <main className="min-w-0 flex-1 pb-16 md:pb-0">{children}</main>
       </div>
     </div>
