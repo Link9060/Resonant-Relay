@@ -33,6 +33,14 @@ export default defineConfig([
     },
   },
   {
+    // Owner Activity intentionally calculates a rolling seven-day count from
+    // the current clock. Keep the purity exception scoped to this read-only view.
+    files: ['src/app/(app)/admin/activity/page.tsx'],
+    rules: {
+      'react-hooks/purity': 'off',
+    },
+  },
+  {
     // User-facing form copy contains normal contractions/apostrophes.
     files: ['src/app/(app)/support/page.tsx'],
     rules: {
