@@ -1,12 +1,27 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import { appPageUrl, BASE_PATH, siteUrl, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
+import { appPageUrl, appUrl, BASE_PATH, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
 import { FormEvent, useEffect, useState } from 'react';
 
 const EMAIL_RATE_LIMIT_COOLDOWN_MS = 60 * 60 * 1000;
 const REQUEST_COOLDOWN_MS = 60 * 1000;
-const AUTH_CALLBACK_URL = siteUrl('/auth/callback/');
+
+function currentAuthCallbackUrl() {
+  const origin = window.location.origin.replace(/\/+$/, '');
+
+  // Production must never inherit the GitHub Pages beta base path from a
+  // stale/misconfigured build. This also makes OAuth routing reflect the URL
+  // the user actually opened instead of only the build-time site setting.
+  if (
+    window.location.hostname === 'resonantrelay.org' ||
+    window.location.hostname === 'www.resonantrelay.org'
+  ) {
+    return `${origin}/auth/callback/`;
+  }
+
+  return `${origin}${appUrl('/auth/callback/')}`;
+}
 
 function retryTime(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, {
@@ -56,11 +71,20 @@ export default function LoginPage() {
     setBusy(true);
     setMessage(null);
     const supabase = createClient();
+
+    // A login page is an explicit account-switch boundary. Clear any stale
+    // session on this origin so a previous account can never win over the new
+    // Google authorization result.
+    await supabase.auth.signOut({ scope: 'local' });
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: AUTH_CALLBACK_URL,
+        redirectTo: currentAuthCallbackUrl(),
         scopes: 'openid email profile',
+        queryParams: {
+          prompt: 'select_account',
+        },
       },
     });
     if (error) {
@@ -83,10 +107,12 @@ export default function LoginPage() {
     setMessage(null);
 
     const supabase = createClient();
+    await supabase.auth.signOut({ scope: 'local' });
+
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        emailRedirectTo: AUTH_CALLBACK_URL,
+        emailRedirectTo: currentAuthCallbackUrl(),
       },
     });
 
