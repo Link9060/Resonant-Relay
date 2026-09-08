@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import './brand.css';
+import './mobile.css';
 import { StartupSequence } from '@/components/startup-sequence';
 import { UiSoundEffects } from '@/components/ui-sound-effects';
 import { PwaRegister } from '@/components/pwa-register';
