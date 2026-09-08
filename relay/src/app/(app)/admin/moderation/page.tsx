@@ -4,7 +4,7 @@ import { PageLoading } from '@/components/page-loading';
 import { StaffControlHeader } from '@/components/staff-control-header';
 import { AppRole, getRolePreview } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
-import { Search, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Search, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type ReportStatus = 'submitted' | 'reviewing' | 'resolved' | 'dismissed';
@@ -28,6 +28,7 @@ export default function ModerationWorkspacePage() {
   const [role, setRole] = useState<AppRole | null>(null);
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [status, setStatus] = useState<'open' | 'all' | ReportStatus>('open');
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);
@@ -97,27 +98,27 @@ export default function ModerationWorkspacePage() {
   if (!role || role === 'user') return <div className="mx-auto max-w-4xl px-4 py-8 md:px-6"><div className="rounded-xl border border-border bg-surface p-6 text-sm text-ink-muted">Staff permission is required for Moderation.</div></div>;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-7 md:px-6 md:py-8">
-      <StaffControlHeader role={role} active="moderation" />
-      {error && <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm text-ink">{error}</div>}
+    <div className="mx-auto max-w-7xl px-4 py-5 md:px-6 md:py-8">
+      <div className={mobileDetailOpen ? 'hidden lg:block' : ''}><StaffControlHeader role={role} active="moderation" /></div>
+      {error && <div className="mt-4 rounded-xl border border-border bg-surface p-4 text-sm text-ink">{error}</div>}
 
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      <div className={`mt-5 grid grid-cols-3 gap-2 md:gap-3 ${mobileDetailOpen ? 'hidden lg:grid' : ''}`}>
         <QueueStat label="New" value={counts.submitted} />
         <QueueStat label="Reviewing" value={counts.reviewing} />
         <QueueStat label="Resolved" value={counts.resolved} />
       </div>
 
       <div className="mt-4 grid min-h-[560px] gap-4 lg:grid-cols-[minmax(320px,.8fr)_minmax(0,1.2fr)]">
-        <section className="overflow-hidden rounded-2xl border border-border bg-surface">
-          <div className="border-b border-border p-4">
-            <div className="flex flex-wrap gap-2">
-              {(['open', 'submitted', 'reviewing', 'resolved', 'dismissed', 'all'] as const).map((option) => <button key={option} type="button" onClick={() => setStatus(option)} className={`rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide ${status === option ? 'border-ink bg-ink text-canvas' : 'border-border text-ink-muted hover:bg-surface-raised'}`}>{option}</button>)}
+        <section className={`overflow-hidden rounded-2xl border border-border bg-surface ${mobileDetailOpen ? 'hidden lg:block' : ''}`}>
+          <div className="border-b border-border p-3 md:p-4">
+            <div className="relay-mobile-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              {(['open', 'submitted', 'reviewing', 'resolved', 'dismissed', 'all'] as const).map((option) => <button key={option} type="button" onClick={() => setStatus(option)} className={`min-h-9 shrink-0 rounded-full border px-3 text-[10px] font-medium uppercase tracking-wide ${status === option ? 'border-ink bg-ink text-canvas' : 'border-border text-ink-muted hover:bg-surface-raised'}`}>{option}</button>)}
             </div>
-            <label className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-canvas px-3 py-2"><Search size={14} className="text-ink-faint" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search reports…" className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint" /></label>
+            <label className="mt-3 flex min-h-11 items-center gap-2 rounded-xl border border-border bg-canvas px-3"><Search size={14} className="text-ink-faint" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search reports…" className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-faint sm:text-sm" /></label>
           </div>
-          <div className="max-h-[620px] overflow-y-auto p-2">
+          <div className="max-h-[58dvh] overflow-y-auto p-2 lg:max-h-[620px]">
             {visible.map((report) => (
-              <button key={report.report_id} type="button" onClick={() => setSelectedId(report.report_id)} className={`block w-full rounded-xl px-3 py-3 text-left transition-colors ${selectedId === report.report_id ? 'bg-surface-raised' : 'hover:bg-canvas'}`}>
+              <button key={report.report_id} type="button" onClick={() => { setSelectedId(report.report_id); setMobileDetailOpen(true); }} className={`block min-h-16 w-full rounded-xl px-3 py-3 text-left transition-colors ${selectedId === report.report_id ? 'bg-surface-raised' : 'hover:bg-canvas'}`}>
                 <div className="flex items-center justify-between gap-3"><span className="truncate text-sm font-medium text-ink">{humanReason(report.reason)}</span><StatusBadge status={report.status} /></div>
                 <div className="mt-1 truncate text-xs text-ink-muted">{report.reported_name ?? 'Removed account'} · {timeAgo(report.created_at)}</div>
               </button>
@@ -126,7 +127,8 @@ export default function ModerationWorkspacePage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
+        <section className={`rounded-2xl border border-border bg-surface p-4 sm:p-6 ${!mobileDetailOpen ? 'hidden lg:block' : ''}`}>
+          <button type="button" onClick={() => setMobileDetailOpen(false)} className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-ink lg:hidden"><ArrowLeft size={16} />Reports</button>
           {!selected ? <div className="flex min-h-80 items-center justify-center text-sm text-ink-muted">Select a report to review.</div> : (
             <>
               <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
@@ -145,7 +147,7 @@ export default function ModerationWorkspacePage() {
               {selected.message_body && <div className="mt-4 rounded-xl border border-border bg-canvas p-4"><div className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">Reported message</div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink-muted">“{truncate(selected.message_body, 500)}”</p></div>}
               {selected.moderation_note && <div className="mt-4 rounded-xl border border-border bg-surface-raised p-4 text-sm text-ink-muted"><span className="font-medium text-ink">Staff note:</span> {selected.moderation_note}</div>}
 
-              <div className="mt-6 flex flex-wrap gap-2 border-t border-border pt-5">
+              <div className="mt-6 grid gap-2 border-t border-border pt-5 sm:flex sm:flex-wrap">
                 {selected.status === 'resolved' || selected.status === 'dismissed' ? <ActionButton disabled={busy} onClick={() => void updateStatus('submitted')}>Reopen</ActionButton> : <><ActionButton disabled={busy || selected.status === 'reviewing'} onClick={() => void updateStatus('reviewing')}>Start review</ActionButton><ActionButton disabled={busy} onClick={() => void updateStatus('resolved')}>Resolve</ActionButton><ActionButton disabled={busy} onClick={() => void updateStatus('dismissed')}>Dismiss</ActionButton></>}
               </div>
             </>
@@ -156,10 +158,10 @@ export default function ModerationWorkspacePage() {
   );
 }
 
-function QueueStat({ label, value }: { label: string; value: number }) { return <div className="rounded-xl border border-border bg-surface p-4"><div className="text-2xl font-semibold text-ink">{value.toLocaleString()}</div><div className="mt-1 text-xs text-ink-muted">{label}</div></div>; }
+function QueueStat({ label, value }: { label: string; value: number }) { return <div className="rounded-xl border border-border bg-surface p-3 md:p-4"><div className="text-xl font-semibold text-ink md:text-2xl">{value.toLocaleString()}</div><div className="mt-1 text-[11px] text-ink-muted md:text-xs">{label}</div></div>; }
 function StatusBadge({ status }: { status: ReportStatus }) { return <span className="shrink-0 rounded-full border border-border px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-ink-muted">{status}</span>; }
 function Info({ label, value }: { label: string; value: string }) { return <div><div className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">{label}</div><div className="mt-1 text-sm text-ink">{value}</div></div>; }
-function ActionButton({ children, disabled, onClick }: { children: React.ReactNode; disabled: boolean; onClick: () => void }) { return <button type="button" disabled={disabled} onClick={onClick} className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-ink transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-40">{children}</button>; }
+function ActionButton({ children, disabled, onClick }: { children: React.ReactNode; disabled: boolean; onClick: () => void }) { return <button type="button" disabled={disabled} onClick={onClick} className="min-h-11 rounded-xl border border-border px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-40 sm:text-xs">{children}</button>; }
 function capitalize(value: string) { return value.charAt(0).toUpperCase() + value.slice(1); }
 function humanReason(value: string) { return value.split('_').map(capitalize).join(' '); }
 function formatRelay(value: string) { return value?.length === 7 ? `${value.slice(0, 3)}-${value.slice(3)}` : value; }
