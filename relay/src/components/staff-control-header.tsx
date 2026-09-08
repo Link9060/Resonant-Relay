@@ -39,7 +39,7 @@ const ITEMS: NavItem[] = [
   { id: 'moderation', label: 'Moderation', description: 'Work through the moderation queue', icon: ShieldCheck, href: '/admin/moderation', roles: ['moderator', 'admin', 'owner'] },
   { id: 'analytics', label: 'Analytics', description: 'Inspect detailed Relay usage metrics', icon: BarChart3, href: '/admin/analytics', roles: ['owner'] },
   { id: 'system', label: 'System', description: 'View verified operational data', icon: Settings2, href: '/admin/system', roles: ['owner'] },
-  { id: 'activity', label: 'Activity', description: 'Open the staff audit trail', icon: Activity, href: '/admin?section=activity', roles: ['owner'] },
+  { id: 'activity', label: 'Activity', description: 'Open the staff activity workspace', icon: Activity, href: '/admin/activity', roles: ['owner'] },
 ];
 
 export function StaffControlHeader({ role, active }: { role: StaffRole; active: StaffSection }) {
@@ -135,12 +135,12 @@ export function StaffControlHeader({ role, active }: { role: StaffRole; active: 
         </div>
       </nav>
 
-      <StaffCommandPalette role={role} open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      {paletteOpen && <StaffCommandPalette role={role} onClose={() => setPaletteOpen(false)} />}
     </>
   );
 }
 
-function StaffCommandPalette({ role, open, onClose }: { role: StaffRole; open: boolean; onClose: () => void }) {
+function StaffCommandPalette({ role, onClose }: { role: StaffRole; onClose: () => void }) {
   const [query, setQuery] = useState('');
   const commands = useMemo(() => {
     const available = ITEMS.filter((item) => item.roles.includes(role));
@@ -148,12 +148,6 @@ function StaffCommandPalette({ role, open, onClose }: { role: StaffRole; open: b
     if (!normalized) return available;
     return available.filter((item) => `${item.label} ${item.description}`.toLowerCase().includes(normalized));
   }, [query, role]);
-
-  useEffect(() => {
-    if (!open) setQuery('');
-  }, [open]);
-
-  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-canvas/70 px-4 pt-[12vh] backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Control Center commands" onMouseDown={onClose}>

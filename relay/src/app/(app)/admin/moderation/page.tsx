@@ -34,7 +34,6 @@ export default function ModerationWorkspacePage() {
   const [error, setError] = useState<string | null>(null);
 
   async function load(preferredId?: string | null) {
-    setError(null);
     const supabase = createClient() as any;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -56,7 +55,10 @@ export default function ModerationWorkspacePage() {
   }
 
   useEffect(() => {
-    void load().catch((e: any) => setError(e?.message ?? 'Moderation workspace could not load.'));
+    const timeout = window.setTimeout(() => {
+      void load().catch((e: any) => setError(e?.message ?? 'Moderation workspace could not load.'));
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const visible = useMemo(() => {
@@ -84,6 +86,7 @@ export default function ModerationWorkspacePage() {
       if (response === null) return;
       note = response;
     }
+    setError(null);
     setBusy(true);
     const { error: actionError } = await (createClient() as any).rpc('staff_update_report_status', { p_report_id: selected.report_id, p_status: next, p_note: note });
     if (actionError) setError(actionError.message); else await load(selected.report_id);
