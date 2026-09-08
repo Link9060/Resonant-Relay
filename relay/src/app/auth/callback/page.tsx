@@ -40,16 +40,12 @@ function Callback() {
     void (async () => {
       const supabase = createClient();
       const callbackError = params.get('error_description');
-
-      // A previously completed link can still leave a valid browser session.
-      // Do not show a failure in that case; finish routing the account instead.
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData.session) {
-        await goAfterSignIn();
-        return;
-      }
-
       const code = params.get('code');
+
+      // A fresh OAuth/magic-link code always wins over any session already in
+      // this browser. Checking the old session first could silently sign the
+      // user back into a previous account and ignore the account they just
+      // chose at the identity provider.
       if (code) {
         const { data, error: exchangeError } =
           await supabase.auth.exchangeCodeForSession(code);
@@ -60,6 +56,20 @@ function Callback() {
         }
 
         console.error('Relay sign-in code exchange failed', exchangeError);
+        setError(
+          callbackError
+            ? decodeURIComponent(callbackError.replaceAll('+', ' '))
+            : 'Relay could not finish this sign-in. Request a fresh sign-in and try again from the same Relay site.',
+        );
+        return;
+      }
+
+      // Only reuse an existing session when this callback does not contain a
+      // new code. This still supports revisiting a completed callback URL.
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session) {
+        await goAfterSignIn();
+        return;
       }
 
       setError(
