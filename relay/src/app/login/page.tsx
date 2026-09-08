@@ -1,12 +1,24 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import { appPageUrl, BASE_PATH, siteUrl, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
+import { appPageUrl, appUrl, BASE_PATH, BETA_SITE_URL, IS_BETA, PUBLIC_SITE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
 import { FormEvent, useEffect, useState } from 'react';
 
 const EMAIL_RATE_LIMIT_COOLDOWN_MS = 60 * 60 * 1000;
 const REQUEST_COOLDOWN_MS = 60 * 1000;
-const AUTH_CALLBACK_URL = siteUrl('/auth/callback/');
+
+function currentAuthCallbackUrl() {
+  const origin = window.location.origin.replace(/\/+$/, '');
+
+  if (
+    window.location.hostname === 'resonantrelay.org' ||
+    window.location.hostname === 'www.resonantrelay.org'
+  ) {
+    return `${origin}/auth/callback/`;
+  }
+
+  return `${origin}${appUrl('/auth/callback/')}`;
+}
 
 function retryTime(timestamp: number) {
   return new Intl.DateTimeFormat(undefined, {
@@ -56,11 +68,16 @@ export default function LoginPage() {
     setBusy(true);
     setMessage(null);
     const supabase = createClient();
+    await supabase.auth.signOut({ scope: 'local' });
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: AUTH_CALLBACK_URL,
+        redirectTo: currentAuthCallbackUrl(),
         scopes: 'openid email profile',
+        queryParams: {
+          prompt: 'select_account',
+        },
       },
     });
     if (error) {
@@ -73,9 +90,7 @@ export default function LoginPage() {
     event.preventDefault();
 
     if (retryAfter) {
-      setMessage(
-        `Relay has temporarily reached its sign-in email limit. Try again after ${retryTime(retryAfter)}.`,
-      );
+      setMessage(`Relay has temporarily reached its sign-in email limit. Try again after ${retryTime(retryAfter)}.`);
       return;
     }
 
@@ -83,113 +98,87 @@ export default function LoginPage() {
     setMessage(null);
 
     const supabase = createClient();
+    await supabase.auth.signOut({ scope: 'local' });
+
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        emailRedirectTo: AUTH_CALLBACK_URL,
+        emailRedirectTo: currentAuthCallbackUrl(),
       },
     });
 
     if (error) {
-      const isEmailLimit =
-        error.code === 'over_email_send_rate_limit' ||
-        error.message.toLowerCase().includes('email rate limit');
+      const isEmailLimit = error.code === 'over_email_send_rate_limit' || error.message.toLowerCase().includes('email rate limit');
       const isRateLimit = error.status === 429 || isEmailLimit;
 
       if (isRateLimit) {
-        const cooldown = isEmailLimit
-          ? EMAIL_RATE_LIMIT_COOLDOWN_MS
-          : REQUEST_COOLDOWN_MS;
+        const cooldown = isEmailLimit ? EMAIL_RATE_LIMIT_COOLDOWN_MS : REQUEST_COOLDOWN_MS;
         const nextAttempt = Date.now() + cooldown;
-
         setRetryAfter(nextAttempt);
-        setMessage(
-          isEmailLimit
-            ? `Relay has temporarily reached its sign-in email limit. Try again after ${retryTime(nextAttempt)}.`
-            : `That email was requested too recently. Try again after ${retryTime(nextAttempt)}.`,
-        );
+        setMessage(isEmailLimit
+          ? `Relay has temporarily reached its sign-in email limit. Try again after ${retryTime(nextAttempt)}.`
+          : `That email was requested too recently. Try again after ${retryTime(nextAttempt)}.`);
       } else {
         setMessage(`Relay couldn't send the sign-in email: ${error.message}`);
       }
     } else {
       setRetryAfter(null);
-      setMessage(
-        'Sign-in link sent. Check your inbox and spam folder, then open the newest Relay email in this browser.',
-      );
+      setMessage('Sign-in link sent. Check your inbox and spam folder, then open the newest Relay email in this browser.');
     }
 
     setBusy(false);
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-canvas px-6">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-canvas px-6 py-10">
       <div className="w-full max-w-sm text-center">
         <div className="relay-brand-lockup justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-12 w-12 dark:invert" />
-          <h1 className="font-display text-4xl font-medium tracking-tight text-ink">Relay</h1>
+          <h1 className="font-display text-4xl font-medium tracking-tight text-ink">Relay{IS_BETA ? ' Beta' : ''}</h1>
         </div>
+        {IS_BETA && <div className="mt-3 inline-flex rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Private Beta</div>}
         <p className="mt-3 text-sm text-ink-muted">
-          The place you open to figure out your day.
+          {IS_BETA ? 'Early Relay builds for approved testers.' : 'The place you open to figure out your day.'}
         </p>
 
         {googleEnabled && (
           <>
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={busy}
-              className="mt-10 flex w-full items-center justify-center gap-3 rounded-md border border-border bg-surface-raised px-4 py-3 text-sm font-medium text-ink transition-colors hover:bg-surface"
-            >
+            <button onClick={handleGoogleSignIn} disabled={busy} className="mt-10 flex w-full items-center justify-center gap-3 rounded-md border border-border bg-surface-raised px-4 py-3 text-sm font-medium text-ink transition-colors hover:bg-surface">
               <GoogleIcon />
               Continue with Google
             </button>
-
-            <div className="my-5 flex items-center gap-3 text-xs text-ink-faint" aria-hidden="true">
-              <span className="h-px flex-1 bg-border" />
-              or
-              <span className="h-px flex-1 bg-border" />
-            </div>
+            <div className="my-5 flex items-center gap-3 text-xs text-ink-faint" aria-hidden="true"><span className="h-px flex-1 bg-border" />or<span className="h-px flex-1 bg-border" /></div>
           </>
         )}
 
-        <form
-          onSubmit={handleEmailSignIn}
-          className={`${googleEnabled ? '' : 'mt-10 '}space-y-3 text-left`}
-        >
-          <label htmlFor="email" className="block text-xs font-medium text-ink-muted">
-            Email address
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@example.com"
-            className="w-full rounded-md border border-border bg-surface-raised px-3 py-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-ink-muted"
-          />
-          <button
-            type="submit"
-            disabled={busy || Boolean(retryAfter)}
-            className="w-full rounded-md bg-ink px-4 py-3 text-sm font-medium text-canvas transition-opacity disabled:opacity-50"
-          >
-            {retryAfter
-              ? `Try again after ${retryTime(retryAfter)}`
-              : 'Email me a sign-in link'}
+        <form onSubmit={handleEmailSignIn} className={`${googleEnabled ? '' : 'mt-10 '}space-y-3 text-left`}>
+          <label htmlFor="email" className="block text-xs font-medium text-ink-muted">Email address</label>
+          <input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="w-full rounded-md border border-border bg-surface-raised px-3 py-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-ink-muted" />
+          <button type="submit" disabled={busy || Boolean(retryAfter)} className="w-full rounded-md bg-ink px-4 py-3 text-sm font-medium text-canvas transition-opacity disabled:opacity-50">
+            {retryAfter ? `Try again after ${retryTime(retryAfter)}` : 'Email me a sign-in link'}
           </button>
         </form>
 
-        {message && (
-          <p role="status" className="mt-4 text-sm text-ink-muted">
-            {message}
-          </p>
+        {message && <p role="status" className="mt-4 text-sm text-ink-muted">{message}</p>}
+
+        {IS_BETA ? (
+          <div className="mt-7 rounded-xl border border-border bg-surface p-4 text-left">
+            <div className="text-sm font-semibold text-ink">Not a Beta tester yet?</div>
+            <p className="mt-1 text-xs leading-5 text-ink-muted">Sign in with your normal Relay account, then request a Beta spot. Only approved accounts can enter the Beta build.</p>
+            <a href={appPageUrl('/beta-access')} className="mt-3 inline-block text-sm font-medium text-ink underline underline-offset-4">Request Beta access</a>
+          </div>
+        ) : (
+          <div className="mt-7 rounded-xl border border-border bg-surface p-4 text-left">
+            <div className="text-sm font-semibold text-ink">Looking for Relay Beta?</div>
+            <p className="mt-1 text-xs leading-5 text-ink-muted">Approved testers can sign in to early builds before they reach the public release.</p>
+            <a href={`${BETA_SITE_URL}/login/`} className="mt-3 inline-block text-sm font-medium text-ink underline underline-offset-4">Open Beta login</a>
+          </div>
         )}
 
-        <p className="mt-6 text-xs text-ink-faint">
-          After sign-in, you&apos;ll choose a username and get a Relay Number for direct adds.
-        </p>
-        <p className="mt-4 text-[11px] text-ink-faint">By continuing, you agree to Relay&apos;s <a href={appPageUrl('/terms')} className="underline underline-offset-2">Terms</a> and acknowledge the <a href={appPageUrl('/privacy')} className="underline underline-offset-2">Privacy Policy</a>.</p>
+        <p className="mt-6 text-xs text-ink-faint">After sign-in, you&apos;ll choose a username and get a Relay Number for direct adds.</p>
+        <p className="mt-4 text-[11px] text-ink-faint">By continuing, you agree to Relay&apos;s <a href={IS_BETA ? `${PUBLIC_SITE_URL}/terms/` : appPageUrl('/terms')} className="underline underline-offset-2">Terms</a> and acknowledge the <a href={IS_BETA ? `${PUBLIC_SITE_URL}/privacy/` : appPageUrl('/privacy')} className="underline underline-offset-2">Privacy Policy</a>.</p>
+        {IS_BETA && <p className="mt-4 text-xs"><a href={`${PUBLIC_SITE_URL}/login/`} className="text-ink-muted underline underline-offset-4">Back to public Relay</a></p>}
       </div>
     </main>
   );
