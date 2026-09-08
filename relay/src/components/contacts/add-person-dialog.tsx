@@ -1,7 +1,7 @@
 'use client';
 
 import { appPageUrl } from '@/lib/config';
-import { UserPlus } from 'lucide-react';
+import { Hash } from 'lucide-react';
 
 // A full page is intentionally used instead of a portal/dialog. Static GitHub
 // Pages navigation is more reliable across iPhone Safari, installed web apps,
@@ -12,8 +12,8 @@ export function AddPersonDialog() {
       href={appPageUrl('/contacts/add')}
       className="flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-sm font-medium text-canvas transition-all hover:opacity-90 active:scale-[0.97]"
     >
-      <UserPlus size={16} />
-      Add person
+      <Hash size={16} />
+      Add by number
     </a>
   );
 }
