@@ -55,7 +55,10 @@ export default function ModerationWorkspacePage() {
   }
 
   useEffect(() => {
-    void load().catch((e: any) => setError(e?.message ?? 'Moderation workspace could not load.'));
+    const timeout = window.setTimeout(() => {
+      void load().catch((e: any) => setError(e?.message ?? 'Moderation workspace could not load.'));
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   const visible = useMemo(() => {
