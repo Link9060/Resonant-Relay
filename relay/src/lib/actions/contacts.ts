@@ -4,6 +4,21 @@ import { normalizeRelayNumber } from '@/lib/utils';
 
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
+export type DiscoveryPerson = {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
+  school: string | null;
+  mutual_count: number;
+  shared_group_count: number;
+  request_state: 'none' | 'incoming' | 'outgoing';
+};
+
+export type DiscoveryPrivacy = {
+  discoverable_in_contacts: boolean;
+  show_school_in_discovery: boolean;
+};
+
 export async function lookupRelayNumber(rawInput: string): Promise<ActionResult<{ id: string; display_name: string; avatar_url: string | null; school: string | null }>> {
   const relayNumber = normalizeRelayNumber(rawInput);
   if (relayNumber.length !== 7) return { ok: false, error: 'Relay Numbers are 7 digits — check for a typo.' };
@@ -11,6 +26,61 @@ export async function lookupRelayNumber(rawInput: string): Promise<ActionResult<
   if (error) return { ok: false, error: error.message.includes('too many') ? error.message : "Couldn't look that up right now." };
   if (!data?.length) return { ok: false, error: 'No one has that Relay Number.' };
   return { ok: true, data: data[0]! };
+}
+
+export async function searchContactDiscovery(query: string): Promise<ActionResult<DiscoveryPerson[]>> {
+  const cleanQuery = query.trim();
+  if (cleanQuery.length < 2) return { ok: false, error: 'Type at least 2 characters to search.' };
+
+  const { data, error } = await (createClient() as any).rpc('search_contact_discovery', {
+    p_query: cleanQuery,
+    p_limit: 12,
+  });
+
+  if (error) {
+    const message = String(error.message ?? '').toLowerCase();
+    if (message.includes('too many searches')) return { ok: false, error: 'You have searched a lot recently. Try again in a few minutes.' };
+    return { ok: false, error: 'People search is unavailable right now.' };
+  }
+
+  return { ok: true, data: (data ?? []) as DiscoveryPerson[] };
+}
+
+export async function getContactDiscoverySuggestions(): Promise<ActionResult<DiscoveryPerson[]>> {
+  const { data, error } = await (createClient() as any).rpc('contact_discovery_suggestions', { p_limit: 12 });
+  if (error) return { ok: false, error: 'Suggestions are unavailable right now.' };
+  return { ok: true, data: (data ?? []) as DiscoveryPerson[] };
+}
+
+export async function getContactDiscoveryPrivacy(): Promise<ActionResult<DiscoveryPrivacy>> {
+  const supabase = createClient() as any;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'Not signed in.' };
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('discoverable_in_contacts,show_school_in_discovery')
+    .eq('id', user.id)
+    .single();
+  if (error || !data) return { ok: false, error: 'Discovery privacy settings are unavailable right now.' };
+  return { ok: true, data: data as DiscoveryPrivacy };
+}
+
+export async function updateContactDiscoveryPrivacy(settings: DiscoveryPrivacy): Promise<ActionResult<DiscoveryPrivacy>> {
+  const supabase = createClient() as any;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'Not signed in.' };
+  const changes: DiscoveryPrivacy = {
+    discoverable_in_contacts: Boolean(settings.discoverable_in_contacts),
+    show_school_in_discovery: Boolean(settings.show_school_in_discovery),
+  };
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(changes)
+    .eq('id', user.id)
+    .select('discoverable_in_contacts,show_school_in_discovery')
+    .single();
+  if (error || !data) return { ok: false, error: 'Discovery privacy settings could not be saved.' };
+  return { ok: true, data: data as DiscoveryPrivacy };
 }
 
 export async function sendConnectionRequest(recipientId: string): Promise<ActionResult> {
