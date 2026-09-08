@@ -4,7 +4,7 @@ import { PageLoading } from '@/components/page-loading';
 import { appPageUrl, BETA_SITE_URL, IS_BETA, PUBLIC_SITE_URL } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { ArrowRight, CheckCircle2, Clock3, FlaskConical, Loader2, LogOut, XCircle } from 'lucide-react';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 
 type BetaStatus = {
   approved: boolean;
@@ -26,7 +26,7 @@ export default function BetaAccessPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadStatus() {
+  const loadStatus = useCallback(async () => {
     const supabase = createClient() as any;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -46,11 +46,14 @@ export default function BetaAccessPage() {
     if (accessError) setError(accessError.message);
     else setStatus((access ?? null) as BetaStatus | null);
     setReady(true);
-  }
+  }, []);
 
   useEffect(() => {
-    void loadStatus();
-  }, []);
+    const timeout = window.setTimeout(() => {
+      void loadStatus();
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [loadStatus]);
 
   async function submitRequest(event: FormEvent) {
     event.preventDefault();
