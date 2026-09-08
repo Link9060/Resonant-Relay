@@ -19,17 +19,56 @@ body {
 @media (max-width: 767px) {
   .relay-app-shell {
     min-height: 100dvh;
+    max-width: 100vw;
+    overflow-x: clip;
     padding-left: var(--relay-safe-left);
     padding-right: var(--relay-safe-right);
   }
 
   .relay-app-header {
-    padding-top: max(0.625rem, var(--relay-safe-top));
+    position: relative;
+    z-index: 20;
+    background-color: rgb(var(--canvas));
+    padding-top: calc(var(--relay-safe-top) + 0.75rem);
+    padding-bottom: 0.75rem;
   }
 
   .relay-mobile-main {
+    min-width: 0;
     min-height: 0;
+    overflow-x: clip;
     padding-bottom: calc(var(--relay-mobile-nav-height) + var(--relay-safe-bottom) + 0.5rem);
+  }
+
+  /* Keep the four Dashboard panels locked to the phone viewport. Long event,
+     email, chat, or task content should truncate inside a card instead of
+     widening the grid and making the cards look incorrectly scaled. */
+  .relay-route-enter [aria-label='Daily overview'] + div {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.875rem;
+  }
+
+  .relay-route-enter [aria-label='Daily overview'] + div > section {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0.875rem;
+  }
+
+  .relay-route-enter [aria-label='Daily overview'] + div > section > header,
+  .relay-route-enter [aria-label='Daily overview'] + div > section :where(ul, li, a, div, form) {
+    min-width: 0;
+  }
+
+  .relay-route-enter [aria-label='Daily overview'] + div > section > header {
+    gap: 0.625rem;
+  }
+
+  .relay-route-enter [aria-label='Daily overview'] + div > section > header > a {
+    flex-shrink: 0;
   }
 
   .relay-mobile-nav {
