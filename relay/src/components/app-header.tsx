@@ -56,7 +56,7 @@ export function AppHeader({
           </a>
         )}
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         {staffIdentity && (
           <a
             href={appPageUrl('/admin/moderation')}
@@ -77,7 +77,7 @@ export function AppHeader({
         </a>
         <StaffInboxButton role={role} />
         <NotificationBell currentUserId={currentUserId} initial={notifications} />
-        <div className="hidden md:block"><ThemeToggle /></div>
+        <ThemeToggle />
         <a
           href={appPageUrl('/profile')}
           aria-label="Settings and profile"
