@@ -44,6 +44,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Release safety checks
+        run: npm run release-check
+
       - name: Build static beta site
         run: npm run build
 
