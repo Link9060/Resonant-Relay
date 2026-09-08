@@ -5,7 +5,7 @@ import { appPageUrl, IS_BETA, RELEASE_LABEL } from '@/lib/config';
 import type { AppRole } from '@/lib/role-preview';
 import type { Notification, Profile } from '@/lib/types/database';
 import { cn, formatRelayNumber } from '@/lib/utils';
-import { Activity, MessageSquarePlus, UserPlus, Users } from 'lucide-react';
+import { MessageSquarePlus, ShieldCheck, UserPlus, Users } from 'lucide-react';
 
 export function AppHeader({
   profile,
@@ -18,6 +18,14 @@ export function AppHeader({
   currentUserId: string;
   notifications: Notification[];
 }) {
+  const staffIdentity = role === 'owner'
+    ? { mark: '◆', label: 'Owner' }
+    : role === 'admin'
+      ? { mark: '◇', label: 'Admin' }
+      : role === 'moderator'
+        ? { mark: '●', label: 'Moderator' }
+        : null;
+
   return (
     <header className="flex items-center justify-between border-b border-border px-4 py-3 md:px-6">
       <div className="flex min-w-0 items-center gap-2">
@@ -36,6 +44,17 @@ export function AppHeader({
         >
           {RELEASE_LABEL}
         </span>
+        {staffIdentity && (
+          <a
+            href={appPageUrl('/admin')}
+            className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink transition-colors hover:bg-surface-raised sm:inline-flex"
+            aria-label={`Open ${staffIdentity.label} Control Center`}
+            title={`${staffIdentity.label} Control Center`}
+          >
+            <span aria-hidden="true">{staffIdentity.mark}</span>
+            {staffIdentity.label}
+          </a>
+        )}
       </div>
       <div className="flex items-center gap-1">
         {/* Contacts is a full rail item on desktop. On mobile, keep Contacts and
@@ -56,6 +75,16 @@ export function AppHeader({
         >
           <UserPlus size={18} />
         </a>
+        {staffIdentity && (
+          <a
+            href={appPageUrl('/admin')}
+            aria-label={`Open ${staffIdentity.label} Control Center`}
+            title={`${staffIdentity.label} Control Center`}
+            className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink sm:hidden"
+          >
+            <ShieldCheck size={18} />
+          </a>
+        )}
         <a
           href={appPageUrl('/support')}
           aria-label="Support and feedback"
@@ -64,16 +93,6 @@ export function AppHeader({
         >
           <MessageSquarePlus size={18} />
         </a>
-        {role === 'owner' && (
-          <a
-            href={appPageUrl('/admin/activity')}
-            aria-label="Owner activity"
-            title="Owner Activity"
-            className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink"
-          >
-            <Activity size={18} />
-          </a>
-        )}
         <StaffInboxButton role={role} />
         <NotificationBell currentUserId={currentUserId} initial={notifications} />
         <ThemeToggle />
