@@ -1,15 +1,22 @@
 'use client';
 
 import {
+  getContactDiscoveryPrivacy,
   getContactDiscoverySuggestions,
   searchContactDiscovery,
   sendConnectionRequest,
+  updateContactDiscoveryPrivacy,
   type DiscoveryPerson,
+  type DiscoveryPrivacy,
 } from '@/lib/actions/contacts';
-import { appPageUrl } from '@/lib/config';
-import { Check, Clock3, Loader2, Search, UserPlus, UsersRound } from 'lucide-react';
+import { Check, Clock3, Loader2, Search, ShieldCheck, UserPlus, UsersRound } from 'lucide-react';
 import Image from 'next/image';
 import { FormEvent, useEffect, useState } from 'react';
+
+const DEFAULT_PRIVACY: DiscoveryPrivacy = {
+  discoverable_in_contacts: true,
+  show_school_in_discovery: false,
+};
 
 export function DiscoverPeople({ onOpenRequests }: { onOpenRequests: () => void }) {
   const [query, setQuery] = useState('');
@@ -18,13 +25,20 @@ export function DiscoverPeople({ onOpenRequests }: { onOpenRequests: () => void 
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [searching, setSearching] = useState(false);
   const [sendingIds, setSendingIds] = useState<Set<string>>(new Set());
+  const [privacy, setPrivacy] = useState<DiscoveryPrivacy>(DEFAULT_PRIVACY);
+  const [privacyLoaded, setPrivacyLoaded] = useState(false);
+  const [privacySaving, setPrivacySaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      void getContactDiscoverySuggestions().then((result) => {
+      void Promise.all([getContactDiscoverySuggestions(), getContactDiscoveryPrivacy()]).then(([suggestionResult, privacyResult]) => {
         setLoadingSuggestions(false);
-        if (result.ok) setSuggestions(result.data);
+        if (suggestionResult.ok) setSuggestions(suggestionResult.data);
+        if (privacyResult.ok) {
+          setPrivacy(privacyResult.data);
+          setPrivacyLoaded(true);
+        }
       });
     }, 0);
     return () => window.clearTimeout(timer);
@@ -75,6 +89,23 @@ export function DiscoverPeople({ onOpenRequests }: { onOpenRequests: () => void 
     setResults((current) => current ? markRequested(current) : current);
   }
 
+  async function savePrivacy(next: DiscoveryPrivacy) {
+    if (privacySaving) return;
+    const previous = privacy;
+    setPrivacy(next);
+    setPrivacySaving(true);
+    setError(null);
+    const result = await updateContactDiscoveryPrivacy(next);
+    setPrivacySaving(false);
+    if (!result.ok) {
+      setPrivacy(previous);
+      setError(result.error);
+      return;
+    }
+    setPrivacy(result.data);
+    setPrivacyLoaded(true);
+  }
+
   const people = results ?? suggestions;
   const heading = results ? 'Search results' : 'People you may know';
   const emptyText = results
@@ -106,10 +137,32 @@ export function DiscoverPeople({ onOpenRequests }: { onOpenRequests: () => void 
         </button>
       </form>
 
-      <div className="mt-3 flex items-center justify-between gap-3 text-xs text-ink-faint">
-        <span>Search uses names only. Relay Numbers still use the private direct-add flow.</span>
-        <a href={appPageUrl('/profile')} className="shrink-0 underline underline-offset-4 hover:text-ink">Discovery privacy</a>
-      </div>
+      <p className="mt-2 text-xs text-ink-faint">Search uses names only. Relay Numbers still use the private direct-add flow.</p>
+
+      <details className="mt-4 rounded-md border border-border bg-surface">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm text-ink">
+          <span className="inline-flex items-center gap-2"><ShieldCheck size={15} className="text-ink-faint" />Discovery privacy</span>
+          <span className="text-xs text-ink-faint">{privacyLoaded ? (privacy.discoverable_in_contacts ? 'Visible' : 'Hidden') : 'Loading'}</span>
+        </summary>
+        <div className="border-t border-border px-3 py-3">
+          <PrivacyToggle
+            checked={privacy.discoverable_in_contacts}
+            disabled={privacySaving || !privacyLoaded}
+            title="Appear in Discover"
+            text="People can find your Relay display name and see mutual-contact or shared-group counts."
+            onChange={(checked) => void savePrivacy({ ...privacy, discoverable_in_contacts: checked })}
+          />
+          <div className="mt-3 border-t border-border pt-3">
+            <PrivacyToggle
+              checked={privacy.show_school_in_discovery}
+              disabled={privacySaving || !privacyLoaded || !privacy.discoverable_in_contacts}
+              title="Show my school"
+              text="Off by default. When enabled, your school may appear beneath your name in Discover."
+              onChange={(checked) => void savePrivacy({ ...privacy, show_school_in_discovery: checked })}
+            />
+          </div>
+        </div>
+      </details>
 
       {error && <div className="mt-4 rounded-md border border-border bg-surface px-3 py-2.5 text-sm text-ink">{error}</div>}
 
@@ -143,6 +196,41 @@ export function DiscoverPeople({ onOpenRequests }: { onOpenRequests: () => void 
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function PrivacyToggle({
+  checked,
+  disabled,
+  title,
+  text,
+  onChange,
+}: {
+  checked: boolean;
+  disabled: boolean;
+  title: string;
+  text: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className={`flex items-start justify-between gap-4 ${disabled ? 'opacity-55' : ''}`}>
+      <div>
+        <div className="text-sm font-medium text-ink">{title}</div>
+        <div className="mt-0.5 text-xs leading-5 text-ink-faint">{text}</div>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        className={`relative mt-0.5 h-6 w-10 shrink-0 rounded-full border transition-colors ${checked ? 'border-ink bg-ink' : 'border-border bg-canvas'}`}
+      >
+        <span className={`absolute top-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full transition-all ${checked ? 'left-[18px] bg-canvas' : 'left-0.5 bg-ink-muted'}`}>
+          {checked && <Check size={10} className="text-ink" />}
+        </span>
+      </button>
     </div>
   );
 }
