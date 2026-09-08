@@ -73,6 +73,7 @@ export default function ProfilePage() {
   async function save(event: FormEvent) {
     event.preventDefault();
     if (!profile) return;
+
     const currentProfile = profile;
     const firstName = currentProfile.first_name?.trim() ?? '';
     const lastName = currentProfile.last_name?.trim() ?? '';
@@ -105,35 +106,35 @@ export default function ProfilePage() {
     }
 
     setSaving(true);
+    setSaved(false);
     setError(null);
 
-    if (nextUsername && nextUsername !== originalUsername) {
-      const { data: usernameData, error: usernameError } = await (createClient() as any).rpc('change_username', { p_username: nextUsername });
-      if (usernameError) {
-        setSaving(false);
-        const raw = String(usernameError.message ?? '').toLowerCase();
-        setError(raw.includes('unavailable') ? 'That username is already taken.' : raw.includes('reserved') ? 'That username is reserved by Relay.' : raw.includes('changed again after') ? usernameError.message : 'Your username could not be changed.');
-        return;
-      }
-      setOriginalUsername(usernameData?.username ?? nextUsername);
-    }
+    const { data, error: saveError } = await (createClient() as any).rpc('save_profile_settings', {
+      p_first_name: firstName,
+      p_last_name: lastName,
+      p_username: nextUsername || '',
+      p_bio: currentProfile.bio?.trim() || null,
+      p_school: currentProfile.school?.trim() || null,
+      p_graduation_year: currentProfile.graduation_year || null,
+      p_avatar_url: avatarUrl,
+    });
 
-    const changes = {
-      first_name: firstName,
-      last_name: lastName,
-      display_name: `${firstName} ${lastName}`,
-      bio: currentProfile.bio?.trim() || null,
-      school: currentProfile.school?.trim() || null,
-      graduation_year: currentProfile.graduation_year || null,
-      avatar_url: avatarUrl,
-    };
-    const { error: updateError } = await (createClient() as any).from('profiles').update(changes).eq('id', currentProfile.id);
     setSaving(false);
-    if (updateError) {
-      setError('Your profile could not be saved.');
+
+    if (saveError) {
+      const raw = String(saveError.message ?? '').toLowerCase();
+      if (raw.includes('username unavailable')) setError('That username is already taken.');
+      else if (raw.includes('username is reserved')) setError('That username is reserved by Relay.');
+      else if (raw.includes('changed again after')) setError(saveError.message);
+      else if (raw.includes('graduation year')) setError('Choose a valid graduation year.');
+      else if (raw.includes('profile photo')) setError('Use a full HTTPS link for your profile photo.');
+      else setError(saveError.message || 'Your profile could not be saved.');
       return;
     }
-    setProfile((current) => current ? { ...current, ...changes, username: nextUsername || null } : current);
+
+    const savedProfile = data as Partial<EditableProfile> | null;
+    setProfile((current) => current ? { ...current, ...savedProfile } : current);
+    setOriginalUsername(savedProfile?.username ?? nextUsername || null);
     setSaved(true);
   }
 
