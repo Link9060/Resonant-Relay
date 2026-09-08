@@ -20,8 +20,8 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, onCan
 
   useEffect(() => {
     let active = true;
-    setCanSend(null);
     const timer = window.setTimeout(() => {
+      setCanSend(null);
       void (async () => {
         const { data, error: statusError } = await (createClient() as any).rpc('conversation_send_status', { p_conversation_id: conversationId });
         if (!active) return;
