@@ -40,6 +40,14 @@ const clientSecretPatterns = [
   'VAPID_PRIVATE_KEY',
 ];
 
+function isClientSource(source) {
+  const firstMeaningfulLine = source
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line.length > 0);
+  return firstMeaningfulLine === "'use client';" || firstMeaningfulLine === '"use client";';
+}
+
 function walk(dir) {
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
@@ -48,6 +56,7 @@ function walk(dir) {
     else if (/\.(ts|tsx|js|jsx)$/.test(name)) {
       const rel = relative(root, path);
       const source = readFileSync(path, 'utf8');
+      if (!isClientSource(source)) continue;
       for (const pattern of clientSecretPatterns) {
         if (source.includes(pattern)) failures.push(`${rel}: server secret name appears in client source (${pattern})`);
       }
