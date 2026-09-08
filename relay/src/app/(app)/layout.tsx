@@ -1,5 +1,7 @@
 'use client';
 
+import { BetaExperience } from '@/components/beta-experience';
+import { Fragment } from 'react';
 import { Dock } from '@/components/dock';
 import { AppHeader } from '@/components/app-header';
 import { MobileRouteGate } from '@/components/mobile-route-gate';
@@ -123,7 +125,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setPreviewRoleState('owner');
   }
 
+  const Experience = IS_BETA ? BetaExperience : Fragment;
   return (
+    <Experience>
     <div className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
       <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={handleDockCollapsedChange} />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
@@ -140,5 +144,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     </div>
+    </Experience>
   );
 }

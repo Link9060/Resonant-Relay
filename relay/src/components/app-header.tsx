@@ -1,7 +1,7 @@
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { StaffInboxButton } from '@/components/staff/staff-inbox-button';
-import { appPageUrl, IS_BETA, RELEASE_LABEL } from '@/lib/config';
+import { appPageUrl, BASE_PATH, IS_BETA, RELEASE_LABEL } from '@/lib/config';
 import type { AppRole } from '@/lib/role-preview';
 import type { Notification, Profile } from '@/lib/types/database';
 import { cn, formatRelayNumber } from '@/lib/utils';
@@ -29,6 +29,10 @@ export function AppHeader({
   return (
     <header className="relay-app-header flex min-h-14 items-center justify-between border-b border-border px-4 py-2.5 md:px-6 md:py-3">
       <div className="flex min-w-0 items-center gap-2">
+        {IS_BETA && <a href={appPageUrl('/space')} aria-label="Return to particle landing page" className="beta-mobile-home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-6 w-6 dark:invert" />
+        </a>}
         {profile && (
           <p className="truncate text-xs text-ink-faint">
             <span className="hidden sm:inline">Your Relay: </span><span className="font-mono text-ink-muted">{formatRelayNumber(profile.relay_number)}</span>
