@@ -30,8 +30,8 @@ export function ThemeToggle() {
       emitParticles({ kind: 'theme', dark: next });
       timerRef.current = window.setTimeout(() => {
         apply();
-        timerRef.current = window.setTimeout(() => setChanging(false), 650);
-      }, 650);
+        timerRef.current = window.setTimeout(() => setChanging(false), 500);
+      }, 500);
     } else apply();
   }
 

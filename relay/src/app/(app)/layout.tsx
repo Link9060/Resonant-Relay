@@ -128,7 +128,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const Experience = IS_BETA ? BetaExperience : Fragment;
   return (
     <Experience>
-    <div className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
+    <div data-dock-collapsed={dockCollapsed} className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
       <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={handleDockCollapsedChange} />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         {isPreviewing && (

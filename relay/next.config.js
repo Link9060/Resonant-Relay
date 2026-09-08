@@ -4,6 +4,7 @@ const basePath = isGitHubPages ? '/Resonant-Relay' : '';
 
 const nextConfig = {
   output: 'export',
+  allowedDevOrigins: ['terminal.local'],
   basePath,
   assetPrefix: basePath || undefined,
   trailingSlash: true,

@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createCloudRenderer, fitCanvas } from '@/lib/particle-renderer';
 import { BASE_PATH } from '@/lib/config';
-import { BETA_INTRO_KEY, INTRO_DONE, drawCloud, introSeen, makeDust, reducedMotion } from '@/lib/particle-motion';
+import { BETA_INTRO_KEY, INTRO_DONE, introSeen, makeDust, reducedMotion } from '@/lib/particle-motion';
 
-// Formation 0–2.05s; hold exactly 3s; dissolve, pulse, burst, warp;
-// black 9.6–10.6s; edge-to-center tile reveal 10.6–12.5s.
+// A deliberate 2.7s formation and 3s hold lead into a brief 850ms flight.
+// Preserve the one-second blackout before the final tile reveal.
 export function BetaIntro() {
   const [visible, setVisible] = useState(false);
   const [active, setActive] = useState(false);
@@ -40,7 +41,8 @@ export function BetaIntro() {
     if (!ctx) { finish(); return; }
     let frame = 0, elapsed = 0, previous = 0;
     let w = 0, h = 0;
-    const dust = makeDust(window.innerWidth < 600 ? 1700 : 3200);
+    const dust = makeDust(window.innerWidth < 600 ? 500 : 950);
+    const renderCloud = createCloudRenderer(window.innerWidth < 600);
     const raster = document.createElement('canvas');
     const rc = raster.getContext('2d', { willReadFrequently: true })!;
     let points: { x: number; y: number; delay: number; angle: number; r: number }[] = [];
@@ -48,9 +50,7 @@ export function BetaIntro() {
     let logoReady = false;
     const resize = () => {
       w = window.innerWidth; h = window.innerHeight;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = w * dpr; canvas.height = h * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      fitCanvas(canvas, ctx, w, h);
       raster.width = w; raster.height = h;
       rc.font = `600 ${Math.min(96, w * 0.19)}px system-ui`;
       rc.textAlign = 'center'; rc.textBaseline = 'middle'; rc.fillStyle = '#fff';
@@ -74,31 +74,32 @@ export function BetaIntro() {
       }
     };
     resize();
-    logo.onload = () => { logoReady = true; resize(); };
+    logo.onload = () => { if (elapsed < 800) { logoReady = true; resize(); } };
     logo.src = `${BASE_PATH}/relay-icon.svg`;
     const draw = (now: number) => {
       // Freeze the cinematic clock in a background tab instead of skipping scenes.
-      if (previous && !document.hidden) elapsed += Math.min(now - previous, 50);
+      if (previous && !document.hidden) elapsed += now - previous;
       previous = now;
       ctx.globalAlpha = 1; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
       const t = elapsed;
-      if (t < 5050) {
-        const solid = Math.max(0, Math.min(1, (t - 1780) / 270));
-        for (const p of points) {
-          const v = Math.max(0, Math.min(1, (t - 260 - p.delay * 150) / 1300));
+      if (t < 5700) {
+        const solid = Math.max(0, Math.min(1, (t - 2300) / 400));
+        if (solid < 1) for (const p of points) {
+          const v = Math.max(0, Math.min(1, (t - 680 - p.delay * 150) / 1500));
           const ease = 1 - Math.pow(1 - v, 3);
-          const burst = Math.min(1, t / 400);
+          const burst = 1 - Math.pow(1 - Math.max(0, Math.min(1, (t - 160) / 700)), 3);
           const bx = w / 2 + Math.cos(p.angle) * p.r * burst;
           const by = h / 2 + Math.sin(p.angle) * p.r * burst;
           ctx.globalAlpha = (1 - solid) * Math.min(1, t / 120);
           ctx.fillStyle = '#fff'; ctx.fillRect(bx + (p.x - bx) * ease, by + (p.y - by) * ease, 1.3, 1.3);
         }
+        if (t < 550) { ctx.globalAlpha = Math.max(0, 1 - t / 550); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(w / 2, h / 2, 6 * (1 + Math.sin(t / 550 * Math.PI) * 0.4), 0, Math.PI * 2); ctx.fill(); }
         ctx.globalAlpha = solid; ctx.drawImage(raster, 0, 0);
-      } else if (t < 7400) {
+      } else if (t < 7600) {
         // Random cells lift out of the exact word raster, becoming individual dots.
-        const dissolve = Math.min(1, (t - 5050) / 1250);
-        const pulse = t >= 6400 && t < 7000 ? Math.sin((t - 6400) / 600 * Math.PI) : 0;
-        const explode = Math.max(0, (t - 7000) / 400);
+        const dissolve = Math.min(1, (t - 5700) / 1100);
+        const pulse = t >= 6800 && t < 7300 ? Math.sin((t - 6800) / 500 * Math.PI) : 0;
+        const explode = Math.max(0, (t - 7300) / 300);
         if (dissolve < 1) {
           ctx.globalAlpha = 1; ctx.drawImage(raster, 0, 0);
           ctx.fillStyle = '#000';
@@ -114,11 +115,11 @@ export function BetaIntro() {
           const y = h / 2 + (p.y - h / 2 + Math.sin(p.angle) * drift) * scale;
           ctx.beginPath(); ctx.arc(x, y, 0.8 + pulse * 0.8, 0, Math.PI * 2); ctx.fill();
         }
-      } else if (t < 9600) {
-        const warp = (t - 7400) / 2200;
+      } else if (t < 8450) {
+        const warp = (t - 7600) / 850;
         ctx.strokeStyle = '#fff'; ctx.lineWidth = 0.65;
         for (const p of dust) {
-          const z = (p.depth + warp * 2.8) % 1;
+          const z = (p.depth + warp * 1.4) % 1;
           const radius = 7 + z * z * Math.max(w, h);
           const length = (8 + z * z * 180) * Math.min(1, warp * 5);
           ctx.globalAlpha = z * 0.75 * Math.min(1, (1 - warp) * 7);
@@ -126,19 +127,19 @@ export function BetaIntro() {
           ctx.moveTo(w / 2 + Math.cos(p.angle) * radius, h / 2 + Math.sin(p.angle) * radius);
           ctx.lineTo(w / 2 + Math.cos(p.angle) * (radius + length), h / 2 + Math.sin(p.angle) * (radius + length)); ctx.stroke();
         }
-      } else if (t >= 10600) {
+      } else if (t >= 9450) {
         ctx.globalAlpha = 1;
         const dark = document.documentElement.classList.contains('dark');
         ctx.fillStyle = dark ? '#0a0a0b' : '#fff'; ctx.fillRect(0, 0, w, h);
-        drawCloud(ctx, dust, w, h, t / 1000, dark);
+        renderCloud(ctx, w / 2, h / 2, w, (t - 9450) / 1000, dark);
         ctx.fillStyle = dark ? '#fff' : '#111'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.font = `300 ${Math.min(50, w * 0.072)}px system-ui`; ctx.fillText('Resonant Relay', w / 2, h / 2);
         const cols = w < 600 ? 8 : 16, rows = Math.ceil(h / (w / cols));
         const tw = w / cols, th = h / rows;
         for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
           const edge = Math.min(col, cols - col - 1, row, rows - row - 1);
-          const delay = edge * 125 + ((row * 17 + col * 11) % 7) * 24;
-          const flip = Math.max(0, Math.min(1, (t - 10600 - delay) / 620));
+          const delay = edge * 110 + ((row * 17 + col * 11) % 7) * 24;
+          const flip = Math.max(0, Math.min(1, (t - 9450 - delay) / 550));
           if (flip === 1) continue;
           const width = tw * Math.cos(flip * Math.PI / 2);
           ctx.fillStyle = '#000'; ctx.fillRect(col * tw + (tw - width) / 2, row * th, width + 0.5, th + 0.5);
@@ -146,12 +147,14 @@ export function BetaIntro() {
         }
       }
       ctx.globalAlpha = 1;
-      if (elapsed >= 12500) { finish(); return; }
+      if (elapsed >= 10800) { finish(); return; }
       frame = requestAnimationFrame(draw);
     };
+    const visibility = () => { previous = 0; if (document.hidden) audioRef.current?.pause(); };
     frame = requestAnimationFrame(draw);
+    document.addEventListener('visibilitychange', visibility);
     window.addEventListener('resize', resize);
-    return () => { cancelAnimationFrame(frame); logo.onload = null; window.removeEventListener('resize', resize); };
+    return () => { cancelAnimationFrame(frame); logo.onload = null; window.removeEventListener('resize', resize); document.removeEventListener('visibilitychange', visibility); };
   }, [active, visible]);
 
   if (!visible) return null;

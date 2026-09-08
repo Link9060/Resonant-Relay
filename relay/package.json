@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
     "build": "next build",
     "start": "npx serve@14.2.4 out -l $PORT",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:motion": "node --test tests/*.test.cjs"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.0",

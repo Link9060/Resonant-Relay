@@ -43,29 +43,6 @@ export function Dock({
         { href: '/profile', label: 'Settings', icon: Settings },
       ];
 
-  if (IS_BETA) return <>
-    <nav aria-label="Main" className="relay-desktop-dock hidden md:flex">
-      <a href={appPageUrl('/space')} className="relay-brand-lockup font-display text-lg font-medium text-ink" aria-label="Return to particle landing page">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 dark:invert" />
-        <span>Relay</span>
-      </a>
-      <ul className="relay-primary-tabs flex flex-1 gap-1">
-        {DESKTOP_DOCK_ITEMS.map(item => <DockLink key={item.href} item={item} active={isDockPathActive(currentPath, item.href)} variant="rail" />)}
-      </ul>
-    </nav>
-    <nav aria-label="Workspace tools" className="relay-secondary-tabs hidden md:flex">
-      <ul className="flex items-center gap-1">
-        {canOpenStaff && <DockLink item={{ href: '/admin', label: staffConsoleLabel(role), icon: Shield }} active={isDockPathActive(currentPath, '/admin')} variant="rail" />}
-        <DockLink item={{ href: '/contacts', label: 'Contacts', icon: Users }} active={isDockPathActive(currentPath, '/contacts')} variant="rail" />
-        <DockLink item={{ href: '/profile', label: 'Settings', icon: Settings }} active={isDockPathActive(currentPath, '/profile')} variant="rail" />
-      </ul>
-    </nav>
-    <nav aria-label="Relay Mobile" className={cn('relay-mobile-nav fixed inset-x-0 bottom-0 z-30 grid border-t border-border bg-surface/95 backdrop-blur-xl md:hidden', canOpenStaff ? 'grid-cols-5' : 'grid-cols-4')}>
-      {mobileItems.map(item => <DockLink key={item.href} item={item} active={isDockPathActive(currentPath, item.href)} variant="tab" />)}
-    </nav>
-  </>;
-
   return (
     <>
       <nav
@@ -81,7 +58,7 @@ export function Dock({
             'relay-brand-lockup pb-8 font-display text-lg font-medium tracking-tight text-ink',
             collapsed ? 'justify-center px-0' : 'px-3'
           )}
-          aria-label={`${APP_TITLE} home`}
+          aria-label={IS_BETA ? 'Return to particle landing page' : `${APP_TITLE} home`}
           title={collapsed ? APP_TITLE : undefined}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -103,7 +80,7 @@ export function Dock({
           )}
         </a>
 
-        <ul className="relay-primary-tabs flex flex-1 flex-col gap-1">
+        <ul className="flex flex-1 flex-col gap-1">
           {DESKTOP_DOCK_ITEMS.map((item) => (
             <DockLink
               key={item.href}
@@ -115,7 +92,7 @@ export function Dock({
           ))}
         </ul>
 
-        <ul className="relay-secondary-tabs mt-auto flex flex-col gap-1 border-t border-border pt-3">
+        <ul className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
           {canOpenStaff && (
             <DockLink
               item={{ href: '/admin', label: staffConsoleLabel(role), icon: Shield }}
@@ -124,7 +101,6 @@ export function Dock({
               collapsed={collapsed}
             />
           )}
-          {IS_BETA && <DockLink item={{ href: '/profile', label: 'Settings', icon: Settings }} active={isDockPathActive(currentPath, '/profile')} variant="rail" collapsed={collapsed} />}
           <DockLink
             item={{ href: '/contacts', label: 'Contacts', icon: Users }}
             active={isDockPathActive(currentPath, '/contacts')}
@@ -133,7 +109,7 @@ export function Dock({
           />
         </ul>
 
-        <div className="relay-collapse-control mt-3 border-t border-border pt-3">
+        <div className="mt-3 border-t border-border pt-3">
           <button
             type="button"
             onClick={() => onCollapsedChange?.(!collapsed)}
