@@ -16,10 +16,13 @@ export const metadata: Metadata = {
   icons: { icon: `${BASE_PATH}/relay-icon.svg`, apple: `${BASE_PATH}/relay-icon.svg` },
 };
 
-export const viewport: Viewport = { themeColor: '#0a0a0b' };
+export const viewport: Viewport = {
+  themeColor: '#0a0a0b',
+  viewportFit: 'cover',
+  width: 'device-width',
+  initialScale: 1,
+};
 
-// Applies the saved theme before paint so there's no light-mode flash
-// for users who prefer dark (and vice versa).
 const themeInitScript = `
 (function () {
   try {
