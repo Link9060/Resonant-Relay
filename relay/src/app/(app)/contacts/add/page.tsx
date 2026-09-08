@@ -52,8 +52,8 @@ export default function AddContactPage() {
         <ArrowLeft size={16} />
         Contacts
       </a>
-      <h1 className="mt-6 font-display text-2xl font-medium tracking-tight text-ink">Add person</h1>
-      <p className="mt-1 text-sm text-ink-muted">Enter their seven-digit Relay Number.</p>
+      <h1 className="mt-6 font-display text-2xl font-medium tracking-tight text-ink">Add by Relay Number</h1>
+      <p className="mt-1 text-sm text-ink-muted">Use this when someone shares their private seven-digit Relay Number with you.</p>
 
       {!preview && (
         <form onSubmit={handleLookup} className="mt-6">
