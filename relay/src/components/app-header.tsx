@@ -5,7 +5,7 @@ import { appPageUrl, IS_BETA, RELEASE_LABEL } from '@/lib/config';
 import type { AppRole } from '@/lib/role-preview';
 import type { Notification, Profile } from '@/lib/types/database';
 import { cn, formatRelayNumber } from '@/lib/utils';
-import { MessageSquarePlus, ShieldCheck, UserPlus, Users } from 'lucide-react';
+import { MessageSquarePlus, ShieldCheck } from 'lucide-react';
 
 export function AppHeader({
   profile,
@@ -27,11 +27,11 @@ export function AppHeader({
         : null;
 
   return (
-    <header className="flex items-center justify-between border-b border-border px-4 py-3 md:px-6">
+    <header className="relay-app-header flex min-h-14 items-center justify-between border-b border-border px-4 py-2.5 md:px-6 md:py-3">
       <div className="flex min-w-0 items-center gap-2">
         {profile && (
           <p className="truncate text-xs text-ink-faint">
-            Your Relay: <span className="font-mono text-ink-muted">{formatRelayNumber(profile.relay_number)}</span>
+            <span className="hidden sm:inline">Your Relay: </span><span className="font-mono text-ink-muted">{formatRelayNumber(profile.relay_number)}</span>
           </p>
         )}
         <span
@@ -57,30 +57,12 @@ export function AppHeader({
         )}
       </div>
       <div className="flex items-center gap-1">
-        {/* Contacts is a full rail item on desktop. On mobile, keep Contacts and
-            Add Friend together in the top bar so both are always discoverable. */}
-        <a
-          href={appPageUrl('/contacts')}
-          aria-label="Contacts"
-          title="Contacts"
-          className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink md:hidden"
-        >
-          <Users size={18} />
-        </a>
-        <a
-          href={appPageUrl('/contacts/add')}
-          aria-label="Add friend"
-          title="Add friend"
-          className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink md:hidden"
-        >
-          <UserPlus size={18} />
-        </a>
         {staffIdentity && (
           <a
-            href={appPageUrl('/admin')}
-            aria-label={`Open ${staffIdentity.label} Control Center`}
-            title={`${staffIdentity.label} Control Center`}
-            className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink sm:hidden"
+            href={appPageUrl('/admin/moderation')}
+            aria-label="Review staff reports"
+            title="Reports"
+            className="hidden h-10 w-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-surface hover:text-ink sm:flex md:hidden"
           >
             <ShieldCheck size={18} />
           </a>
@@ -89,16 +71,17 @@ export function AppHeader({
           href={appPageUrl('/support')}
           aria-label="Support and feedback"
           title="Support & Feedback"
-          className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink"
+          className="hidden h-10 w-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-surface hover:text-ink sm:flex md:flex"
         >
           <MessageSquarePlus size={18} />
         </a>
         <StaffInboxButton role={role} />
         <NotificationBell currentUserId={currentUserId} initial={notifications} />
-        <ThemeToggle />
+        <div className="hidden md:block"><ThemeToggle /></div>
         <a
           href={appPageUrl('/profile')}
-          className="ml-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-surface-raised text-xs font-medium text-ink"
+          aria-label="Settings and profile"
+          className="ml-1 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-surface-raised text-xs font-medium text-ink"
         >
           {profile?.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element

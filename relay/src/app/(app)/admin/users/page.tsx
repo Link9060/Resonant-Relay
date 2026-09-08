@@ -2,9 +2,10 @@
 
 import { PageLoading } from '@/components/page-loading';
 import { StaffControlHeader } from '@/components/staff-control-header';
+import { OwnerUserInspector } from '@/components/staff/owner-user-inspector';
 import { AppRole, getRolePreview } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
-import { Search, ShieldCheck, UserRound } from 'lucide-react';
+import { Search, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type UserRow = {
@@ -24,8 +25,6 @@ type UserRow = {
   report_count: number;
   open_report_count: number;
 };
-
-const ROLE_ORDER: AppRole[] = ['user', 'moderator', 'admin', 'owner'];
 
 export default function StaffUsersPage() {
   const [actualRole, setActualRole] = useState<AppRole | null>(null);
@@ -75,12 +74,10 @@ export default function StaffUsersPage() {
   const selected = users.find((user) => user.id === selectedId) ?? null;
 
   async function changeRole(nextRole: AppRole) {
-    if (role !== 'owner' || !selected) return;
-    if (selected.id === currentUserId) return;
+    if (role !== 'owner' || !selected || selected.id === currentUserId) return;
     setError(null);
     setBusy(true);
-    const supabase = createClient() as any;
-    const { error: actionError } = await supabase.rpc('set_user_role', { p_user_id: selected.id, p_role: nextRole });
+    const { error: actionError } = await (createClient() as any).rpc('set_user_role', { p_user_id: selected.id, p_role: nextRole });
     if (actionError) setError(actionError.message); else await load(selected.id);
     setBusy(false);
   }
@@ -131,19 +128,19 @@ export default function StaffUsersPage() {
       <StaffControlHeader role={role} active="users" />
       {error && <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm text-ink">{error}</div>}
 
-      <div className="mt-6 grid min-h-[560px] gap-4 lg:grid-cols-[minmax(300px,.78fr)_minmax(0,1.22fr)]">
+      <div className="mt-6 grid min-h-[560px] gap-4 lg:grid-cols-[minmax(300px,.72fr)_minmax(0,1.28fr)]">
         <section className="overflow-hidden rounded-2xl border border-border bg-surface">
           <div className="border-b border-border p-4">
             <div className="text-sm font-semibold text-ink">Account directory</div>
             <div className="mt-1 text-xs text-ink-muted">{users.length} accounts available to inspect.</div>
-            <label className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-canvas px-3 py-2">
+            <label className="mt-3 flex min-h-11 items-center gap-2 rounded-lg border border-border bg-canvas px-3">
               <Search size={14} className="text-ink-faint" />
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name, email, Relay…" className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint" />
             </label>
           </div>
-          <div className="max-h-[620px] overflow-y-auto p-2">
+          <div className="max-h-[680px] overflow-y-auto p-2">
             {filtered.map((user) => (
-              <button key={user.id} type="button" onClick={() => setSelectedId(user.id)} className={`block w-full rounded-xl px-3 py-3 text-left transition-colors ${selectedId === user.id ? 'bg-surface-raised' : 'hover:bg-canvas'}`}>
+              <button key={user.id} type="button" onClick={() => setSelectedId(user.id)} className={`block min-h-16 w-full rounded-xl px-3 py-3 text-left transition-colors ${selectedId === user.id ? 'bg-surface-raised' : 'hover:bg-canvas'}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0"><div className="truncate text-sm font-medium text-ink">{user.display_name}</div><div className="mt-0.5 truncate text-xs text-ink-muted">{user.primary_email ?? formatRelay(user.relay_number)}</div></div>
                   <RoleBadge role={user.role} />
@@ -156,51 +153,21 @@ export default function StaffUsersPage() {
         </section>
 
         <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
-          {!selected ? <div className="flex min-h-80 items-center justify-center text-sm text-ink-muted">Select an account to inspect.</div> : (
-            <>
-              <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-canvas text-ink-muted"><UserRound size={18} /></span>
-                  <div><div className="text-xl font-semibold text-ink">{selected.display_name}</div><div className="mt-1 text-xs text-ink-muted">{selected.primary_email ?? 'No primary email'} · {formatRelay(selected.relay_number)}</div>{selected.school && <div className="mt-1 text-xs text-ink-faint">{selected.school}</div>}</div>
-                </div>
-                <div className="flex items-center gap-2"><RoleBadge role={selected.role} /><span className={`rounded-full border px-2 py-1 text-[10px] font-medium ${selected.banned_at ? 'border-ink text-ink' : 'border-border text-ink-muted'}`}>{selected.banned_at ? 'Banned' : 'Active'}</span></div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 py-5 sm:grid-cols-4">
-                <InspectorMetric label="Messages" value={selected.message_count} />
-                <InspectorMetric label="Contacts" value={selected.connection_count} />
-                <InspectorMetric label="Reports" value={selected.report_count} />
-                <InspectorMetric label="Open reports" value={selected.open_report_count} />
-              </div>
-
-              <div className="grid gap-4 border-t border-border pt-5 sm:grid-cols-2">
-                <InfoLine label="Last active" value={selected.last_sign_in_at ? timeAgo(selected.last_sign_in_at) : 'Never'} />
-                <InfoLine label="Joined" value={new Date(selected.created_at).toLocaleDateString()} />
-                <InfoLine label="Gmail" value={selected.gmail_connected ? 'Connected' : 'Not connected'} />
-                <InfoLine label="Account ID" value={selected.id.slice(0, 8) + '…'} mono />
-              </div>
-
-              {selected.banned_at && <div className="mt-5 rounded-xl border border-border bg-canvas p-4 text-sm text-ink-muted"><div className="font-medium text-ink">Account disabled</div><div className="mt-1 text-xs">{selected.ban_reason || 'No ban reason recorded.'}</div></div>}
-
-              {role === 'owner' && (
-                <div className="mt-6 border-t border-border pt-5">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-ink"><ShieldCheck size={15} /> Owner controls</div>
-                  <p className="mt-1 text-xs text-ink-muted">Protected accounts cannot be removed, banned, or force-signed-out from here.</p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
-                    <label className="block text-xs text-ink-muted">Role
-                      <select value={selected.role} disabled={busy || selected.id === currentUserId} onChange={(e) => void changeRole(e.target.value as AppRole)} className="mt-1.5 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-ink disabled:opacity-50">
-                        {ROLE_ORDER.map((option) => <option key={option} value={option}>{capitalize(option)}</option>)}
-                      </select>
-                    </label>
-                    <div className="flex flex-wrap items-end gap-2">
-                      <ActionButton disabled={busy || selected.role === 'owner' || selected.id === currentUserId} onClick={() => void toggleBan()}>{selected.banned_at ? 'Unban' : 'Ban'}</ActionButton>
-                      <ActionButton disabled={busy || selected.role === 'owner' || selected.id === currentUserId} onClick={() => void forceSignOut()}>Sign out</ActionButton>
-                      <ActionButton disabled={busy || selected.role === 'owner' || selected.id === currentUserId} onClick={() => void removeUser()}>Remove</ActionButton>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
+          {!selected ? (
+            <div className="flex min-h-80 items-center justify-center text-sm text-ink-muted">Select an account to inspect.</div>
+          ) : role === 'owner' ? (
+            <OwnerUserInspector
+              user={selected}
+              currentUserId={currentUserId}
+              busy={busy}
+              onSelectUser={(id) => setSelectedId(id)}
+              onRoleChange={(nextRole) => void changeRole(nextRole)}
+              onToggleBan={() => void toggleBan()}
+              onForceSignOut={() => void forceSignOut()}
+              onDeleteUser={() => void removeUser()}
+            />
+          ) : (
+            <AdminUserInspector user={selected} />
           )}
         </section>
       </div>
@@ -208,10 +175,40 @@ export default function StaffUsersPage() {
   );
 }
 
+function AdminUserInspector({ user }: { user: UserRow }) {
+  return (
+    <>
+      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-canvas text-ink-muted"><UserRound size={18} /></span>
+          <div><div className="text-xl font-semibold text-ink">{user.display_name}</div><div className="mt-1 text-xs text-ink-muted">{user.primary_email ?? 'No primary email'} · {formatRelay(user.relay_number)}</div>{user.school && <div className="mt-1 text-xs text-ink-faint">{user.school}</div>}</div>
+        </div>
+        <div className="flex items-center gap-2"><RoleBadge role={user.role} /><span className={`rounded-full border px-2 py-1 text-[10px] font-medium ${user.banned_at ? 'border-ink text-ink' : 'border-border text-ink-muted'}`}>{user.banned_at ? 'Banned' : 'Active'}</span></div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 py-5 sm:grid-cols-4">
+        <InspectorMetric label="Messages" value={user.message_count} />
+        <InspectorMetric label="Contacts" value={user.connection_count} />
+        <InspectorMetric label="Reports" value={user.report_count} />
+        <InspectorMetric label="Open reports" value={user.open_report_count} />
+      </div>
+
+      <div className="grid gap-4 border-t border-border pt-5 sm:grid-cols-2">
+        <InfoLine label="Last active" value={user.last_sign_in_at ? timeAgo(user.last_sign_in_at) : 'Never'} />
+        <InfoLine label="Joined" value={new Date(user.created_at).toLocaleDateString()} />
+        <InfoLine label="Gmail" value={user.gmail_connected ? 'Connected' : 'Not connected'} />
+        <InfoLine label="Account ID" value={user.id.slice(0, 8) + '…'} mono />
+      </div>
+
+      {user.banned_at && <div className="mt-5 rounded-xl border border-border bg-canvas p-4 text-sm text-ink-muted"><div className="font-medium text-ink">Account disabled</div><div className="mt-1 text-xs">{user.ban_reason || 'No ban reason recorded.'}</div></div>}
+
+      <div className="mt-6 rounded-xl border border-border bg-canvas p-4 text-xs leading-5 text-ink-muted">Admin has operational account visibility and moderation context. Contacts, groups, conversation metadata, storage attribution, sessions, Owner notes, and destructive account controls are reserved for Owner.</div>
+    </>
+  );
+}
+
 function RoleBadge({ role }: { role: AppRole }) { return <span className="shrink-0 rounded-full border border-border px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-ink-muted">{role}</span>; }
 function InspectorMetric({ label, value }: { label: string; value: number }) { return <div className="rounded-xl border border-border bg-canvas p-3"><div className="text-xl font-semibold text-ink">{Number(value ?? 0).toLocaleString()}</div><div className="mt-1 text-[11px] text-ink-muted">{label}</div></div>; }
 function InfoLine({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) { return <div><div className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">{label}</div><div className={`mt-1 text-sm text-ink ${mono ? 'font-mono' : ''}`}>{value}</div></div>; }
-function ActionButton({ children, disabled, onClick }: { children: React.ReactNode; disabled: boolean; onClick: () => void }) { return <button type="button" disabled={disabled} onClick={onClick} className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-ink transition-colors hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-40">{children}</button>; }
 function formatRelay(value: string) { return value?.length === 7 ? `${value.slice(0, 3)}-${value.slice(3)}` : value; }
-function capitalize(value: string) { return value.charAt(0).toUpperCase() + value.slice(1); }
 function timeAgo(value: string) { const diff = Date.now() - new Date(value).getTime(); const minutes = Math.max(0, Math.floor(diff / 60000)); if (minutes < 60) return `${minutes}m ago`; const hours = Math.floor(minutes / 60); if (hours < 24) return `${hours}h ago`; return `${Math.floor(hours / 24)}d ago`; }
