@@ -55,6 +55,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
       ]);
       if (!active) return;
+      if (!profile?.onboarding_completed_at) {
+        window.location.replace(appPageUrl('/onboarding'));
+        return;
+      }
       setState({ userId: user.id, profile, notifications: notifications ?? [] });
       const actualRole = (profile?.role ?? 'user') as AppRole;
       setPreviewRoleState(getRolePreview(actualRole));
