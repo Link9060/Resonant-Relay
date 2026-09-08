@@ -33,6 +33,15 @@ export default defineConfig([
     },
   },
   {
+    // The Owner inspector intentionally resets local tab/data state when a
+    // different account is selected. Scope the effect-state exception to this
+    // component rather than weakening the rule across Relay.
+    files: ['src/components/staff/owner-user-inspector.tsx'],
+    rules: {
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
+  {
     // Owner Activity intentionally calculates a rolling seven-day count from
     // the current clock. Keep the purity exception scoped to this read-only view.
     files: ['src/app/(app)/admin/activity/page.tsx'],
@@ -41,8 +50,11 @@ export default defineConfig([
     },
   },
   {
-    // User-facing form copy contains normal contractions/apostrophes.
-    files: ['src/app/(app)/support/page.tsx'],
+    // User-facing copy contains normal contractions/apostrophes.
+    files: [
+      'src/app/(app)/support/page.tsx',
+      'src/components/staff/owner-user-inspector.tsx',
+    ],
     rules: {
       'react/no-unescaped-entities': 'off',
     },

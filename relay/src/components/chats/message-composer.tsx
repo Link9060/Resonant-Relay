@@ -1,7 +1,8 @@
 'use client';
 
 import { sendMessage } from '@/lib/actions/chats';
-import { CornerUpLeft, Paperclip, Send, X } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { CornerUpLeft, Paperclip, Send, UserPlus, X } from 'lucide-react';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
 const MAX_MESSAGE_LENGTH = 4000;
@@ -10,10 +11,31 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, onCan
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
+  const [canSend, setCanSend] = useState<boolean | null>(null);
+  const [sendReason, setSendReason] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const stopTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingSignal = useRef(0);
+
+  useEffect(() => {
+    let active = true;
+    const timer = window.setTimeout(() => {
+      setCanSend(null);
+      void (async () => {
+        const { data, error: statusError } = await (createClient() as any).rpc('conversation_send_status', { p_conversation_id: conversationId });
+        if (!active) return;
+        if (statusError) {
+          setCanSend(true);
+          return;
+        }
+        const row = data?.[0];
+        setCanSend(row?.can_send !== false);
+        setSendReason(row?.reason ?? null);
+      })();
+    }, 0);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [conversationId]);
 
   useEffect(() => () => {
     if (stopTypingTimer.current) clearTimeout(stopTypingTimer.current);
@@ -21,6 +43,7 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, onCan
   }, [onTypingChange]);
 
   function signalTyping(nextValue: string) {
+    if (canSend === false) return;
     if (stopTypingTimer.current) clearTimeout(stopTypingTimer.current);
     if (!nextValue.trim()) {
       onTypingChange?.(false);
@@ -35,6 +58,7 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, onCan
   }
 
   function handleSend() {
+    if (canSend === false) return;
     const body = value.trim();
     if ((!body && files.length === 0) || isPending) return;
     if (body.length > MAX_MESSAGE_LENGTH) {
@@ -61,14 +85,28 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, onCan
     inputRef.current?.focus();
   }
 
+  if (canSend === false) {
+    return (
+      <div className="border-t border-border bg-surface px-4 py-3">
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-canvas px-3 py-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface text-ink-muted"><UserPlus size={17} /></span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-ink">This chat is read-only</p>
+            <p className="mt-0.5 text-xs leading-5 text-ink-muted">{sendReason ?? 'Reconnect in Contacts to send new messages.'}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="border-t border-border px-4 py-3">
-      {replyTo && <div className="mb-2 flex items-center gap-2 rounded-md border-l-2 border-accent bg-surface px-3 py-2"><CornerUpLeft size={14} className="shrink-0 text-ink-faint" /><div className="min-w-0 flex-1"><p className="text-[11px] font-medium text-ink-muted">Replying to {replyTo.label}</p><p className="truncate text-xs text-ink-faint">{replyTo.body || 'Attachment'}</p></div><button type="button" onClick={onCancelReply} aria-label="Cancel reply" className="text-ink-faint hover:text-ink"><X size={14} /></button></div>}
+    <div className="border-t border-border bg-surface px-3 py-3 sm:px-4">
+      {replyTo && <div className="mb-2 flex items-center gap-2 rounded-md border-l-2 border-accent bg-surface px-3 py-2"><CornerUpLeft size={14} className="shrink-0 text-ink-faint" /><div className="min-w-0 flex-1"><p className="text-[11px] font-medium text-ink-muted">Replying to {replyTo.label}</p><p className="truncate text-xs text-ink-faint">{replyTo.body || 'Attachment'}</p></div><button type="button" onClick={onCancelReply} aria-label="Cancel reply" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-faint hover:bg-canvas hover:text-ink"><X size={14} /></button></div>}
       {error && <p className="mb-2 text-xs text-red-500">{error}</p>}
-      {files.length > 0 && <ul className="mb-2 flex flex-wrap gap-2">{files.map((file, index) => <li key={`${file.name}-${index}`} className="flex max-w-52 items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-ink"><Paperclip size={13} className="shrink-0" /><span className="truncate">{file.name}</span><button type="button" aria-label={`Remove ${file.name}`} onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="text-ink-faint hover:text-ink"><X size={13} /></button></li>)}</ul>}
+      {files.length > 0 && <ul className="mb-2 flex flex-wrap gap-2">{files.map((file, index) => <li key={`${file.name}-${index}`} className="flex max-w-52 items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-ink"><Paperclip size={13} className="shrink-0" /><span className="truncate">{file.name}</span><button type="button" aria-label={`Remove ${file.name}`} onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="flex h-8 w-8 items-center justify-center text-ink-faint hover:text-ink"><X size={13} /></button></li>)}</ul>}
       <div className="flex items-center gap-2">
-        <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border text-ink-muted hover:bg-surface hover:text-ink" aria-label="Attach photos or files">
-          <Paperclip size={17} />
+        <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border text-ink-muted hover:bg-canvas hover:text-ink" aria-label="Attach photos or files">
+          <Paperclip size={18} />
           <input type="file" multiple className="sr-only" accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,text/plain,text/csv,application/zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx" onChange={(event) => { const selected = Array.from(event.target.files ?? []); setError(null); setFiles((current) => [...current, ...selected].slice(0, 5)); event.target.value = ''; }} />
         </label>
         <input
@@ -83,16 +121,18 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, onCan
               handleSend();
             }
           }}
-          placeholder="Message"
-          className="flex-1 rounded-md border border-border bg-canvas px-3 py-2.5 text-sm text-ink outline-none focus-visible:border-accent"
+          placeholder={canSend === null ? 'Checking chat…' : 'Message'}
+          disabled={canSend === null}
+          className="min-h-11 min-w-0 flex-1 rounded-xl border border-border bg-canvas px-3 py-2.5 text-base text-ink outline-none focus-visible:border-accent disabled:opacity-50 sm:text-sm"
         />
         <button
+          type="button"
           onClick={handleSend}
-          disabled={isPending || (!value.trim() && files.length === 0)}
+          disabled={canSend === null || isPending || (!value.trim() && files.length === 0)}
           aria-label="Send"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-ink text-canvas disabled:opacity-40"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink text-canvas disabled:opacity-40"
         >
-          <Send size={16} />
+          <Send size={17} />
         </button>
       </div>
     </div>

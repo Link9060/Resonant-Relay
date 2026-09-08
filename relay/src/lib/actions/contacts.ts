@@ -19,6 +19,14 @@ export type DiscoveryPrivacy = {
   show_school_in_discovery: boolean;
 };
 
+export type BlockedPerson = {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
+  school: string | null;
+  blocked_at: string;
+};
+
 export async function lookupRelayNumber(rawInput: string): Promise<ActionResult<{ id: string; display_name: string; avatar_url: string | null; school: string | null }>> {
   const relayNumber = normalizeRelayNumber(rawInput);
   if (relayNumber.length !== 7) return { ok: false, error: 'Relay Numbers are 7 digits — check for a typo.' };
@@ -140,9 +148,27 @@ export async function updateContactPreference(
   return { ok: true, data: { nickname: data.nickname, color_key: data.color_key as ContactColorKey } };
 }
 
+export async function removeContact(contactId: string): Promise<ActionResult> {
+  const { error } = await (createClient() as any).rpc('remove_contact', { p_contact_id: contactId });
+  if (error) return { ok: false, error: 'This contact could not be removed right now.' };
+  return { ok: true, data: undefined };
+}
+
 export async function blockContact(contactId: string): Promise<ActionResult> {
   const { error } = await createClient().rpc('block_user', { p_blocked_id: contactId });
   return error
     ? { ok: false, error: 'This person could not be blocked right now.' }
     : { ok: true, data: undefined };
+}
+
+export async function getBlockedPeople(): Promise<ActionResult<BlockedPerson[]>> {
+  const { data, error } = await (createClient() as any).rpc('list_blocked_people');
+  if (error) return { ok: false, error: 'Blocked people could not be loaded right now.' };
+  return { ok: true, data: (data ?? []) as BlockedPerson[] };
+}
+
+export async function unblockContact(contactId: string): Promise<ActionResult> {
+  const { error } = await createClient().rpc('unblock_user', { p_blocked_id: contactId });
+  if (error) return { ok: false, error: 'This person could not be unblocked right now.' };
+  return { ok: true, data: undefined };
 }
