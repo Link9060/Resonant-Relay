@@ -2,6 +2,7 @@
 
 import { Dock } from '@/components/dock';
 import { AppHeader } from '@/components/app-header';
+import { MobileRouteGate } from '@/components/mobile-route-gate';
 import { PageLoading } from '@/components/page-loading';
 import { appPageUrl } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
@@ -43,8 +44,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    // The runtime schema includes profiles.role and moderation fields, while the
-    // checked-in generated types still lag those migrations.
     const supabase = createClient() as any;
     void (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -102,7 +101,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               Reason: {state.profile.ban_reason}
             </div>
           )}
-          <button type="button" onClick={() => void leaveDisabledAccount()} className="mt-5 rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-surface-raised">Sign out</button>
+          <button type="button" onClick={() => void leaveDisabledAccount()} className="mt-5 min-h-11 rounded-md border border-border px-4 text-sm font-medium text-ink hover:bg-surface-raised">Sign out</button>
         </div>
       </main>
     );
@@ -128,7 +127,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         )}
         <AppHeader profile={{ ...state.profile, role: effectiveRole }} role={effectiveRole} currentUserId={state.userId} notifications={state.notifications} />
-        <main className="min-w-0 flex-1 pb-16 md:pb-0">{children}</main>
+        <main className="relay-mobile-main min-w-0 flex-1 md:pb-0">
+          <MobileRouteGate role={effectiveRole}>{children}</MobileRouteGate>
+        </main>
       </div>
     </div>
   );
