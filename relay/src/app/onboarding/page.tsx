@@ -12,7 +12,6 @@ import {
   LayoutDashboard,
   Loader2,
   MessageCircle,
-  ShieldCheck,
   Smartphone,
   UserRound,
   UsersRound,
@@ -128,43 +127,32 @@ export default function OnboardingPage() {
   }, [step, username]);
 
   const suggestions = useMemo(() => usernameSuggestions(firstName, lastName, graduationYear), [firstName, lastName, graduationYear]);
-  const tourSlides = useMemo(() => {
-    const slides = [
-      {
-        icon: <LayoutDashboard size={24} />,
-        eyebrow: 'Dashboard',
-        title: 'Your day, without the digging.',
-        body: 'Tasks, upcoming events, recent mail, and new chats all land on Dashboard. On iPhone, this is your main quick-view hub.',
-      },
-      {
-        icon: <MessageCircle size={24} />,
-        eyebrow: 'Chats',
-        title: 'Message people and groups.',
-        body: 'Use Chats for direct messages and group conversations. Replies, reactions, attachments, and message tools stay close to the conversation.',
-      },
-      {
-        icon: <UsersRound size={24} />,
-        eyebrow: 'Contacts',
-        title: 'Find people without oversharing.',
-        body: 'Search by name or @username, discover mutual connections, or add someone directly with their Relay Number. You control whether you appear in Discover.',
-      },
-      {
-        icon: <Smartphone size={24} />,
-        eyebrow: 'Relay Mobile',
-        title: 'Phone for quick actions. Mac for deep work.',
-        body: 'On iPhone, Relay focuses on Dashboard, Chats, Contacts, Settings, and urgent staff work. Full Mail, Calendar, Planner, analytics, and advanced controls stay Mac-first.',
-      },
-    ];
-    if (profile?.role && profile.role !== 'user') {
-      slides.push({
-        icon: <ShieldCheck size={24} />,
-        eyebrow: 'Staff',
-        title: 'Reports follow you.',
-        body: 'Open reports that need attention can appear on your mobile Dashboard. Review the case, take action, and keep moving without opening the full Control Center.',
-      });
-    }
-    return slides;
-  }, [profile?.role]);
+  const tourSlides = [
+    {
+      icon: <LayoutDashboard size={24} />,
+      eyebrow: 'Dashboard',
+      title: 'Your day, without the digging.',
+      body: 'Tasks, upcoming events, recent mail, and new chats all land on Dashboard. On iPhone, this is your main quick-view hub.',
+    },
+    {
+      icon: <MessageCircle size={24} />,
+      eyebrow: 'Chats',
+      title: 'Message people and groups.',
+      body: 'Use Chats for direct messages and group conversations. Replies, reactions, attachments, and message tools stay close to the conversation.',
+    },
+    {
+      icon: <UsersRound size={24} />,
+      eyebrow: 'Contacts',
+      title: 'Find people without oversharing.',
+      body: 'Search by name or @username, discover mutual connections, or add someone directly with their Relay Number. You control whether you appear in Discover.',
+    },
+    {
+      icon: <Smartphone size={24} />,
+      eyebrow: 'Relay Mobile',
+      title: 'Phone for quick actions. Mac for deep work.',
+      body: 'On iPhone, Relay focuses on Dashboard, Chats, Contacts, Settings, and urgent staff work. Full Mail, Calendar, Planner, analytics, and advanced controls stay Mac-first.',
+    },
+  ];
 
   if (!profile && !error) return <PageLoading label="Setting up Relay…" />;
 
