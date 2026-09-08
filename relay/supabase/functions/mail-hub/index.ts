@@ -2,9 +2,10 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 type Provider = 'google' | 'microsoft';
-const APP_ORIGIN = 'https://link9060.github.io';
-const APP_URL = `${APP_ORIGIN}/Resonant-Relay`;
-const ALLOWED_ORIGINS = new Set([APP_ORIGIN, 'http://localhost:3000']);
+const PROD_ORIGIN = 'https://resonantrelay.org';
+const BETA_ORIGIN = 'https://link9060.github.io';
+const LOCAL_ORIGIN = 'http://localhost:3000';
+const ALLOWED_ORIGINS = new Set([PROD_ORIGIN, BETA_ORIGIN, LOCAL_ORIGIN]);
 const GOOGLE_SCOPE = 'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.events.readonly';
 const MICROSOFT_SCOPE = 'openid profile email offline_access User.Read Mail.Read Calendars.Read';
 
@@ -13,7 +14,9 @@ function cors(req: Request) {
   return { ...(origin && ALLOWED_ORIGINS.has(origin) ? { 'Access-Control-Allow-Origin': origin } : {}), 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', Vary: 'Origin' };
 }
 function json(req: Request, value: unknown, status = 200) { return new Response(JSON.stringify(value), { status, headers: { ...cors(req), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }); }
-function redirect(provider: Provider, result: 'connected' | 'error', reason?: string, returnPath = '/email') { const safePath = returnPath === '/calendar' ? '/calendar/' : '/email/'; const url = new URL(`${APP_URL}${safePath}`); url.searchParams.set(provider, result); if (reason) url.searchParams.set('reason', reason); return new Response(null, { status: 302, headers: { Location: url.toString(), 'Cache-Control': 'no-store' } }); }
+function trustedOrigin(req: Request) { const origin = req.headers.get('Origin'); return origin && ALLOWED_ORIGINS.has(origin) ? origin : PROD_ORIGIN; }
+function appUrlFor(origin: string) { return origin === BETA_ORIGIN ? `${origin}/Resonant-Relay` : origin; }
+function redirect(origin: string, provider: Provider, result: 'connected' | 'error', reason?: string, returnPath = '/email') { const safePath = returnPath === '/calendar' ? '/calendar/' : '/email/'; const url = new URL(`${appUrlFor(origin)}${safePath}`); url.searchParams.set(provider, result); if (reason) url.searchParams.set('reason', reason); return new Response(null, { status: 302, headers: { Location: url.toString(), 'Cache-Control': 'no-store' } }); }
 function base64url(bytes: Uint8Array) { return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
 function randomValue(size = 32) { return base64url(crypto.getRandomValues(new Uint8Array(size))); }
 async function sha256(value: string) { return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))); }
@@ -49,9 +52,10 @@ Deno.serve(async (req: Request) => {
       if (!configured(provider)) return json(req, { error: `${provider === 'google' ? 'Google' : 'Microsoft'} OAuth is not configured yet.` }, 503);
       const state = randomValue();
       const verifier = randomValue(64);
+      const returnOrigin = trustedOrigin(req);
       await admin.from('email_oauth_states').delete().lt('expires_at', new Date().toISOString());
       const returnPath = body.next === '/calendar' ? '/calendar' : '/email';
-      const { error: stateError } = await admin.from('email_oauth_states').insert({ state_hash: await hashHex(state), user_id: user.id, provider, code_verifier: verifier, return_path: returnPath, expires_at: new Date(Date.now() + 10 * 60_000).toISOString() });
+      const { error: stateError } = await admin.from('email_oauth_states').insert({ state_hash: await hashHex(state), user_id: user.id, provider, code_verifier: verifier, return_path: returnPath, return_origin: returnOrigin, expires_at: new Date(Date.now() + 10 * 60_000).toISOString() });
       if (stateError) throw stateError;
       const callbackUrl = `${supabaseUrl}/functions/v1/mail-hub/callback`;
       const challenge = base64url(await sha256(verifier));
@@ -101,23 +105,24 @@ function configured(provider: Provider) { return Boolean(clientId(provider) && c
 
 async function callback(url: URL, admin: any, supabaseUrl: string) {
   const rawState = url.searchParams.get('state'); const code = url.searchParams.get('code');
-  if (!rawState || !code) return redirect('google', 'error', 'missing_response');
+  if (!rawState || !code) return redirect(PROD_ORIGIN, 'google', 'error', 'missing_response');
   const { data: state } = await admin.from('email_oauth_states').select('*').eq('state_hash', await hashHex(rawState)).maybeSingle();
-  if (!state) return redirect('google', 'error', 'invalid_state');
+  if (!state) return redirect(PROD_ORIGIN, 'google', 'error', 'invalid_state');
   await admin.from('email_oauth_states').delete().eq('state_hash', state.state_hash);
   const provider = state.provider as Provider;
-  if (new Date(state.expires_at).getTime() <= Date.now()) return redirect(provider, 'error', 'expired', state.return_path);
-  if (!configured(provider)) return redirect(provider, 'error', 'not_configured', state.return_path);
+  const returnOrigin = ALLOWED_ORIGINS.has(state.return_origin) ? state.return_origin : PROD_ORIGIN;
+  if (new Date(state.expires_at).getTime() <= Date.now()) return redirect(returnOrigin, provider, 'error', 'expired', state.return_path);
+  if (!configured(provider)) return redirect(returnOrigin, provider, 'error', 'not_configured', state.return_path);
   const callbackUrl = `${supabaseUrl}/functions/v1/mail-hub/callback`;
   const tokenUrl = provider === 'google' ? 'https://oauth2.googleapis.com/token' : 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
   const tokenResponse = await fetch(tokenUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: clientId(provider), client_secret: clientSecret(provider), code, code_verifier: state.code_verifier, grant_type: 'authorization_code', redirect_uri: callbackUrl, ...(provider === 'microsoft' ? { scope: MICROSOFT_SCOPE } : {}) }) });
-  if (!tokenResponse.ok) return redirect(provider, 'error', 'token_exchange', state.return_path);
+  if (!tokenResponse.ok) return redirect(returnOrigin, provider, 'error', 'token_exchange', state.return_path);
   const tokens = await tokenResponse.json();
-  if (!tokens.refresh_token) return redirect(provider, 'error', 'missing_refresh_token', state.return_path);
+  if (!tokens.refresh_token) return redirect(returnOrigin, provider, 'error', 'missing_refresh_token', state.return_path);
   const identity = await identityFor(provider, tokens.access_token);
   const { error } = await admin.from('email_integrations').upsert({ user_id: state.user_id, provider, provider_account_id: identity.id, email_address: identity.email, display_name: identity.name, refresh_token: tokens.refresh_token, access_token: tokens.access_token, access_token_expires_at: new Date(Date.now() + Number(tokens.expires_in ?? 3600) * 1000).toISOString(), granted_scope: tokens.scope ?? (provider === 'google' ? GOOGLE_SCOPE : MICROSOFT_SCOPE), connected_at: new Date().toISOString() }, { onConflict: 'user_id,provider,provider_account_id' });
-  if (error) return redirect(provider, 'error', error.message.includes('three') ? 'account_limit' : 'save_failed', state.return_path);
-  return redirect(provider, 'connected', undefined, state.return_path);
+  if (error) return redirect(returnOrigin, provider, 'error', error.message.includes('three') ? 'account_limit' : 'save_failed', state.return_path);
+  return redirect(returnOrigin, provider, 'connected', undefined, state.return_path);
 }
 
 async function identityFor(provider: Provider, token: string) {
