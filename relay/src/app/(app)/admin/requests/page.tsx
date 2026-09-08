@@ -1,12 +1,13 @@
 'use client';
 
 import { PageLoading } from '@/components/page-loading';
-import { PageHeader } from '@/components/ui/page-header';
+import { StaffControlHeader } from '@/components/staff-control-header';
 import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
 import { Check, Clock3, ExternalLink, Inbox, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
+type StaffRole = Exclude<AppRole, 'user'>;
 type RequestStatus = 'new' | 'reviewing' | 'resolved' | 'dismissed';
 type RequestType = 'bug_report' | 'role_application' | 'feature_request' | 'safety_report' | 'general_feedback' | 'privacy_request';
 
@@ -41,6 +42,7 @@ export default function StaffRequestsPage() {
   const role = actualRole === 'owner' ? previewRole : actualRole;
 
   async function load() {
+    setError(null);
     const supabase = createClient() as any;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -76,6 +78,8 @@ export default function StaffRequestsPage() {
 
     const onPreviewChange = (event: Event) => {
       setPreviewRole((event as CustomEvent<AppRole>).detail);
+      setStatusFilter('open');
+      setTypeFilter('all');
     };
     window.addEventListener(ROLE_PREVIEW_EVENT, onPreviewChange);
     return () => window.removeEventListener(ROLE_PREVIEW_EVENT, onPreviewChange);
@@ -92,8 +96,14 @@ export default function StaffRequestsPage() {
     });
   }, [requests, role, statusFilter, typeFilter]);
 
-  const openCount = useMemo(() => requests.filter((r) => role && isStaff(role) && visibleToRole(role, r.request_type) && ['new', 'reviewing'].includes(r.status)).length, [requests, role]);
-  const newCount = useMemo(() => requests.filter((r) => role && isStaff(role) && visibleToRole(role, r.request_type) && r.status === 'new').length, [requests, role]);
+  const roleVisibleRequests = useMemo(
+    () => requests.filter((request) => role && isStaff(role) && visibleToRole(role, request.request_type)),
+    [requests, role],
+  );
+  const openCount = roleVisibleRequests.filter((request) => ['new', 'reviewing'].includes(request.status)).length;
+  const newCount = roleVisibleRequests.filter((request) => request.status === 'new').length;
+  const reviewingCount = roleVisibleRequests.filter((request) => request.status === 'reviewing').length;
+  const resolvedCount = roleVisibleRequests.filter((request) => request.status === 'resolved').length;
 
   async function updateStatus(request: StaffRequest, status: RequestStatus) {
     if (!role || !isStaff(role)) return;
@@ -141,97 +151,100 @@ export default function StaffRequestsPage() {
   if (!role || !isStaff(role)) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8 md:px-6">
-        <PageHeader title="Staff Inbox" />
-        <div className="mt-6 rounded-xl border border-border bg-surface p-6 text-sm text-ink-muted">Staff permission is required.</div>
+        <div className="rounded-xl border border-border bg-surface p-6 text-sm text-ink-muted">Staff permission is required.</div>
       </div>
     );
   }
 
+  const staffRole = role as StaffRole;
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-      <PageHeader title="Staff Inbox" />
-      <p className="mt-2 text-sm text-ink-muted">Requests are routed automatically by staff role. You only see the categories available to your current view.</p>
+    <div className="mx-auto max-w-7xl px-4 py-7 md:px-6 md:py-8">
+      <StaffControlHeader role={staffRole} active="requests" />
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <Stat label="New" value={newCount} />
-        <Stat label="Open" value={openCount} />
-        <Stat label="Visible to you" value={requests.filter((r) => visibleToRole(role, r.request_type)).length} />
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink">
-          <option value="open">Open requests</option>
-          <option value="all">All statuses</option>
-          <option value="new">New</option>
-          <option value="reviewing">Reviewing</option>
-          <option value="resolved">Resolved</option>
-          <option value="dismissed">Dismissed</option>
-        </select>
-        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink">
-          <option value="all">All request types</option>
-          {requestTypesForRole(role).map((type) => <option key={type} value={type}>{typeLabel(type)}</option>)}
-        </select>
-      </div>
-
-      {error && <div className="mt-5 rounded-lg border border-border bg-surface p-4 text-sm text-ink">{error}</div>}
-
-      <div className="mt-5 space-y-3">
-        {visibleRequests.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-10 text-center">
-            <Inbox className="mx-auto text-ink-faint" size={26} />
-            <div className="mt-3 text-sm font-medium text-ink">Inbox clear</div>
-            <div className="mt-1 text-xs text-ink-muted">No requests match these filters.</div>
-          </div>
-        ) : visibleRequests.map((request) => (
-          <article key={request.request_id} className="rounded-2xl border border-border bg-surface p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <TypeBadge type={request.request_type} />
-                  <StatusBadge status={request.status} />
-                  {request.requested_role && <span className="rounded-full border border-border px-2 py-1 text-[10px] text-ink-muted">Applying for {capitalize(request.requested_role)}</span>}
-                </div>
-                <h2 className="mt-3 text-base font-semibold text-ink">{request.subject}</h2>
-                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink-muted">{request.description}</p>
-
-                <div className="mt-4 text-xs text-ink-faint">
-                  {request.requester_name} · {formatRelay(request.requester_relay_number)} · {new Date(request.created_at).toLocaleString()}
-                  {request.handled_by_name ? ` · Last handled by ${request.handled_by_name}` : ''}
-                </div>
-
-                {request.request_type === 'bug_report' && request.metadata && (
-                  <BugMetadata metadata={request.metadata} />
-                )}
-
-                {request.staff_note && (
-                  <div className="mt-4 rounded-lg border border-border bg-canvas px-3 py-2 text-xs text-ink-muted">Staff note: {request.staff_note}</div>
-                )}
-              </div>
-
-              <div className="flex shrink-0 flex-wrap gap-2 lg:max-w-64 lg:justify-end">
-                {request.status === 'new' && (
-                  <ActionButton disabled={busy === request.request_id} onClick={() => void updateStatus(request, 'reviewing')} icon={Clock3}>Review</ActionButton>
-                )}
-                {role === 'owner' && request.request_type === 'role_application' && !['resolved', 'dismissed'].includes(request.status) && (
-                  <ActionButton disabled={busy === request.request_id} onClick={() => void approveRole(request)} icon={Check}>Approve role</ActionButton>
-                )}
-                {!['resolved', 'dismissed'].includes(request.status) && (
-                  <>
-                    <ActionButton disabled={busy === request.request_id} onClick={() => void updateStatus(request, 'resolved')} icon={Check}>Resolve</ActionButton>
-                    <ActionButton disabled={busy === request.request_id} onClick={() => void updateStatus(request, 'dismissed')} icon={X}>Dismiss</ActionButton>
-                  </>
-                )}
-              </div>
+      <section className="mt-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <Inbox size={17} className="text-ink-faint" />
+              <h2 className="text-lg font-semibold text-ink">Requests inbox</h2>
             </div>
-          </article>
-        ))}
-      </div>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-muted">Form-backed submissions are routed here by staff role. Your current view only exposes request types you are allowed to handle.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink">
+              <option value="open">Open requests</option>
+              <option value="all">All statuses</option>
+              <option value="new">New</option>
+              <option value="reviewing">Reviewing</option>
+              <option value="resolved">Resolved</option>
+              <option value="dismissed">Dismissed</option>
+            </select>
+            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink">
+              <option value="all">All request types</option>
+              {requestTypesForRole(staffRole).map((type) => <option key={type} value={type}>{typeLabel(type)}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <RequestStat label="New" value={newCount} note="Unreviewed submissions" />
+          <RequestStat label="Open" value={openCount} note="New or reviewing" />
+          <RequestStat label="Reviewing" value={reviewingCount} note="Already being handled" />
+          <RequestStat label="Resolved" value={resolvedCount} note="Completed in loaded history" />
+        </div>
+
+        {error && <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm text-ink">{error}</div>}
+
+        <div className="mt-5 space-y-3">
+          {visibleRequests.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-12 text-center">
+              <Inbox className="mx-auto text-ink-faint" size={28} />
+              <div className="mt-3 text-sm font-medium text-ink">Inbox clear</div>
+              <div className="mt-1 text-xs text-ink-muted">No requests match these filters.</div>
+            </div>
+          ) : visibleRequests.map((request) => (
+            <article key={request.request_id} className="rounded-2xl border border-border bg-surface p-5 transition-colors hover:bg-surface/90">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <TypeBadge type={request.request_type} />
+                    <StatusBadge status={request.status} />
+                    {request.requested_role && <span className="rounded-full border border-border px-2 py-1 text-[10px] text-ink-muted">Applying for {capitalize(request.requested_role)}</span>}
+                  </div>
+                  <h3 className="mt-3 text-base font-semibold text-ink">{request.subject}</h3>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink-muted">{request.description}</p>
+
+                  <div className="mt-4 text-xs text-ink-faint">
+                    {request.requester_name} · {formatRelay(request.requester_relay_number)} · {new Date(request.created_at).toLocaleString()}
+                    {request.handled_by_name ? ` · Last handled by ${request.handled_by_name}` : ''}
+                  </div>
+
+                  {request.request_type === 'bug_report' && request.metadata && <BugMetadata metadata={request.metadata} />}
+                  {request.staff_note && <div className="mt-4 rounded-lg border border-border bg-canvas px-3 py-2 text-xs text-ink-muted">Staff note: {request.staff_note}</div>}
+                </div>
+
+                <div className="flex shrink-0 flex-wrap gap-2 lg:max-w-64 lg:justify-end">
+                  {request.status === 'new' && <ActionButton disabled={busy === request.request_id} onClick={() => void updateStatus(request, 'reviewing')} icon={Clock3}>Review</ActionButton>}
+                  {staffRole === 'owner' && request.request_type === 'role_application' && !['resolved', 'dismissed'].includes(request.status) && <ActionButton disabled={busy === request.request_id} onClick={() => void approveRole(request)} icon={Check}>Approve role</ActionButton>}
+                  {!['resolved', 'dismissed'].includes(request.status) && (
+                    <>
+                      <ActionButton disabled={busy === request.request_id} onClick={() => void updateStatus(request, 'resolved')} icon={Check}>Resolve</ActionButton>
+                      <ActionButton disabled={busy === request.request_id} onClick={() => void updateStatus(request, 'dismissed')} icon={X}>Dismiss</ActionButton>
+                    </>
+                  )}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
-  return <div className="rounded-xl border border-border bg-surface px-4 py-3"><div className="text-xs text-ink-faint">{label}</div><div className="mt-1 text-2xl font-semibold text-ink">{value}</div></div>;
+function RequestStat({ label, value, note }: { label: string; value: number; note: string }) {
+  return <div className="rounded-xl border border-border bg-surface px-4 py-3"><div className="text-xs text-ink-faint">{label}</div><div className="mt-1 text-2xl font-semibold text-ink">{value.toLocaleString()}</div><div className="mt-1 text-xs text-ink-muted">{note}</div></div>;
 }
 
 function ActionButton({ children, disabled, onClick, icon: Icon }: { children: React.ReactNode; disabled: boolean; onClick: () => void; icon: typeof Check }) {
@@ -264,7 +277,7 @@ function BugMetadata({ metadata }: { metadata: Record<string, unknown> }) {
   );
 }
 
-function isStaff(role: AppRole): role is 'moderator' | 'admin' | 'owner' {
+function isStaff(role: AppRole): role is StaffRole {
   return role !== 'user';
 }
 

@@ -45,7 +45,7 @@ export default function SupportPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const selectedType = useMemo(() => TYPES.find((type) => type.id === requestType) ?? TYPES[0], [requestType]);
+  const selectedType = useMemo(() => TYPES.find((type) => type.id === requestType) ?? TYPES[0]!, [requestType]);
 
   async function loadHistory() {
     const supabase = createClient() as any;

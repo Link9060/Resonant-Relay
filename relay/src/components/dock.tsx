@@ -176,9 +176,9 @@ function DockLink({
 }
 
 function staffConsoleLabel(role: AppRole) {
-  if (role === 'owner') return 'Owner Console';
-  if (role === 'admin') return 'Admin Console';
-  return 'Moderator Console';
+  if (role === 'owner') return '◆ Owner Control';
+  if (role === 'admin') return '◇ Admin Control';
+  return '● Moderator';
 }
 
 function isDockPathActive(pathname: string, href: string) {
