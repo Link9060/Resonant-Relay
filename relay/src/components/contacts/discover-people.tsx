@@ -116,12 +116,12 @@ export function DiscoverPeople({ onOpenRequests }: { onOpenRequests: () => void 
     <div className="mt-5">
       <form onSubmit={search} className="flex gap-2">
         <label className="relative min-w-0 flex-1">
-          <span className="sr-only">Search people by name</span>
+          <span className="sr-only">Search people by name or username</span>
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search people by name"
+            placeholder="Search name or @username"
             maxLength={40}
             autoComplete="off"
             className="w-full rounded-md border border-border bg-canvas py-2.5 pl-9 pr-3 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-ink-muted"
@@ -137,7 +137,7 @@ export function DiscoverPeople({ onOpenRequests }: { onOpenRequests: () => void 
         </button>
       </form>
 
-      <p className="mt-2 text-xs text-ink-faint">Search uses names only. Relay Numbers still use the private direct-add flow.</p>
+      <p className="mt-2 text-xs text-ink-faint">Search by name or @username. Relay Numbers still use the private direct-add flow.</p>
 
       <details className="mt-4 rounded-md border border-border bg-surface">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm text-ink">
@@ -149,7 +149,7 @@ export function DiscoverPeople({ onOpenRequests }: { onOpenRequests: () => void 
             checked={privacy.discoverable_in_contacts}
             disabled={privacySaving || !privacyLoaded}
             title="Appear in Discover"
-            text="People can find your Relay display name and see mutual-contact or shared-group counts."
+            text="People can find your Relay name or @username and see mutual-contact or shared-group counts."
             onChange={(checked) => void savePrivacy({ ...privacy, discoverable_in_contacts: checked })}
           />
           <div className="mt-3 border-t border-border pt-3">

@@ -33,6 +33,16 @@ export default defineConfig([
     },
   },
   {
+    // First-run onboarding intentionally resets username availability when the
+    // user edits the field and memoizes the role-aware tour card list. These
+    // exceptions are scoped to onboarding rather than relaxing hooks rules app-wide.
+    files: ['src/app/onboarding/page.tsx'],
+    rules: {
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
+    },
+  },
+  {
     // The Owner inspector intentionally resets local tab/data state when a
     // different account is selected. Scope the effect-state exception to this
     // component rather than weakening the rule across Relay.

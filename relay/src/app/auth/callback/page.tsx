@@ -8,8 +8,22 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 
 const LOGIN_PATH = appUrl('/login/');
 
-function goToRelay() {
-  window.location.replace(`${window.location.origin}${appUrl('/')}`);
+async function goAfterSignIn() {
+  const supabase = createClient() as any;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    window.location.replace(`${window.location.origin}${LOGIN_PATH}`);
+    return;
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('onboarding_completed_at')
+    .eq('id', user.id)
+    .single();
+
+  const destination = profile?.onboarding_completed_at ? appUrl('/') : appUrl('/onboarding/');
+  window.location.replace(`${window.location.origin}${destination}`);
 }
 
 function Callback() {
@@ -28,10 +42,10 @@ function Callback() {
       const callbackError = params.get('error_description');
 
       // A previously completed link can still leave a valid browser session.
-      // Do not show a failure in that case; just finish entering Relay.
+      // Do not show a failure in that case; finish routing the account instead.
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session) {
-        goToRelay();
+        await goAfterSignIn();
         return;
       }
 
@@ -41,7 +55,7 @@ function Callback() {
           await supabase.auth.exchangeCodeForSession(code);
 
         if (!exchangeError && data.session) {
-          goToRelay();
+          await goAfterSignIn();
           return;
         }
 

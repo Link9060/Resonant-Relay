@@ -187,7 +187,7 @@ export default function LoginPage() {
         )}
 
         <p className="mt-6 text-xs text-ink-faint">
-          You&apos;ll get a Relay Number as soon as you sign in — that&apos;s how people find you.
+          After sign-in, you&apos;ll choose a username and get a Relay Number for direct adds.
         </p>
         <p className="mt-4 text-[11px] text-ink-faint">By continuing, you agree to Relay&apos;s <a href={appPageUrl('/terms')} className="underline underline-offset-2">Terms</a> and acknowledge the <a href={appPageUrl('/privacy')} className="underline underline-offset-2">Privacy Policy</a>.</p>
       </div>
