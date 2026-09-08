@@ -286,7 +286,7 @@ function SecurityTab({ data, user, currentUserId, busy, onRoleChange, onToggleBa
       <section className="rounded-xl border border-border bg-canvas p-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-ink"><ShieldCheck size={15} />Sensitive access</div>
         <p className="mt-1 text-xs leading-5 text-ink-muted">Opening this deep inspector and using sensitive Owner controls are written to Relay's permanent audit log.</p>
-        <a href={appPageUrl('/admin/access-audit')} className="mt-3 inline-flex min-h-10 items-center rounded-lg border border-border px-3 text-xs font-medium text-ink hover:bg-surface-raised">Open Sensitive Access Audit</a>
+        <a href={appPageUrl('/admin/activity/sensitive')} className="mt-3 inline-flex min-h-10 items-center rounded-lg border border-border px-3 text-xs font-medium text-ink hover:bg-surface-raised">Open Sensitive Access Audit</a>
       </section>
       <section className="rounded-xl border border-border bg-canvas p-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-ink"><ShieldCheck size={15} />Owner controls</div>
