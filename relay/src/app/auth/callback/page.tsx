@@ -1,7 +1,7 @@
 'use client';
 
 import { PageLoading } from '@/components/page-loading';
-import { appUrl } from '@/lib/config';
+import { appUrl, IS_BETA } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
@@ -14,6 +14,14 @@ async function goAfterSignIn() {
   if (!user) {
     window.location.replace(`${window.location.origin}${LOGIN_PATH}`);
     return;
+  }
+
+  if (IS_BETA) {
+    const { data: betaAccess, error: betaError } = await supabase.rpc('beta_access_status');
+    if (betaError || !betaAccess?.approved) {
+      window.location.replace(`${window.location.origin}${appUrl('/beta-access/')}`);
+      return;
+    }
   }
 
   const { data: profile } = await supabase
@@ -32,27 +40,21 @@ function Callback() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Auth codes are one-time values. Guarding the effect prevents React from
-    // accidentally attempting the same exchange twice.
     if (started.current) return;
     started.current = true;
 
     void (async () => {
       const supabase = createClient();
       const callbackError = params.get('error_description');
-
-      // A previously completed link can still leave a valid browser session.
-      // Do not show a failure in that case; finish routing the account instead.
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData.session) {
-        await goAfterSignIn();
-        return;
-      }
-
       const code = params.get('code');
+      const flowId = params.get('sb_flow_id');
+
       if (code) {
         const { data, error: exchangeError } =
-          await supabase.auth.exchangeCodeForSession(code);
+          await supabase.auth.exchangeCodeForSession(
+            code,
+            flowId ? { flowId } : undefined,
+          );
 
         if (!exchangeError && data.session) {
           await goAfterSignIn();
@@ -60,6 +62,18 @@ function Callback() {
         }
 
         console.error('Relay sign-in code exchange failed', exchangeError);
+        setError(
+          callbackError
+            ? decodeURIComponent(callbackError.replaceAll('+', ' '))
+            : 'Relay could not finish this sign-in. Request a fresh sign-in and try again from the same Relay site.',
+        );
+        return;
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session) {
+        await goAfterSignIn();
+        return;
       }
 
       setError(
