@@ -1,7 +1,7 @@
 'use client';
 
 import { PageLoading } from '@/components/page-loading';
-import { appUrl } from '@/lib/config';
+import { appUrl, IS_BETA } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
@@ -14,6 +14,14 @@ async function goAfterSignIn() {
   if (!user) {
     window.location.replace(`${window.location.origin}${LOGIN_PATH}`);
     return;
+  }
+
+  if (IS_BETA) {
+    const { data: betaAccess, error: betaError } = await supabase.rpc('beta_access_status');
+    if (betaError || !betaAccess?.approved) {
+      window.location.replace(`${window.location.origin}${appUrl('/beta-access/')}`);
+      return;
+    }
   }
 
   const { data: profile } = await supabase
@@ -32,8 +40,6 @@ function Callback() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Auth codes are one-time values. Guarding the effect prevents React from
-    // accidentally attempting the same exchange twice.
     if (started.current) return;
     started.current = true;
 
@@ -43,9 +49,6 @@ function Callback() {
       const code = params.get('code');
       const flowId = params.get('sb_flow_id');
 
-      // A fresh OAuth/magic-link code always wins over any session already in
-      // this browser. Relay owns the PKCE exchange on this route; the browser
-      // client has detectSessionInUrl disabled so this code is exchanged once.
       if (code) {
         const { data, error: exchangeError } =
           await supabase.auth.exchangeCodeForSession(
@@ -67,8 +70,6 @@ function Callback() {
         return;
       }
 
-      // Only reuse an existing session when this callback does not contain a
-      // new code. This still supports revisiting a completed callback URL.
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session) {
         await goAfterSignIn();

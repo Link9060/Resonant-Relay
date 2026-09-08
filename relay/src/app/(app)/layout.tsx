@@ -5,7 +5,7 @@ import { AppHeader } from '@/components/app-header';
 import { MobileRouteGate } from '@/components/mobile-route-gate';
 import { MobileStaffAlert } from '@/components/mobile-staff-alert';
 import { PageLoading } from '@/components/page-loading';
-import { appPageUrl } from '@/lib/config';
+import { appPageUrl, IS_BETA } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT, setRolePreview } from '@/lib/role-preview';
 import { useEffect, useState, useSyncExternalStore } from 'react';
@@ -37,11 +37,7 @@ function getServerDockCollapsedSnapshot() {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<{ userId: string; profile: any; notifications: any[] } | null>(null);
   const [previewRole, setPreviewRoleState] = useState<AppRole>('user');
-  const dockCollapsed = useSyncExternalStore(
-    subscribeDockCollapsed,
-    getDockCollapsedSnapshot,
-    getServerDockCollapsedSnapshot,
-  );
+  const dockCollapsed = useSyncExternalStore(subscribeDockCollapsed, getDockCollapsedSnapshot, getServerDockCollapsedSnapshot);
 
   useEffect(() => {
     let active = true;
@@ -50,6 +46,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!active) return;
       if (!user) { window.location.replace(appPageUrl('/login')); return; }
+
+      if (IS_BETA) {
+        const { data: betaAccess, error: betaError } = await supabase.rpc('beta_access_status');
+        if (!active) return;
+        if (betaError || !betaAccess?.approved) {
+          window.location.replace(appPageUrl('/beta-access'));
+          return;
+        }
+      }
+
       const [{ data: profile }, { data: notifications }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', user.id).single(),
         supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
@@ -101,11 +107,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-7 text-center">
           <div className="font-display text-2xl font-medium tracking-tight text-ink">Relay account disabled</div>
           <p className="mt-3 text-sm text-ink-muted">This account has been banned from Relay and cannot use the app right now.</p>
-          {state.profile?.ban_reason && (
-            <div className="mt-4 rounded-lg border border-border bg-canvas px-4 py-3 text-left text-sm text-ink-muted">
-              Reason: {state.profile.ban_reason}
-            </div>
-          )}
+          {state.profile?.ban_reason && <div className="mt-4 rounded-lg border border-border bg-canvas px-4 py-3 text-left text-sm text-ink-muted">Reason: {state.profile.ban_reason}</div>}
           <button type="button" onClick={() => void leaveDisabledAccount()} className="mt-5 min-h-11 rounded-md border border-border px-4 text-sm font-medium text-ink hover:bg-surface-raised">Sign out</button>
         </div>
       </main>

@@ -9,6 +9,7 @@ import {
   BarChart3,
   Bug,
   Command,
+  FlaskConical,
   Gauge,
   Inbox,
   Search,
@@ -21,7 +22,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 type StaffRole = Exclude<AppRole, 'user'>;
-export type StaffSection = 'overview' | 'requests' | 'users' | 'moderation' | 'analytics' | 'system' | 'activity';
+export type StaffSection = 'overview' | 'requests' | 'users' | 'moderation' | 'beta' | 'analytics' | 'system' | 'activity';
 
 type NavItem = {
   id: StaffSection;
@@ -37,6 +38,7 @@ const ITEMS: NavItem[] = [
   { id: 'requests', label: 'Requests', description: 'Review bugs, applications, and feedback', icon: Inbox, href: '/admin/requests', roles: ['moderator', 'admin', 'owner'] },
   { id: 'users', label: 'Users', description: 'Search and inspect Relay accounts', icon: Users, href: '/admin/users', roles: ['admin', 'owner'] },
   { id: 'moderation', label: 'Moderation', description: 'Work through the moderation queue', icon: ShieldCheck, href: '/admin/moderation', roles: ['moderator', 'admin', 'owner'] },
+  { id: 'beta', label: 'Beta', description: 'Review Beta requests and tester access', icon: FlaskConical, href: '/admin/beta', roles: ['owner'] },
   { id: 'analytics', label: 'Analytics', description: 'Inspect detailed Relay usage metrics', icon: BarChart3, href: '/admin/analytics', roles: ['owner'] },
   { id: 'system', label: 'System', description: 'View verified operational data', icon: Settings2, href: '/admin/system', roles: ['owner'] },
   { id: 'activity', label: 'Activity', description: 'Open the staff activity workspace', icon: Activity, href: '/admin/activity', roles: ['owner'] },
@@ -154,16 +156,8 @@ function StaffCommandPalette({ role, onClose }: { role: StaffRole; onClose: () =
       <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">
           <Search size={17} className="shrink-0 text-ink-faint" />
-          <input
-            autoFocus
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search Control Center…"
-            className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint"
-          />
-          <button type="button" onClick={onClose} aria-label="Close command palette" className="rounded-md p-1.5 text-ink-faint hover:bg-surface-raised hover:text-ink">
-            <X size={15} />
-          </button>
+          <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search Control Center…" className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint" />
+          <button type="button" onClick={onClose} aria-label="Close command palette" className="rounded-md p-1.5 text-ink-faint hover:bg-surface-raised hover:text-ink"><X size={15} /></button>
         </div>
 
         <div className="max-h-[55vh] overflow-y-auto p-2">
@@ -173,16 +167,9 @@ function StaffCommandPalette({ role, onClose }: { role: StaffRole; onClose: () =
           ) : commands.map((item) => {
             const Icon = item.icon;
             return (
-              <a
-                key={item.id}
-                href={appPageUrl(item.href)}
-                className="flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-surface-raised"
-              >
+              <a key={item.id} href={appPageUrl(item.href)} className="flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-surface-raised">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-canvas text-ink-muted"><Icon size={16} /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-ink">{item.label}</span>
-                  <span className="mt-0.5 block truncate text-xs text-ink-muted">{item.description}</span>
-                </span>
+                <span className="min-w-0 flex-1"><span className="block text-sm font-medium text-ink">{item.label}</span><span className="mt-0.5 block truncate text-xs text-ink-muted">{item.description}</span></span>
                 <ArrowRight size={14} className="text-ink-faint" />
               </a>
             );
