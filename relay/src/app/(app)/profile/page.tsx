@@ -134,7 +134,7 @@ export default function ProfilePage() {
 
     const savedProfile = data as Partial<EditableProfile> | null;
     setProfile((current) => current ? { ...current, ...savedProfile } : current);
-    setOriginalUsername(savedProfile?.username ?? nextUsername || null);
+    setOriginalUsername((savedProfile?.username ?? nextUsername) || null);
     setSaved(true);
   }
 
