@@ -3,6 +3,7 @@
 import { Dock } from '@/components/dock';
 import { AppHeader } from '@/components/app-header';
 import { MobileRouteGate } from '@/components/mobile-route-gate';
+import { MobileStaffAlert } from '@/components/mobile-staff-alert';
 import { PageLoading } from '@/components/page-loading';
 import { appPageUrl } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
@@ -127,6 +128,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         )}
         <AppHeader profile={{ ...state.profile, role: effectiveRole }} role={effectiveRole} currentUserId={state.userId} notifications={state.notifications} />
+        <MobileStaffAlert role={effectiveRole} />
         <main className="relay-mobile-main min-w-0 flex-1 md:pb-0">
           <MobileRouteGate role={effectiveRole}>{children}</MobileRouteGate>
         </main>
