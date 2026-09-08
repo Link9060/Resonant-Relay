@@ -27,6 +27,20 @@ export async function sendMessage(conversationId: string, body: string, files: F
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Not signed in.' };
+
+  if (files.length) {
+    const { data: usage } = await (supabase as any).rpc('my_storage_usage');
+    const row = usage?.[0];
+    if (row) {
+      const usedBytes = Number(row.used_bytes ?? 0);
+      const limitBytes = Number(row.limit_bytes ?? 0);
+      const pendingBytes = files.reduce((total, file) => total + file.size, 0);
+      if (limitBytes > 0 && usedBytes + pendingBytes > limitBytes) {
+        return { ok: false, error: 'These files would exceed your Relay attachment storage limit. Remove older uploads or choose smaller files.' };
+      }
+    }
+  }
+
   const attachments: MessageAttachment[] = [];
   for (const file of files) {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-120) || 'attachment';
@@ -34,13 +48,15 @@ export async function sendMessage(conversationId: string, body: string, files: F
     const { error } = await supabase.storage.from('chat-attachments').upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: false });
     if (error) {
       if (attachments.length) await supabase.storage.from('chat-attachments').remove(attachments.map((item) => item.path));
-      return { ok: false, error: `Could not upload ${file.name}. Check the file type and 10 MB limit.` };
+      return { ok: false, error: `Could not upload ${file.name}. Check the file type, 10 MB file limit, and your Relay storage usage.` };
     }
     attachments.push({ path, name: file.name.slice(0, 180), type: file.type || 'application/octet-stream', size: file.size });
   }
   const { error } = await supabase.from('messages').insert({ conversation_id: conversationId, sender_id: user.id, body: trimmed, attachments, reply_to_id: replyToId });
   if (error) {
     if (attachments.length) await supabase.storage.from('chat-attachments').remove(attachments.map((item) => item.path));
+    const message = String(error.message ?? '').toLowerCase();
+    if (message.includes('rate limit')) return { ok: false, error: 'You are sending messages too quickly. Wait a moment and try again.' };
     return { ok: false, error: 'Could not send that message right now.' };
   }
   return { ok: true, data: undefined };

@@ -3,9 +3,10 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 type GoogleService = 'calendar' | 'gmail';
 
-const APP_ORIGIN = 'https://link9060.github.io';
-const APP_BASE_URL = `${APP_ORIGIN}/Resonant-Relay`;
-const ALLOWED_ORIGINS = new Set([APP_ORIGIN, 'http://localhost:3000']);
+const PROD_ORIGIN = 'https://resonantrelay.org';
+const BETA_ORIGIN = 'https://link9060.github.io';
+const LOCAL_ORIGIN = 'http://localhost:3000';
+const ALLOWED_ORIGINS = new Set([PROD_ORIGIN, BETA_ORIGIN, LOCAL_ORIGIN]);
 const GOOGLE_SCOPES: Record<GoogleService, string> = {
   calendar: 'https://www.googleapis.com/auth/calendar.events.readonly',
   gmail: 'https://www.googleapis.com/auth/gmail.readonly',
@@ -28,8 +29,17 @@ function json(req: Request, data: unknown, status = 200) {
   });
 }
 
-function redirect(path: string, result: 'connected' | 'error', detail?: string) {
-  const url = new URL(`${APP_BASE_URL}${path}/`);
+function trustedOrigin(req: Request) {
+  const origin = req.headers.get('Origin');
+  return origin && ALLOWED_ORIGINS.has(origin) ? origin : PROD_ORIGIN;
+}
+
+function appBaseFor(origin: string) {
+  return origin === BETA_ORIGIN ? `${origin}/Resonant-Relay` : origin;
+}
+
+function redirect(origin: string, path: string, result: 'connected' | 'error', detail?: string) {
+  const url = new URL(`${appBaseFor(origin)}${path}/`);
   url.searchParams.set('google', result);
   if (detail) url.searchParams.set('reason', detail);
   return new Response(null, { status: 302, headers: { Location: url.toString(), 'Cache-Control': 'no-store' } });
@@ -92,12 +102,14 @@ Deno.serve(async (req: Request) => {
       const state = randomState();
       const stateHash = await hashState(state);
       const returnTo = expectedReturnTo(service);
+      const returnOrigin = trustedOrigin(req);
       await admin.from('google_oauth_states').delete().lt('expires_at', new Date().toISOString());
       const { error } = await admin.from('google_oauth_states').insert({
         state_hash: stateHash,
         user_id: user.id,
         service,
         return_to: returnTo,
+        return_origin: returnOrigin,
         expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
       });
       if (error) throw error;
@@ -146,17 +158,18 @@ Deno.serve(async (req: Request) => {
 async function handleCallback(requestUrl: URL, admin: any, supabaseUrl: string) {
   const rawState = requestUrl.searchParams.get('state');
   const code = requestUrl.searchParams.get('code');
-  if (!rawState || !code) return redirect('/calendar', 'error', 'missing_response');
+  if (!rawState || !code) return redirect(PROD_ORIGIN, '/calendar', 'error', 'missing_response');
 
   const stateHash = await hashState(rawState);
   const { data: state } = await admin.from('google_oauth_states').select('*').eq('state_hash', stateHash).maybeSingle();
-  if (!state) return redirect('/calendar', 'error', 'invalid_state');
+  if (!state) return redirect(PROD_ORIGIN, '/calendar', 'error', 'invalid_state');
   await admin.from('google_oauth_states').delete().eq('state_hash', stateHash);
-  if (new Date(state.expires_at).getTime() <= Date.now()) return redirect(state.return_to, 'error', 'expired');
+  const returnOrigin = ALLOWED_ORIGINS.has(state.return_origin) ? state.return_origin : PROD_ORIGIN;
+  if (new Date(state.expires_at).getTime() <= Date.now()) return redirect(returnOrigin, state.return_to, 'error', 'expired');
 
   const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID');
   const clientSecret = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET');
-  if (!clientId || !clientSecret) return redirect(state.return_to, 'error', 'not_configured');
+  if (!clientId || !clientSecret) return redirect(returnOrigin, state.return_to, 'error', 'not_configured');
 
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -169,10 +182,10 @@ async function handleCallback(requestUrl: URL, admin: any, supabaseUrl: string) 
       redirect_uri: `${supabaseUrl}/functions/v1/google-hub/callback`,
     }),
   });
-  if (!tokenResponse.ok) return redirect(state.return_to, 'error', 'token_exchange');
+  if (!tokenResponse.ok) return redirect(returnOrigin, state.return_to, 'error', 'token_exchange');
 
   const tokens = await tokenResponse.json();
-  if (!tokens.refresh_token) return redirect(state.return_to, 'error', 'missing_refresh_token');
+  if (!tokens.refresh_token) return redirect(returnOrigin, state.return_to, 'error', 'missing_refresh_token');
   const { error } = await admin.from('google_integrations').upsert({
     user_id: state.user_id,
     service: state.service,
@@ -183,7 +196,7 @@ async function handleCallback(requestUrl: URL, admin: any, supabaseUrl: string) 
     connected_at: new Date().toISOString(),
   }, { onConflict: 'user_id,service' });
   if (error) throw error;
-  return redirect(state.return_to, 'connected');
+  return redirect(returnOrigin, state.return_to, 'connected');
 }
 
 async function getAccessToken(admin: any, userId: string, service: GoogleService) {
