@@ -41,14 +41,17 @@ function Callback() {
       const supabase = createClient();
       const callbackError = params.get('error_description');
       const code = params.get('code');
+      const flowId = params.get('sb_flow_id');
 
       // A fresh OAuth/magic-link code always wins over any session already in
-      // this browser. Checking the old session first could silently sign the
-      // user back into a previous account and ignore the account they just
-      // chose at the identity provider.
+      // this browser. Relay owns the PKCE exchange on this route; the browser
+      // client has detectSessionInUrl disabled so this code is exchanged once.
       if (code) {
         const { data, error: exchangeError } =
-          await supabase.auth.exchangeCodeForSession(code);
+          await supabase.auth.exchangeCodeForSession(
+            code,
+            flowId ? { flowId } : undefined,
+          );
 
         if (!exchangeError && data.session) {
           await goAfterSignIn();
