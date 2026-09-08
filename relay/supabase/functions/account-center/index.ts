@@ -1,8 +1,11 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const APP_ORIGIN = 'https://link9060.github.io';
-const ALLOWED_ORIGINS = new Set([APP_ORIGIN, 'http://localhost:3000']);
+const ALLOWED_ORIGINS = new Set([
+  'https://resonantrelay.org',
+  'https://link9060.github.io',
+  'http://localhost:3000',
+]);
 
 function cors(req: Request) {
   const origin = req.headers.get('Origin');
