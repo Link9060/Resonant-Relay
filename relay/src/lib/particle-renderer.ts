@@ -8,6 +8,7 @@ export type CloudMotion = {
   hover?: number;
   impulse?: number;
   loading?: boolean;
+  loadingMix?: number;
   pointerX?: number;
   pointerY?: number;
   scale?: number;
@@ -130,9 +131,10 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
     const pointerX = motion.pointerX ?? 0, pointerY = motion.pointerY ?? 0;
     const scale = Math.max(0.025, motion.scale ?? 1);
     const opacity = Math.max(0, Math.min(1, motion.alpha ?? 1));
+    const loadingMix = smooth01(motion.loadingMix ?? (motion.loading ? 1 : 0));
     const viewportHeight = ctx.canvas.height / Math.max(1, ctx.getTransform().d);
     const radius = getRadius(width, viewportHeight, scale);
-    const yaw = time * (motion.loading ? 0.16 : 0.052) + mx * hover * 0.68;
+    const yaw = time * (0.052 + loadingMix * 0.045) + mx * hover * 0.68;
     const pitch = Math.sin(time * 0.14) * 0.028 - my * hover * 0.42;
     const roll = Math.sin(time * 0.09) * 0.016 + mx * hover * 0.05;
     const cyaw = Math.cos(yaw), syaw = Math.sin(yaw);
@@ -166,28 +168,35 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
       let sy = cy + followY + y3 * radius * perspective;
       let interaction = 0;
 
-      // While data is loading, the loose cloud gathers into a dense satellite
-      // with a tapered wake. The three ordered shells stay in the center so the
-      // loading state still belongs to the same object instead of becoming a spinner.
-      let loadingHead = 0;
-      if (motion.loading && !structural) {
-        const trail = Math.pow(point.phase / TAU, 1.72);
-        const orbitAngle = time * 1.34 - trail * 1.72;
-        loadingHead = 1 - trail;
-        const bubbleRadius = radius * (0.036 + loadingHead * 0.12);
-        const localTurn = orbitAngle * 0.72;
-        const localX = (point.x * Math.cos(localTurn) - point.y * Math.sin(localTurn)) * bubbleRadius;
-        const localY = (point.x * Math.sin(localTurn) + point.y * Math.cos(localTurn)) * bubbleRadius;
-        sx = cx + Math.cos(orbitAngle) * radius * 0.9 + localX;
-        sy = cy + Math.sin(orbitAngle) * radius * 0.43 + localY;
+      // The active state grows out of the loose cloud instead of replacing it.
+      // Most unstructured points ease into a noisy orbital field, while a portion
+      // remains around the core so it never becomes a bare geometric wireframe.
+      let orbitBlend = 0;
+      let loadingWave = 0;
+      if (loadingMix > 0.001 && !structural) {
+        const selector = Math.abs(Math.sin(point.phase * 12.9898 + point.tone * 78.233) * 43758.5453) % 1;
+        if (selector > 0.26) {
+          const stagger = ((selector * 17.13) % 1) * 0.16;
+          orbitBlend = smooth01((loadingMix - stagger) / Math.max(0.001, 1 - stagger));
+          const orbitAngle = point.phase + time * (0.62 + point.tone * 0.07) + point.z * 0.16;
+          const radialNoise = point.y * radius * 0.075 + Math.sin(point.phase * 4.7 + time * 0.44) * radius * 0.022;
+          const tangentNoise = point.z * radius * 0.052;
+          const orbitRadius = radius * (1.01 + point.x * 0.065) + radialNoise;
+          const orbitX = cx + Math.cos(orbitAngle) * orbitRadius - Math.sin(orbitAngle) * tangentNoise;
+          const orbitY = cy + Math.sin(orbitAngle) * radius * 0.48 + Math.cos(orbitAngle) * tangentNoise * 0.42 + point.y * radius * 0.035;
+          sx += (orbitX - sx) * orbitBlend;
+          sy += (orbitY - sy) * orbitBlend;
+          loadingWave = Math.pow(Math.abs(Math.cos(orbitAngle - time * 1.58)), 14) * orbitBlend;
+        }
       }
 
-      if (!motion.loading && hover > 0.015) {
+      const interactiveHover = hover * (1 - loadingMix * 0.72);
+      if (interactiveHover > 0.015) {
         const dx = sx - (cx + pointerX);
         const dy = sy - (cy + pointerY);
         const distance = Math.hypot(dx, dy);
         if (distance < interactionRadius) {
-          interaction = Math.pow(1 - distance / interactionRadius, 2) * hover;
+          interaction = Math.pow(1 - distance / interactionRadius, 2) * interactiveHover;
           const inverse = distance > 0.5 ? 1 / distance : 0;
           const push = radius * 0.14 * interaction;
           const swirl = radius * 0.065 * interaction;
@@ -209,9 +218,12 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
             : point.layer === 1
               ? (0.12 + rim * 0.105 + front * 0.125) * randomTone
               : (0.05 + front * 0.14 + rim * 0.035 + point.spark * 0.22) * randomTone;
-      if (motion.loading && !structural) alpha = (0.15 + loadingHead * 0.76 + point.tone * 0.16) * randomTone;
-      if (motion.loading && structural) alpha *= 1.32;
-      const grain = Math.max(0.58, point.grain * preferences.size * (0.9 + rim * 0.26 + front * 0.12 + point.spark * 0.45 + loadingHead * 0.18));
+      if (!structural && orbitBlend > 0) {
+        const activeAlpha = (0.16 + point.tone * 0.34 + loadingWave * 0.28 + point.spark * 0.1) * randomTone;
+        alpha += (activeAlpha - alpha) * orbitBlend;
+      }
+      if (structural) alpha *= 1 + loadingMix * 0.16;
+      const grain = Math.max(0.58, point.grain * preferences.size * (0.9 + rim * 0.26 + front * 0.12 + point.spark * 0.45 + loadingWave * 0.28));
       ctx.globalAlpha = Math.min(0.99, alpha + interaction * 0.22) * opacity;
       ctx.fillRect(sx - grain / 2, sy - grain / 2, grain, grain);
     }
@@ -250,6 +262,11 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
 
 function clamp01(value: number) {
   return Math.max(0, Math.min(1, value));
+}
+
+function smooth01(value: number) {
+  const t = clamp01(value);
+  return t * t * (3 - 2 * t);
 }
 
 export function fitCanvas(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, width: number, height: number) {

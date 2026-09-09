@@ -40,7 +40,7 @@ export function ParticleField() {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     let sparks = makeDust(Math.round((window.innerWidth < 600 ? 700 : 1450) * preferences.density));
     let w = 0, h = 0, cx = 0, cy = 0, areaWidth = 0;
-    let frame = 0, last = 0, clock = 0, dirty = true;
+    let frame = 0, last = 0, clock = 0, dirty = true, loadingMix = 0;
     let pointerX = 0, pointerY = 0, pointerClientX = 0, pointerClientY = 0;
     let mouseX = 0, mouseY = 0, hover = 0, targetHover = 0;
     let dark = document.documentElement.classList.contains('dark');
@@ -148,24 +148,32 @@ export function ParticleField() {
     const draw = (now: number) => {
       frame = 0;
       if (document.hidden) return;
-      const loading = root.dataset.loading === 'true';
-      const showCloud = root.dataset.ready === 'true' && (root.dataset.space === 'true' || loading);
+      const loadingState = root.dataset.loading ?? 'false';
+      const loading = loadingState === 'true';
+      const settling = loadingState === 'settling';
+      const showCloud = root.dataset.ready === 'true' && (root.dataset.space === 'true' || loading || settling);
       if (!showCloud && !cue && !impact) {
         bg.clearRect(0, 0, w, h); fx.clearRect(0, 0, w, h);
         last = 0; return;
       }
-      const interval = cue || impact || loading ? 1000 / 60 : 1000 / 30;
+      const interval = cue || impact || loading || settling ? 1000 / 60 : 1000 / 30;
       if (!dirty && now - last < interval - 1) { frame = requestAnimationFrame(draw); return; }
       const costStart = performance.now();
-      clock += last ? Math.min((now - last) / 1000, 0.05) : 0;
+      const elapsed = last ? Math.min((now - last) / 1000, 0.05) : 0;
+      clock += elapsed;
       last = now; dirty = false;
+      if (!media.matches) {
+        const direction = loading ? 1 : -1;
+        const duration = loading ? 0.68 : 0.72;
+        loadingMix = clamp01(loadingMix + direction * elapsed / duration);
+      } else loadingMix = 0;
       mouseX += (pointerX - mouseX) * 0.08; mouseY += (pointerY - mouseY) * 0.08;
       hover += (targetHover - hover) * 0.1;
       bg.clearRect(0, 0, w, h); fx.clearRect(0, 0, w, h);
       const impactProgress = impact ? Math.min(1, (now - impact.started) / 820) : 1;
       const impulse = impact && impactProgress < 1 ? Math.sin(impactProgress * Math.PI) : 0;
       if (showCloud) renderCloud(bg, cx, cy, areaWidth, media.matches ? 0 : clock, dark, media.matches ? {} : {
-        mx: mouseX, my: mouseY, hover, impulse, loading,
+        mx: mouseX, my: mouseY, hover, impulse, loading, loadingMix,
         pointerX: pointerClientX - cx, pointerY: pointerClientY - cy,
       });
       if (impact && impactProgress < 1 && !media.matches) {
@@ -286,13 +294,27 @@ export function BetaExperience({ children }: { children: ReactNode }) {
       cancel: id => window.clearTimeout(id),
     });
     let wasLoading = false;
+    let loadingReleaseTimer = 0;
     const syncLoading = () => {
       const loading = Boolean(root.querySelector('.relay-loading, [data-relay-loading]'));
-      root.dataset.loading = String(loading);
-      if (loading !== wasLoading) {
-        wasLoading = loading;
-        controller.holdForLoading(loading);
+      if (loading === wasLoading) return;
+      wasLoading = loading;
+      window.clearTimeout(loadingReleaseTimer);
+      if (loading) {
+        root.dataset.loading = 'true';
+        controller.holdForLoading(true);
+        return;
       }
+      if (reducedMotion()) {
+        root.dataset.loading = 'false';
+        controller.holdForLoading(false);
+        return;
+      }
+      root.dataset.loading = 'settling';
+      loadingReleaseTimer = window.setTimeout(() => {
+        root.dataset.loading = 'false';
+        controller.holdForLoading(false);
+      }, 720);
     };
     const loadingObserver = new MutationObserver(syncLoading);
     loadingObserver.observe(root, { childList: true, subtree: true });
@@ -335,6 +357,7 @@ export function BetaExperience({ children }: { children: ReactNode }) {
     return () => {
       controller.dispose();
       loadingObserver.disconnect();
+      window.clearTimeout(loadingReleaseTimer);
       window.removeEventListener(INTRO_DONE, ready); window.removeEventListener('popstate', history);
       root.removeEventListener('click', click); root.removeEventListener('pointerover', prefetch); root.removeEventListener('focusin', prefetch);
       routeChanged.current = () => {};
