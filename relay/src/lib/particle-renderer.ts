@@ -28,8 +28,11 @@ type BlobPoint = {
  * displaces the projected points without introducing a WebGL dependency. */
 export function createCloudRenderer(compact: boolean, requested: ParticlePreferences = DEFAULT_PARTICLE_PREFERENCES) {
   const preferences = normalizeParticlePreferences(requested);
-  const count = Math.round((compact ? 2300 : 3600) * preferences.density);
-  const shellCount = Math.round(count * 0.72);
+  // Keep the object physically compact while raising point density. The
+  // desktop default lands just above ten thousand points without increasing
+  // the number of animation frames we draw.
+  const count = Math.round((compact ? 3200 : 5600) * preferences.density);
+  const shellCount = Math.round(count * 0.64);
   const points: BlobPoint[] = [];
   let seed = 1741;
   const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) | 0; return (seed >>> 0) / 4294967296; };
@@ -41,15 +44,15 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
     const ring = Math.sqrt(Math.max(0, 1 - y * y));
     const angle = i * GOLDEN_ANGLE + (random() - 0.5) * 0.07;
     const deformation = 1
-      + Math.sin(angle * 3 + y * 4.2) * 0.045
-      + Math.sin(angle * 7 - y * 2.7) * 0.025
-      + (random() - 0.5) * 0.035;
+      + Math.sin(angle * 3 + y * 4.2) * 0.055
+      + Math.sin(angle * 7 - y * 2.7) * 0.032
+      + (random() - 0.5) * 0.045;
     points.push({
       x: Math.cos(angle) * ring * deformation,
       y: y * deformation,
       z: Math.sin(angle) * ring * deformation,
       phase: random() * TAU,
-      grain: 0.72 + random() * 1.15,
+      grain: 0.52 + random() * 0.7,
       shell: 1,
       spark: random() > 0.982 ? 1 : 0,
     });
@@ -67,7 +70,7 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
       y: y * radius,
       z: Math.sin(angle) * ring * radius,
       phase: random() * TAU,
-      grain: 0.58 + random() * 0.8,
+      grain: 0.46 + random() * 0.62,
       shell: 0,
       spark: random() > 0.994 ? 1 : 0,
     });
@@ -78,7 +81,7 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
     const hover = motion.hover ?? 0, impulse = motion.impulse ?? 0;
     const pointerX = motion.pointerX ?? 0, pointerY = motion.pointerY ?? 0;
     const viewportHeight = ctx.canvas.height / Math.max(1, ctx.getTransform().d);
-    const radius = Math.min(width * (compact ? 0.39 : 0.32), viewportHeight * (compact ? 0.31 : 0.35), compact ? 290 : 420);
+    const radius = Math.min(width * (compact ? 0.34 : 0.245), viewportHeight * (compact ? 0.27 : 0.28), compact ? 220 : 315);
     const yaw = time * (motion.loading ? 0.42 : 0.055) + mx * hover * 0.58;
     const pitch = Math.sin(time * 0.17) * 0.035 - my * hover * 0.32;
     const roll = Math.sin(time * 0.11) * 0.025 + mx * hover * 0.06;
@@ -126,9 +129,9 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
       const rim = Math.max(0, Math.min(1, (projectedRadius - 0.67) / 0.35));
       const front = Math.max(0, Math.min(1, (z2 + 1.05) / 2.1));
       const alpha = point.shell
-        ? 0.12 + rim * 0.62 + front * 0.1 + point.spark * 0.2
-        : 0.035 + front * 0.13 + point.spark * 0.34;
-      const grain = Math.max(0.65, point.grain * preferences.size * (0.78 + rim * 0.5 + front * 0.18 + point.spark * 0.6));
+        ? 0.14 + rim * 0.54 + front * 0.12 + point.spark * 0.18
+        : 0.065 + front * 0.18 + rim * 0.08 + point.spark * 0.3;
+      const grain = Math.max(0.55, point.grain * preferences.size * (0.82 + rim * 0.42 + front * 0.16 + point.spark * 0.58));
       ctx.globalAlpha = Math.min(0.98, alpha);
       ctx.fillRect(sx - grain / 2, sy - grain / 2, grain, grain);
     }
