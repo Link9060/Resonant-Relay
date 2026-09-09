@@ -164,7 +164,7 @@ export function ParticleField() {
       last = now; dirty = false;
       if (!media.matches) {
         const direction = loading ? 1 : -1;
-        const duration = loading ? 0.68 : 0.72;
+        const duration = loading ? 0.8 : 0.82;
         loadingMix = clamp01(loadingMix + direction * elapsed / duration);
       } else loadingMix = 0;
       mouseX += (pointerX - mouseX) * 0.08; mouseY += (pointerY - mouseY) * 0.08;
@@ -314,7 +314,7 @@ export function BetaExperience({ children }: { children: ReactNode }) {
       loadingReleaseTimer = window.setTimeout(() => {
         root.dataset.loading = 'false';
         controller.holdForLoading(false);
-      }, 720);
+      }, 820);
     };
     const loadingObserver = new MutationObserver(syncLoading);
     loadingObserver.observe(root, { childList: true, subtree: true });

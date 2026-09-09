@@ -142,7 +142,7 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
     const croll = Math.cos(roll), sroll = Math.sin(roll);
     const followX = mx * hover * radius * 0.028;
     const followY = my * hover * radius * 0.02;
-    const interactionRadius = radius * 0.43;
+    const interactionRadius = radius * (0.43 + loadingMix * 0.14);
     ctx.fillStyle = dark ? '#fff' : '#0d0d0f';
 
     for (const point of points) {
@@ -173,21 +173,36 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
       // remains around the core so it never becomes a bare geometric wireframe.
       let orbitBlend = 0;
       let loadingWave = 0;
+      let orbitDepth = 0.5;
       if (loadingMix > 0.001 && !structural) {
         const selector = Math.abs(Math.sin(point.phase * 12.9898 + point.tone * 78.233) * 43758.5453) % 1;
-        if (selector > 0.26) {
+        if (selector > 0.34) {
           const stagger = ((selector * 17.13) % 1) * 0.16;
           orbitBlend = smooth01((loadingMix - stagger) / Math.max(0.001, 1 - stagger));
           const orbitAngle = point.phase + time * (0.62 + point.tone * 0.07) + point.z * 0.16;
-          const radialNoise = point.y * radius * 0.075 + Math.sin(point.phase * 4.7 + time * 0.44) * radius * 0.022;
-          const tangentNoise = point.z * radius * 0.052;
-          const orbitRadius = radius * (1.01 + point.x * 0.065) + radialNoise;
-          const orbitX = cx + Math.cos(orbitAngle) * orbitRadius - Math.sin(orbitAngle) * tangentNoise;
-          const orbitY = cy + Math.sin(orbitAngle) * radius * 0.48 + Math.cos(orbitAngle) * tangentNoise * 0.42 + point.y * radius * 0.035;
+          const lane = (selector * 31.71) % 1;
+          const radialNoise = point.y * radius * 0.082 + Math.sin(point.phase * 4.7 + time * 0.44) * radius * 0.026;
+          const tangentNoise = point.z * radius * (0.044 + lane * 0.026);
+          const orbitRadius = radius * (0.95 + lane * 0.13 + point.x * 0.045) + radialNoise;
+          const rawX = Math.cos(orbitAngle) * orbitRadius - Math.sin(orbitAngle) * tangentNoise;
+          const rawY = Math.sin(orbitAngle) * radius * (0.41 + lane * 0.095) + Math.cos(orbitAngle) * tangentNoise * 0.46 + point.y * radius * 0.045;
+          const precession = -0.17 + Math.sin(time * 0.115) * 0.12 + mx * hover * 0.09;
+          const cosPlane = Math.cos(precession), sinPlane = Math.sin(precession);
+          const depth = Math.sin(orbitAngle + 0.48);
+          orbitDepth = clamp01((depth + 1) / 2);
+          const depthPerspective = 0.92 + orbitDepth * 0.1;
+          const orbitX = cx + (rawX * cosPlane - rawY * sinPlane) * depthPerspective + followX * 0.45;
+          const orbitY = cy + (rawX * sinPlane + rawY * cosPlane) * depthPerspective + followY * 0.45 + my * hover * radius * 0.018;
           sx += (orbitX - sx) * orbitBlend;
           sy += (orbitY - sy) * orbitBlend;
-          loadingWave = Math.pow(Math.abs(Math.cos(orbitAngle - time * 1.58)), 14) * orbitBlend;
+          loadingWave = Math.pow(Math.abs(Math.cos(orbitAngle - time * 1.42 + lane * 0.34)), 6) * orbitBlend * (0.78 + selector * 0.22);
         }
+      }
+
+      if (structural && loadingMix > 0.001) {
+        const loosen = radius * loadingMix * (point.layer === 3 ? 0.011 : 0.007);
+        sx += Math.sin(time * 0.37 + point.phase * 1.7) * loosen;
+        sy += Math.cos(time * 0.31 + point.phase * 1.3) * loosen;
       }
 
       const interactiveHover = hover * (1 - loadingMix * 0.72);
@@ -219,11 +234,13 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
               ? (0.12 + rim * 0.105 + front * 0.125) * randomTone
               : (0.05 + front * 0.14 + rim * 0.035 + point.spark * 0.22) * randomTone;
       if (!structural && orbitBlend > 0) {
-        const activeAlpha = (0.16 + point.tone * 0.34 + loadingWave * 0.28 + point.spark * 0.1) * randomTone;
+        const depthLight = 0.56 + orbitDepth * 0.44;
+        const activeAlpha = (0.11 + point.tone * 0.25 + loadingWave * 0.17 + point.spark * 0.075) * randomTone * depthLight;
         alpha += (activeAlpha - alpha) * orbitBlend;
       }
-      if (structural) alpha *= 1 + loadingMix * 0.16;
-      const grain = Math.max(0.58, point.grain * preferences.size * (0.9 + rim * 0.26 + front * 0.12 + point.spark * 0.45 + loadingWave * 0.28));
+      if (structural) alpha *= 1 - loadingMix * 0.04;
+      const loadingSize = 1 - orbitBlend * (0.17 - orbitDepth * 0.08);
+      const grain = Math.max(0.58, point.grain * preferences.size * (0.9 + rim * 0.26 + front * 0.12 + point.spark * 0.45 + loadingWave * 0.09) * loadingSize);
       ctx.globalAlpha = Math.min(0.99, alpha + interaction * 0.22) * opacity;
       ctx.fillRect(sx - grain / 2, sy - grain / 2, grain, grain);
     }
