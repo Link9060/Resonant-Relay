@@ -25,7 +25,10 @@ const smooth = (value: number) => {
   const t = clamp01(value);
   return t * t * (3 - 2 * t);
 };
-const easeOut = (value: number) => 1 - Math.pow(1 - clamp01(value), 3);
+const easeInOut = (value: number) => {
+  const t = clamp01(value);
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+};
 
 export function ParticleField() {
   const backgroundRef = useRef<HTMLCanvasElement>(null);
@@ -122,18 +125,18 @@ export function ParticleField() {
     const drawWorkspaceCue = (kind: 'open' | 'close', progress: number) => {
       const opening = kind === 'open';
       const structureAlpha = opening
-        ? 1 - smooth((progress - 0.68) / 0.25)
+        ? 1 - smooth((progress - 0.08) / 0.58)
         : smooth((progress - 0.44) / 0.36);
       if (structureAlpha > 0.002) renderCloud(fx, cx, cy, areaWidth, clock, dark, {
         structureOnly: true,
         alpha: structureAlpha,
       });
 
-      const dotAlpha = opening ? 1 - smooth((progress - 0.9) / 0.1) : smooth(progress / 0.14);
+      const dotAlpha = opening ? 1 : smooth(progress / 0.14);
       fx.fillStyle = dark ? '#fff' : '#111';
       for (const point of pageParticles) {
         const local = opening
-          ? easeOut((progress - 0.035 - point.delay) / 0.43)
+          ? easeInOut((progress - 0.025 - point.delay * 0.72) / 0.57)
           : smooth((progress - 0.1 - point.delay * 0.24) / 0.64);
         const travel = opening ? local : 1 - local;
         const inverse = 1 - travel;
@@ -141,7 +144,8 @@ export function ParticleField() {
         const y = inverse * inverse * point.sourceY + 2 * inverse * travel * point.controlY + travel * travel * point.targetY;
         const flightGlow = Math.sin(travel * Math.PI);
         const size = point.size * (1 + flightGlow * 0.28);
-        fx.globalAlpha = dotAlpha * point.tone * (0.68 + flightGlow * 0.3);
+        const settledFade = opening ? 1 - smooth((local - 0.72) / 0.28) : 1;
+        fx.globalAlpha = dotAlpha * settledFade * point.tone * (0.68 + flightGlow * 0.3);
         fx.fillRect(x - size / 2, y - size / 2, size, size);
       }
       fx.globalAlpha = 1;
