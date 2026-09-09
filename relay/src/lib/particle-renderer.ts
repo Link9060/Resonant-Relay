@@ -1,75 +1,138 @@
 import { DEFAULT_PARTICLE_PREFERENCES, normalizeParticlePreferences, type ParticlePreferences } from '@/lib/particle-preferences';
 
+const TAU = Math.PI * 2;
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+
 export type CloudMotion = {
   mx?: number;
   my?: number;
   hover?: number;
   impulse?: number;
   loading?: boolean;
+  pointerX?: number;
+  pointerY?: number;
 };
 
-/** Rasterize the fine dust and smoke once, then composite four orbiting layers.
- * Density changes cost texture-generation time, not per-frame particle math. */
+type BlobPoint = {
+  x: number;
+  y: number;
+  z: number;
+  phase: number;
+  grain: number;
+  shell: number;
+  spark: number;
+};
+
+/** A true 3D point blob: most particles sit on a noisy spherical shell while
+ * the rest create darker interior depth. Mouse input rotates and locally
+ * displaces the projected points without introducing a WebGL dependency. */
 export function createCloudRenderer(compact: boolean, requested: ParticlePreferences = DEFAULT_PARTICLE_PREFERENCES) {
   const preferences = normalizeParticlePreferences(requested);
-  const size = compact ? 768 : 1024;
-  const layers = Array.from({ length: 4 }, (_, layer) => {
-    const texture = document.createElement('canvas');
-    texture.width = size; texture.height = size;
-    const ctx = texture.getContext('2d')!;
-    const count = Math.round((compact ? 1450 : 2350) * preferences.density);
-    let seed = 1741 + layer * 7151;
-    const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) | 0; return (seed >>> 0) / 4294967296; };
+  const count = Math.round((compact ? 2300 : 3600) * preferences.density);
+  const shellCount = Math.round(count * 0.72);
+  const points: BlobPoint[] = [];
+  let seed = 1741;
+  const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) | 0; return (seed >>> 0) / 4294967296; };
 
-    // Wide, low-opacity billows give the point field a smoke-like body while
-    // preserving the visible individual grains that define Relay's motion.
-    for (let i = 0; i < 34; i++) {
-      const radius = (0.05 + random() * 0.19) * size;
-      const x = size / 2 + (random() - 0.5) * size * 0.58;
-      const y = size / 2 + (random() - 0.5) * size * 0.28;
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, `rgba(255,255,255,${0.022 + random() * 0.026})`);
-      gradient.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-    }
+  // A Fibonacci shell avoids obvious clumps while overlapping waves keep its
+  // silhouette organic instead of mathematically round.
+  for (let i = 0; i < shellCount; i++) {
+    const y = 1 - 2 * (i + 0.5) / shellCount;
+    const ring = Math.sqrt(Math.max(0, 1 - y * y));
+    const angle = i * GOLDEN_ANGLE + (random() - 0.5) * 0.07;
+    const deformation = 1
+      + Math.sin(angle * 3 + y * 4.2) * 0.045
+      + Math.sin(angle * 7 - y * 2.7) * 0.025
+      + (random() - 0.5) * 0.035;
+    points.push({
+      x: Math.cos(angle) * ring * deformation,
+      y: y * deformation,
+      z: Math.sin(angle) * ring * deformation,
+      phase: random() * TAU,
+      grain: 0.72 + random() * 1.15,
+      shell: 1,
+      spark: random() > 0.982 ? 1 : 0,
+    });
+  }
 
-    for (let i = 0; i < count; i++) {
-      const radius = Math.pow(random(), 0.76) * size * 0.47;
-      const angle = random() * Math.PI * 2 + radius / size * 5;
-      const grain = (0.78 + random() * 1.12) * preferences.size * size / 900;
-      ctx.globalAlpha = (0.28 + random() * 0.7) * Math.max(0.08, 1 - radius / size * 1.14);
-      ctx.fillStyle = '#fff';
-      const x = size / 2 + Math.cos(angle) * radius;
-      const y = size / 2 + Math.sin(angle) * radius;
-      if (grain > 1.45) { ctx.beginPath(); ctx.arc(x, y, grain * 0.5, 0, Math.PI * 2); ctx.fill(); }
-      else ctx.fillRect(x, y, grain, grain);
-    }
-    ctx.globalAlpha = 1;
-    const light = document.createElement('canvas'); light.width = size; light.height = size;
-    const lc = light.getContext('2d')!; lc.drawImage(texture, 0, 0);
-    lc.globalCompositeOperation = 'source-in'; lc.fillStyle = '#171719'; lc.fillRect(0, 0, size, size);
-    return { dark: texture, light };
-  });
+  // Volumetric points make the center feel dimensional and partially hollow,
+  // matching the reference's quieter interior and brighter turbulent edge.
+  for (let i = shellCount; i < count; i++) {
+    const y = random() * 2 - 1;
+    const ring = Math.sqrt(Math.max(0, 1 - y * y));
+    const angle = random() * TAU;
+    const radius = Math.cbrt(random()) * 0.91;
+    points.push({
+      x: Math.cos(angle) * ring * radius,
+      y: y * radius,
+      z: Math.sin(angle) * ring * radius,
+      phase: random() * TAU,
+      grain: 0.58 + random() * 0.8,
+      shell: 0,
+      spark: random() > 0.994 ? 1 : 0,
+    });
+  }
+
   return (ctx: CanvasRenderingContext2D, cx: number, cy: number, width: number, time: number, dark: boolean, motion: CloudMotion = {}) => {
-    const spread = Math.min(width * 0.94, 1040);
     const mx = motion.mx ?? 0, my = motion.my ?? 0;
     const hover = motion.hover ?? 0, impulse = motion.impulse ?? 0;
-    for (let i = 0; i < layers.length; i++) {
-      ctx.save();
-      const depth = (i + 1) / layers.length;
-      const push = hover * (8 + depth * 13);
-      ctx.translate(cx + mx * push, cy + my * push * 0.62);
-      const pulse = 1 + impulse * (0.035 + depth * 0.07);
-      ctx.scale(pulse, pulse * (0.43 + i * 0.045));
-      const direction = i % 2 ? -1 : 1;
-      const speed = motion.loading ? 0.29 + i * 0.025 : 0.018 + i * 0.004;
-      ctx.rotate(time * speed * direction + i * 1.22 + mx * hover * direction * 0.035);
-      ctx.globalAlpha = i === 0 ? 0.98 : 0.78;
-      const texture = dark ? layers[i]!.dark : layers[i]!.light;
-      ctx.drawImage(texture, -spread / 2, -spread / 2, spread, spread);
-      ctx.restore();
+    const pointerX = motion.pointerX ?? 0, pointerY = motion.pointerY ?? 0;
+    const viewportHeight = ctx.canvas.height / Math.max(1, ctx.getTransform().d);
+    const radius = Math.min(width * (compact ? 0.39 : 0.32), viewportHeight * (compact ? 0.31 : 0.35), compact ? 290 : 420);
+    const yaw = time * (motion.loading ? 0.42 : 0.055) + mx * hover * 0.58;
+    const pitch = Math.sin(time * 0.17) * 0.035 - my * hover * 0.32;
+    const roll = Math.sin(time * 0.11) * 0.025 + mx * hover * 0.06;
+    const cyaw = Math.cos(yaw), syaw = Math.sin(yaw);
+    const cpitch = Math.cos(pitch), spitch = Math.sin(pitch);
+    const croll = Math.cos(roll), sroll = Math.sin(roll);
+    const followX = mx * hover * radius * 0.025;
+    const followY = my * hover * radius * 0.018;
+    const interactionRadius = radius * 0.4;
+    ctx.fillStyle = dark ? '#fff' : '#0f0f11';
+
+    for (const point of points) {
+      const surfaceWobble = point.shell
+        ? 1 + Math.sin(time * 0.68 + point.phase) * 0.012 + impulse * (0.045 + point.spark * 0.035)
+        : 1 + impulse * 0.018;
+      const px = point.x * surfaceWobble;
+      const py = point.y * surfaceWobble;
+      const pz = point.z * surfaceWobble;
+
+      const x1 = px * cyaw + pz * syaw;
+      const z1 = -px * syaw + pz * cyaw;
+      const y2 = py * cpitch - z1 * spitch;
+      const z2 = py * spitch + z1 * cpitch;
+      const x3 = x1 * croll - y2 * sroll;
+      const y3 = x1 * sroll + y2 * croll;
+      const perspective = 1 / Math.max(0.74, 1 - z2 * 0.14);
+      let sx = cx + followX + x3 * radius * perspective;
+      let sy = cy + followY + y3 * radius * perspective;
+
+      // Particles beneath the pointer peel away locally while the rest keeps
+      // rotating, making the interaction visible without expensive physics.
+      if (hover > 0.015) {
+        const dx = sx - (cx + pointerX);
+        const dy = sy - (cy + pointerY);
+        const distance = Math.hypot(dx, dy);
+        if (distance < interactionRadius) {
+          const force = Math.pow(1 - distance / interactionRadius, 2) * hover;
+          const inverse = distance > 0.5 ? 1 / distance : 0;
+          sx += dx * inverse * force * radius * 0.095;
+          sy += dy * inverse * force * radius * 0.095;
+        }
+      }
+
+      const projectedRadius = Math.min(1.15, Math.hypot(x3, y3));
+      const rim = Math.max(0, Math.min(1, (projectedRadius - 0.67) / 0.35));
+      const front = Math.max(0, Math.min(1, (z2 + 1.05) / 2.1));
+      const alpha = point.shell
+        ? 0.12 + rim * 0.62 + front * 0.1 + point.spark * 0.2
+        : 0.035 + front * 0.13 + point.spark * 0.34;
+      const grain = Math.max(0.65, point.grain * preferences.size * (0.78 + rim * 0.5 + front * 0.18 + point.spark * 0.6));
+      ctx.globalAlpha = Math.min(0.98, alpha);
+      ctx.fillRect(sx - grain / 2, sy - grain / 2, grain, grain);
     }
+    ctx.globalAlpha = 1;
   };
 }
 

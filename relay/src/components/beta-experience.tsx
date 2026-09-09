@@ -22,7 +22,8 @@ export function ParticleField() {
     let sparks = makeDust(Math.round((window.innerWidth < 600 ? 700 : 1450) * preferences.density));
     let w = 0, h = 0, cx = 0, cy = 0, areaWidth = 0;
     let frame = 0, last = 0, clock = 0, dirty = true;
-    let pointerX = 0, pointerY = 0, mouseX = 0, mouseY = 0, hover = 0, targetHover = 0;
+    let pointerX = 0, pointerY = 0, pointerClientX = 0, pointerClientY = 0;
+    let mouseX = 0, mouseY = 0, hover = 0, targetHover = 0;
     let dark = document.documentElement.classList.contains('dark');
     let cue: (ParticleCue & { started: number }) | null = null;
     let impact: { x: number; y: number; started: number } | null = null;
@@ -59,7 +60,10 @@ export function ParticleField() {
       bg.clearRect(0, 0, w, h); fx.clearRect(0, 0, w, h);
       const impactProgress = impact ? Math.min(1, (now - impact.started) / 820) : 1;
       const impulse = impact && impactProgress < 1 ? Math.sin(impactProgress * Math.PI) : 0;
-      if (showCloud) renderCloud(bg, cx, cy, areaWidth, media.matches ? 0 : clock, dark, media.matches ? {} : { mx: mouseX, my: mouseY, hover, impulse, loading });
+      if (showCloud) renderCloud(bg, cx, cy, areaWidth, media.matches ? 0 : clock, dark, media.matches ? {} : {
+        mx: mouseX, my: mouseY, hover, impulse, loading,
+        pointerX: pointerClientX - cx, pointerY: pointerClientY - cy,
+      });
       if (impact && impactProgress < 1 && !media.matches) {
         const radius = 18 + Math.pow(impactProgress, 0.72) * Math.min(areaWidth * 0.38, 330);
         fx.fillStyle = dark ? '#fff' : '#111';
@@ -117,6 +121,7 @@ export function ParticleField() {
       measure(); cue = { ...next, started: performance.now() }; wake();
     };
     const onPointer = (event: PointerEvent) => {
+      pointerClientX = event.clientX; pointerClientY = event.clientY;
       pointerX = (event.clientX - cx) / Math.max(1, areaWidth / 2);
       pointerY = (event.clientY - cy) / Math.max(1, h / 2);
       targetHover = Math.max(0, 1 - Math.hypot((event.clientX - cx) / Math.max(1, areaWidth * 0.42), (event.clientY - cy) / Math.max(1, h * 0.26)));
