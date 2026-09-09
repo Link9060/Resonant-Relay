@@ -204,9 +204,9 @@ export default function ProfilePage() {
         <p className="mt-2 text-xs text-ink-faint">Share this number when you want someone to add you directly.</p>
       </div>
 
-      <section className="mt-8 border-t border-border pt-6">
+      <section id="notifications" className="mt-8 scroll-mt-24 border-t border-border pt-6">
         <h2 className="text-sm font-medium text-ink">Preferences</h2>
-        <div className="mt-3 flex flex-col items-start gap-3">
+        <div className="mt-3 flex w-full flex-col items-start gap-3">
           {IS_BETA && <ParticleControls />}
           <PushToggle />
           <a href={appPageUrl('/onboarding?tour=1')} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface"><Play size={15} />Replay Relay tour</a>
