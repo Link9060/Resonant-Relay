@@ -18,7 +18,7 @@ export function ParticleControls() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  function update(field: keyof ParticlePreferences, value: number) {
+  function update<Field extends keyof ParticlePreferences>(field: Field, value: ParticlePreferences[Field]) {
     const next = { ...preferences, [field]: value };
     setPreferences(next);
     writeParticlePreferences(next);
@@ -57,6 +57,22 @@ export function ParticleControls() {
         step={PARTICLE_LIMITS.size.step}
         onChange={(value) => update('size', value)}
       />
+      <div className="mt-5 flex items-center justify-between gap-4 border-t border-border pt-4">
+        <div>
+          <p className="text-xs font-medium text-ink">Minimal loading</p>
+          <p className="mt-1 text-xs leading-5 text-ink-faint">Use a quiet Relay mark instead of the particle loading scene.</p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={preferences.minimalLoading}
+          onClick={() => update('minimalLoading', !preferences.minimalLoading)}
+          className={`relative h-7 w-12 shrink-0 rounded-full border transition-colors ${preferences.minimalLoading ? 'border-ink bg-ink' : 'border-border bg-canvas'}`}
+        >
+          <span className={`absolute top-1 h-[18px] w-[18px] rounded-full transition-transform ${preferences.minimalLoading ? 'translate-x-[25px] bg-canvas' : 'translate-x-1 bg-ink-muted'}`} />
+          <span className="sr-only">Minimal loading</span>
+        </button>
+      </div>
     </div>
   );
 }

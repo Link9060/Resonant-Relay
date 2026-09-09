@@ -4,6 +4,7 @@ export const PARTICLE_PREFERENCES_EVENT = 'relay:particle-preferences';
 export type ParticlePreferences = {
   density: number;
   size: number;
+  minimalLoading: boolean;
 };
 
 export const PARTICLE_LIMITS = {
@@ -15,6 +16,7 @@ export const PARTICLE_LIMITS = {
 export const DEFAULT_PARTICLE_PREFERENCES: ParticlePreferences = {
   density: 1.85,
   size: 1.35,
+  minimalLoading: false,
 };
 
 function clamp(value: unknown, min: number, max: number, fallback: number) {
@@ -26,6 +28,7 @@ export function normalizeParticlePreferences(value?: Partial<ParticlePreferences
   return {
     density: clamp(value?.density, PARTICLE_LIMITS.density.min, PARTICLE_LIMITS.density.max, DEFAULT_PARTICLE_PREFERENCES.density),
     size: clamp(value?.size, PARTICLE_LIMITS.size.min, PARTICLE_LIMITS.size.max, DEFAULT_PARTICLE_PREFERENCES.size),
+    minimalLoading: typeof value?.minimalLoading === 'boolean' ? value.minimalLoading : DEFAULT_PARTICLE_PREFERENCES.minimalLoading,
   };
 }
 

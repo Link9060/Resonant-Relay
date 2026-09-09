@@ -36,6 +36,7 @@ export function ParticleField() {
     const bg = background.getContext('2d'), fx = canvas.getContext('2d');
     if (!bg || !fx || !root) return;
     let preferences = readParticlePreferences();
+    root.dataset.minimalLoading = String(preferences.minimalLoading);
     let renderCloud = createCloudRenderer(window.innerWidth < 600, preferences);
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     let sparks = makeDust(Math.round((window.innerWidth < 600 ? 700 : 1450) * preferences.density));
@@ -151,7 +152,11 @@ export function ParticleField() {
       const loadingState = root.dataset.loading ?? 'false';
       const loading = loadingState === 'true';
       const settling = loadingState === 'settling';
-      const showCloud = root.dataset.ready === 'true' && (root.dataset.space === 'true' || loading || settling);
+      const minimalLoading = root.dataset.minimalLoading === 'true';
+      const showCloud = root.dataset.ready === 'true' && (
+        (root.dataset.space === 'true' && !loading && !settling)
+        || ((loading || settling) && !minimalLoading)
+      );
       if (!showCloud && !cue && !impact) {
         bg.clearRect(0, 0, w, h); fx.clearRect(0, 0, w, h);
         last = 0; return;
@@ -238,6 +243,7 @@ export function ParticleField() {
     let preferenceTimer = 0;
     const onPreferences = (event: Event) => {
       preferences = (event as CustomEvent<ParticlePreferences>).detail;
+      root.dataset.minimalLoading = String(preferences.minimalLoading);
       window.clearTimeout(preferenceTimer);
       preferenceTimer = window.setTimeout(() => {
         renderCloud = createCloudRenderer(window.innerWidth < 600, preferences);
@@ -370,7 +376,7 @@ export function BetaExperience({ children }: { children: ReactNode }) {
     routeChanged.current();
   }, [pathname]);
 
-  return <div ref={rootRef} className="beta-experience" data-ready="false" data-loading="false" data-space={appPathname(pathname).replace(/\/$/, '') === '/space'}>
+  return <div ref={rootRef} className="beta-experience" data-ready="false" data-loading="false" data-minimal-loading="false" data-space={appPathname(pathname).replace(/\/$/, '') === '/space'}>
     <ParticleField />
     <h1 className="beta-landing-title" aria-hidden={appPathname(pathname).replace(/\/$/, '') !== '/space'}>Resonant Relay</h1>
     {children}
