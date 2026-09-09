@@ -1,8 +1,9 @@
 import { Skeleton } from '@/components/ui/skeleton';
+import { BetaRouteLoading } from '@/components/beta-route-loading';
 
 export default function CalendarLoading() {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
+    <BetaRouteLoading label="Loading calendar"><div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
       <div className="flex items-center justify-between">
         <div className="space-y-1.5">
           <Skeleton className="h-8 w-28" />
@@ -18,6 +19,6 @@ export default function CalendarLoading() {
           </div>
         ))}
       </div>
-    </div>
+    </div></BetaRouteLoading>
   );
 }

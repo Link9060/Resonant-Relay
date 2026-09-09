@@ -20,11 +20,12 @@ export function createWorkspaceTransition(host: TransitionHost) {
   let timer = 0, watchdog = 0;
   let stage: PanelPhase | 'waiting' = 'hidden';
   let desired: string | null = null, expected: string | null = null;
-  let disposed = false;
+  let disposed = false, heldForLoading = false;
   const clear = () => { host.cancel(timer); host.cancel(watchdog); timer = watchdog = 0; };
   const phase = (next: PanelPhase) => { stage = next; host.phase(next); };
   const reveal = (delay = 0) => {
     clear();
+    if (heldForLoading) { phase('hidden'); return; }
     if (host.landing(host.current())) { phase('hidden'); return; }
     phase('hidden');
     timer = host.schedule(() => {
@@ -59,6 +60,12 @@ export function createWorkspaceTransition(host: TransitionHost) {
       if (expected && host.current() === expected && desired && desired !== expected) { navigate(); return; }
       desired = expected = null;
       reveal();
+    },
+    holdForLoading(active: boolean) {
+      if (disposed || heldForLoading === active) return;
+      heldForLoading = active;
+      if (active) { clear(); phase('hidden'); }
+      else reveal();
     },
     historyChanged() { if (!disposed) { clear(); desired = expected = null; phase('hidden'); } },
     dispose() { disposed = true; clear(); },

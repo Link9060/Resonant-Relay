@@ -4,8 +4,10 @@ import { PushToggle } from '@/components/notifications/push-toggle';
 import { PageLoading } from '@/components/page-loading';
 import { SignOutButton } from '@/components/profile/sign-out-button';
 import { AccountDataControls } from '@/components/profile/account-data-controls';
-import { appPageUrl } from '@/lib/config';
+import { ParticleControls } from '@/components/profile/particle-controls';
+import { appPageUrl, IS_BETA } from '@/lib/config';
 import { STARTUP_SESSION_KEY } from '@/components/startup-sequence';
+import { BETA_INTRO_KEY } from '@/lib/particle-motion';
 import { AppRole, getRolePreview, setRolePreview } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
 import { cn, formatRelayNumber } from '@/lib/utils';
@@ -139,7 +141,7 @@ export default function ProfilePage() {
   }
 
   function replayStartup() {
-    sessionStorage.removeItem(STARTUP_SESSION_KEY);
+    sessionStorage.removeItem(IS_BETA ? BETA_INTRO_KEY : STARTUP_SESSION_KEY);
     window.location.reload();
   }
 
@@ -205,6 +207,7 @@ export default function ProfilePage() {
       <section className="mt-8 border-t border-border pt-6">
         <h2 className="text-sm font-medium text-ink">Preferences</h2>
         <div className="mt-3 flex flex-col items-start gap-3">
+          {IS_BETA && <ParticleControls />}
           <PushToggle />
           <a href={appPageUrl('/onboarding?tour=1')} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface"><Play size={15} />Replay Relay tour</a>
           <button type="button" onClick={replayStartup} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface">

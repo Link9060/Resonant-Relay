@@ -41,6 +41,9 @@ export async function sendMessage(conversationId: string, body: string, files: F
   const { error } = await supabase.from('messages').insert({ conversation_id: conversationId, sender_id: user.id, body: trimmed, attachments, reply_to_id: replyToId });
   if (error) {
     if (attachments.length) await supabase.storage.from('chat-attachments').remove(attachments.map((item) => item.path));
+    const { data: status } = await (supabase as any).rpc('conversation_send_status', { p_conversation_id: conversationId });
+    const reason = status?.[0]?.reason;
+    if (status?.[0]?.can_send === false && reason) return { ok: false, error: reason };
     return { ok: false, error: 'Could not send that message right now.' };
   }
   return { ok: true, data: undefined };

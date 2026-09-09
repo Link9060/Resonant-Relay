@@ -101,7 +101,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }
 
-  if (!state) return <PageLoading />;
+  if (!state) return IS_BETA ? <BetaExperience><PageLoading /></BetaExperience> : <PageLoading />;
 
   if (state.profile?.banned_at) {
     return (

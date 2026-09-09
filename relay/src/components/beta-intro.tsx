@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createCloudRenderer, fitCanvas } from '@/lib/particle-renderer';
 import { BASE_PATH } from '@/lib/config';
 import { BETA_INTRO_KEY, INTRO_DONE, introSeen, makeDust, reducedMotion } from '@/lib/particle-motion';
+import { readParticlePreferences } from '@/lib/particle-preferences';
 
 // A deliberate 2.7s formation and 3s hold lead into a brief 850ms flight.
 // Preserve the one-second blackout before the final tile reveal.
@@ -41,8 +42,9 @@ export function BetaIntro() {
     if (!ctx) { finish(); return; }
     let frame = 0, elapsed = 0, previous = 0;
     let w = 0, h = 0;
-    const dust = makeDust(window.innerWidth < 600 ? 500 : 950);
-    const renderCloud = createCloudRenderer(window.innerWidth < 600);
+    const preferences = readParticlePreferences();
+    const dust = makeDust(Math.round((window.innerWidth < 600 ? 950 : 1650) * preferences.density));
+    const renderCloud = createCloudRenderer(window.innerWidth < 600, preferences);
     const raster = document.createElement('canvas');
     const rc = raster.getContext('2d', { willReadFrequently: true })!;
     let points: { x: number; y: number; delay: number; angle: number; r: number }[] = [];
@@ -67,8 +69,9 @@ export function BetaIntro() {
       }
       const pixels = rc.getImageData(0, 0, w, h).data;
       points = [];
-      for (let y = Math.floor(h / 2 - 70); y < Math.min(h, h / 2 + 70); y += 3) {
-        for (let x = 0; x < w; x += 3) {
+      const pointStep = preferences.density < 0.8 ? 4 : preferences.density < 1.45 ? 3 : 2;
+      for (let y = Math.floor(h / 2 - 70); y < Math.min(h, h / 2 + 70); y += pointStep) {
+        for (let x = 0; x < w; x += pointStep) {
           if ((pixels[(y * w + x) * 4 + 3] ?? 0) > 100) points.push({ x, y, delay: Math.random(), angle: Math.random() * Math.PI * 2, r: 40 + Math.random() * 230 });
         }
       }
@@ -91,7 +94,8 @@ export function BetaIntro() {
           const bx = w / 2 + Math.cos(p.angle) * p.r * burst;
           const by = h / 2 + Math.sin(p.angle) * p.r * burst;
           ctx.globalAlpha = (1 - solid) * Math.min(1, t / 120);
-          ctx.fillStyle = '#fff'; ctx.fillRect(bx + (p.x - bx) * ease, by + (p.y - by) * ease, 1.3, 1.3);
+          const dot = 1.25 * preferences.size;
+          ctx.fillStyle = '#fff'; ctx.fillRect(bx + (p.x - bx) * ease, by + (p.y - by) * ease, dot, dot);
         }
         if (t < 550) { ctx.globalAlpha = Math.max(0, 1 - t / 550); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(w / 2, h / 2, 6 * (1 + Math.sin(t / 550 * Math.PI) * 0.4), 0, Math.PI * 2); ctx.fill(); }
         ctx.globalAlpha = solid; ctx.drawImage(raster, 0, 0);
@@ -103,7 +107,7 @@ export function BetaIntro() {
         if (dissolve < 1) {
           ctx.globalAlpha = 1; ctx.drawImage(raster, 0, 0);
           ctx.fillStyle = '#000';
-          for (const p of points) if (p.delay < dissolve) ctx.fillRect(p.x - 1, p.y - 1, 5, 5);
+          for (const p of points) if (p.delay < dissolve) ctx.fillRect(p.x - preferences.size, p.y - preferences.size, 4 * preferences.size, 4 * preferences.size);
         }
         ctx.fillStyle = '#fff';
         for (const p of points) {
@@ -113,11 +117,11 @@ export function BetaIntro() {
           ctx.globalAlpha = 0.65 + pulse * 0.35;
           const x = w / 2 + (p.x - w / 2 + Math.cos(p.angle) * drift) * scale;
           const y = h / 2 + (p.y - h / 2 + Math.sin(p.angle) * drift) * scale;
-          ctx.beginPath(); ctx.arc(x, y, 0.8 + pulse * 0.8, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(x, y, (0.78 + pulse * 0.8) * preferences.size, 0, Math.PI * 2); ctx.fill();
         }
       } else if (t < 8450) {
         const warp = (t - 7600) / 850;
-        ctx.strokeStyle = '#fff'; ctx.lineWidth = 0.65;
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(0.65, preferences.size * 0.72);
         for (const p of dust) {
           const z = (p.depth + warp * 1.4) % 1;
           const radius = 7 + z * z * Math.max(w, h);

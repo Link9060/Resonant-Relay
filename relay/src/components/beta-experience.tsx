@@ -6,6 +6,7 @@ import { appPathname, BASE_PATH } from '@/lib/config';
 import { createCloudRenderer, fitCanvas } from '@/lib/particle-renderer';
 import { createWorkspaceTransition, PANEL_CLOSE_MS, PANEL_OPEN_MS } from '@/lib/workspace-transition';
 import { emitParticles, INTRO_DONE, introSeen, makeDust, PARTICLE_EVENT, reducedMotion, type ParticleCue } from '@/lib/particle-motion';
+import { PARTICLE_PREFERENCES_EVENT, readParticlePreferences, type ParticlePreferences } from '@/lib/particle-preferences';
 
 export function ParticleField() {
   const backgroundRef = useRef<HTMLCanvasElement>(null);
@@ -15,20 +16,22 @@ export function ParticleField() {
     const root = canvas.closest<HTMLElement>('.beta-experience')!;
     const bg = background.getContext('2d'), fx = canvas.getContext('2d');
     if (!bg || !fx || !root) return;
-    const renderCloud = createCloudRenderer(window.innerWidth < 600);
+    let preferences = readParticlePreferences();
+    let renderCloud = createCloudRenderer(window.innerWidth < 600, preferences);
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const sparks = makeDust(window.innerWidth < 600 ? 480 : 900);
+    let sparks = makeDust(Math.round((window.innerWidth < 600 ? 700 : 1450) * preferences.density));
     let w = 0, h = 0, cx = 0, cy = 0, areaWidth = 0;
     let frame = 0, last = 0, clock = 0, dirty = true;
-    let pointerX = 0, pointerY = 0, mouseX = 0, mouseY = 0;
+    let pointerX = 0, pointerY = 0, mouseX = 0, mouseY = 0, hover = 0, targetHover = 0;
     let dark = document.documentElement.classList.contains('dark');
     let cue: (ParticleCue & { started: number }) | null = null;
+    let impact: { x: number; y: number; started: number } | null = null;
     let bounds = { left: 24, top: 80, width: 0, height: 0 };
     const measure = () => {
       const rect = root.querySelector('.relay-mobile-main')?.getBoundingClientRect();
       bounds = { left: rect?.left ?? 24, top: Math.max(72, rect?.top ?? 80), width: rect?.width ?? w - 48, height: Math.min(h - 100, rect?.height ?? h - 100) };
       const rail = root.querySelector('.relay-desktop-dock')?.getBoundingClientRect();
-      const left = w >= 768 ? rail?.width ?? 240 : 0;
+      const left = w >= 768 ? rail?.width ?? 0 : 0;
       areaWidth = w - left; cx = left + areaWidth / 2; cy = h / 2;
     };
     const wake = () => { dirty = true; if (!frame && !document.hidden) frame = requestAnimationFrame(draw); };
@@ -40,19 +43,35 @@ export function ParticleField() {
     const draw = (now: number) => {
       frame = 0;
       if (document.hidden) return;
-      const showCloud = root.dataset.ready === 'true' && root.dataset.space === 'true';
-      if (!showCloud && !cue) {
+      const loading = root.dataset.loading === 'true';
+      const showCloud = root.dataset.ready === 'true' && (root.dataset.space === 'true' || loading);
+      if (!showCloud && !cue && !impact) {
         bg.clearRect(0, 0, w, h); fx.clearRect(0, 0, w, h);
         last = 0; return;
       }
-      const interval = cue ? 1000 / 60 : 1000 / 30;
+      const interval = cue || impact || loading ? 1000 / 60 : 1000 / 30;
       if (!dirty && now - last < interval - 1) { frame = requestAnimationFrame(draw); return; }
       const costStart = performance.now();
       clock += last ? Math.min((now - last) / 1000, 0.05) : 0;
       last = now; dirty = false;
       mouseX += (pointerX - mouseX) * 0.08; mouseY += (pointerY - mouseY) * 0.08;
+      hover += (targetHover - hover) * 0.1;
       bg.clearRect(0, 0, w, h); fx.clearRect(0, 0, w, h);
-      if (showCloud) renderCloud(bg, cx, cy, areaWidth, media.matches ? 0 : clock, dark, media.matches ? 0 : mouseX, media.matches ? 0 : mouseY);
+      const impactProgress = impact ? Math.min(1, (now - impact.started) / 820) : 1;
+      const impulse = impact && impactProgress < 1 ? Math.sin(impactProgress * Math.PI) : 0;
+      if (showCloud) renderCloud(bg, cx, cy, areaWidth, media.matches ? 0 : clock, dark, media.matches ? {} : { mx: mouseX, my: mouseY, hover, impulse, loading });
+      if (impact && impactProgress < 1 && !media.matches) {
+        const radius = 18 + Math.pow(impactProgress, 0.72) * Math.min(areaWidth * 0.38, 330);
+        fx.fillStyle = dark ? '#fff' : '#111';
+        for (let i = 0; i < Math.min(260, sparks.length); i++) {
+          const s = sparks[i]!;
+          const r = radius + (s.depth - 0.5) * 38;
+          fx.globalAlpha = (1 - impactProgress) * (0.18 + s.depth * 0.5);
+          const dot = Math.max(0.8, (s.size + 0.7) * preferences.size);
+          fx.fillRect(impact.x + Math.cos(s.angle) * r, impact.y + Math.sin(s.angle) * r, dot, dot);
+        }
+        fx.globalAlpha = 1;
+      } else impact = null;
       if (cue && !media.matches) {
         const duration = cue.kind === 'theme' ? 1000 : cue.kind === 'open' ? PANEL_OPEN_MS : PANEL_CLOSE_MS;
         const p = Math.min(1, (now - cue.started) / duration);
@@ -63,7 +82,8 @@ export function ParticleField() {
           fx.beginPath(); fx.arc(cx, cy, Math.max(0, radius - 28), 0, Math.PI * 2); fx.fill();
           for (const s of sparks) {
             const r = Math.max(0, radius - s.depth * 85);
-            fx.fillRect(cx + Math.cos(s.angle) * r, cy + Math.sin(s.angle) * r, 1 + s.depth * 2.5, 1 + s.depth * 2.5);
+            const dot = (1 + s.depth * 2.5) * preferences.size;
+            fx.fillRect(cx + Math.cos(s.angle) * r, cy + Math.sin(s.angle) * r, dot, dot);
           }
         } else {
           const q = cue.kind === 'close' ? 1 - p : p;
@@ -75,17 +95,18 @@ export function ParticleField() {
             const endX = bounds.left + s.depth * bounds.width;
             const endY = bounds.top + s.radius * bounds.height;
             fx.globalAlpha = Math.sin(p * Math.PI) * (0.2 + s.depth * 0.45);
-            fx.fillRect(startX + (endX - startX) * spread, startY + (endY - startY) * spread, s.size + 0.45, s.size + 0.45);
+            const dot = (s.size + 0.7) * preferences.size;
+            fx.fillRect(startX + (endX - startX) * spread, startY + (endY - startY) * spread, dot, dot);
           }
         }
         fx.globalAlpha = 1;
         if (p === 1) { cue = null; fx.clearRect(0, 0, w, h); }
       } else cue = null;
       if (process.env.NODE_ENV === 'development') background.dataset.drawMs = (performance.now() - costStart).toFixed(2);
-      if (!media.matches && (showCloud || cue)) frame = requestAnimationFrame(draw);
+      if (!media.matches && (showCloud || cue || impact || hover !== targetHover)) frame = requestAnimationFrame(draw);
     };
     const observer = new MutationObserver(() => { measure(); wake(); });
-    observer.observe(root, { attributes: true, subtree: true, attributeFilter: ['data-space', 'data-ready', 'data-dock-collapsed'] });
+    observer.observe(root, { attributes: true, subtree: true, childList: true, attributeFilter: ['data-space', 'data-ready', 'data-loading', 'data-dock-collapsed'] });
     const layoutObserver = new ResizeObserver(() => { measure(); wake(); });
     root.querySelectorAll('.relay-desktop-dock, .relay-mobile-main').forEach(element => layoutObserver.observe(element));
     const themeObserver = new MutationObserver(() => { dark = document.documentElement.classList.contains('dark'); wake(); });
@@ -95,14 +116,40 @@ export function ParticleField() {
       if (cue?.kind === 'theme' && next.kind !== 'theme') return;
       measure(); cue = { ...next, started: performance.now() }; wake();
     };
-    const onPointer = (event: PointerEvent) => { pointerX = event.clientX / w * 2 - 1; pointerY = event.clientY / h * 2 - 1; };
+    const onPointer = (event: PointerEvent) => {
+      pointerX = (event.clientX - cx) / Math.max(1, areaWidth / 2);
+      pointerY = (event.clientY - cy) / Math.max(1, h / 2);
+      targetHover = Math.max(0, 1 - Math.hypot((event.clientX - cx) / Math.max(1, areaWidth * 0.42), (event.clientY - cy) / Math.max(1, h * 0.26)));
+      wake();
+    };
+    const onPointerLeave = () => { targetHover = 0; wake(); };
+    const onPointerDown = (event: PointerEvent) => {
+      if (root.dataset.ready !== 'true' || (root.dataset.space !== 'true' && root.dataset.loading !== 'true')) return;
+      if (Math.hypot((event.clientX - cx) / Math.max(1, areaWidth * 0.42), (event.clientY - cy) / Math.max(1, h * 0.28)) > 1.2) return;
+      impact = { x: event.clientX, y: event.clientY, started: performance.now() };
+      wake();
+    };
+    let preferenceTimer = 0;
+    const onPreferences = (event: Event) => {
+      preferences = (event as CustomEvent<ParticlePreferences>).detail;
+      window.clearTimeout(preferenceTimer);
+      preferenceTimer = window.setTimeout(() => {
+        renderCloud = createCloudRenderer(window.innerWidth < 600, preferences);
+        sparks = makeDust(Math.round((window.innerWidth < 600 ? 700 : 1450) * preferences.density));
+        wake();
+      }, 80);
+    };
     const visibility = () => { cancelAnimationFrame(frame); frame = 0; last = 0; wake(); };
     resize();
     window.addEventListener('resize', resize); window.addEventListener('pointermove', onPointer, { passive: true });
+    window.addEventListener('pointerleave', onPointerLeave); window.addEventListener('pointerdown', onPointerDown, { passive: true });
+    window.addEventListener(PARTICLE_PREFERENCES_EVENT, onPreferences);
     window.addEventListener(PARTICLE_EVENT, onCue); document.addEventListener('visibilitychange', visibility); media.addEventListener('change', wake);
     return () => {
       cancelAnimationFrame(frame); observer.disconnect(); layoutObserver.disconnect(); themeObserver.disconnect();
-      window.removeEventListener('resize', resize); window.removeEventListener('pointermove', onPointer); window.removeEventListener(PARTICLE_EVENT, onCue);
+      window.clearTimeout(preferenceTimer);
+      window.removeEventListener('resize', resize); window.removeEventListener('pointermove', onPointer); window.removeEventListener('pointerleave', onPointerLeave); window.removeEventListener('pointerdown', onPointerDown); window.removeEventListener(PARTICLE_EVENT, onCue);
+      window.removeEventListener(PARTICLE_PREFERENCES_EVENT, onPreferences);
       document.removeEventListener('visibilitychange', visibility); media.removeEventListener('change', wake);
     };
   }, []);
@@ -130,7 +177,7 @@ export function BetaExperience({ children }: { children: ReactNode }) {
           panel.inert = value === 'closing' || value === 'hidden';
           panel.setAttribute('aria-busy', String(value !== 'open' && !landing(current())));
         }
-        root.dataset.space = String(value === 'hidden');
+        root.dataset.space = String(landing(current()));
       },
       particles: kind => emitParticles({ kind }),
       navigate: href => router.push(href.slice(BASE_PATH.length) || '/'),
@@ -138,6 +185,18 @@ export function BetaExperience({ children }: { children: ReactNode }) {
       schedule: (callback, ms) => window.setTimeout(callback, ms),
       cancel: id => window.clearTimeout(id),
     });
+    let wasLoading = false;
+    const syncLoading = () => {
+      const loading = Boolean(root.querySelector('.relay-loading, [data-relay-loading]'));
+      root.dataset.loading = String(loading);
+      if (loading !== wasLoading) {
+        wasLoading = loading;
+        controller.holdForLoading(loading);
+      }
+    };
+    const loadingObserver = new MutationObserver(syncLoading);
+    loadingObserver.observe(root, { childList: true, subtree: true });
+    syncLoading();
     const ready = () => {
       root.dataset.ready = 'true';
       controller.reveal(reducedMotion() ? 0 : 480);
@@ -175,6 +234,7 @@ export function BetaExperience({ children }: { children: ReactNode }) {
     root.addEventListener('focusin', prefetch);
     return () => {
       controller.dispose();
+      loadingObserver.disconnect();
       window.removeEventListener(INTRO_DONE, ready); window.removeEventListener('popstate', history);
       root.removeEventListener('click', click); root.removeEventListener('pointerover', prefetch); root.removeEventListener('focusin', prefetch);
       routeChanged.current = () => {};
@@ -187,7 +247,7 @@ export function BetaExperience({ children }: { children: ReactNode }) {
     routeChanged.current();
   }, [pathname]);
 
-  return <div ref={rootRef} className="beta-experience" data-ready="false" data-space={appPathname(pathname).replace(/\/$/, '') === '/space'}>
+  return <div ref={rootRef} className="beta-experience" data-ready="false" data-loading="false" data-space={appPathname(pathname).replace(/\/$/, '') === '/space'}>
     <ParticleField />
     <h1 className="beta-landing-title" aria-hidden={appPathname(pathname).replace(/\/$/, '') !== '/space'}>Resonant Relay</h1>
     {children}
