@@ -47,7 +47,7 @@
   100% { opacity: 1; transform: perspective(500px) rotateX(180deg); }
 }
 @keyframes beta-page-open {
-  0%, 72% { opacity: 0; transform: scale(.992); filter: blur(2px); }
+  0%, 78% { opacity: 0; transform: scale(.994); filter: blur(1.5px); }
   100% { opacity: 1; transform: none; filter: none; }
 }
 @keyframes beta-page-close {

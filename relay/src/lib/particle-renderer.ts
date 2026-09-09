@@ -1,7 +1,6 @@
 import { DEFAULT_PARTICLE_PREFERENCES, normalizeParticlePreferences, type ParticlePreferences } from '@/lib/particle-preferences';
 
 const TAU = Math.PI * 2;
-const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
 export type CloudMotion = {
   mx?: number;
@@ -15,67 +14,92 @@ export type CloudMotion = {
   alpha?: number;
 };
 
-type BlobPoint = {
+type SpherePoint = {
   x: number;
   y: number;
   z: number;
   phase: number;
   grain: number;
   layer: 0 | 1 | 2 | 3 | 4;
+  tone: number;
   spark: number;
 };
 
-/** Layered point-sphere renderer. Three quiet, regular shells establish a
- * clean volume; a brighter turbulent skin supplies the organic silhouette. */
+/** A structured spherical core wrapped in a loose, brighter particle skin.
+ * The core keeps the curved rows visible in the reference while the outer
+ * points drift independently enough to feel like a living cloud. */
 export function createCloudRenderer(compact: boolean, requested: ParticlePreferences = DEFAULT_PARTICLE_PREFERENCES) {
   const preferences = normalizeParticlePreferences(requested);
-  const count = Math.round((compact ? 3800 : 6200) * preferences.density);
-  const points: BlobPoint[] = [];
+  const targetCount = Math.round((compact ? 3900 : 6400) * preferences.density);
+  const points: SpherePoint[] = [];
   let seed = 1741;
   const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) | 0; return (seed >>> 0) / 4294967296; };
 
-  const addShell = (amount: number, radius: number, layer: 1 | 2 | 3 | 4, turbulence: number) => {
-    for (let i = 0; i < amount; i++) {
-      const y = 1 - 2 * (i + 0.5) / amount;
-      const ring = Math.sqrt(Math.max(0, 1 - y * y));
-      const angle = i * GOLDEN_ANGLE + (random() - 0.5) * 0.055;
-      const wave = 1
-        + Math.sin(angle * 3 + y * 4.2) * turbulence
-        + Math.sin(angle * 7 - y * 2.7) * turbulence * 0.52
-        + (random() - 0.5) * turbulence * 0.8;
-      const r = radius * wave;
-      points.push({
-        x: Math.cos(angle) * ring * r,
-        y: y * r,
-        z: Math.sin(angle) * ring * r,
-        phase: random() * TAU,
-        grain: layer === 4 ? 0.5 + random() * 0.76 : 0.42 + random() * 0.48,
-        layer,
-        spark: layer === 4 && random() > 0.978 ? 1 : 0,
-      });
+  const addGridShell = (amount: number, radius: number, layer: 1 | 2 | 3) => {
+    const bands = Math.max(12, Math.round(Math.sqrt(amount * 0.52)));
+    const longitudeBase = Math.max(24, Math.round(amount * Math.PI / (2 * bands)));
+    for (let band = 1; band < bands; band++) {
+      const phi = Math.PI * band / bands;
+      const y = Math.cos(phi);
+      const ring = Math.sin(phi);
+      const around = Math.max(10, Math.round(longitudeBase * ring));
+      const offset = band % 2 ? Math.PI / around : 0;
+      for (let column = 0; column < around; column++) {
+        const angle = column / around * TAU + offset + (random() - 0.5) * 0.012;
+        const ripple = 1 + Math.sin(angle * 4 + y * 3.4 + layer) * 0.004 + (random() - 0.5) * 0.004;
+        const r = radius * ripple;
+        points.push({
+          x: Math.cos(angle) * ring * r,
+          y: y * r,
+          z: Math.sin(angle) * ring * r,
+          phase: random() * TAU,
+          grain: 0.62 + random() * 0.5,
+          layer,
+          tone: 0.25 + random() * 0.65,
+          spark: 0,
+        });
+      }
     }
   };
 
-  // The inner shells stay deliberately orderly. Their overlap reads as one
-  // dimensional core instead of a single hollow wireframe surface.
-  addShell(Math.round(count * 0.16), 0.56, 1, 0.006);
-  addShell(Math.round(count * 0.18), 0.72, 2, 0.009);
-  addShell(Math.round(count * 0.2), 0.86, 3, 0.012);
-  addShell(Math.round(count * 0.31), 1, 4, 0.06);
+  addGridShell(Math.round(targetCount * 0.15), 0.58, 1);
+  addGridShell(Math.round(targetCount * 0.17), 0.75, 2);
+  addGridShell(Math.round(targetCount * 0.19), 0.9, 3);
 
-  const volumeCount = count - points.length;
+  const outerCount = Math.round(targetCount * 0.37);
+  for (let i = 0; i < outerCount; i++) {
+    const y = 1 - 2 * (i + 0.5) / outerCount;
+    const ring = Math.sqrt(Math.max(0, 1 - y * y));
+    const angle = random() * TAU;
+    const patch = Math.max(0, Math.sin(angle * 5.1 + y * 7.3) * 0.5 + Math.sin(angle * 9.2 - y * 4.1) * 0.5);
+    const loose = random() > 0.68 ? (0.025 + random() * 0.11) * (0.35 + patch * 0.8) : 0;
+    const r = 0.995 + Math.sin(angle * 3 + y * 4.5) * 0.018 + (random() - 0.5) * 0.026 + loose;
+    points.push({
+      x: Math.cos(angle) * ring * r,
+      y: y * r,
+      z: Math.sin(angle) * ring * r,
+      phase: random() * TAU,
+      grain: 0.72 + random() * 0.82,
+      layer: 4,
+      tone: 0.46 + random() * 0.54,
+      spark: random() > 0.974 ? 1 : 0,
+    });
+  }
+
+  const volumeCount = Math.max(0, targetCount - points.length);
   for (let i = 0; i < volumeCount; i++) {
     const y = random() * 2 - 1;
     const ring = Math.sqrt(Math.max(0, 1 - y * y));
     const angle = random() * TAU;
-    const radius = Math.cbrt(random()) * 0.92;
+    const r = Math.cbrt(random()) * 0.93;
     points.push({
-      x: Math.cos(angle) * ring * radius,
-      y: y * radius,
-      z: Math.sin(angle) * ring * radius,
+      x: Math.cos(angle) * ring * r,
+      y: y * r,
+      z: Math.sin(angle) * ring * r,
       phase: random() * TAU,
-      grain: 0.4 + random() * 0.46,
+      grain: 0.5 + random() * 0.62,
       layer: 0,
+      tone: 0.18 + random() * 0.68,
       spark: random() > 0.994 ? 1 : 0,
     });
   }
@@ -87,25 +111,27 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
     const scale = Math.max(0.025, motion.scale ?? 1);
     const opacity = Math.max(0, Math.min(1, motion.alpha ?? 1));
     const viewportHeight = ctx.canvas.height / Math.max(1, ctx.getTransform().d);
-    const radius = Math.min(width * (compact ? 0.31 : 0.225), viewportHeight * (compact ? 0.25 : 0.255), compact ? 205 : 286) * scale;
-    const yaw = time * (motion.loading ? 0.42 : 0.055) + mx * hover * 0.58;
-    const pitch = Math.sin(time * 0.17) * 0.035 - my * hover * 0.32;
-    const roll = Math.sin(time * 0.11) * 0.025 + mx * hover * 0.06;
+    const radius = Math.min(width * (compact ? 0.315 : 0.228), viewportHeight * (compact ? 0.25 : 0.258), compact ? 208 : 292) * scale;
+    const yaw = time * (motion.loading ? 0.4 : 0.052) + mx * hover * 0.68;
+    const pitch = Math.sin(time * 0.14) * 0.028 - my * hover * 0.42;
+    const roll = Math.sin(time * 0.09) * 0.016 + mx * hover * 0.05;
     const cyaw = Math.cos(yaw), syaw = Math.sin(yaw);
     const cpitch = Math.cos(pitch), spitch = Math.sin(pitch);
     const croll = Math.cos(roll), sroll = Math.sin(roll);
-    const followX = mx * hover * radius * 0.025;
-    const followY = my * hover * radius * 0.018;
-    const interactionRadius = radius * 0.4;
-    ctx.fillStyle = dark ? '#fff' : '#0f0f11';
+    const followX = mx * hover * radius * 0.028;
+    const followY = my * hover * radius * 0.02;
+    const interactionRadius = radius * 0.43;
+    ctx.fillStyle = dark ? '#fff' : '#0d0d0f';
 
     for (const point of points) {
-      const surfaceWobble = point.layer === 4
-        ? 1 + Math.sin(time * 0.62 + point.phase) * 0.014 + impulse * (0.046 + point.spark * 0.034)
-        : 1 + Math.sin(time * 0.24 + point.phase) * 0.0025 + impulse * 0.018;
-      const px = point.x * surfaceWobble;
-      const py = point.y * surfaceWobble;
-      const pz = point.z * surfaceWobble;
+      const cloudDrift = point.layer === 4
+        ? Math.sin(time * 0.72 + point.phase) * (0.009 + point.spark * 0.008)
+        : Math.sin(time * 0.2 + point.phase) * 0.0018;
+      const pulse = impulse * (point.layer === 4 ? 0.048 + point.spark * 0.03 : 0.017);
+      const wobble = 1 + cloudDrift + pulse;
+      const px = point.x * wobble;
+      const py = point.y * wobble;
+      const pz = point.z * wobble;
 
       const x1 = px * cyaw + pz * syaw;
       const z1 = -px * syaw + pz * cyaw;
@@ -113,46 +139,51 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
       const z2 = py * spitch + z1 * cpitch;
       const x3 = x1 * croll - y2 * sroll;
       const y3 = x1 * sroll + y2 * croll;
-      const perspective = 1 / Math.max(0.74, 1 - z2 * 0.14);
+      const perspective = 1 / Math.max(0.76, 1 - z2 * 0.13);
       let sx = cx + followX + x3 * radius * perspective;
       let sy = cy + followY + y3 * radius * perspective;
+      let interaction = 0;
 
-      // Particles beneath the pointer peel away locally while the rest keeps
-      // rotating, making the interaction visible without expensive physics.
       if (hover > 0.015) {
         const dx = sx - (cx + pointerX);
         const dy = sy - (cy + pointerY);
         const distance = Math.hypot(dx, dy);
         if (distance < interactionRadius) {
-          const force = Math.pow(1 - distance / interactionRadius, 2) * hover;
+          interaction = Math.pow(1 - distance / interactionRadius, 2) * hover;
           const inverse = distance > 0.5 ? 1 / distance : 0;
-          sx += dx * inverse * force * radius * 0.095;
-          sy += dy * inverse * force * radius * 0.095;
+          const push = radius * 0.14 * interaction;
+          const swirl = radius * 0.065 * interaction;
+          sx += dx * inverse * push - dy * inverse * swirl;
+          sy += dy * inverse * push + dx * inverse * swirl;
         }
       }
 
-      const projectedRadius = Math.min(1.15, Math.hypot(x3, y3));
-      const rim = Math.max(0, Math.min(1, (projectedRadius - 0.67) / 0.35));
-      const front = Math.max(0, Math.min(1, (z2 + 1.05) / 2.1));
+      const projectedRadius = Math.min(1.2, Math.hypot(x3, y3));
+      const rim = clamp01((projectedRadius - 0.65) / 0.37);
+      const front = clamp01((z2 + 1.05) / 2.1);
+      const randomTone = 0.48 + point.tone * 0.52;
       const alpha = point.layer === 4
-        ? 0.18 + rim * 0.58 + front * 0.12 + point.spark * 0.18
+        ? (0.28 + rim * 0.48 + front * 0.11 + point.spark * 0.12) * randomTone
         : point.layer === 3
-          ? 0.075 + rim * 0.12 + front * 0.105
+          ? (0.11 + rim * 0.13 + front * 0.13) * randomTone
           : point.layer === 2
-            ? 0.055 + rim * 0.085 + front * 0.085
+            ? (0.085 + rim * 0.1 + front * 0.105) * randomTone
             : point.layer === 1
-              ? 0.04 + rim * 0.06 + front * 0.07
-              : 0.035 + front * 0.095 + rim * 0.025 + point.spark * 0.24;
-      const grain = Math.max(0.5, point.grain * preferences.size * (0.86 + rim * 0.34 + front * 0.14 + point.spark * 0.55));
-      ctx.globalAlpha = Math.min(0.98, alpha) * opacity;
+              ? (0.065 + rim * 0.075 + front * 0.09) * randomTone
+              : (0.05 + front * 0.14 + rim * 0.035 + point.spark * 0.22) * randomTone;
+      const grain = Math.max(0.58, point.grain * preferences.size * (0.9 + rim * 0.26 + front * 0.12 + point.spark * 0.45));
+      ctx.globalAlpha = Math.min(0.99, alpha + interaction * 0.22) * opacity;
       ctx.fillRect(sx - grain / 2, sy - grain / 2, grain, grain);
     }
     ctx.globalAlpha = 1;
   };
 }
 
+function clamp01(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
 export function fitCanvas(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, width: number, height: number) {
-  // Bound fullscreen buffers on Retina and ultrawide displays.
   const dpr = Math.min(window.devicePixelRatio || 1, 1.5, Math.sqrt(5_000_000 / Math.max(1, width * height)));
   canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);

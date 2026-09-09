@@ -15,6 +15,7 @@ type MatrixPoint = {
   coreY: number;
   size: number;
   delay: number;
+  tone: number;
 };
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
@@ -53,31 +54,34 @@ export function ParticleField() {
       if (signature === matrixSignature) return;
       matrixSignature = signature;
       const densityScale = Math.min(1.55, Math.sqrt(preferences.density));
-      const gap = Math.max(w < 600 ? 13 : 14, (w < 600 ? 20 : 24) / densityScale);
+      const gap = Math.max(w < 600 ? 13 : 14.5, (w < 600 ? 19 : 22) / densityScale);
+      const rowGap = gap * 0.866;
       const left = bounds.left + Math.min(24, bounds.width * 0.04);
       const top = bounds.top + 18;
       const right = bounds.left + bounds.width - Math.min(24, bounds.width * 0.04);
       const bottom = bounds.top + bounds.height - 18;
-      const hole = Math.min(w < 600 ? 54 : 92, bounds.width * 0.105, bounds.height * 0.16);
-      const rows = Math.max(1, Math.floor((bottom - top) / gap));
+      const hole = Math.min(w < 600 ? 62 : 108, bounds.width * 0.12, bounds.height * 0.18);
+      const rows = Math.max(1, Math.floor((bottom - top) / rowGap));
       const cols = Math.max(1, Math.floor((right - left) / gap));
       const byCell = new Map<string, number>();
       const next: MatrixPoint[] = [];
       for (let row = 0; row <= rows; row++) for (let col = 0; col <= cols; col++) {
         const hash = Math.abs(Math.sin((row + 1) * 71.17 + (col + 1) * 19.31) * 43758.5453) % 1;
         const hashB = Math.abs(Math.sin((row + 1) * 17.83 + (col + 1) * 91.07) * 19642.349) % 1;
-        const x = left + col * (right - left) / cols + (hash - 0.5) * 1.8;
-        const y = top + row * (bottom - top) / rows + (hashB - 0.5) * 1.8;
+        const x = left + col * gap + (row % 2 ? gap * 0.5 : 0) + (hash - 0.5) * 0.9;
+        const y = top + row * rowGap + (hashB - 0.5) * 0.9;
+        if (x > right || y > bottom) continue;
         if (Math.hypot(x - cx, y - cy) < hole) continue;
         const angle = hash * Math.PI * 2;
-        const coreRadius = Math.sqrt(hashB) * (w < 600 ? 46 : 72);
+        const coreRadius = (0.34 + Math.sqrt(hashB) * 0.66) * (w < 600 ? 52 : 82);
         byCell.set(`${row}:${col}`, next.length);
         next.push({
           x, y,
           coreX: cx + Math.cos(angle) * coreRadius,
           coreY: cy + Math.sin(angle) * coreRadius,
-          size: (0.55 + hash * 0.75) * preferences.size,
-          delay: hashB * 0.11,
+          size: (0.58 + hash * 0.48) * preferences.size,
+          delay: hashB * 0.075,
+          tone: 0.58 + hash * 0.42,
         });
       }
       const links: Array<[number, number]> = [];
@@ -86,8 +90,10 @@ export function ParticleField() {
         if (index === undefined) continue;
         const rightIndex = byCell.get(`${row}:${col + 1}`);
         const downIndex = byCell.get(`${row + 1}:${col}`);
+        const diagonalIndex = byCell.get(`${row + 1}:${col + (row % 2 ? 1 : -1)}`);
         if (rightIndex !== undefined) links.push([index, rightIndex]);
         if (downIndex !== undefined) links.push([index, downIndex]);
+        if (diagonalIndex !== undefined) links.push([index, diagonalIndex]);
       }
       matrix = next; matrixLinks = links;
       matrixX = new Float32Array(matrix.length); matrixY = new Float32Array(matrix.length);
@@ -109,10 +115,10 @@ export function ParticleField() {
     const drawWorkspaceCue = (kind: 'open' | 'close', progress: number) => {
       const opening = kind === 'open';
       const travel = opening
-        ? easeOut((progress - 0.16) / 0.5)
-        : smooth((progress - 0.28) / 0.58);
-      const dotsIn = opening ? clamp01((progress - 0.14) / 0.16) : clamp01(progress / 0.2);
-      const dotsOut = opening ? 1 - smooth((progress - 0.84) / 0.16) : 1 - smooth((progress - 0.78) / 0.22);
+        ? easeOut((progress - 0.12) / 0.44)
+        : smooth((progress - 0.32) / 0.5);
+      const dotsIn = opening ? clamp01((progress - 0.1) / 0.12) : clamp01(progress / 0.16);
+      const dotsOut = opening ? 1 - smooth((progress - 0.86) / 0.14) : 1 - smooth((progress - 0.82) / 0.18);
       const dotAlpha = dotsIn * dotsOut;
       for (let index = 0; index < matrix.length; index++) {
         const point = matrix[index]!;
@@ -127,13 +133,13 @@ export function ParticleField() {
           : point.y + (point.coreY - point.y) * localTravel;
       }
 
-      const lineIn = opening ? smooth((progress - 0.61) / 0.17) : smooth((progress - 0.08) / 0.2);
-      const lineOut = opening ? 1 - smooth((progress - 0.84) / 0.16) : 1 - smooth((progress - 0.38) / 0.2);
+      const lineIn = opening ? smooth((progress - 0.54) / 0.14) : smooth((progress - 0.06) / 0.16);
+      const lineOut = opening ? 1 - smooth((progress - 0.86) / 0.14) : 1 - smooth((progress - 0.4) / 0.18);
       const lineAlpha = lineIn * lineOut;
       if (lineAlpha > 0.002) {
         fx.strokeStyle = dark ? '#fff' : '#111';
-        fx.lineWidth = 0.55;
-        fx.globalAlpha = lineAlpha * 0.19;
+        fx.lineWidth = 0.62;
+        fx.globalAlpha = lineAlpha * 0.31;
         fx.beginPath();
         for (const [from, to] of matrixLinks) {
           fx.moveTo(matrixX[from]!, matrixY[from]!);
@@ -143,24 +149,24 @@ export function ParticleField() {
       }
       if (dotAlpha > 0.002) {
         fx.fillStyle = dark ? '#fff' : '#111';
-        fx.globalAlpha = dotAlpha * 0.72;
         for (let index = 0; index < matrix.length; index++) {
           const point = matrix[index]!;
+          fx.globalAlpha = dotAlpha * point.tone;
           fx.fillRect(matrixX[index]! - point.size / 2, matrixY[index]! - point.size / 2, point.size, point.size);
         }
       }
 
       if (opening) {
-        const collapse = smooth(progress / 0.2);
-        const sphereAlpha = 1 - smooth((progress - 0.17) / 0.13);
+        const collapse = smooth(progress / 0.18);
+        const sphereAlpha = 1 - smooth((progress - 0.08) / 0.12);
         if (sphereAlpha > 0.002) renderCloud(fx, cx, cy, areaWidth, clock, dark, {
-          scale: 1 - collapse * 0.93,
+          scale: 1 - collapse * 0.62,
           alpha: sphereAlpha,
         });
       } else {
-        const assemble = smooth((progress - 0.7) / 0.3);
+        const assemble = smooth((progress - 0.68) / 0.32);
         if (assemble > 0.002) renderCloud(fx, cx, cy, areaWidth, clock, dark, {
-          scale: 0.25 + assemble * 0.75,
+          scale: 0.42 + assemble * 0.58,
           alpha: assemble,
         });
       }
