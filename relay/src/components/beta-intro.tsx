@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createCloudRenderer, fitCanvas } from '@/lib/particle-renderer';
-import { BASE_PATH } from '@/lib/config';
+import { appPageUrl, appPathname, BASE_PATH } from '@/lib/config';
 import { BETA_INTRO_KEY, INTRO_DONE, introSeen, makeDust, reducedMotion } from '@/lib/particle-motion';
 import { readParticlePreferences } from '@/lib/particle-preferences';
 
@@ -19,6 +19,12 @@ export function BetaIntro() {
     try { sessionStorage.setItem(BETA_INTRO_KEY, '1'); } catch { /* Storage is optional. */ }
     audioRef.current?.pause();
     setVisible(false);
+    const path = appPathname(window.location.pathname).replace(/\/$/, '') || '/';
+    const publicRoute = /^\/(?:login|auth|beta-access|onboarding)(?:\/|$)/.test(path);
+    if (!publicRoute && path !== '/space') {
+      window.location.replace(appPageUrl('/space'));
+      return;
+    }
     window.dispatchEvent(new Event(INTRO_DONE));
   }
 

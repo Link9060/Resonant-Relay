@@ -2,7 +2,7 @@
 
 import { PageLoading } from '@/components/page-loading';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { appPageUrl, BASE_PATH } from '@/lib/config';
+import { appPageUrl, BASE_PATH, IS_BETA } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { formatRelayNumber } from '@/lib/utils';
 import {
@@ -83,7 +83,7 @@ export default function OnboardingPage() {
       const replay = params.get('tour') === '1';
 
       if (typed.onboarding_completed_at && !replay) {
-        window.location.replace(appPageUrl('/'));
+        window.location.replace(appPageUrl(IS_BETA ? '/space' : '/'));
         return;
       }
 
@@ -407,7 +407,7 @@ export default function OnboardingPage() {
                     <div className="mt-1 text-xs text-ink-faint">Use this when you want an exact, direct add.</div>
                   </div>
                 </div>
-                <PrimaryButton onClick={() => window.location.replace(appPageUrl('/'))}>Open Relay <ArrowRight size={16} /></PrimaryButton>
+                <PrimaryButton onClick={() => window.location.replace(appPageUrl(IS_BETA ? '/space' : '/'))}>Open Relay <ArrowRight size={16} /></PrimaryButton>
               </OnboardingPanel>
             )}
           </section>

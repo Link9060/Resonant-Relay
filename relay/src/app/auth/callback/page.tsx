@@ -30,7 +30,7 @@ async function goAfterSignIn() {
     .eq('id', user.id)
     .single();
 
-  const destination = profile?.onboarding_completed_at ? appUrl('/') : appUrl('/onboarding/');
+  const destination = profile?.onboarding_completed_at ? appUrl(IS_BETA ? '/space/' : '/') : appUrl('/onboarding/');
   window.location.replace(`${window.location.origin}${destination}`);
 }
 

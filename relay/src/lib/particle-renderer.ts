@@ -11,6 +11,8 @@ export type CloudMotion = {
   loading?: boolean;
   pointerX?: number;
   pointerY?: number;
+  scale?: number;
+  alpha?: number;
 };
 
 type BlobPoint = {
@@ -19,59 +21,61 @@ type BlobPoint = {
   z: number;
   phase: number;
   grain: number;
-  shell: number;
+  layer: 0 | 1 | 2 | 3 | 4;
   spark: number;
 };
 
-/** A true 3D point blob: most particles sit on a noisy spherical shell while
- * the rest create darker interior depth. Mouse input rotates and locally
- * displaces the projected points without introducing a WebGL dependency. */
+/** Layered point-sphere renderer. Three quiet, regular shells establish a
+ * clean volume; a brighter turbulent skin supplies the organic silhouette. */
 export function createCloudRenderer(compact: boolean, requested: ParticlePreferences = DEFAULT_PARTICLE_PREFERENCES) {
   const preferences = normalizeParticlePreferences(requested);
-  // Keep the object physically compact while raising point density. The
-  // desktop default lands just above ten thousand points without increasing
-  // the number of animation frames we draw.
-  const count = Math.round((compact ? 3200 : 5600) * preferences.density);
-  const shellCount = Math.round(count * 0.64);
+  const count = Math.round((compact ? 3800 : 6200) * preferences.density);
   const points: BlobPoint[] = [];
   let seed = 1741;
   const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) | 0; return (seed >>> 0) / 4294967296; };
 
-  // A Fibonacci shell avoids obvious clumps while overlapping waves keep its
-  // silhouette organic instead of mathematically round.
-  for (let i = 0; i < shellCount; i++) {
-    const y = 1 - 2 * (i + 0.5) / shellCount;
-    const ring = Math.sqrt(Math.max(0, 1 - y * y));
-    const angle = i * GOLDEN_ANGLE + (random() - 0.5) * 0.07;
-    const deformation = 1
-      + Math.sin(angle * 3 + y * 4.2) * 0.055
-      + Math.sin(angle * 7 - y * 2.7) * 0.032
-      + (random() - 0.5) * 0.045;
-    points.push({
-      x: Math.cos(angle) * ring * deformation,
-      y: y * deformation,
-      z: Math.sin(angle) * ring * deformation,
-      phase: random() * TAU,
-      grain: 0.52 + random() * 0.7,
-      shell: 1,
-      spark: random() > 0.982 ? 1 : 0,
-    });
-  }
+  const addShell = (amount: number, radius: number, layer: 1 | 2 | 3 | 4, turbulence: number) => {
+    for (let i = 0; i < amount; i++) {
+      const y = 1 - 2 * (i + 0.5) / amount;
+      const ring = Math.sqrt(Math.max(0, 1 - y * y));
+      const angle = i * GOLDEN_ANGLE + (random() - 0.5) * 0.055;
+      const wave = 1
+        + Math.sin(angle * 3 + y * 4.2) * turbulence
+        + Math.sin(angle * 7 - y * 2.7) * turbulence * 0.52
+        + (random() - 0.5) * turbulence * 0.8;
+      const r = radius * wave;
+      points.push({
+        x: Math.cos(angle) * ring * r,
+        y: y * r,
+        z: Math.sin(angle) * ring * r,
+        phase: random() * TAU,
+        grain: layer === 4 ? 0.5 + random() * 0.76 : 0.42 + random() * 0.48,
+        layer,
+        spark: layer === 4 && random() > 0.978 ? 1 : 0,
+      });
+    }
+  };
 
-  // Volumetric points make the center feel dimensional and partially hollow,
-  // matching the reference's quieter interior and brighter turbulent edge.
-  for (let i = shellCount; i < count; i++) {
+  // The inner shells stay deliberately orderly. Their overlap reads as one
+  // dimensional core instead of a single hollow wireframe surface.
+  addShell(Math.round(count * 0.16), 0.56, 1, 0.006);
+  addShell(Math.round(count * 0.18), 0.72, 2, 0.009);
+  addShell(Math.round(count * 0.2), 0.86, 3, 0.012);
+  addShell(Math.round(count * 0.31), 1, 4, 0.06);
+
+  const volumeCount = count - points.length;
+  for (let i = 0; i < volumeCount; i++) {
     const y = random() * 2 - 1;
     const ring = Math.sqrt(Math.max(0, 1 - y * y));
     const angle = random() * TAU;
-    const radius = Math.cbrt(random()) * 0.91;
+    const radius = Math.cbrt(random()) * 0.92;
     points.push({
       x: Math.cos(angle) * ring * radius,
       y: y * radius,
       z: Math.sin(angle) * ring * radius,
       phase: random() * TAU,
-      grain: 0.46 + random() * 0.62,
-      shell: 0,
+      grain: 0.4 + random() * 0.46,
+      layer: 0,
       spark: random() > 0.994 ? 1 : 0,
     });
   }
@@ -80,8 +84,10 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
     const mx = motion.mx ?? 0, my = motion.my ?? 0;
     const hover = motion.hover ?? 0, impulse = motion.impulse ?? 0;
     const pointerX = motion.pointerX ?? 0, pointerY = motion.pointerY ?? 0;
+    const scale = Math.max(0.025, motion.scale ?? 1);
+    const opacity = Math.max(0, Math.min(1, motion.alpha ?? 1));
     const viewportHeight = ctx.canvas.height / Math.max(1, ctx.getTransform().d);
-    const radius = Math.min(width * (compact ? 0.34 : 0.245), viewportHeight * (compact ? 0.27 : 0.28), compact ? 220 : 315);
+    const radius = Math.min(width * (compact ? 0.31 : 0.225), viewportHeight * (compact ? 0.25 : 0.255), compact ? 205 : 286) * scale;
     const yaw = time * (motion.loading ? 0.42 : 0.055) + mx * hover * 0.58;
     const pitch = Math.sin(time * 0.17) * 0.035 - my * hover * 0.32;
     const roll = Math.sin(time * 0.11) * 0.025 + mx * hover * 0.06;
@@ -94,9 +100,9 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
     ctx.fillStyle = dark ? '#fff' : '#0f0f11';
 
     for (const point of points) {
-      const surfaceWobble = point.shell
-        ? 1 + Math.sin(time * 0.68 + point.phase) * 0.012 + impulse * (0.045 + point.spark * 0.035)
-        : 1 + impulse * 0.018;
+      const surfaceWobble = point.layer === 4
+        ? 1 + Math.sin(time * 0.62 + point.phase) * 0.014 + impulse * (0.046 + point.spark * 0.034)
+        : 1 + Math.sin(time * 0.24 + point.phase) * 0.0025 + impulse * 0.018;
       const px = point.x * surfaceWobble;
       const py = point.y * surfaceWobble;
       const pz = point.z * surfaceWobble;
@@ -128,11 +134,17 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
       const projectedRadius = Math.min(1.15, Math.hypot(x3, y3));
       const rim = Math.max(0, Math.min(1, (projectedRadius - 0.67) / 0.35));
       const front = Math.max(0, Math.min(1, (z2 + 1.05) / 2.1));
-      const alpha = point.shell
-        ? 0.14 + rim * 0.54 + front * 0.12 + point.spark * 0.18
-        : 0.065 + front * 0.18 + rim * 0.08 + point.spark * 0.3;
-      const grain = Math.max(0.55, point.grain * preferences.size * (0.82 + rim * 0.42 + front * 0.16 + point.spark * 0.58));
-      ctx.globalAlpha = Math.min(0.98, alpha);
+      const alpha = point.layer === 4
+        ? 0.18 + rim * 0.58 + front * 0.12 + point.spark * 0.18
+        : point.layer === 3
+          ? 0.075 + rim * 0.12 + front * 0.105
+          : point.layer === 2
+            ? 0.055 + rim * 0.085 + front * 0.085
+            : point.layer === 1
+              ? 0.04 + rim * 0.06 + front * 0.07
+              : 0.035 + front * 0.095 + rim * 0.025 + point.spark * 0.24;
+      const grain = Math.max(0.5, point.grain * preferences.size * (0.86 + rim * 0.34 + front * 0.14 + point.spark * 0.55));
+      ctx.globalAlpha = Math.min(0.98, alpha) * opacity;
       ctx.fillRect(sx - grain / 2, sy - grain / 2, grain, grain);
     }
     ctx.globalAlpha = 1;

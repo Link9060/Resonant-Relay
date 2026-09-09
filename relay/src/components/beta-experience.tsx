@@ -8,6 +8,22 @@ import { createWorkspaceTransition, PANEL_CLOSE_MS, PANEL_OPEN_MS } from '@/lib/
 import { emitParticles, INTRO_DONE, introSeen, makeDust, PARTICLE_EVENT, reducedMotion, type ParticleCue } from '@/lib/particle-motion';
 import { PARTICLE_PREFERENCES_EVENT, readParticlePreferences, type ParticlePreferences } from '@/lib/particle-preferences';
 
+type MatrixPoint = {
+  x: number;
+  y: number;
+  coreX: number;
+  coreY: number;
+  size: number;
+  delay: number;
+};
+
+const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+const smooth = (value: number) => {
+  const t = clamp01(value);
+  return t * t * (3 - 2 * t);
+};
+const easeOut = (value: number) => 1 - Math.pow(1 - clamp01(value), 3);
+
 export function ParticleField() {
   const backgroundRef = useRef<HTMLCanvasElement>(null);
   const effectRef = useRef<HTMLCanvasElement>(null);
@@ -28,18 +44,127 @@ export function ParticleField() {
     let cue: (ParticleCue & { started: number }) | null = null;
     let impact: { x: number; y: number; started: number } | null = null;
     let bounds = { left: 24, top: 80, width: 0, height: 0 };
+    let matrix: MatrixPoint[] = [];
+    let matrixLinks: Array<[number, number]> = [];
+    let matrixX = new Float32Array(0), matrixY = new Float32Array(0);
+    let matrixSignature = '';
+    const rebuildMatrix = () => {
+      const signature = [w, h, cx, cy, bounds.left, bounds.top, bounds.width, bounds.height, preferences.density, preferences.size].map(value => Math.round(value * 10)).join(':');
+      if (signature === matrixSignature) return;
+      matrixSignature = signature;
+      const densityScale = Math.min(1.55, Math.sqrt(preferences.density));
+      const gap = Math.max(w < 600 ? 13 : 14, (w < 600 ? 20 : 24) / densityScale);
+      const left = bounds.left + Math.min(24, bounds.width * 0.04);
+      const top = bounds.top + 18;
+      const right = bounds.left + bounds.width - Math.min(24, bounds.width * 0.04);
+      const bottom = bounds.top + bounds.height - 18;
+      const hole = Math.min(w < 600 ? 54 : 92, bounds.width * 0.105, bounds.height * 0.16);
+      const rows = Math.max(1, Math.floor((bottom - top) / gap));
+      const cols = Math.max(1, Math.floor((right - left) / gap));
+      const byCell = new Map<string, number>();
+      const next: MatrixPoint[] = [];
+      for (let row = 0; row <= rows; row++) for (let col = 0; col <= cols; col++) {
+        const hash = Math.abs(Math.sin((row + 1) * 71.17 + (col + 1) * 19.31) * 43758.5453) % 1;
+        const hashB = Math.abs(Math.sin((row + 1) * 17.83 + (col + 1) * 91.07) * 19642.349) % 1;
+        const x = left + col * (right - left) / cols + (hash - 0.5) * 1.8;
+        const y = top + row * (bottom - top) / rows + (hashB - 0.5) * 1.8;
+        if (Math.hypot(x - cx, y - cy) < hole) continue;
+        const angle = hash * Math.PI * 2;
+        const coreRadius = Math.sqrt(hashB) * (w < 600 ? 46 : 72);
+        byCell.set(`${row}:${col}`, next.length);
+        next.push({
+          x, y,
+          coreX: cx + Math.cos(angle) * coreRadius,
+          coreY: cy + Math.sin(angle) * coreRadius,
+          size: (0.55 + hash * 0.75) * preferences.size,
+          delay: hashB * 0.11,
+        });
+      }
+      const links: Array<[number, number]> = [];
+      for (let row = 0; row <= rows; row++) for (let col = 0; col <= cols; col++) {
+        const index = byCell.get(`${row}:${col}`);
+        if (index === undefined) continue;
+        const rightIndex = byCell.get(`${row}:${col + 1}`);
+        const downIndex = byCell.get(`${row + 1}:${col}`);
+        if (rightIndex !== undefined) links.push([index, rightIndex]);
+        if (downIndex !== undefined) links.push([index, downIndex]);
+      }
+      matrix = next; matrixLinks = links;
+      matrixX = new Float32Array(matrix.length); matrixY = new Float32Array(matrix.length);
+    };
     const measure = () => {
       const rect = root.querySelector('.relay-mobile-main')?.getBoundingClientRect();
       bounds = { left: rect?.left ?? 24, top: Math.max(72, rect?.top ?? 80), width: rect?.width ?? w - 48, height: Math.min(h - 100, rect?.height ?? h - 100) };
       const rail = root.querySelector('.relay-desktop-dock')?.getBoundingClientRect();
       const left = w >= 768 ? rail?.width ?? 0 : 0;
       areaWidth = w - left; cx = left + areaWidth / 2; cy = h / 2;
+      rebuildMatrix();
     };
     const wake = () => { dirty = true; if (!frame && !document.hidden) frame = requestAnimationFrame(draw); };
     const resize = () => {
       w = window.innerWidth; h = window.innerHeight;
       fitCanvas(background, bg, w, h); fitCanvas(canvas, fx, w, h);
       measure(); wake();
+    };
+    const drawWorkspaceCue = (kind: 'open' | 'close', progress: number) => {
+      const opening = kind === 'open';
+      const travel = opening
+        ? easeOut((progress - 0.16) / 0.5)
+        : smooth((progress - 0.28) / 0.58);
+      const dotsIn = opening ? clamp01((progress - 0.14) / 0.16) : clamp01(progress / 0.2);
+      const dotsOut = opening ? 1 - smooth((progress - 0.84) / 0.16) : 1 - smooth((progress - 0.78) / 0.22);
+      const dotAlpha = dotsIn * dotsOut;
+      for (let index = 0; index < matrix.length; index++) {
+        const point = matrix[index]!;
+        const localTravel = opening
+          ? easeOut((travel - point.delay) / Math.max(0.001, 1 - point.delay))
+          : smooth((travel - point.delay * 0.35) / Math.max(0.001, 1 - point.delay * 0.35));
+        matrixX[index] = opening
+          ? point.coreX + (point.x - point.coreX) * localTravel
+          : point.x + (point.coreX - point.x) * localTravel;
+        matrixY[index] = opening
+          ? point.coreY + (point.y - point.coreY) * localTravel
+          : point.y + (point.coreY - point.y) * localTravel;
+      }
+
+      const lineIn = opening ? smooth((progress - 0.61) / 0.17) : smooth((progress - 0.08) / 0.2);
+      const lineOut = opening ? 1 - smooth((progress - 0.84) / 0.16) : 1 - smooth((progress - 0.38) / 0.2);
+      const lineAlpha = lineIn * lineOut;
+      if (lineAlpha > 0.002) {
+        fx.strokeStyle = dark ? '#fff' : '#111';
+        fx.lineWidth = 0.55;
+        fx.globalAlpha = lineAlpha * 0.19;
+        fx.beginPath();
+        for (const [from, to] of matrixLinks) {
+          fx.moveTo(matrixX[from]!, matrixY[from]!);
+          fx.lineTo(matrixX[to]!, matrixY[to]!);
+        }
+        fx.stroke();
+      }
+      if (dotAlpha > 0.002) {
+        fx.fillStyle = dark ? '#fff' : '#111';
+        fx.globalAlpha = dotAlpha * 0.72;
+        for (let index = 0; index < matrix.length; index++) {
+          const point = matrix[index]!;
+          fx.fillRect(matrixX[index]! - point.size / 2, matrixY[index]! - point.size / 2, point.size, point.size);
+        }
+      }
+
+      if (opening) {
+        const collapse = smooth(progress / 0.2);
+        const sphereAlpha = 1 - smooth((progress - 0.17) / 0.13);
+        if (sphereAlpha > 0.002) renderCloud(fx, cx, cy, areaWidth, clock, dark, {
+          scale: 1 - collapse * 0.93,
+          alpha: sphereAlpha,
+        });
+      } else {
+        const assemble = smooth((progress - 0.7) / 0.3);
+        if (assemble > 0.002) renderCloud(fx, cx, cy, areaWidth, clock, dark, {
+          scale: 0.25 + assemble * 0.75,
+          alpha: assemble,
+        });
+      }
+      fx.globalAlpha = 1;
     };
     const draw = (now: number) => {
       frame = 0;
@@ -89,20 +214,7 @@ export function ParticleField() {
             const dot = (1 + s.depth * 2.5) * preferences.size;
             fx.fillRect(cx + Math.cos(s.angle) * r, cy + Math.sin(s.angle) * r, dot, dot);
           }
-        } else {
-          const q = cue.kind === 'close' ? 1 - p : p;
-          const spread = 1 - Math.pow(1 - q, 3);
-          fx.fillStyle = dark ? '#fff' : '#111';
-          for (const s of sparks) {
-            const startX = cx + Math.cos(s.angle) * 90 * s.radius;
-            const startY = cy + Math.sin(s.angle) * 35 * s.radius;
-            const endX = bounds.left + s.depth * bounds.width;
-            const endY = bounds.top + s.radius * bounds.height;
-            fx.globalAlpha = Math.sin(p * Math.PI) * (0.2 + s.depth * 0.45);
-            const dot = (s.size + 0.7) * preferences.size;
-            fx.fillRect(startX + (endX - startX) * spread, startY + (endY - startY) * spread, dot, dot);
-          }
-        }
+        } else drawWorkspaceCue(cue.kind, p);
         fx.globalAlpha = 1;
         if (p === 1) { cue = null; fx.clearRect(0, 0, w, h); }
       } else cue = null;
@@ -141,6 +253,7 @@ export function ParticleField() {
       preferenceTimer = window.setTimeout(() => {
         renderCloud = createCloudRenderer(window.innerWidth < 600, preferences);
         sparks = makeDust(Math.round((window.innerWidth < 600 ? 700 : 1450) * preferences.density));
+        rebuildMatrix();
         wake();
       }, 80);
     };
