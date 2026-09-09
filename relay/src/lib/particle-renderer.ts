@@ -12,6 +12,20 @@ export type CloudMotion = {
   pointerY?: number;
   scale?: number;
   alpha?: number;
+  structureOnly?: boolean;
+};
+
+export type CloudEmitterPoint = {
+  x: number;
+  y: number;
+  size: number;
+  tone: number;
+  phase: number;
+};
+
+export type CloudRenderer = {
+  (ctx: CanvasRenderingContext2D, cx: number, cy: number, width: number, time: number, dark: boolean, motion?: CloudMotion): void;
+  projectEmitters(cx: number, cy: number, width: number, height: number, time: number): CloudEmitterPoint[];
 };
 
 type SpherePoint = {
@@ -104,15 +118,21 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
     });
   }
 
-  return (ctx: CanvasRenderingContext2D, cx: number, cy: number, width: number, time: number, dark: boolean, motion: CloudMotion = {}) => {
+  const getRadius = (width: number, height: number, scale = 1) => Math.min(
+    width * (compact ? 0.315 : 0.228),
+    height * (compact ? 0.25 : 0.258),
+    compact ? 208 : 292,
+  ) * scale;
+
+  const render: CloudRenderer = (ctx, cx, cy, width, time, dark, motion = {}) => {
     const mx = motion.mx ?? 0, my = motion.my ?? 0;
     const hover = motion.hover ?? 0, impulse = motion.impulse ?? 0;
     const pointerX = motion.pointerX ?? 0, pointerY = motion.pointerY ?? 0;
     const scale = Math.max(0.025, motion.scale ?? 1);
     const opacity = Math.max(0, Math.min(1, motion.alpha ?? 1));
     const viewportHeight = ctx.canvas.height / Math.max(1, ctx.getTransform().d);
-    const radius = Math.min(width * (compact ? 0.315 : 0.228), viewportHeight * (compact ? 0.25 : 0.258), compact ? 208 : 292) * scale;
-    const yaw = time * (motion.loading ? 0.4 : 0.052) + mx * hover * 0.68;
+    const radius = getRadius(width, viewportHeight, scale);
+    const yaw = time * (motion.loading ? 0.16 : 0.052) + mx * hover * 0.68;
     const pitch = Math.sin(time * 0.14) * 0.028 - my * hover * 0.42;
     const roll = Math.sin(time * 0.09) * 0.016 + mx * hover * 0.05;
     const cyaw = Math.cos(yaw), syaw = Math.sin(yaw);
@@ -124,6 +144,8 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
     ctx.fillStyle = dark ? '#fff' : '#0d0d0f';
 
     for (const point of points) {
+      const structural = point.layer === 1 || point.layer === 2 || point.layer === 3;
+      if (motion.structureOnly && !structural) continue;
       const cloudDrift = point.layer === 4
         ? Math.sin(time * 0.72 + point.phase) * (0.009 + point.spark * 0.008)
         : Math.sin(time * 0.2 + point.phase) * 0.0018;
@@ -144,7 +166,23 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
       let sy = cy + followY + y3 * radius * perspective;
       let interaction = 0;
 
-      if (hover > 0.015) {
+      // While data is loading, the loose cloud gathers into a dense satellite
+      // with a tapered wake. The three ordered shells stay in the center so the
+      // loading state still belongs to the same object instead of becoming a spinner.
+      let loadingHead = 0;
+      if (motion.loading && !structural) {
+        const trail = Math.pow(point.phase / TAU, 1.72);
+        const orbitAngle = time * 1.34 - trail * 1.72;
+        loadingHead = 1 - trail;
+        const bubbleRadius = radius * (0.036 + loadingHead * 0.12);
+        const localTurn = orbitAngle * 0.72;
+        const localX = (point.x * Math.cos(localTurn) - point.y * Math.sin(localTurn)) * bubbleRadius;
+        const localY = (point.x * Math.sin(localTurn) + point.y * Math.cos(localTurn)) * bubbleRadius;
+        sx = cx + Math.cos(orbitAngle) * radius * 0.9 + localX;
+        sy = cy + Math.sin(orbitAngle) * radius * 0.43 + localY;
+      }
+
+      if (!motion.loading && hover > 0.015) {
         const dx = sx - (cx + pointerX);
         const dy = sy - (cy + pointerY);
         const distance = Math.hypot(dx, dy);
@@ -162,21 +200,52 @@ export function createCloudRenderer(compact: boolean, requested: ParticlePrefere
       const rim = clamp01((projectedRadius - 0.65) / 0.37);
       const front = clamp01((z2 + 1.05) / 2.1);
       const randomTone = 0.48 + point.tone * 0.52;
-      const alpha = point.layer === 4
+      let alpha = point.layer === 4
         ? (0.28 + rim * 0.48 + front * 0.11 + point.spark * 0.12) * randomTone
         : point.layer === 3
-          ? (0.11 + rim * 0.13 + front * 0.13) * randomTone
+          ? (0.19 + rim * 0.18 + front * 0.17) * randomTone
           : point.layer === 2
-            ? (0.085 + rim * 0.1 + front * 0.105) * randomTone
+            ? (0.15 + rim * 0.14 + front * 0.145) * randomTone
             : point.layer === 1
-              ? (0.065 + rim * 0.075 + front * 0.09) * randomTone
+              ? (0.12 + rim * 0.105 + front * 0.125) * randomTone
               : (0.05 + front * 0.14 + rim * 0.035 + point.spark * 0.22) * randomTone;
-      const grain = Math.max(0.58, point.grain * preferences.size * (0.9 + rim * 0.26 + front * 0.12 + point.spark * 0.45));
+      if (motion.loading && !structural) alpha = (0.15 + loadingHead * 0.76 + point.tone * 0.16) * randomTone;
+      if (motion.loading && structural) alpha *= 1.32;
+      const grain = Math.max(0.58, point.grain * preferences.size * (0.9 + rim * 0.26 + front * 0.12 + point.spark * 0.45 + loadingHead * 0.18));
       ctx.globalAlpha = Math.min(0.99, alpha + interaction * 0.22) * opacity;
       ctx.fillRect(sx - grain / 2, sy - grain / 2, grain, grain);
     }
     ctx.globalAlpha = 1;
   };
+
+  const emitters = points.filter(point => point.layer === 0 || point.layer === 4);
+  render.projectEmitters = (cx, cy, width, height, time) => {
+    const radius = getRadius(width, height);
+    const yaw = time * 0.052;
+    const pitch = Math.sin(time * 0.14) * 0.028;
+    const roll = Math.sin(time * 0.09) * 0.016;
+    const cyaw = Math.cos(yaw), syaw = Math.sin(yaw);
+    const cpitch = Math.cos(pitch), spitch = Math.sin(pitch);
+    const croll = Math.cos(roll), sroll = Math.sin(roll);
+    return emitters.map(point => {
+      const x1 = point.x * cyaw + point.z * syaw;
+      const z1 = -point.x * syaw + point.z * cyaw;
+      const y2 = point.y * cpitch - z1 * spitch;
+      const z2 = point.y * spitch + z1 * cpitch;
+      const x3 = x1 * croll - y2 * sroll;
+      const y3 = x1 * sroll + y2 * croll;
+      const perspective = 1 / Math.max(0.76, 1 - z2 * 0.13);
+      return {
+        x: cx + x3 * radius * perspective,
+        y: cy + y3 * radius * perspective,
+        size: Math.max(0.62, point.grain * preferences.size),
+        tone: point.tone,
+        phase: point.phase,
+      };
+    });
+  };
+
+  return render;
 }
 
 function clamp01(value: number) {
