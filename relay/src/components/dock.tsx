@@ -1,8 +1,9 @@
 'use client';
 
+import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
 import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, IS_BETA, RELEASE_LABEL } from '@/lib/config';
 import { cn } from '@/lib/utils';
-import { CalendarDays, ChevronLeft, ChevronRight, House, ListTodo, Mail, MessageCircle, Settings, Shield, ShieldCheck, SquareCheck, Users, type LucideIcon } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, History, House, ListTodo, Mail, MessageCircle, Settings, Shield, ShieldCheck, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 const DESKTOP_DOCK_ITEMS = [
@@ -20,10 +21,12 @@ export function Dock({
   role = 'user',
   collapsed = false,
   onCollapsedChange,
+  onboardingCompletedAt,
 }: {
   role?: AppRole;
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
+  onboardingCompletedAt?: string | null;
 }) {
   const pathname = usePathname();
   const currentPath = appPathname(pathname);
@@ -112,6 +115,19 @@ export function Dock({
         <div className="mt-3 border-t border-border pt-3">
           <button
             type="button"
+            onClick={() => window.dispatchEvent(new Event(OPEN_WHATS_NEW_EVENT))}
+            className={cn(
+              'relay-dock-link flex w-full items-center rounded-md py-2 text-sm text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink',
+              collapsed ? 'justify-center px-0' : 'gap-3 px-3'
+            )}
+            aria-label="What’s New"
+            title={collapsed ? 'What’s New' : undefined}
+          >
+            <History size={18} />
+            {!collapsed && <span>What&apos;s New</span>}
+          </button>
+          <button
+            type="button"
             onClick={() => onCollapsedChange?.(!collapsed)}
             className={cn(
               'relay-dock-link flex w-full items-center rounded-md py-2 text-sm text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink',
@@ -125,6 +141,8 @@ export function Dock({
           </button>
         </div>
       </nav>
+
+      <WhatsNew onboardingCompletedAt={onboardingCompletedAt} />
 
       <nav
         aria-label="Relay Mobile"
