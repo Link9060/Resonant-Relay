@@ -6,6 +6,7 @@ export const DEVELOPMENT_VERSION = '1.0.3';
 export const APP_VERSION = IS_BETA ? DEVELOPMENT_VERSION : PRODUCTION_VERSION;
 export const RELEASE_LABEL = IS_BETA ? `Beta ${APP_VERSION}` : APP_VERSION;
 export const APP_TITLE = IS_BETA ? `Relay · Beta ${APP_VERSION}` : `Relay · ${APP_VERSION}`;
+export const DASHBOARD_PATH = IS_BETA ? '/' : '/dashboard';
 export const BASE_PATH = isGitHubPages ? '/Resonant-Relay' : '';
 export const PUBLIC_SITE_URL = 'https://resonantrelay.org';
 export const BETA_SITE_URL = 'https://link9060.github.io/Resonant-Relay';
