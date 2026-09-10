@@ -3,6 +3,7 @@
 import { removePushDevice, removePushSubscription, savePushSubscription } from '@/lib/actions/notifications';
 import { appUrl, VAPID_PUBLIC_KEY } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { BellOff, BellRing, Check, Laptop, Loader2, Send, Smartphone, Trash2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -148,15 +149,51 @@ export function PushToggle({ variant = 'card' }: { variant?: Variant }) {
     setTesting(true);
     setError(null);
     setMessage(null);
+    let resetDevice = false;
     try {
-      const result = await createClient().functions.invoke('push-dispatch', { body: { action: 'test' } });
+      const supabase = createClient();
+      const health = await supabase.functions.invoke('push-dispatch', { body: { action: 'health' } });
+      const publicKey = typeof health.data?.publicKey === 'string' ? health.data.publicKey : serverKey;
+      if (health.error || !publicKey) throw new Error('Relay could not verify its notification service.');
+
+      const registration = await navigator.serviceWorker.ready;
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription || !subscriptionUsesKey(subscription, publicKey)) {
+        if (subscription) {
+          await removePushSubscription(subscription.endpoint);
+          await subscription.unsubscribe();
+        }
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToArrayBuffer(publicKey),
+        });
+        if (!await persist(subscription)) throw new Error('Relay could not register this device.');
+        setServerKey(publicKey);
+        setCurrentEndpoint(subscription.endpoint);
+        await loadDevices();
+      }
+
+      const result = await supabase.functions.invoke('push-dispatch', { body: { action: 'test' } });
       if (result.error || !result.data?.ok) {
-        const reason = typeof result.data?.error === 'string' ? result.data.error : 'The device push service did not accept the alert.';
-        throw new Error(reason);
+        let reason = typeof result.data?.error === 'string' ? result.data.error : null;
+        if (!reason && result.error instanceof FunctionsHttpError) {
+          const response = await result.error.context.json().catch(() => null) as { error?: string } | null;
+          reason = response?.error ?? null;
+          resetDevice = result.error.context.status === 502;
+        }
+        throw new Error(reason ?? 'The device push service did not accept the alert.');
       }
       setMessage(`Delivered to ${result.data.sent} ${result.data.sent === 1 ? 'device' : 'devices'}.`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'The test alert could not be delivered.');
+      if (resetDevice) {
+        const registration = await navigator.serviceWorker.getRegistration(appUrl('/'));
+        const subscription = await registration?.pushManager.getSubscription();
+        await subscription?.unsubscribe();
+        setCurrentEndpoint(null);
+        setStatus('off');
+      }
+      setError(cause instanceof Error && cause.message ? cause.message : 'The test alert could not be delivered.');
+      await loadDevices();
     } finally {
       setTesting(false);
     }

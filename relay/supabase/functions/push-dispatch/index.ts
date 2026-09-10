@@ -142,6 +142,7 @@ async function deliverPush(
   webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
   let sent = 0;
   let failed = 0;
+  const rejectedStatuses: number[] = [];
   await Promise.all(subscriptions.map(async (subscription) => {
     try {
       await webpush.sendNotification(
@@ -153,6 +154,7 @@ async function deliverPush(
     } catch (error) {
       failed += 1;
       const statusCode = Number((error as { statusCode?: number })?.statusCode ?? 0);
+      rejectedStatuses.push(statusCode);
       if ([400, 401, 403, 404, 410].includes(statusCode)) {
         await admin.from('push_subscriptions').delete().eq('id', subscription.id);
       } else {
@@ -160,7 +162,7 @@ async function deliverPush(
       }
     }
   }));
-  return { sent, failed };
+  return { sent, failed, rejectedStatuses };
 }
 
 async function getVapidDetails(admin: ReturnType<typeof createClient>): Promise<VapidDetails> {

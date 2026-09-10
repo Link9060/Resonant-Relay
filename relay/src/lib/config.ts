@@ -11,7 +11,7 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL
   ?? (isGitHubPages ? BETA_SITE_URL : PUBLIC_SITE_URL);
 export const SUPABASE_URL = 'https://cnorozrjugxpanpfmssa.supabase.co';
 export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_yVNPiB7opT0WRvBfKTZ2BA_s5bOQLRg';
-export const VAPID_PUBLIC_KEY = 'BMxrxCFfZZkQzGWk0TvMVUJqzNjokxkY0oQkVFkeo8EeTHX3LQCwNMoYsnQVAYYJUzQMokbuQ_dt8-Co1a6Vhg8';
+export const VAPID_PUBLIC_KEY = 'BB9uLQEkhGFPyhDZMCNWFy-TwbYqyv1mz4Q8irl50o9pBaESA5d0sImf7Gd55SNG_AqfVGbyZ5e_odALU_rxYuA';
 
 export function appPathname(pathname: string) {
   if (pathname === BASE_PATH) return '/';

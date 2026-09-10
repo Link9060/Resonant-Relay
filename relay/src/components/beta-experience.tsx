@@ -334,7 +334,6 @@ export function BetaExperience({ children }: { children: ReactNode }) {
       window.clearTimeout(loadingReleaseTimer);
       if (staff(current()) || root.dataset.staff === 'true') {
         root.dataset.loading = 'false';
-        controller.holdForLoading(false);
         return;
       }
       if (loading) {
@@ -358,8 +357,7 @@ export function BetaExperience({ children }: { children: ReactNode }) {
     syncLoading();
     const ready = () => {
       root.dataset.ready = 'true';
-      if (staff(current())) revealInstantly();
-      else controller.reveal(reducedMotion() ? 0 : 480);
+      controller.reveal(reducedMotion() ? 0 : 480);
     };
     if (introSeen()) ready();
     else if (page()) { page()!.dataset.phase = 'hidden'; page()!.inert = true; }
@@ -367,14 +365,14 @@ export function BetaExperience({ children }: { children: ReactNode }) {
     routeChanged.current = () => {
       root.dataset.staff = String(staff(current()));
       if (root.dataset.ready !== 'true') return;
-      if (instantNavigation || staff(current())) {
+      if (instantNavigation) {
         instantNavigation = false;
         controller.historyChanged();
         revealInstantly();
       } else controller.committed();
     };
     const history = () => {
-      instantNavigation = root.dataset.staff === 'true' || staff(current());
+      instantNavigation = root.dataset.staff === 'true' && staff(current());
       controller.historyChanged();
       if (instantNavigation) revealInstantly();
     };
@@ -399,7 +397,7 @@ export function BetaExperience({ children }: { children: ReactNode }) {
       // Preserve native same-page query/filter behavior.
       if (url.pathname === window.location.pathname && url.search !== window.location.search) return;
       event.preventDefault();
-      if (staff(current()) || staff(url.pathname)) {
+      if (staff(current()) && staff(url.pathname)) {
         instantNavigation = true;
         controller.historyChanged();
         router.push(url.pathname.slice(BASE_PATH.length) + url.search || '/');
