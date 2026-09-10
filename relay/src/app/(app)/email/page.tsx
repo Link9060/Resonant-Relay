@@ -20,19 +20,23 @@ export default function EmailPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { void load(); }, []);
-
-  async function load() {
-    const supabase = createClient();
-    const accountResult = await supabase.functions.invoke('mail-hub', { body: { action: 'accounts' } });
-    if (accountResult.error) { setError('Could not load connected inboxes.'); setAccounts([]); return; }
-    const nextAccounts: ConnectedAccount[] = accountResult.data?.accounts ?? [];
-    setAccounts(nextAccounts);
-    if (!nextAccounts.length) { setMessages([]); return; }
-    const messageResult = await supabase.functions.invoke('mail-hub', { body: { action: 'messages' } });
-    if (messageResult.error) setError('Your accounts are connected, but the inbox could not load right now.');
-    setMessages(messageResult.data?.messages ?? []);
-  }
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const supabase = createClient();
+      const accountResult = await supabase.functions.invoke('mail-hub', { body: { action: 'accounts' } });
+      if (!active) return;
+      if (accountResult.error) { setError('Could not load connected inboxes.'); setAccounts([]); return; }
+      const nextAccounts: ConnectedAccount[] = accountResult.data?.accounts ?? [];
+      setAccounts(nextAccounts);
+      if (!nextAccounts.length) { setMessages([]); return; }
+      const messageResult = await supabase.functions.invoke('mail-hub', { body: { action: 'messages' } });
+      if (!active) return;
+      if (messageResult.error) setError('Your accounts are connected, but the inbox could not load right now.');
+      setMessages(messageResult.data?.messages ?? []);
+    })();
+    return () => { active = false; };
+  }, []);
 
   async function connect(provider: IntegrationProvider) {
     setBusy(provider); setError(null);
