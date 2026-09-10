@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { appPageUrl, staticDetailPath } from '@/lib/config';
 
 type Group = { id: string; name: string };
-type ResponseType = 'rsvp' | 'select_option';
+type ResponseType = 'rsvp' | 'select_option' | 'custom_text';
 type RepeatRule = 'never' | 'daily' | 'weekly' | 'custom';
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -19,6 +19,7 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
   const [notes, setNotes] = useState('');
   const [responseType, setResponseType] = useState<ResponseType>('select_option');
   const [options, setOptions] = useState(['', '']);
+  const [responsePrompt, setResponsePrompt] = useState('');
   const [repeatRule, setRepeatRule] = useState<RepeatRule>('weekly');
   const [startsOn, setStartsOn] = useState(today());
   const [repeatUntil, setRepeatUntil] = useState('');
@@ -32,6 +33,7 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
     setNotes('');
     setResponseType('select_option');
     setOptions(['', '']);
+    setResponsePrompt('');
     setRepeatRule('weekly');
     setStartsOn(today());
     setRepeatUntil('');
@@ -47,6 +49,9 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
     if (responseType === 'select_option' && options.filter((o) => o.trim()).length < 2) {
       return setError('Add at least two options.');
     }
+    if (responseType === 'custom_text' && !responsePrompt.trim()) {
+      return setError('Add a question for the written answer.');
+    }
     if (repeatRule === 'custom' && customDates.filter(Boolean).length === 0) {
       return setError('Pick at least one date.');
     }
@@ -58,6 +63,7 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
       notes,
       responseType,
       options,
+      responsePrompt,
       repeatRule,
       startsOn,
       repeatUntil: repeatRule === 'daily' || repeatRule === 'weekly' ? repeatUntil || null : null,
@@ -122,12 +128,15 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
             </Field>
 
             <Field label="What are people responding to?">
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <RadioPill active={responseType === 'select_option'} onClick={() => setResponseType('select_option')}>
                   Choose an option
                 </RadioPill>
                 <RadioPill active={responseType === 'rsvp'} onClick={() => setResponseType('rsvp')}>
                   Yes / No / Maybe
+                </RadioPill>
+                <RadioPill active={responseType === 'custom_text'} onClick={() => setResponseType('custom_text')}>
+                  Written answer
                 </RadioPill>
               </div>
             </Field>
@@ -161,6 +170,19 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
                     <Plus size={14} /> Add option
                   </button>
                 </div>
+              </Field>
+            )}
+
+            {responseType === 'custom_text' && (
+              <Field label="Question for each person">
+                <input
+                  value={responsePrompt}
+                  onChange={(event) => setResponsePrompt(event.target.value)}
+                  maxLength={120}
+                  placeholder="Which teacher are you going to?"
+                  className="w-full rounded-md border border-border bg-canvas px-3 py-2 text-sm text-ink outline-none focus-visible:border-accent"
+                />
+                <p className="mt-1 text-xs text-ink-faint">Each person gets their own text box. Use this for a teacher, location, ride plan, or any short answer.</p>
               </Field>
             )}
 

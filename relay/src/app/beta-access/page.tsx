@@ -121,7 +121,7 @@ export default function BetaAccessPage() {
               <h2 className="mt-3 text-lg font-semibold text-ink">You’re approved for Beta</h2>
               <p className="mt-2 text-sm text-ink-muted">{displayName ? `${displayName}, your account` : 'Your account'} is on the active Beta tester list.</p>
               {status.response_message && <div className="mt-4 rounded-xl border border-border bg-canvas px-4 py-3 text-left text-sm text-ink-muted"><div className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">Owner message</div><div className="mt-1">{status.response_message}</div></div>}
-              <a href={appPageUrl('/')} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-md bg-ink px-4 text-sm font-medium text-canvas">Enter Relay Beta <ArrowRight size={15} /></a>
+              <a href={appPageUrl('/space')} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-md bg-ink px-4 text-sm font-medium text-canvas">Enter Relay Beta <ArrowRight size={15} /></a>
             </div>
           ) : status?.request_status === 'pending' ? (
             <div className="text-center">

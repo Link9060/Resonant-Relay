@@ -1,6 +1,7 @@
 'use client';
 
 import { sendMessage } from '@/lib/actions/chats';
+import { appPageUrl } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { CornerUpLeft, Paperclip, Send, UserPlus, X } from 'lucide-react';
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -77,6 +78,10 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, onCan
         setError(result.error);
         setValue(body);
         setFiles(pendingFiles);
+        if (/reconnect|no longer send/i.test(result.error)) {
+          setCanSend(false);
+          setSendReason(result.error);
+        }
       } else {
         onCancelReply?.();
       }
@@ -93,6 +98,7 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, onCan
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-ink">This chat is read-only</p>
             <p className="mt-0.5 text-xs leading-5 text-ink-muted">{sendReason ?? 'Reconnect in Contacts to send new messages.'}</p>
+            <a href={appPageUrl('/contacts')} className="mt-2 inline-flex text-xs font-medium text-ink underline underline-offset-4">Open Contacts</a>
           </div>
         </div>
       </div>

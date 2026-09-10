@@ -160,11 +160,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-4 rounded-md border border-border bg-surface px-3 py-2.5 text-left">
-          <p className="text-xs font-medium text-ink">Use a personal email to sign in to Relay — not a school-managed email.</p>
-          <p className="mt-1 text-[11px] leading-5 text-ink-faint">You can still connect a school email later inside Email or Calendar.</p>
-        </div>
-
         {message && <p role="status" className="mt-4 text-sm text-ink-muted">{message}</p>}
 
         {IS_BETA ? (

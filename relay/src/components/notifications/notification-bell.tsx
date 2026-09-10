@@ -1,11 +1,12 @@
 'use client';
 
 import { markAllNotificationsRead, markNotificationRead } from '@/lib/actions/notifications';
+import { appPageUrl, normalizeAppLink } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import type { Notification } from '@/lib/types/database';
-import { Bell, ChevronDown } from 'lucide-react';
+import { PushToggle } from '@/components/notifications/push-toggle';
+import { Bell, CalendarClock, Check, MessageCircle, Settings2, UserRoundCheck, UserRoundPlus, UsersRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { appPageUrl, normalizeAppLink } from '@/lib/config';
 
 export function NotificationBell({ currentUserId, initial }: { currentUserId: string; initial: Notification[] }) {
   const [notifications, setNotifications] = useState(initial);
@@ -16,23 +17,43 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
     const channel = supabase
       .channel(`notifications:${currentUserId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUserId}` }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          const removed = payload.old as Pick<Notification, 'id'>;
+          if (removed?.id) setNotifications((current) => current.filter((notification) => notification.id !== removed.id));
+          return;
+        }
+
         const incoming = payload.new as Notification;
         if (!incoming?.id) return;
-        setNotifications((prev) => {
-          const exists = prev.some((notification) => notification.id === incoming.id);
-          return exists ? prev.map((notification) => notification.id === incoming.id ? incoming : notification) : [incoming, ...prev].slice(0, 20);
+        setNotifications((current) => {
+          const exists = current.some((notification) => notification.id === incoming.id);
+          return exists
+            ? current.map((notification) => notification.id === incoming.id ? incoming : notification)
+            : [incoming, ...current].slice(0, 20);
         });
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { void supabase.removeChannel(channel); };
   }, [currentUserId]);
 
-  const unreadCount = notifications.filter((n) => !n.read_at).length;
-  const groups = useMemo(() => groupNotifications(notifications), [notifications]);
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [open]);
+
+  const unreadCount = notifications.filter((notification) => !notification.read_at).length;
+  const sections = useMemo(() => [
+    { label: 'New', items: notifications.filter((notification) => !notification.read_at) },
+    { label: 'Earlier', items: notifications.filter((notification) => notification.read_at) },
+  ].filter((section) => section.items.length > 0), [notifications]);
 
   async function handleSelect(notification: Notification) {
     if (!notification.read_at) {
-      setNotifications((prev) => prev.map((n) => n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n));
+      setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, read_at: new Date().toISOString() } : item));
       await markNotificationRead(notification.id);
     }
     setOpen(false);
@@ -41,25 +62,68 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
 
   async function handleMarkAllRead() {
     const timestamp = new Date().toISOString();
-    setNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at ?? timestamp })));
+    setNotifications((current) => current.map((notification) => ({ ...notification, read_at: notification.read_at ?? timestamp })));
     await markAllNotificationsRead();
   }
 
   return (
     <div className="relative">
-      <button type="button" aria-label="Notifications" aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} className="relative flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink">
+      <button type="button" aria-label={unreadCount ? `Notifications, ${unreadCount} new` : 'Notifications'} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} className="relative flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink">
         <Bell size={18} />
-        {unreadCount > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-accent" aria-hidden="true" />}
+        {unreadCount > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-canvas" aria-hidden="true">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
       </button>
+
       {open && (
         <>
           <button type="button" aria-label="Close notifications" className="fixed inset-0 z-30 cursor-default" onClick={() => setOpen(false)} />
-          <div role="dialog" aria-label="Notifications" className="fixed left-4 right-4 top-16 z-40 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-xl md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-96">
-            <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
-              <div><p className="text-sm font-medium text-ink">Notifications</p><p className="text-[11px] text-ink-faint">Grouped so nothing gets lost</p></div>
-              {unreadCount > 0 && <button onClick={handleMarkAllRead} className="text-xs text-ink-faint hover:text-ink">Mark all read</button>}
+          <div role="dialog" aria-label="Notifications" className="fixed left-3 right-3 top-16 z-40 flex max-h-[calc(100vh-5rem)] flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-2xl md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-[26rem]">
+            <div className="flex min-h-14 items-center justify-between gap-4 border-b border-border px-4">
+              <div className="flex items-baseline gap-2">
+                <h2 className="text-sm font-semibold text-ink">Notifications</h2>
+                {unreadCount > 0 && <span className="text-xs text-ink-faint">{unreadCount} new</span>}
+              </div>
+              {unreadCount > 0 && (
+                <button type="button" onClick={() => void handleMarkAllRead()} className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-ink-faint transition-colors hover:bg-surface hover:text-ink">
+                  <Check size={13} /> Mark all read
+                </button>
+              )}
             </div>
-            {notifications.length === 0 ? <p className="px-3 py-8 text-center text-sm text-ink-faint">Nothing yet.</p> : <div className="max-h-[min(28rem,70vh)] overflow-y-auto p-1.5">{groups.map((group) => <NotificationGroup key={group.label} group={group} onSelect={handleSelect} />)}</div>}
+
+            <PushToggle variant="compact" />
+
+            <div className="border-b border-border bg-canvas/65 px-4 py-3">
+              <div className="flex items-start gap-2.5">
+                <Settings2 size={14} className="mt-0.5 shrink-0 text-ink-faint" />
+                <p className="text-[11px] leading-4.5 text-ink-faint">
+                  <span className="font-medium text-ink-muted">One more step:</span> your device also has to allow notifications for the browser you use. If Relay tests appear here but not on your screen, check your device notification settings and make sure Chrome, Safari, or Edge is allowed. On Mac, go to System Settings → Notifications → your browser.
+                </p>
+              </div>
+            </div>
+
+            {notifications.length === 0 ? (
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-10 text-center">
+                <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-surface text-ink-faint"><Bell size={18} /></span>
+                <p className="mt-3 text-sm font-medium text-ink">You&apos;re all caught up</p>
+                <p className="mt-1 text-xs text-ink-faint">Messages, requests, and reminders will appear here.</p>
+              </div>
+            ) : (
+              <div className="min-h-0 flex-1 overflow-y-auto py-1">
+                {sections.map((section) => (
+                  <section key={section.label} aria-label={section.label}>
+                    <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">{section.label}</p>
+                    <div>{section.items.map((notification) => <NotificationRow key={notification.id} notification={notification} onSelect={handleSelect} />)}</div>
+                  </section>
+                ))}
+              </div>
+            )}
+
+            <a href={appPageUrl('/profile#notifications')} onClick={() => setOpen(false)} className="flex h-11 items-center justify-center gap-2 border-t border-border text-xs font-medium text-ink-faint transition-colors hover:bg-surface hover:text-ink">
+              <Settings2 size={14} /> Notification settings
+            </a>
           </div>
         </>
       )}
@@ -67,27 +131,41 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
   );
 }
 
-type NotificationGroupData = { label: string; items: Notification[] };
-
-function groupNotifications(notifications: Notification[]): NotificationGroupData[] {
-  const grouped = new Map<string, Notification[]>();
-  for (const notification of notifications) {
-    const label = notification.type === 'group_added' || notification.type === 'plan_created' || notification.type === 'plan_reminder' || notification.link?.startsWith('/chats/') ? 'Group chats & plans' : notification.type === 'new_message' ? 'Messages' : 'Connections';
-    grouped.set(label, [...(grouped.get(label) ?? []), notification]);
-  }
-  return Array.from(grouped, ([label, items]) => ({ label, items }));
+function NotificationRow({ notification, onSelect }: { notification: Notification; onSelect: (notification: Notification) => void }) {
+  return (
+    <button type="button" onClick={() => void onSelect(notification)} className={`group flex w-full items-start gap-3 px-4 py-3 text-left outline-none transition-colors hover:bg-surface focus-visible:bg-surface ${notification.read_at ? '' : 'bg-surface/55'}`}>
+      <span className="relative mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-canvas text-ink-muted">
+        <NotificationTypeIcon notification={notification} />
+        {!notification.read_at && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-accent ring-2 ring-surface-raised" />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-start justify-between gap-3">
+          <span className={`truncate text-sm text-ink ${notification.read_at ? 'font-normal' : 'font-medium'}`}>{notification.title}</span>
+          <time className="shrink-0 pt-0.5 text-[10px] text-ink-faint" dateTime={notification.created_at}>{relativeTime(notification.created_at)}</time>
+        </span>
+        <span className="mt-0.5 block line-clamp-2 text-xs leading-5 text-ink-faint">{notification.body}</span>
+      </span>
+    </button>
+  );
 }
 
-function NotificationGroup({ group, onSelect }: { group: NotificationGroupData; onSelect: (notification: Notification) => void }) {
-  return <section className="mb-2 last:mb-0"><div className="flex items-center gap-1 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint"><ChevronDown size={12} />{group.label}<span className="ml-auto font-normal">{group.items.length}</span></div>{group.items.map((notification) => <button type="button" key={notification.id} onClick={() => void onSelect(notification)} className="w-full rounded-md px-2 py-2 text-left outline-none hover:bg-surface focus-visible:bg-surface"><div className="flex items-start gap-2">{!notification.read_at && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />}<div className={notification.read_at ? 'pl-3.5' : ''}><p className="text-sm text-ink">{notification.title}</p><p className="mt-0.5 line-clamp-2 text-xs text-ink-faint">{notification.body}</p><p className="mt-1 text-[11px] text-ink-faint">{relativeTime(notification.created_at)}</p></div></div></button>)}</section>;
+function NotificationTypeIcon({ notification }: { notification: Notification }) {
+  if (notification.type === 'new_message') return <MessageCircle size={15} />;
+  if (notification.type === 'connection_request') return <UserRoundPlus size={15} />;
+  if (notification.type === 'connection_accepted') return <UserRoundCheck size={15} />;
+  if (notification.type === 'plan_created' || notification.type === 'plan_reminder') return <CalendarClock size={15} />;
+  if (notification.type === 'group_added' || notification.link?.startsWith('/chats/')) return <UsersRound size={15} />;
+  return <Bell size={15} />;
 }
 
 function relativeTime(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffMs = Math.max(0, Date.now() - new Date(iso).getTime());
   const minutes = Math.floor(diffMs / 60_000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return 'now';
+  if (minutes < 60) return `${minutes}m`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(iso));
 }

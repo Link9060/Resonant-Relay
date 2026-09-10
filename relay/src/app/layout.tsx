@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import './brand.css';
 import './mobile.css';
+import './beta-experience.css';
+import { BetaIntro } from '@/components/beta-intro';
 import { StartupSequence } from '@/components/startup-sequence';
 import { UiSoundEffects } from '@/components/ui-sound-effects';
 import { PwaRegister } from '@/components/pwa-register';
@@ -36,11 +38,11 @@ const themeInitScript = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="font-body"><PwaRegister /><UiSoundEffects /><StartupSequence />{children}</body>
+      <body className="font-body"><PwaRegister /><UiSoundEffects />{IS_BETA ? <BetaIntro /> : <StartupSequence />}{children}</body>
     </html>
   );
 }

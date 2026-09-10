@@ -3,7 +3,7 @@
 import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
 import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, IS_BETA, RELEASE_LABEL } from '@/lib/config';
 import { cn } from '@/lib/utils';
-import { CalendarDays, ChevronLeft, ChevronRight, History, House, ListTodo, Mail, MessageCircle, Settings, Shield, ShieldCheck, SquareCheck, Users, type LucideIcon } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, Mail, MessageCircle, Settings, Shield, ShieldCheck, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 const DESKTOP_DOCK_ITEMS = [
@@ -13,6 +13,7 @@ const DESKTOP_DOCK_ITEMS = [
   { href: '/planner', label: 'Planner', mobileLabel: 'Plans', icon: SquareCheck },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
   { href: '/email', label: 'Email', icon: Mail },
+  { href: '/quicklinks', label: 'Quick Links', icon: Link2 },
 ] as const;
 
 type AppRole = 'user' | 'moderator' | 'admin' | 'owner';
@@ -51,17 +52,17 @@ export function Dock({
       <nav
         aria-label="Main"
         className={cn(
-          'fixed inset-y-0 left-0 z-30 hidden flex-col overflow-y-auto border-r border-border bg-surface py-6 transition-[width,padding] duration-200 md:flex',
+          'relay-desktop-dock fixed inset-y-0 left-0 z-30 hidden flex-col overflow-y-auto border-r border-border bg-surface py-6 transition-[width,padding] duration-200 md:flex',
           collapsed ? 'w-16 px-2' : 'w-60 px-3'
         )}
       >
         <a
-          href={appPageUrl('/')}
+          href={appPageUrl(IS_BETA ? '/space' : '/')}
           className={cn(
             'relay-brand-lockup pb-8 font-display text-lg font-medium tracking-tight text-ink',
             collapsed ? 'justify-center px-0' : 'px-3'
           )}
-          aria-label={`${APP_TITLE} home`}
+          aria-label={IS_BETA ? 'Return to particle landing page' : `${APP_TITLE} home`}
           title={collapsed ? APP_TITLE : undefined}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}

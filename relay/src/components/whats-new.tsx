@@ -1,6 +1,6 @@
 'use client';
 
-import { APP_VERSION, DEVELOPMENT_VERSION, IS_BETA } from '@/lib/config';
+import { APP_VERSION } from '@/lib/config';
 import { Check, Sparkles, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -8,24 +8,23 @@ export const OPEN_WHATS_NEW_EVENT = 'relay-open-whats-new';
 
 const SEEN_VERSION_KEY = 'relay-whats-new-seen-version';
 
-const DEVELOPMENT_RELEASE = {
-  version: '1.0.3',
-  status: 'Development',
-  publishedAt: '2026-09-10T10:30:00-05:00',
-  title: 'The next Relay update',
-  summary: 'Relay 1.0.3 is the active development build. New improvements will appear here as they are added and tested before the next public release.',
-  groups: [
-    {
-      label: 'In development',
-      items: [
-        'Ongoing stability, polish, and fixes following the 1.0.2 public release.',
-        'New changes stay in the development channel until they are ready for everyone.',
-      ],
-    },
-  ],
-} as const;
-
-const PUBLIC_RELEASES = [
+const RELEASES = [
+  {
+    version: '1.0.3',
+    status: 'Development',
+    publishedAt: '2026-09-10T10:30:00-05:00',
+    title: 'The next Relay update',
+    summary: 'Relay 1.0.3 is the active development build. New improvements will appear here as they are added and tested before the next public release.',
+    groups: [
+      {
+        label: 'In development',
+        items: [
+          'Ongoing stability, polish, and fixes following the 1.0.2 public release.',
+          'New changes stay in the development channel until they are ready for everyone.',
+        ],
+      },
+    ],
+  },
   {
     version: '1.0.2',
     status: 'Public release',
@@ -84,16 +83,13 @@ const PUBLIC_RELEASES = [
   },
 ] as const;
 
-const RELEASES = IS_BETA ? [DEVELOPMENT_RELEASE, ...PUBLIC_RELEASES] : [...PUBLIC_RELEASES];
-
 type WhatsNewProps = {
   onboardingCompletedAt?: string | null;
 };
 
 export function WhatsNew({ onboardingCompletedAt }: WhatsNewProps) {
   const [open, setOpen] = useState(false);
-  const currentVersion = IS_BETA ? DEVELOPMENT_VERSION : APP_VERSION;
-  const currentRelease = RELEASES.find((release) => release.version === currentVersion) ?? PUBLIC_RELEASES[0];
+  const currentRelease = RELEASES.find((release) => release.version === APP_VERSION) ?? RELEASES[0];
 
   useEffect(() => {
     const openFromDock = () => setOpen(true);
@@ -190,7 +186,7 @@ export function WhatsNew({ onboardingCompletedAt }: WhatsNewProps) {
             <p className="text-xs font-medium text-ink">Update history</p>
             <div className="mt-3 space-y-2">
               {RELEASES.map((release) => (
-                <details key={release.version} open={release.version === currentVersion} className="group rounded-xl border border-border bg-canvas">
+                <details key={release.version} open={release.version === APP_VERSION} className="group rounded-xl border border-border bg-canvas">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-left [&::-webkit-details-marker]:hidden">
                     <div>
                       <div className="text-sm font-medium text-ink">Relay {release.version}</div>
