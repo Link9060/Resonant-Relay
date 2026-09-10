@@ -4,6 +4,7 @@ import { markAllNotificationsRead, markNotificationRead } from '@/lib/actions/no
 import { appPageUrl, normalizeAppLink } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import type { Notification } from '@/lib/types/database';
+import { PushToggle } from '@/components/notifications/push-toggle';
 import { Bell, CalendarClock, Check, MessageCircle, Settings2, UserRoundCheck, UserRoundPlus, UsersRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -79,7 +80,7 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
       {open && (
         <>
           <button type="button" aria-label="Close notifications" className="fixed inset-0 z-30 cursor-default" onClick={() => setOpen(false)} />
-          <div role="dialog" aria-label="Notifications" className="fixed left-3 right-3 top-16 z-40 overflow-hidden rounded-xl border border-border bg-surface-raised shadow-2xl md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-[26rem]">
+          <div role="dialog" aria-label="Notifications" className="fixed left-3 right-3 top-16 z-40 flex max-h-[calc(100vh-5rem)] flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-2xl md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-[26rem]">
             <div className="flex min-h-14 items-center justify-between gap-4 border-b border-border px-4">
               <div className="flex items-baseline gap-2">
                 <h2 className="text-sm font-semibold text-ink">Notifications</h2>
@@ -92,14 +93,16 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
               )}
             </div>
 
+            <PushToggle variant="compact" />
+
             {notifications.length === 0 ? (
-              <div className="px-6 py-12 text-center">
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-10 text-center">
                 <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-surface text-ink-faint"><Bell size={18} /></span>
                 <p className="mt-3 text-sm font-medium text-ink">You&apos;re all caught up</p>
                 <p className="mt-1 text-xs text-ink-faint">Messages, requests, and reminders will appear here.</p>
               </div>
             ) : (
-              <div className="max-h-[min(32rem,72vh)] overflow-y-auto py-1">
+              <div className="min-h-0 flex-1 overflow-y-auto py-1">
                 {sections.map((section) => (
                   <section key={section.label} aria-label={section.label}>
                     <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">{section.label}</p>

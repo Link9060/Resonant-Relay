@@ -496,6 +496,8 @@ export interface Database {
           endpoint: string;
           p256dh: string;
           auth_key: string;
+          device_name: string;
+          last_seen_at: string;
           created_at: string;
         };
         Insert: {
@@ -503,8 +505,15 @@ export interface Database {
           endpoint: string;
           p256dh: string;
           auth_key: string;
+          device_name?: string;
+          last_seen_at?: string;
         };
-        Update: never;
+        Update: Partial<{
+          p256dh: string;
+          auth_key: string;
+          device_name: string;
+          last_seen_at: string;
+        }>;
         Relationships: [
           {
             foreignKeyName: 'push_subscriptions_user_id_fkey';
@@ -663,7 +672,8 @@ export type NotificationType =
   | 'group_added'
   | 'new_message'
   | 'plan_created'
-  | 'plan_reminder';
+  | 'plan_reminder'
+  | 'system';
 
 export interface Notification {
   id: string;

@@ -1,4 +1,4 @@
-const CACHE = 'relay-shell-v2';
+const CACHE = 'relay-shell-v3';
 const BASE = '/Resonant-Relay';
 const SHELL = [`${BASE}/`, `${BASE}/offline/`, `${BASE}/manifest.webmanifest`, `${BASE}/relay-icon.svg`];
 
@@ -36,7 +36,7 @@ self.addEventListener('push', (event) => {
   if (!event.data) return;
   let payload = { title: 'Relay', body: '', link: `${BASE}/` };
   try { payload = { ...payload, ...event.data.json() }; } catch { payload.body = event.data.text(); }
-  event.waitUntil(self.registration.showNotification(payload.title, { body: payload.body, tag: payload.id || undefined, renotify: Boolean(payload.id), icon: `${BASE}/relay-icon.svg`, badge: `${BASE}/relay-icon.svg`, data: { link: payload.link || `${BASE}/` } }));
+  event.waitUntil(self.registration.showNotification(payload.title, { body: payload.body, tag: payload.id || undefined, renotify: Boolean(payload.id), silent: false, icon: `${BASE}/relay-icon.svg`, badge: `${BASE}/relay-icon.svg`, data: { link: payload.link || `${BASE}/` } }));
 });
 
 self.addEventListener('notificationclick', (event) => {
