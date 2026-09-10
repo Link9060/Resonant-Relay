@@ -17,6 +17,7 @@ export interface Database {
           bio: string | null;
           created_at: string;
           updated_at: string;
+          role: 'user' | 'moderator' | 'admin' | 'owner';
         };
         Insert: Partial<Database['public']['Tables']['profiles']['Row']> & { id: string };
         Update: Partial<Database['public']['Tables']['profiles']['Row']>;
@@ -84,6 +85,37 @@ export interface Database {
         Relationships: [
           {
             foreignKeyName: 'todos_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notes: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          content: NoteBlock[];
+          is_pinned: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          title?: string;
+          content?: NoteBlock[];
+          is_pinned?: boolean;
+        };
+        Update: Partial<{
+          title: string;
+          content: NoteBlock[];
+          is_pinned: boolean;
+        }>;
+        Relationships: [
+          {
+            foreignKeyName: 'notes_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
@@ -646,6 +678,9 @@ export type Conversation = Database['public']['Tables']['conversations']['Row'];
 export type Message = Database['public']['Tables']['messages']['Row'];
 export interface MessageAttachment { path: string; name: string; type: string; size: number }
 export type Todo = Database['public']['Tables']['todos']['Row'];
+export type NoteBlockType = 'paragraph' | 'heading' | 'bullet' | 'todo' | 'quote';
+export interface NoteBlock { id: string; type: NoteBlockType; text: string; checked?: boolean }
+export type Note = Database['public']['Tables']['notes']['Row'];
 
 export type PlanResponseType = 'rsvp' | 'select_option' | 'custom_text';
 export type PlanRepeatRule = 'never' | 'daily' | 'weekly' | 'custom';

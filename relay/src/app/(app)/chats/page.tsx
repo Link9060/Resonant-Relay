@@ -18,7 +18,7 @@ export default function ChatsPage() {
 
   useEffect(() => { void (async () => {
     const supabase = createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return;
-    const { data: rows } = await supabase.from('conversation_participants').select(`conversation:conversations(id,type,last_message_at,group:groups(id,name),participants:conversation_participants(user_id,profile:profiles(id,display_name,avatar_url)))`).eq('user_id', user.id);
+    const { data: rows } = await supabase.from('conversation_participants').select(`conversation:conversations(id,type,last_message_at,group:groups(id,name),participants:conversation_participants(user_id,profile:profiles(id,display_name,avatar_url,role)))`).eq('user_id', user.id);
     const conversations = (rows ?? []).map((row: any) => row.conversation).filter(Boolean);
     const ids = conversations.map((conversation: any) => conversation.id);
     const [messageResult, conversationPreferenceResult] = await Promise.all([
@@ -28,7 +28,7 @@ export default function ChatsPage() {
     const preferenceByConversation = Object.fromEntries((conversationPreferenceResult.data ?? []).map((item: any) => [item.conversation_id, item]));
     conversations.sort((a: any, b: any) => { const aPin = preferenceByConversation[a.id]?.pinned_at; const bPin = preferenceByConversation[b.id]?.pinned_at; if (aPin && !bPin) return -1; if (!aPin && bPin) return 1; return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime(); });
     const previews = new Map<string, string>(); for (const message of messageResult.data ?? []) if (!previews.has(message.conversation_id)) previews.set(message.conversation_id, message.body || (message.attachments?.[0]?.name ? `Attachment: ${message.attachments[0].name}` : 'Attachment'));
-    const [asA, asB] = await Promise.all([supabase.from('connections').select('other:profiles!connections_user_b_fkey(id,display_name,avatar_url)').eq('user_a', user.id), supabase.from('connections').select('other:profiles!connections_user_a_fkey(id,display_name,avatar_url)').eq('user_b', user.id)]);
+    const [asA, asB] = await Promise.all([supabase.from('connections').select('other:profiles!connections_user_b_fkey(id,display_name,avatar_url,role)').eq('user_a', user.id), supabase.from('connections').select('other:profiles!connections_user_a_fkey(id,display_name,avatar_url,role)').eq('user_b', user.id)]);
     const contacts = [...(asA.data ?? []), ...(asB.data ?? [])].map((row: any) => row.other).filter(Boolean);
     const { data: preferences } = contacts.length ? await supabase.from('contact_preferences').select('contact_id,nickname,color_key').eq('owner_id', user.id).in('contact_id', contacts.map((contact: any) => contact.id)) : { data: [] };
     const preferencesById = Object.fromEntries((preferences ?? []).map((preference: any) => [preference.contact_id, preference]));

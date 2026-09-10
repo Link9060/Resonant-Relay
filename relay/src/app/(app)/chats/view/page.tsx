@@ -18,7 +18,7 @@ function ConversationView() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: conversation } = await supabase.from('conversations').select(`id,type,group_id,group:groups(id,name),participants:conversation_participants(user_id,profile:profiles(id,display_name,avatar_url))`).eq('id', id).single();
+      const { data: conversation } = await supabase.from('conversations').select(`id,type,group_id,group:groups(id,name),participants:conversation_participants(user_id,profile:profiles(id,display_name,avatar_url,role))`).eq('id', id).single();
       if (!conversation) { setState({ error: 'Conversation not found.' }); return; }
       const { data: rawMessages } = await supabase.from('messages').select('id,conversation_id,sender_id,body,created_at,edited_at,attachments,reply_to_id').eq('conversation_id', id).order('created_at', { ascending: true }).limit(200);
       const messageIds = (rawMessages ?? []).map((message) => message.id);

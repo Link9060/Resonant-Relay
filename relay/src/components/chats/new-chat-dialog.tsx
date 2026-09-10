@@ -7,8 +7,10 @@ import { Loader2, MessageCirclePlus, X } from 'lucide-react';
 import { useState } from 'react';
 import { appPageUrl, staticDetailPath } from '@/lib/config';
 import { contactColor, contactDisplayName, type ContactColorKey } from '@/lib/contact-colors';
+import { UserRoleBadge } from '@/components/user-role-badge';
+import type { AppRole } from '@/lib/role-preview';
 
-type Contact = { id: string; display_name: string; avatar_url: string | null; preference?: { nickname: string | null; color_key: ContactColorKey } | null };
+type Contact = { id: string; display_name: string; avatar_url: string | null; role: AppRole; preference?: { nickname: string | null; color_key: ContactColorKey } | null };
 
 export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
   const [open, setOpen] = useState(false);
@@ -127,7 +129,7 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
                         <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium" style={{color,backgroundColor:`${color}1f`}}>
                           {displayName[0]?.toUpperCase()}
                         </div>
-                        <span className="text-sm text-ink">{displayName}</span>
+                        <span className="min-w-0 truncate text-sm text-ink">{displayName}</span><UserRoleBadge role={c.role} />
                       </button>
                     </li>
                   )})}
@@ -159,7 +161,7 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
                           <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium" style={{color,backgroundColor:`${color}1f`}}>
                             {displayName[0]?.toUpperCase()}
                           </div>
-                          <span className="text-sm text-ink">{displayName}</span>
+                          <span className="min-w-0 truncate text-sm text-ink">{displayName}</span><UserRoleBadge role={c.role} />
                         </label>
                       </li>
                     )})}

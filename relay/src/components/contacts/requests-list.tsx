@@ -1,9 +1,11 @@
 'use client';
 
 import { acceptConnectionRequest, cancelConnectionRequest, declineConnectionRequest } from '@/lib/actions/contacts';
+import { UserRoleBadge } from '@/components/user-role-badge';
+import type { AppRole } from '@/lib/role-preview';
 import { useTransition } from 'react';
 
-type Person = { id: string; display_name: string; avatar_url: string | null; school: string | null };
+type Person = { id: string; display_name: string; avatar_url: string | null; school: string | null; role: AppRole };
 
 export function RequestsList({
   incoming,
@@ -23,7 +25,7 @@ export function RequestsList({
           <div className="flex items-center gap-3">
             <Avatar name={req.sender.display_name} />
             <div>
-              <p className="text-sm font-medium text-ink">{req.sender.display_name}</p>
+              <div className="flex items-center gap-1.5"><p className="text-sm font-medium text-ink">{req.sender.display_name}</p><UserRoleBadge role={req.sender.role} /></div>
               <p className="text-xs text-ink-faint">wants to connect</p>
             </div>
           </div>
@@ -59,7 +61,7 @@ export function RequestsList({
           <div className="flex items-center gap-3">
             <Avatar name={req.recipient.display_name} />
             <div>
-              <p className="text-sm font-medium text-ink">{req.recipient.display_name}</p>
+              <div className="flex items-center gap-1.5"><p className="text-sm font-medium text-ink">{req.recipient.display_name}</p><UserRoleBadge role={req.recipient.role} /></div>
               <p className="text-xs text-ink-faint">Request sent — waiting</p>
             </div>
           </div>

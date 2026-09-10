@@ -1,7 +1,9 @@
 'use client';
 
 import { blockContact, removeContact, updateContactPreference } from '@/lib/actions/contacts';
+import { UserRoleBadge } from '@/components/user-role-badge';
 import { CONTACT_COLORS, contactColor, contactDisplayName, type ContactColorKey } from '@/lib/contact-colors';
+import type { AppRole } from '@/lib/role-preview';
 import { Ban, Check, Loader2, Settings2, UserMinus, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -15,6 +17,7 @@ type Contact = {
     avatar_url: string | null;
     school: string | null;
     bio: string | null;
+    role: AppRole;
   };
   preference: Preference;
 };
@@ -116,7 +119,7 @@ export function ContactsList({ contacts, onRemoved, onPreferenceUpdated }: Props
                   {other.avatar_url ? <span className="relative h-full w-full"><Image src={other.avatar_url} alt="" fill sizes="44px" className="object-cover" unoptimized /></span> : displayName[0]?.toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-ink">{displayName}</p>
+                  <div className="flex min-w-0 items-center gap-1.5"><p className="truncate text-sm font-medium text-ink">{displayName}</p><UserRoleBadge role={other.role} /></div>
                   {preference?.nickname && <p className="truncate text-xs text-ink-faint">{other.display_name}</p>}
                   {!preference?.nickname && other.school && <p className="truncate text-xs text-ink-faint">{other.school}</p>}
                 </div>
@@ -133,7 +136,7 @@ export function ContactsList({ contacts, onRemoved, onPreferenceUpdated }: Props
                   <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border sm:hidden" />
                   <div className="mb-4 flex items-start justify-between gap-3 sm:hidden">
                     <div>
-                      <p className="text-base font-semibold text-ink">{displayName}</p>
+                      <div className="flex items-center gap-1.5"><p className="text-base font-semibold text-ink">{displayName}</p><UserRoleBadge role={other.role} /></div>
                       {preference?.nickname && <p className="mt-0.5 text-xs text-ink-faint">{other.display_name}</p>}
                     </div>
                     <button type="button" onClick={closeEdit} className="flex h-11 w-11 items-center justify-center rounded-full bg-canvas text-ink-muted"><X size={18} /></button>

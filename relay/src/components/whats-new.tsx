@@ -12,14 +12,21 @@ const DEVELOPMENT_RELEASE = {
   version: '1.0.3',
   status: 'Beta · Development',
   publishedAt: '2026-09-10T10:30:00-05:00',
-  title: 'The next Relay update',
-  summary: 'Relay 1.0.3 is the active beta build. New improvements appear here while they are tested before the next public release.',
+  title: 'Notes arrive in Relay',
+  summary: 'Relay 1.0.3 starts turning To Do into a personal knowledge workspace, with private block-based notes and clearer staff identities.',
   groups: [
     {
-      label: 'In beta',
+      label: 'New in beta',
       items: [
-        'Ongoing stability, polish, and fixes following the 1.0.2 public release.',
-        'Experimental changes stay in Beta until they are ready for everyone.',
+        'Notes now live beneath To Do and sync privately with your Relay account.',
+        'Build notes from text, headings, lists, checkboxes, and quotes, with automatic saving, search, pinning, and block reordering.',
+        'Owner, Admin, and Moderator titles now appear beside people across profiles, contacts, and chats.',
+      ],
+    },
+    {
+      label: 'Foundation',
+      items: [
+        'Notes use structured blocks and stable IDs so a future visual knowledge graph can connect notes, tasks, and files for RAVIN.',
       ],
     },
   ],

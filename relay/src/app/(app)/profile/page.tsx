@@ -1,6 +1,7 @@
 'use client';
 
 import { PushToggle } from '@/components/notifications/push-toggle';
+import { UserRoleBadge } from '@/components/user-role-badge';
 import { PageLoading } from '@/components/page-loading';
 import { SignOutButton } from '@/components/profile/sign-out-button';
 import { AccountDataControls } from '@/components/profile/account-data-controls';
@@ -154,7 +155,7 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-lg px-4 py-8 md:px-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-medium tracking-tight text-ink">Profile</h1>
+          <div className="flex items-center gap-2"><h1 className="font-display text-2xl font-medium tracking-tight text-ink">Profile</h1><UserRoleBadge role={profile.role} /></div>
           <p className="mt-1 text-sm text-ink-faint">Choose how people see you across Relay.</p>
         </div>
         <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-raised text-xl font-medium text-ink">

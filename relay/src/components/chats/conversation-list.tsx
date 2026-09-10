@@ -3,10 +3,12 @@
 import { appPageUrl, staticDetailPath } from '@/lib/config';
 import { contactColor, contactDisplayName, type ContactColorKey } from '@/lib/contact-colors';
 import { setConversationPreferences } from '@/lib/actions/chats';
+import { UserRoleBadge } from '@/components/user-role-badge';
+import type { AppRole } from '@/lib/role-preview';
 import { BellOff, Pin, PinOff } from 'lucide-react';
 import { useState } from 'react';
 
-type Participant = { user_id: string; profile: { id: string; display_name: string; avatar_url: string | null } };
+type Participant = { user_id: string; profile: { id: string; display_name: string; avatar_url: string | null; role: AppRole } };
 type ConversationRow = {
   id: string;
   type: 'direct' | 'group';
@@ -64,7 +66,7 @@ export function ConversationList({
                 {initial}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-ink">{title}</p>
+                <div className="flex min-w-0 items-center gap-1.5"><p className="truncate text-sm font-medium text-ink">{title}</p>{conversation.type === 'direct' && <UserRoleBadge role={other?.profile.role} />}</div>
                 <p className="truncate text-xs text-ink-faint">{preview ?? 'No messages yet'}</p>
               </div>
             </a><div className="flex items-center gap-1">{preferenceState.muted && <BellOff size={13} className="text-ink-faint" aria-label="Muted" />}<button type="button" onClick={() => void togglePinned()} aria-label={preferenceState.pinned_at ? `Unpin ${title}` : `Pin ${title}`} className="flex h-8 w-8 items-center justify-center rounded-md text-ink-faint hover:bg-surface-raised hover:text-ink">{preferenceState.pinned_at ? <PinOff size={14} /> : <Pin size={14} />}</button></div></div>

@@ -1,8 +1,11 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const APP_ORIGIN = 'https://link9060.github.io';
-const ALLOWED_ORIGINS = new Set([APP_ORIGIN, 'http://localhost:3000']);
+const ALLOWED_ORIGINS = new Set([
+  'https://resonantrelay.org',
+  'https://link9060.github.io',
+  'http://localhost:3000',
+]);
 
 function cors(req: Request) {
   const origin = req.headers.get('Origin');
@@ -57,10 +60,11 @@ Deno.serve(async (req: Request) => {
     }
 
     if (body.action === 'export') {
-      const [profile, messages, todos, memberships, plans, responses, contacts, blocks, notifications, accounts, reports] = await Promise.all([
+      const [profile, messages, todos, notes, memberships, plans, responses, contacts, blocks, notifications, accounts, reports] = await Promise.all([
         admin.from('profiles').select('*').eq('id', user.id).maybeSingle(),
         admin.from('messages').select('id,conversation_id,body,attachments,reply_to_id,created_at,edited_at').eq('sender_id', user.id).order('created_at'),
         admin.from('todos').select('*').eq('user_id', user.id).order('created_at'),
+        admin.from('notes').select('*').eq('user_id', user.id).order('updated_at'),
         admin.from('group_members').select('group_id,role,joined_at,group:groups(name)').eq('user_id', user.id),
         admin.from('plans').select('*').eq('created_by', user.id).order('created_at'),
         admin.from('plan_responses').select('*').eq('user_id', user.id).order('responded_at'),
@@ -76,6 +80,7 @@ Deno.serve(async (req: Request) => {
         profile: profile.data,
         sentMessages: messages.data ?? [],
         todos: todos.data ?? [],
+        notes: notes.data ?? [],
         groupMemberships: memberships.data ?? [],
         plansCreated: plans.data ?? [],
         planResponses: responses.data ?? [],

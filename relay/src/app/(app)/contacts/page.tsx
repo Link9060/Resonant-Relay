@@ -24,10 +24,10 @@ export default function ContactsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const [a, b, incoming, outgoing, preferences] = await Promise.all([
-        supabase.from('connections').select('id,created_at,other:profiles!connections_user_b_fkey(id,display_name,avatar_url,school,bio)').eq('user_a', user.id),
-        supabase.from('connections').select('id,created_at,other:profiles!connections_user_a_fkey(id,display_name,avatar_url,school,bio)').eq('user_b', user.id),
-        supabase.from('connection_requests').select('id,created_at,sender:profiles!connection_requests_sender_id_fkey(id,display_name,avatar_url,school)').eq('recipient_id', user.id).eq('status', 'pending'),
-        supabase.from('connection_requests').select('id,created_at,recipient:profiles!connection_requests_recipient_id_fkey(id,display_name,avatar_url,school)').eq('sender_id', user.id).eq('status', 'pending'),
+        supabase.from('connections').select('id,created_at,other:profiles!connections_user_b_fkey(id,display_name,avatar_url,school,bio,role)').eq('user_a', user.id),
+        supabase.from('connections').select('id,created_at,other:profiles!connections_user_a_fkey(id,display_name,avatar_url,school,bio,role)').eq('user_b', user.id),
+        supabase.from('connection_requests').select('id,created_at,sender:profiles!connection_requests_sender_id_fkey(id,display_name,avatar_url,school,role)').eq('recipient_id', user.id).eq('status', 'pending'),
+        supabase.from('connection_requests').select('id,created_at,recipient:profiles!connection_requests_recipient_id_fkey(id,display_name,avatar_url,school,role)').eq('sender_id', user.id).eq('status', 'pending'),
         supabase.from('contact_preferences').select('contact_id,nickname,color_key').eq('owner_id', user.id),
       ]);
       const failed = [a, b, incoming, outgoing, preferences].find((result) => result.error)?.error;
