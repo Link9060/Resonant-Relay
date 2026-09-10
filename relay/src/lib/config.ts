@@ -4,8 +4,8 @@ export const IS_BETA = isGitHubPages;
 export const PRODUCTION_VERSION = '1.0.2';
 export const DEVELOPMENT_VERSION = '1.0.3';
 export const APP_VERSION = IS_BETA ? DEVELOPMENT_VERSION : PRODUCTION_VERSION;
-export const RELEASE_LABEL = APP_VERSION;
-export const APP_TITLE = `Relay · ${APP_VERSION}`;
+export const RELEASE_LABEL = IS_BETA ? `Beta ${APP_VERSION}` : APP_VERSION;
+export const APP_TITLE = IS_BETA ? `Relay · Beta ${APP_VERSION}` : `Relay · ${APP_VERSION}`;
 export const BASE_PATH = isGitHubPages ? '/Resonant-Relay' : '';
 export const PUBLIC_SITE_URL = 'https://resonantrelay.org';
 export const BETA_SITE_URL = 'https://link9060.github.io/Resonant-Relay';
@@ -13,7 +13,7 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL
   ?? (isGitHubPages ? BETA_SITE_URL : PUBLIC_SITE_URL);
 export const SUPABASE_URL = 'https://cnorozrjugxpanpfmssa.supabase.co';
 export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_yVNPiB7opT0WRvBfKTZ2BA_s5bOQLRg';
-export const VAPID_PUBLIC_KEY = 'BB9uLQEkhGFPyhDZMCNWFy-TwbYqyv1mz4Q8irl50o9pBaESA5d0sImf7Gd55SNG_AqfVGbyZ5e_odALU_rxYuA';
+export const VAPID_PUBLIC_KEY = 'BCTFsU2mbSt5UPCIY9Sc2NoclRYl4wv826kVqwkdgEdgdxsT8YoGBvM9IZQfNQHYCTt5HMEhwxAH86ZKN9CC38I';
 
 export function appPathname(pathname: string) {
   if (pathname === BASE_PATH) return '/';
