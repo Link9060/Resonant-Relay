@@ -95,6 +95,15 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
 
             <PushToggle variant="compact" />
 
+            <div className="border-b border-border bg-canvas/65 px-4 py-3">
+              <div className="flex items-start gap-2.5">
+                <Settings2 size={14} className="mt-0.5 shrink-0 text-ink-faint" />
+                <p className="text-[11px] leading-4.5 text-ink-faint">
+                  <span className="font-medium text-ink-muted">One more step:</span> your device also has to allow notifications for the browser you use. If Relay tests appear here but not on your screen, check your device notification settings and make sure Chrome, Safari, or Edge is allowed. On Mac, go to System Settings → Notifications → your browser.
+                </p>
+              </div>
+            </div>
+
             {notifications.length === 0 ? (
               <div className="min-h-0 flex-1 overflow-y-auto px-6 py-10 text-center">
                 <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-surface text-ink-faint"><Bell size={18} /></span>
