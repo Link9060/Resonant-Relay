@@ -112,7 +112,7 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: 'Unknown action.' }, 400);
   } catch (error) {
     console.error(error);
-    return json(req, { error: error instanceof Error ? error.message : 'Relay could not complete that request.' }, 500);
+    return json(req, { error: 'Relay could not complete that request.' }, 500);
   }
 });
 
