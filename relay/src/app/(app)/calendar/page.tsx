@@ -128,7 +128,6 @@ export default function CalendarPage() {
       </div>}
       {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
     </section>
-
     <section className="mt-7 overflow-hidden rounded-lg border border-border bg-surface-raised">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div>
@@ -246,7 +245,9 @@ function formatTime(start: string) {
 function formatEvent(start: string, allDay: boolean) {
   if (allDay && /^\d{4}-\d{2}-\d{2}$/.test(start)) {
     const [year, month, day] = start.split('-').map(Number);
-    return new Date(year, month - 1, day).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    if (year !== undefined && month !== undefined && day !== undefined) {
+      return new Date(year, month - 1, day).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    }
   }
   const date = new Date(start);
   return allDay ? date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : date.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });

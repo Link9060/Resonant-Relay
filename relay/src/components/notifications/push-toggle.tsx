@@ -94,30 +94,31 @@ export function PushToggle() {
 
   if (status === 'denied') {
     return (
-      <p className="text-xs text-ink-faint">
-        Notifications are blocked for Relay in your browser settings. Allow them there to turn this on.
+      <p className="max-w-md text-xs leading-5 text-ink-faint">
+        Notifications are blocked for Relay. Allow notifications for this site in your browser, then check your device notification settings and make sure notifications are allowed for the browser you use with Relay.
       </p>
     );
   }
 
   return (
     <div>
-    <button
-      onClick={status === 'on' ? disable : enable}
-      disabled={loading}
-      className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
-    >
-      {loading ? (
-        <Loader2 size={16} className="animate-spin" />
-      ) : status === 'on' ? (
-        <BellOff size={16} />
-      ) : (
-        <Bell size={16} />
-      )}
-      {status === 'on' ? 'Turn off notifications' : 'Turn on notifications'}
-    </button>
-    <p className="mt-2 max-w-md text-xs leading-5 text-ink-faint">{status === 'on' ? 'This device will receive Relay messages even when the app is closed.' : 'On iPhone or iPad, install Relay from Safari using Add to Home Screen first.'}</p>
-    {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+      <button
+        onClick={status === 'on' ? disable : enable}
+        disabled={loading}
+        className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
+      >
+        {loading ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : status === 'on' ? (
+          <BellOff size={16} />
+        ) : (
+          <Bell size={16} />
+        )}
+        {status === 'on' ? 'Turn off notifications' : 'Turn on notifications'}
+      </button>
+      <p className="mt-2 max-w-md text-xs leading-5 text-ink-faint">{status === 'on' ? 'This device will receive Relay messages even when the app is closed.' : 'On iPhone or iPad, install Relay from Safari using Add to Home Screen first.'}</p>
+      <p className="mt-1 max-w-md text-xs leading-5 text-ink-faint">Also check your device settings and make sure notifications are allowed for your browser (such as Chrome, Safari, or Edge).</p>
+      {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
     </div>
   );
 }
