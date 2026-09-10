@@ -5,20 +5,22 @@ import { useState, useTransition } from 'react';
 
 type Option = { id: string; label: string };
 type Member = { id: string; display_name: string };
-type Response = { user_id: string; option_id: string | null; rsvp_status: 'yes' | 'no' | 'maybe' | null };
+type Response = { user_id: string; option_id: string | null; rsvp_status: 'yes' | 'no' | 'maybe' | null; text_response: string | null };
 
 const RSVP_LABEL: Record<'yes' | 'no' | 'maybe', string> = { yes: 'Yes', no: 'No', maybe: 'Maybe' };
 
 export function PlanInstanceCard({
   instance,
   responseType,
+  responsePrompt,
   options,
   groupMembers,
   responses,
   currentUserId,
 }: {
   instance: { id: string; occurs_on: string };
-  responseType: 'rsvp' | 'select_option';
+  responseType: 'rsvp' | 'select_option' | 'custom_text';
+  responsePrompt: string | null;
   options: Option[];
   groupMembers: Member[];
   responses: Response[];
@@ -27,6 +29,7 @@ export function PlanInstanceCard({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [localResponses, setLocalResponses] = useState(responses);
+  const [textResponse, setTextResponse] = useState(responses.find((response) => response.user_id === currentUserId)?.text_response ?? '');
 
   const responseByUser = new Map(localResponses.map((r) => [r.user_id, r]));
   const myResponse = responseByUser.get(currentUserId);
@@ -36,7 +39,7 @@ export function PlanInstanceCard({
     startTransition(async () => {
       const result = await submitPlanResponse(instance.id, { optionId });
       if (!result.ok) setError(result.error);
-      else setLocalResponses((prev) => [...prev.filter((r) => r.user_id !== currentUserId), { user_id: currentUserId, option_id: optionId, rsvp_status: null }]);
+      else setLocalResponses((prev) => [...prev.filter((r) => r.user_id !== currentUserId), { user_id: currentUserId, option_id: optionId, rsvp_status: null, text_response: null }]);
     });
   }
 
@@ -45,14 +48,30 @@ export function PlanInstanceCard({
     startTransition(async () => {
       const result = await submitPlanResponse(instance.id, { rsvpStatus: status });
       if (!result.ok) setError(result.error);
-      else setLocalResponses((prev) => [...prev.filter((r) => r.user_id !== currentUserId), { user_id: currentUserId, option_id: null, rsvp_status: status }]);
+      else setLocalResponses((prev) => [...prev.filter((r) => r.user_id !== currentUserId), { user_id: currentUserId, option_id: null, rsvp_status: status, text_response: null }]);
+    });
+  }
+
+  function respondWithText() {
+    const answer = textResponse.trim();
+    if (!answer) {
+      setError('Enter an answer first.');
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const result = await submitPlanResponse(instance.id, { textResponse: answer });
+      if (!result.ok) setError(result.error);
+      else setLocalResponses((prev) => [...prev.filter((r) => r.user_id !== currentUserId), { user_id: currentUserId, option_id: null, rsvp_status: null, text_response: answer }]);
     });
   }
 
   const summary =
     responseType === 'select_option'
       ? buildOptionSummary(options, responseByUser, currentUserId, groupMembers)
-      : buildRsvpSummary(responseByUser);
+      : responseType === 'rsvp'
+        ? buildRsvpSummary(responseByUser)
+        : buildTextSummary(responseByUser, groupMembers.length);
 
   return (
     <div className="rounded-md border border-border">
@@ -68,9 +87,9 @@ export function PlanInstanceCard({
             const label =
               responseType === 'select_option'
                 ? options.find((o) => o.id === response?.option_id)?.label
-                : response?.rsvp_status
+                : responseType === 'rsvp' && response?.rsvp_status
                   ? RSVP_LABEL[response.rsvp_status]
-                  : undefined;
+                  : response?.text_response ?? undefined;
 
             return (
               <tr key={member.id}>
@@ -104,7 +123,7 @@ export function PlanInstanceCard({
               </button>
             ))}
           </div>
-        ) : (
+        ) : responseType === 'rsvp' ? (
           <div className="flex gap-2">
             {(['yes', 'maybe', 'no'] as const).map((status) => (
               <button
@@ -120,6 +139,24 @@ export function PlanInstanceCard({
                 {RSVP_LABEL[status]}
               </button>
             ))}
+          </div>
+        ) : (
+          <div>
+            <label htmlFor={`plan-answer-${instance.id}`} className="mb-1.5 block text-xs font-medium text-ink-muted">{responsePrompt ?? 'Your answer'}</label>
+            <div className="flex gap-2">
+              <input
+                id={`plan-answer-${instance.id}`}
+                value={textResponse}
+                onChange={(event) => setTextResponse(event.target.value)}
+                onKeyDown={(event) => { if (event.key === 'Enter') respondWithText(); }}
+                maxLength={240}
+                placeholder="Type your answer"
+                className="min-w-0 flex-1 rounded-md border border-border bg-canvas px-3 py-2 text-sm text-ink outline-none focus-visible:border-accent"
+              />
+              <button type="button" disabled={isPending || !textResponse.trim()} onClick={respondWithText} className="rounded-md bg-ink px-4 py-2 text-xs font-medium text-canvas disabled:opacity-40">
+                {isPending ? 'Saving…' : myResponse?.text_response ? 'Update' : 'Submit'}
+              </button>
+            </div>
           </div>
         )}
         {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
@@ -166,6 +203,11 @@ function buildRsvpSummary(responseByUser: Map<string, Response>): string | null 
   if (total === 0) return null;
   const yesCount = [...responseByUser.values()].filter((r) => r.rsvp_status === 'yes').length;
   return `${yesCount} of ${total} said yes.`;
+}
+
+function buildTextSummary(responseByUser: Map<string, Response>, memberCount: number): string | null {
+  const total = [...responseByUser.values()].filter((response) => response.text_response).length;
+  return total ? `${total} of ${memberCount} answered.` : null;
 }
 
 function joinNames(names: string[]): string {

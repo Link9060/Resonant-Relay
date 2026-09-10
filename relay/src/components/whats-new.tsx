@@ -10,16 +10,16 @@ const SEEN_VERSION_KEY = 'relay-whats-new-seen-version';
 
 const DEVELOPMENT_RELEASE = {
   version: '1.0.3',
-  status: 'Development',
+  status: 'Beta · Development',
   publishedAt: '2026-09-10T10:30:00-05:00',
   title: 'The next Relay update',
-  summary: 'Relay 1.0.3 is the active development build. New improvements will appear here as they are added and tested before the next public release.',
+  summary: 'Relay 1.0.3 is the active beta build. New improvements appear here while they are tested before the next public release.',
   groups: [
     {
-      label: 'In development',
+      label: 'In beta',
       items: [
         'Ongoing stability, polish, and fixes following the 1.0.2 public release.',
-        'New changes stay in the development channel until they are ready for everyone.',
+        'Experimental changes stay in Beta until they are ready for everyone.',
       ],
     },
   ],

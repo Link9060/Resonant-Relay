@@ -1,6 +1,7 @@
 'use client';
 
-import { appPageUrl } from '@/lib/config';
+import { InteractiveGrid } from '@/components/interactive-grid';
+import { appPageUrl, IS_BETA } from '@/lib/config';
 import { AppRole } from '@/lib/role-preview';
 import { cn } from '@/lib/utils';
 import {
@@ -69,7 +70,7 @@ export function StaffControlHeader({ role, active }: { role: StaffRole; active: 
   return (
     <>
       <section className="relative overflow-hidden rounded-2xl border border-border bg-surface p-5 sm:p-6">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.035] [background-image:linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] [background-size:28px_28px]" />
+        {IS_BETA ? <InteractiveGrid /> : <div className="pointer-events-none absolute inset-0 opacity-[0.035] [background-image:linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] [background-size:28px_28px]" />}
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-2">

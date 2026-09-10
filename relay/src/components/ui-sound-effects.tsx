@@ -19,6 +19,7 @@ function restart(audio: HTMLAudioElement) {
 }
 
 function internalNavigationTarget(event: MouseEvent, interactive: HTMLElement) {
+  if (event.defaultPrevented) return null;
   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return null;
   const anchor = interactive.closest<HTMLAnchorElement>('a[href]');
   if (!anchor || anchor.hasAttribute('download')) return null;
@@ -101,12 +102,14 @@ export function UiSoundEffects() {
     };
 
     document.addEventListener('pointerdown', onPointerDown, true);
-    document.addEventListener('click', onClick, true);
+    // Let app navigation handlers claim the click first. Capturing here forced
+    // a document reload before the beta workspace could animate the route.
+    document.addEventListener('click', onClick);
     document.addEventListener('pointerover', onPointerOver, true);
 
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true);
-      document.removeEventListener('click', onClick, true);
+      document.removeEventListener('click', onClick);
       document.removeEventListener('pointerover', onPointerOver, true);
       hoverSound.pause();
       clickSounds.forEach((audio) => audio.pause());

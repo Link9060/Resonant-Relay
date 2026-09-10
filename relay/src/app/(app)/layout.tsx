@@ -1,5 +1,6 @@
 'use client';
 
+import { BetaExperience } from '@/components/beta-experience';
 import { Dock } from '@/components/dock';
 import { AppHeader } from '@/components/app-header';
 import { MobileRouteGate } from '@/components/mobile-route-gate';
@@ -49,8 +50,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!active) return;
       if (!user) {
-        // Keep the production homepage publicly accessible for visitors and
-        // OAuth verification. Protected app routes still go to sign-in.
         if (isPublicHome) return;
         window.location.replace(appPageUrl('/login'));
         return;
@@ -108,11 +107,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // On production, the signed-out root is a real public app homepage rather
-  // than a login-only screen. Signed-in users still get their normal dashboard.
   if (!state) {
     if (isPublicHome) return <PublicHomepage />;
-    return <PageLoading />;
+    return <BetaExperience><PageLoading /></BetaExperience>;
   }
 
   if (state.profile?.banned_at) {
@@ -138,27 +135,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
-      <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={handleDockCollapsedChange} onboardingCompletedAt={state.profile?.onboarding_completed_at} />
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        {isPreviewing && (
-          <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 text-xs text-ink md:px-6">
-            <span>Previewing Relay as <strong>{effectiveRole === 'user' ? 'Normal User' : effectiveRole.charAt(0).toUpperCase() + effectiveRole.slice(1)}</strong>. Your real account is still Owner.</span>
-            <button type="button" onClick={returnToOwner} className="shrink-0 rounded-md border border-border px-2.5 py-1 font-medium hover:bg-surface-raised">Return to Owner View</button>
-          </div>
-        )}
-        <AppHeader profile={{ ...state.profile, role: effectiveRole }} role={effectiveRole} currentUserId={state.userId} notifications={state.notifications} />
-        <MobileStaffAlert role={effectiveRole} />
-        <main className="relay-mobile-main min-w-0 flex-1 md:pb-0">
-          <MobileRouteGate role={effectiveRole}>{children}</MobileRouteGate>
-        </main>
-        <footer className="border-t border-border px-4 py-4 text-center text-[11px] text-ink-faint md:px-6">
-          <a href={appPageUrl('/privacy')} className="underline underline-offset-4 hover:text-ink">Privacy Policy</a>
-          <span className="mx-2" aria-hidden="true">·</span>
-          <a href={appPageUrl('/terms')} className="underline underline-offset-4 hover:text-ink">Terms of Use</a>
-        </footer>
+    <BetaExperience>
+      <div data-dock-collapsed={dockCollapsed} className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
+        <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={handleDockCollapsedChange} onboardingCompletedAt={state.profile?.onboarding_completed_at ?? null} />
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+          {isPreviewing && (
+            <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 text-xs text-ink md:px-6">
+              <span>Previewing Relay as <strong>{effectiveRole === 'user' ? 'Normal User' : effectiveRole.charAt(0).toUpperCase() + effectiveRole.slice(1)}</strong>. Your real account is still Owner.</span>
+              <button type="button" onClick={returnToOwner} className="shrink-0 rounded-md border border-border px-2.5 py-1 font-medium hover:bg-surface-raised">Return to Owner View</button>
+            </div>
+          )}
+          <AppHeader profile={{ ...state.profile, role: effectiveRole }} role={effectiveRole} currentUserId={state.userId} notifications={state.notifications} />
+          <MobileStaffAlert role={effectiveRole} />
+          <main className="relay-mobile-main min-w-0 flex-1 md:pb-0">
+            <MobileRouteGate role={effectiveRole}>{children}</MobileRouteGate>
+          </main>
+        </div>
       </div>
-    </div>
+    </BetaExperience>
   );
 }
 
