@@ -2,7 +2,7 @@
 
 import { APP_VERSION } from '@/lib/config';
 import { Check, Sparkles, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export const OPEN_WHATS_NEW_EVENT = 'relay-open-whats-new';
 
@@ -73,10 +73,7 @@ type WhatsNewProps = {
 
 export function WhatsNew({ onboardingCompletedAt }: WhatsNewProps) {
   const [open, setOpen] = useState(false);
-  const currentRelease = useMemo(
-    () => RELEASES.find((release) => release.version === APP_VERSION) ?? RELEASES[0],
-    []
-  );
+  const currentRelease = RELEASES.find((release) => release.version === APP_VERSION) ?? RELEASES[0];
 
   useEffect(() => {
     const openFromDock = () => setOpen(true);
@@ -106,7 +103,13 @@ export function WhatsNew({ onboardingCompletedAt }: WhatsNewProps) {
   useEffect(() => {
     if (!open) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') close();
+      if (event.key !== 'Escape') return;
+      try {
+        window.localStorage.setItem(SEEN_VERSION_KEY, APP_VERSION);
+      } catch {
+        // The modal can still close even when local storage is unavailable.
+      }
+      setOpen(false);
     };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
