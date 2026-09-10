@@ -1,6 +1,10 @@
 node_modules
 .next
 .env
-.env.local
+.env.*
+!.env.example
+.vercel
+*.pem
+*.key
 .DS_Store
 next-env.d.ts
