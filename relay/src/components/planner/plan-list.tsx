@@ -3,7 +3,7 @@ import { appPageUrl, staticDetailPath } from '@/lib/config';
 type PlanRow = {
   id: string;
   name: string;
-  response_type: 'rsvp' | 'select_option';
+  response_type: 'rsvp' | 'select_option' | 'custom_text';
   repeat_rule: 'never' | 'daily' | 'weekly' | 'custom';
   group: { id: string; name: string } | null;
   instances: { id: string; occurs_on: string }[];

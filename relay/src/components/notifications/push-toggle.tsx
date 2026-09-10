@@ -150,10 +150,13 @@ export function PushToggle({ variant = 'card' }: { variant?: Variant }) {
     setMessage(null);
     try {
       const result = await createClient().functions.invoke('push-dispatch', { body: { action: 'test' } });
-      if (result.error || !result.data?.ok) throw new Error('Test failed');
-      setMessage(result.data?.cooldown ? 'A test alert was just sent.' : 'Test alert sent. It may take a moment to appear.');
-    } catch {
-      setError('The test alert could not be sent. Check this device and try again.');
+      if (result.error || !result.data?.ok) {
+        const reason = typeof result.data?.error === 'string' ? result.data.error : 'The device push service did not accept the alert.';
+        throw new Error(reason);
+      }
+      setMessage(`Delivered to ${result.data.sent} ${result.data.sent === 1 ? 'device' : 'devices'}.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'The test alert could not be delivered.');
     } finally {
       setTesting(false);
     }

@@ -1,5 +1,5 @@
 export const PANEL_CLOSE_MS = 640;
-export const PANEL_OPEN_MS = 780;
+export const PANEL_OPEN_MS = 700;
 export type PanelPhase = 'open' | 'opening' | 'closing' | 'hidden';
 
 type TransitionHost = {

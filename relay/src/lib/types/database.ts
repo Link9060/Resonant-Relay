@@ -337,7 +337,8 @@ export interface Database {
           created_by: string;
           name: string;
           notes: string | null;
-          response_type: 'rsvp' | 'select_option';
+          response_type: 'rsvp' | 'select_option' | 'custom_text';
+          response_prompt: string | null;
           repeat_rule: 'never' | 'daily' | 'weekly' | 'custom';
           starts_on: string;
           repeat_until: string | null;
@@ -397,6 +398,7 @@ export interface Database {
           user_id: string;
           option_id: string | null;
           rsvp_status: 'yes' | 'no' | 'maybe' | null;
+          text_response: string | null;
           responded_at: string;
         };
         Insert: never; // created only via submit_plan_response RPC
@@ -590,8 +592,27 @@ export interface Database {
         };
         Returns: string;
       };
+      create_plan_v2: {
+        Args: {
+          p_group_id: string;
+          p_name: string;
+          p_notes: string | null;
+          p_response_type: 'rsvp' | 'select_option' | 'custom_text';
+          p_options: string[] | null;
+          p_response_prompt: string | null;
+          p_repeat_rule: 'never' | 'daily' | 'weekly' | 'custom';
+          p_starts_on: string;
+          p_repeat_until: string | null;
+          p_custom_dates: string[] | null;
+        };
+        Returns: string;
+      };
       submit_plan_response: {
         Args: { p_instance_id: string; p_option_id: string | null; p_rsvp_status: string | null };
+        Returns: void;
+      };
+      submit_plan_response_v2: {
+        Args: { p_instance_id: string; p_option_id: string | null; p_rsvp_status: string | null; p_text_response: string | null };
         Returns: void;
       };
       delete_plan: {
@@ -626,7 +647,7 @@ export type Message = Database['public']['Tables']['messages']['Row'];
 export interface MessageAttachment { path: string; name: string; type: string; size: number }
 export type Todo = Database['public']['Tables']['todos']['Row'];
 
-export type PlanResponseType = 'rsvp' | 'select_option';
+export type PlanResponseType = 'rsvp' | 'select_option' | 'custom_text';
 export type PlanRepeatRule = 'never' | 'daily' | 'weekly' | 'custom';
 export type RsvpStatus = 'yes' | 'no' | 'maybe';
 
@@ -637,6 +658,7 @@ export interface Plan {
   name: string;
   notes: string | null;
   response_type: PlanResponseType;
+  response_prompt: string | null;
   repeat_rule: PlanRepeatRule;
   starts_on: string;
   repeat_until: string | null;
@@ -663,6 +685,7 @@ export interface PlanResponse {
   user_id: string;
   option_id: string | null;
   rsvp_status: RsvpStatus | null;
+  text_response: string | null;
   responded_at: string;
 }
 

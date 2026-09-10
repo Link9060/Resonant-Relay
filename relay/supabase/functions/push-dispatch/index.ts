@@ -8,6 +8,13 @@ type VapidDetails = {
   subject: string;
 };
 
+type PushSubscriptionRow = {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth_key: string;
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -40,12 +47,12 @@ Deno.serve(async (req: Request) => {
       const { data: authData, error: authError } = await admin.auth.getUser(token);
       if (authError || !authData.user) return json({ error: 'Your session has expired.' }, 401);
 
-      const { count, error: countError } = await admin
+      const { data: subscriptions, error: subscriptionsError } = await admin
         .from('push_subscriptions')
-        .select('id', { count: 'exact', head: true })
+        .select('id,endpoint,p256dh,auth_key')
         .eq('user_id', authData.user.id);
-      if (countError) throw countError;
-      if (!count) return json({ error: 'Enable alerts on this device first.' }, 409);
+      if (subscriptionsError) throw subscriptionsError;
+      if (!subscriptions?.length) return json({ error: 'Enable alerts on this device first.' }, 409);
 
       const tenSecondsAgo = new Date(Date.now() - 10_000).toISOString();
       const { data: recent, error: recentError } = await admin
@@ -57,21 +64,38 @@ Deno.serve(async (req: Request) => {
         .limit(1)
         .maybeSingle();
       if (recentError) throw recentError;
-      if (recent) return json({ ok: true, queued: false, cooldown: true });
+      if (recent) return json({ error: 'Wait a few seconds before sending another test.' }, 429);
+
+      const testPayload = {
+        id: `test-${crypto.randomUUID()}`,
+        title: 'Relay notifications are working',
+        body: 'This device can receive alerts even when Relay is closed.',
+        link: '/profile#notifications',
+      };
+      const delivery = await deliverPush(admin, vapid, subscriptions as PushSubscriptionRow[], testPayload);
+      if (delivery.sent === 0) {
+        return json({
+          error: delivery.failed > 0
+            ? 'The device push service rejected this alert. Reload Relay, then enable device alerts again.'
+            : 'No registered device accepted the alert.',
+          ...delivery,
+        }, 502);
+      }
 
       const { data: testNotification, error: testError } = await admin
         .from('notifications')
         .insert({
           user_id: authData.user.id,
           type: 'system',
-          title: 'Relay notifications are working',
-          body: 'This device can receive alerts even when Relay is closed.',
-          link: '/profile#notifications',
+          title: testPayload.title,
+          body: testPayload.body,
+          link: testPayload.link,
+          pushed_at: new Date().toISOString(),
         })
         .select('id')
         .single();
       if (testError) throw testError;
-      return json({ ok: true, queued: true, notificationId: testNotification.id });
+      return json({ ok: true, ...delivery, notificationId: testNotification.id });
     }
 
     const notificationId = typeof body.notificationId === 'string' ? body.notificationId : null;
@@ -92,28 +116,12 @@ Deno.serve(async (req: Request) => {
       .eq('user_id', notification.user_id);
 
     if (subscriptionsError) throw subscriptionsError;
-    webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
-
-    let sent = 0;
-    let failed = 0;
-    await Promise.all((subscriptions ?? []).map(async (subscription) => {
-      try {
-        await webpush.sendNotification(
-          { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth_key } },
-          JSON.stringify({ id: notification.id, title: notification.title, body: notification.body, link: notification.link ?? '/' }),
-          { TTL: 300, urgency: 'high' },
-        );
-        sent += 1;
-      } catch (error) {
-        failed += 1;
-        const statusCode = Number((error as { statusCode?: number })?.statusCode ?? 0);
-        if ([400, 401, 403, 404, 410].includes(statusCode)) {
-          await admin.from('push_subscriptions').delete().eq('id', subscription.id);
-        } else {
-          console.error('Push delivery failed', error);
-        }
-      }
-    }));
+    const { sent, failed } = await deliverPush(admin, vapid, (subscriptions ?? []) as PushSubscriptionRow[], {
+      id: notification.id,
+      title: notification.title,
+      body: notification.body,
+      link: notification.link ?? '/',
+    });
 
     if (sent > 0) {
       await admin.from('notifications').update({ pushed_at: new Date().toISOString() }).eq('id', notification.id).is('pushed_at', null);
@@ -125,12 +133,37 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-async function getVapidDetails(admin: ReturnType<typeof createClient>): Promise<VapidDetails> {
-  const publicKey = Deno.env.get('VAPID_PUBLIC_KEY');
-  const privateKey = Deno.env.get('VAPID_PRIVATE_KEY');
-  const subject = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:relay-notifications@outlook.com';
-  if (publicKey && privateKey) return { publicKey, privateKey, subject };
+async function deliverPush(
+  admin: ReturnType<typeof createClient>,
+  vapid: VapidDetails,
+  subscriptions: PushSubscriptionRow[],
+  payload: { id: string; title: string; body: string; link: string },
+) {
+  webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
+  let sent = 0;
+  let failed = 0;
+  await Promise.all(subscriptions.map(async (subscription) => {
+    try {
+      await webpush.sendNotification(
+        { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth_key } },
+        JSON.stringify(payload),
+        { TTL: 300, urgency: 'high' },
+      );
+      sent += 1;
+    } catch (error) {
+      failed += 1;
+      const statusCode = Number((error as { statusCode?: number })?.statusCode ?? 0);
+      if ([400, 401, 403, 404, 410].includes(statusCode)) {
+        await admin.from('push_subscriptions').delete().eq('id', subscription.id);
+      } else {
+        console.error('Push delivery failed', { statusCode });
+      }
+    }
+  }));
+  return { sent, failed };
+}
 
+async function getVapidDetails(admin: ReturnType<typeof createClient>): Promise<VapidDetails> {
   const { data: stored, error: readError } = await admin
     .from('push_delivery_config')
     .select('public_key,private_key,subject')
@@ -139,7 +172,12 @@ async function getVapidDetails(admin: ReturnType<typeof createClient>): Promise<
   if (readError) throw readError;
   if (stored) return { publicKey: stored.public_key, privateKey: stored.private_key, subject: stored.subject };
 
-  const generated = webpush.generateVAPIDKeys();
+  const envPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
+  const envPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+  const subject = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:relay-notifications@outlook.com';
+  const generated = envPublicKey && envPrivateKey
+    ? { publicKey: envPublicKey, privateKey: envPrivateKey }
+    : webpush.generateVAPIDKeys();
   const { error: insertError } = await admin.from('push_delivery_config').insert({
     id: 1,
     public_key: generated.publicKey,

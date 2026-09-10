@@ -9,6 +9,7 @@ import { emitParticles, INTRO_DONE, introSeen, makeDust, PARTICLE_EVENT, reduced
 import { PARTICLE_PREFERENCES_EVENT, readParticlePreferences, type ParticlePreferences } from '@/lib/particle-preferences';
 
 type PageParticle = {
+  sourceIndex: number;
   targetX: number;
   targetY: number;
   sourceX: number;
@@ -74,23 +75,26 @@ export function ParticleField() {
           y: top + (row + 0.08 + random() * 0.84) / rows * usableHeight,
         };
       });
-      for (let index = targets.length - 1; index > 0; index--) {
-        const swap = Math.floor(random() * (index + 1));
-        [targets[index], targets[swap]] = [targets[swap]!, targets[index]!];
-      }
-      pageParticles = emitters.map((source, index) => {
-        const target = targets[index]!;
+      const sourceOrder = emitters.map((source, sourceIndex) => ({ source, sourceIndex }))
+        .sort((a, b) => Math.atan2(a.source.y - cy, a.source.x - cx) - Math.atan2(b.source.y - cy, b.source.x - cx));
+      const targetOrder = targets.sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx));
+      pageParticles = sourceOrder.map(({ source, sourceIndex }, index) => {
+        const target = targetOrder[index]!;
         const sourceAngle = Math.atan2(source.y - cy, source.x - cx);
-        const burst = (w < 600 ? 34 : 58) + random() * (w < 600 ? 46 : 92);
+        const dx = target.x - source.x;
+        const dy = target.y - source.y;
+        const distance = Math.max(1, Math.hypot(dx, dy));
+        const arc = (random() - 0.5) * Math.min(34, distance * 0.08);
         return {
+          sourceIndex,
           targetX: target.x,
           targetY: target.y,
           sourceX: source.x,
           sourceY: source.y,
-          controlX: source.x + Math.cos(sourceAngle) * burst + (random() - 0.5) * 46,
-          controlY: source.y + Math.sin(sourceAngle) * burst + (random() - 0.5) * 46,
+          controlX: source.x + dx * 0.43 - dy / distance * arc + Math.cos(sourceAngle) * 14,
+          controlY: source.y + dy * 0.43 + dx / distance * arc + Math.sin(sourceAngle) * 14,
           size: source.size * (0.72 + random() * 0.48),
-          delay: clamp01((target.y - top) / usableHeight) * 0.48 + random() * 0.035,
+          delay: clamp01((target.y - top) / usableHeight) * 0.2 + random() * 0.018,
           tone: 0.36 + source.tone * 0.64,
         };
       });
@@ -99,13 +103,14 @@ export function ParticleField() {
       rebuildPageParticles();
       const sources = renderCloud.projectEmitters(cx, cy, areaWidth, h, clock);
       for (let index = 0; index < pageParticles.length; index++) {
-        const point = pageParticles[index]!, source = sources[index];
+        const point = pageParticles[index]!, source = sources[point.sourceIndex];
         if (!source) break;
         point.sourceX = source.x; point.sourceY = source.y;
         const angle = Math.atan2(source.y - cy, source.x - cx);
-        const burst = Math.hypot(point.controlX - point.sourceX, point.controlY - point.sourceY);
-        point.controlX = source.x + Math.cos(angle) * Math.max(38, burst);
-        point.controlY = source.y + Math.sin(angle) * Math.max(38, burst);
+        const dx = point.targetX - source.x;
+        const dy = point.targetY - source.y;
+        point.controlX = source.x + dx * 0.43 + Math.cos(angle) * 14;
+        point.controlY = source.y + dy * 0.43 + Math.sin(angle) * 14;
       }
     };
     const measure = () => {
@@ -125,18 +130,19 @@ export function ParticleField() {
     const drawWorkspaceCue = (kind: 'open' | 'close', progress: number) => {
       const opening = kind === 'open';
       const structureAlpha = opening
-        ? 1 - smooth((progress - 0.08) / 0.58)
+        ? 1 - smooth((progress - 0.3) / 0.45)
         : smooth((progress - 0.44) / 0.36);
       if (structureAlpha > 0.002) renderCloud(fx, cx, cy, areaWidth, clock, dark, {
         structureOnly: true,
         alpha: structureAlpha,
+        scale: opening ? 1 - smooth(progress / 0.38) * 0.035 : 1,
       });
 
       const dotAlpha = opening ? 1 : smooth(progress / 0.14);
       fx.fillStyle = dark ? '#fff' : '#111';
       for (const point of pageParticles) {
         const local = opening
-          ? easeInOut((progress - 0.025 - point.delay * 0.72) / 0.57)
+          ? easeInOut((progress - 0.025 - point.delay) / 0.65)
           : smooth((progress - 0.1 - point.delay * 0.24) / 0.64);
         const travel = opening ? local : 1 - local;
         const inverse = 1 - travel;
@@ -286,6 +292,21 @@ export function BetaExperience({ children }: { children: ReactNode }) {
     const page = () => root.querySelector<HTMLElement>('.relay-mobile-main');
     const current = () => window.location.pathname + window.location.search;
     const landing = (href: string) => appPathname(href.split('?')[0]!).replace(/\/$/, '') === '/space';
+    const staff = (href: string) => {
+      const path = appPathname(href.split('?')[0]!).replace(/\/$/, '');
+      return path === '/admin' || path.startsWith('/admin/');
+    };
+    const revealInstantly = () => {
+      const panel = page();
+      if (panel) {
+        panel.dataset.phase = landing(current()) ? 'hidden' : 'open';
+        panel.inert = false;
+        panel.setAttribute('aria-busy', 'false');
+      }
+      root.dataset.space = String(landing(current()));
+      root.dataset.staff = String(staff(current()));
+      root.dataset.loading = 'false';
+    };
     const controller = createWorkspaceTransition({
       current, landing, reduced: reducedMotion,
       phase(value) {
@@ -305,11 +326,17 @@ export function BetaExperience({ children }: { children: ReactNode }) {
     });
     let wasLoading = false;
     let loadingReleaseTimer = 0;
+    let instantNavigation = false;
     const syncLoading = () => {
       const loading = Boolean(root.querySelector('.relay-loading, [data-relay-loading]'));
       if (loading === wasLoading) return;
       wasLoading = loading;
       window.clearTimeout(loadingReleaseTimer);
+      if (staff(current()) || root.dataset.staff === 'true') {
+        root.dataset.loading = 'false';
+        controller.holdForLoading(false);
+        return;
+      }
       if (loading) {
         root.dataset.loading = 'true';
         controller.holdForLoading(true);
@@ -331,13 +358,26 @@ export function BetaExperience({ children }: { children: ReactNode }) {
     syncLoading();
     const ready = () => {
       root.dataset.ready = 'true';
-      controller.reveal(reducedMotion() ? 0 : 480);
+      if (staff(current())) revealInstantly();
+      else controller.reveal(reducedMotion() ? 0 : 480);
     };
     if (introSeen()) ready();
     else if (page()) { page()!.dataset.phase = 'hidden'; page()!.inert = true; }
     window.addEventListener(INTRO_DONE, ready);
-    routeChanged.current = () => { if (root.dataset.ready === 'true') controller.committed(); };
-    const history = () => controller.historyChanged();
+    routeChanged.current = () => {
+      root.dataset.staff = String(staff(current()));
+      if (root.dataset.ready !== 'true') return;
+      if (instantNavigation || staff(current())) {
+        instantNavigation = false;
+        controller.historyChanged();
+        revealInstantly();
+      } else controller.committed();
+    };
+    const history = () => {
+      instantNavigation = root.dataset.staff === 'true' || staff(current());
+      controller.historyChanged();
+      if (instantNavigation) revealInstantly();
+    };
     window.addEventListener('popstate', history);
     const prefetched = new Set<string>();
     const prefetch = (event: Event) => {
@@ -355,10 +395,16 @@ export function BetaExperience({ children }: { children: ReactNode }) {
       const url = new URL(link.href, window.location.href);
       if (url.origin !== window.location.origin || !url.pathname.startsWith(`${BASE_PATH}/`) || url.hash) return;
       const path = appPathname(url.pathname);
-      if (!/^\/(?:$|space\/?$|chats(?:\/|$)|todo(?:\/|$)|planner(?:\/|$)|calendar(?:\/|$)|email(?:\/|$)|contacts(?:\/|$)|profile(?:\/|$)|admin(?:\/|$)|support(?:\/|$)|notifications(?:\/|$))/.test(path)) return;
+      if (!/^\/(?:$|space\/?$|chats(?:\/|$)|todo(?:\/|$)|planner(?:\/|$)|calendar(?:\/|$)|email(?:\/|$)|quicklinks(?:\/|$)|contacts(?:\/|$)|profile(?:\/|$)|admin(?:\/|$)|support(?:\/|$)|notifications(?:\/|$))/.test(path)) return;
       // Preserve native same-page query/filter behavior.
       if (url.pathname === window.location.pathname && url.search !== window.location.search) return;
       event.preventDefault();
+      if (staff(current()) || staff(url.pathname)) {
+        instantNavigation = true;
+        controller.historyChanged();
+        router.push(url.pathname.slice(BASE_PATH.length) + url.search || '/');
+        return;
+      }
       controller.request(url.pathname + url.search);
     };
     root.addEventListener('click', click);
@@ -380,7 +426,7 @@ export function BetaExperience({ children }: { children: ReactNode }) {
     routeChanged.current();
   }, [pathname]);
 
-  return <div ref={rootRef} className="beta-experience" data-ready="false" data-loading="false" data-minimal-loading="false" data-space={appPathname(pathname).replace(/\/$/, '') === '/space'}>
+  return <div ref={rootRef} className="beta-experience" data-ready="false" data-loading="false" data-minimal-loading="false" data-space={appPathname(pathname).replace(/\/$/, '') === '/space'} data-staff={appPathname(pathname) === '/admin' || appPathname(pathname).startsWith('/admin/')}>
     <ParticleField />
     <h1 className="beta-landing-title" aria-hidden={appPathname(pathname).replace(/\/$/, '') !== '/space'}>Resonant Relay</h1>
     {children}
