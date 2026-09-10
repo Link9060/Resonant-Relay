@@ -5,7 +5,7 @@ import { StaffControlHeader } from '@/components/staff-control-header';
 import { AppRole, getRolePreview } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
 import { Mail, RefreshCw, Send } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type Thread = {
   id: string;
@@ -41,7 +41,7 @@ export default function AdminSupportPage() {
   const selected = useMemo(() => threads.find((thread) => thread.id === selectedId) ?? null, [threads, selectedId]);
   const canReply = role === 'admin' || role === 'owner';
 
-  async function loadThreads() {
+  const loadThreads = useCallback(async () => {
     const supabase = createClient() as any;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -60,9 +60,9 @@ export default function AdminSupportPage() {
     const nextThreads = (data ?? []) as Thread[];
     setThreads(nextThreads);
     setSelectedId((current) => current && nextThreads.some((thread) => thread.id === current) ? current : (nextThreads[0]?.id ?? null));
-  }
+  }, []);
 
-  async function loadMessages(threadId: string) {
+  const loadMessages = useCallback(async (threadId: string) => {
     const supabase = createClient() as any;
     const { data, error: messageError } = await supabase
       .from('support_email_messages')
@@ -71,16 +71,22 @@ export default function AdminSupportPage() {
       .order('created_at', { ascending: true });
     if (messageError) throw messageError;
     setMessages((data ?? []) as Message[]);
-  }
-
-  useEffect(() => {
-    void loadThreads().catch((e: any) => setError(e?.message ?? 'Support inbox could not load.'));
   }, []);
 
   useEffect(() => {
-    if (!selectedId) { setMessages([]); return; }
-    void loadMessages(selectedId).catch((e: any) => setError(e?.message ?? 'Messages could not load.'));
-  }, [selectedId]);
+    const task = window.setTimeout(() => {
+      void loadThreads().catch((e: any) => setError(e?.message ?? 'Support inbox could not load.'));
+    }, 0);
+    return () => window.clearTimeout(task);
+  }, [loadThreads]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    const task = window.setTimeout(() => {
+      void loadMessages(selectedId).catch((e: any) => setError(e?.message ?? 'Messages could not load.'));
+    }, 0);
+    return () => window.clearTimeout(task);
+  }, [loadMessages, selectedId]);
 
   async function sendReply() {
     if (!selectedId || !reply.trim() || !canReply) return;
