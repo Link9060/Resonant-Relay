@@ -10,6 +10,19 @@
 -- Deploy that function with gateway JWT verification disabled so pg_net does
 -- not need an API credential embedded in SQL.
 
+-- Some production environments received push_delivery_config ahead of the
+-- numbered repository migrations. Create it here too so a fresh database can
+-- apply this migration safely.
+create table if not exists public.push_delivery_config (
+  id smallint primary key,
+  public_key text not null,
+  private_key text not null,
+  subject text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.push_delivery_config enable row level security;
+
 alter table public.push_delivery_config
   add column if not exists dispatch_secret text;
 
