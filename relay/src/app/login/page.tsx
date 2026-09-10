@@ -81,7 +81,8 @@ export default function LoginPage() {
       },
     });
     if (error) {
-      setMessage('Google sign-in is not configured yet. Use the email option below.');
+      console.error('Relay Google sign-in start failed', error);
+      setMessage('Relay could not start Google sign-in. Try again, or use the email option below.');
       setBusy(false);
     }
   }
@@ -119,7 +120,8 @@ export default function LoginPage() {
           ? `Relay has temporarily reached its sign-in email limit. Try again after ${retryTime(nextAttempt)}.`
           : `That email was requested too recently. Try again after ${retryTime(nextAttempt)}.`);
       } else {
-        setMessage(`Relay couldn't send the sign-in email: ${error.message}`);
+        console.error('Relay email sign-in request failed', error);
+        setMessage('Relay could not send the sign-in email. Check the address and try again.');
       }
     } else {
       setRetryAfter(null);
