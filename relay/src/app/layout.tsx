@@ -4,7 +4,6 @@ import './brand.css';
 import './mobile.css';
 import './beta-experience.css';
 import { BetaIntro } from '@/components/beta-intro';
-import { StartupSequence } from '@/components/startup-sequence';
 import { UiSoundEffects } from '@/components/ui-sound-effects';
 import { PwaRegister } from '@/components/pwa-register';
 import { APP_TITLE, BASE_PATH, IS_BETA } from '@/lib/config';
@@ -42,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="font-body"><PwaRegister /><UiSoundEffects />{IS_BETA ? <BetaIntro /> : <StartupSequence />}{children}</body>
+      <body className="font-body"><PwaRegister /><UiSoundEffects /><BetaIntro />{children}</body>
     </html>
   );
 }
