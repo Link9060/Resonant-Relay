@@ -74,12 +74,18 @@ export default function AdminSupportPage() {
   }
 
   useEffect(() => {
-    void loadThreads().catch((e: any) => setError(e?.message ?? 'Support inbox could not load.'));
+    const timer = window.setTimeout(() => {
+      void loadThreads().catch((e: any) => setError(e?.message ?? 'Support inbox could not load.'));
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (!selectedId) { setMessages([]); return; }
-    void loadMessages(selectedId).catch((e: any) => setError(e?.message ?? 'Messages could not load.'));
+    if (!selectedId) return;
+    const timer = window.setTimeout(() => {
+      void loadMessages(selectedId).catch((e: any) => setError(e?.message ?? 'Messages could not load.'));
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [selectedId]);
 
   async function sendReply() {
