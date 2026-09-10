@@ -60,6 +60,14 @@ export default defineConfig([
     },
   },
   {
+    // The What's New dialog opens from persisted version state after hydration.
+    // Keep the effect-state exception scoped to this one client-only surface.
+    files: ['src/components/whats-new.tsx'],
+    rules: {
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
+  {
     // User-facing copy contains normal contractions/apostrophes.
     files: [
       'src/app/(app)/support/page.tsx',
