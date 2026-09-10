@@ -13,6 +13,7 @@ import {
   FlaskConical,
   Gauge,
   Inbox,
+  Mail,
   Search,
   Settings2,
   ShieldCheck,
@@ -23,7 +24,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 type StaffRole = Exclude<AppRole, 'user'>;
-export type StaffSection = 'overview' | 'requests' | 'users' | 'moderation' | 'beta' | 'analytics' | 'system' | 'activity';
+export type StaffSection = 'overview' | 'requests' | 'support' | 'users' | 'moderation' | 'beta' | 'analytics' | 'system' | 'activity';
 
 type NavItem = {
   id: StaffSection;
@@ -37,6 +38,7 @@ type NavItem = {
 const ITEMS: NavItem[] = [
   { id: 'overview', label: 'Overview', description: 'Open the staff command overview', icon: Gauge, href: '/admin?section=overview', roles: ['moderator', 'admin', 'owner'] },
   { id: 'requests', label: 'Requests', description: 'Review bugs, applications, and feedback', icon: Inbox, href: '/admin/requests', roles: ['moderator', 'admin', 'owner'] },
+  { id: 'support', label: 'Support', description: 'Read and reply to support@resonantrelay.org', icon: Mail, href: '/admin/support', roles: ['moderator', 'admin', 'owner'] },
   { id: 'users', label: 'Users', description: 'Search and inspect Relay accounts', icon: Users, href: '/admin/users', roles: ['admin', 'owner'] },
   { id: 'moderation', label: 'Moderation', description: 'Work through the moderation queue', icon: ShieldCheck, href: '/admin/moderation', roles: ['moderator', 'admin', 'owner'] },
   { id: 'beta', label: 'Beta', description: 'Review Beta requests and tester access', icon: FlaskConical, href: '/admin/beta', roles: ['owner'] },
