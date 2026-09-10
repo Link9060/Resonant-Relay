@@ -55,6 +55,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      if (isPublicHome) {
+        window.location.replace(appPageUrl('/space'));
+        return;
+      }
+
       if (IS_BETA) {
         const { data: betaAccess, error: betaError } = await supabase.rpc('beta_access_status');
         if (!active) return;

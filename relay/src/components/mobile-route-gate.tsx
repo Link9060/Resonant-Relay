@@ -1,6 +1,6 @@
 'use client';
 
-import { appPageUrl, appPathname } from '@/lib/config';
+import { appPageUrl, appPathname, DASHBOARD_PATH } from '@/lib/config';
 import type { AppRole } from '@/lib/role-preview';
 import { ArrowLeft, Laptop, LayoutDashboard } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -63,7 +63,7 @@ export function MobileRouteGate({ children, role }: { children: React.ReactNode;
 
         <div className="mt-6 grid gap-2">
           {blocked.dashboard && (
-            <a href={appPageUrl('/')} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-ink px-4 text-sm font-medium text-canvas">
+            <a href={appPageUrl(DASHBOARD_PATH)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-ink px-4 text-sm font-medium text-canvas">
               <LayoutDashboard size={16} />Open Dashboard quick view
             </a>
           )}

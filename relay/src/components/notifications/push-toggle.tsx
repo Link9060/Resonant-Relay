@@ -261,6 +261,11 @@ export function PushToggle({ variant = 'card' }: { variant?: Variant }) {
           {status === 'denied' && <StatusLine icon={BellOff}>{blockedGuidance()}</StatusLine>}
           {message && <p className="mt-3 text-xs text-ink-muted">{message}</p>}
           {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
+
+          <div className="mt-4 rounded-lg border border-border bg-canvas px-3 py-3">
+            <p className="text-xs font-medium text-ink">Also check your device settings</p>
+            <p className="mt-1 text-[11px] leading-5 text-ink-faint">Relay needs notification permission in both the browser and your device settings. Make sure notifications are allowed for the browser you use for Relay. On Mac, open System Settings → Notifications → Chrome, Safari, or Edge → Allow Notifications.</p>
+          </div>
         </div>
       </div>
 

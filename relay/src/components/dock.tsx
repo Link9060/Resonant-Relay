@@ -1,13 +1,13 @@
 'use client';
 
 import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
-import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, IS_BETA, RELEASE_LABEL } from '@/lib/config';
+import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, DASHBOARD_PATH, IS_BETA, RELEASE_LABEL } from '@/lib/config';
 import { cn } from '@/lib/utils';
 import { CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, Mail, MessageCircle, Settings, Shield, ShieldCheck, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 const DESKTOP_DOCK_ITEMS = [
-  { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
+  { href: DASHBOARD_PATH, label: 'Dashboard', mobileLabel: 'Home', icon: House },
   { href: '/chats', label: 'Chats', icon: MessageCircle },
   { href: '/todo', label: 'To Do', icon: ListTodo },
   { href: '/planner', label: 'Planner', mobileLabel: 'Plans', icon: SquareCheck },
@@ -34,14 +34,14 @@ export function Dock({
   const canOpenStaff = role !== 'user';
   const mobileItems: Array<{ href: string; label: string; mobileLabel?: string; icon: LucideIcon }> = canOpenStaff
     ? [
-        { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
+        { href: DASHBOARD_PATH, label: 'Dashboard', mobileLabel: 'Home', icon: House },
         { href: '/chats', label: 'Chats', icon: MessageCircle },
         { href: '/admin/moderation', label: 'Reports', icon: ShieldCheck },
         { href: '/contacts', label: 'Contacts', icon: Users },
         { href: '/profile', label: 'Settings', icon: Settings },
       ]
     : [
-        { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
+        { href: DASHBOARD_PATH, label: 'Dashboard', mobileLabel: 'Home', icon: House },
         { href: '/chats', label: 'Chats', icon: MessageCircle },
         { href: '/contacts', label: 'Contacts', icon: Users },
         { href: '/profile', label: 'Settings', icon: Settings },
@@ -62,7 +62,7 @@ export function Dock({
             'relay-brand-lockup pb-8 font-display text-lg font-medium tracking-tight text-ink',
             collapsed ? 'justify-center px-0' : 'px-3'
           )}
-          aria-label={IS_BETA ? 'Return to particle landing page' : `${APP_TITLE} home`}
+          aria-label="Return to particle landing page"
           title={collapsed ? APP_TITLE : undefined}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
