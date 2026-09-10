@@ -93,7 +93,7 @@ type WhatsNewProps = {
 export function WhatsNew({ onboardingCompletedAt }: WhatsNewProps) {
   const [open, setOpen] = useState(false);
   const currentVersion = IS_BETA ? DEVELOPMENT_VERSION : APP_VERSION;
-  const currentRelease = RELEASES.find((release) => release.version === currentVersion) ?? RELEASES[0];
+  const currentRelease = RELEASES.find((release) => release.version === currentVersion) ?? PUBLIC_RELEASES[0];
 
   useEffect(() => {
     const openFromDock = () => setOpen(true);
