@@ -52,6 +52,15 @@ export default defineConfig([
     },
   },
   {
+    // What’s New checks the signed-in profile's onboarding time after hydration
+    // so returning users can see the current version summary once per device.
+    // Keep the effect-state exception limited to this update experience.
+    files: ['src/components/whats-new.tsx'],
+    rules: {
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
+  {
     // Owner Activity intentionally calculates a rolling seven-day count from
     // the current clock. Keep the purity exception scoped to this read-only view.
     files: ['src/app/(app)/admin/activity/page.tsx'],
