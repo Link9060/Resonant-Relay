@@ -33,7 +33,7 @@
 .dark .beta-experience :is(.relay-brand-lockup, .beta-mobile-home) img { filter: brightness(0) invert(1); }
 .beta-experience .relay-dock-link { position: relative; isolation: isolate; overflow: hidden; min-height: 44px; border: 1px solid transparent; }
 .beta-experience .relay-dock-link::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: rgb(var(--ink)); opacity: 0; z-index: -1; pointer-events: none; }
-.beta-experience .relay-dock-link[aria-current="page"] { border-color: rgb(var(--border)); background: rgb(var(--surface-raised)); }
+.beta-experience .relay-dock-link[aria-current="page"] { border-color: rgb(var(--border)); background: rgb(var(--surface-raised)); animation: beta-active-nav 320ms cubic-bezier(.2,.72,.22,1) both; }
 .beta-experience .relay-dock-link:focus-visible { outline: 2px solid rgb(var(--ink)); outline-offset: 2px; }
 .beta-particle-slider { --particle-fill: 50%; height: 18px; appearance: none; cursor: pointer; background: transparent; }
 .beta-particle-slider::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background: linear-gradient(to right, rgb(var(--ink)) 0 var(--particle-fill), rgb(var(--border)) var(--particle-fill) 100%); }
@@ -42,6 +42,27 @@
 .beta-particle-slider::-moz-range-progress { height: 4px; border-radius: 999px; background: rgb(var(--ink)); }
 .beta-particle-slider::-moz-range-thumb { width: 15px; height: 15px; border: 2px solid rgb(var(--canvas)); border-radius: 999px; background: rgb(var(--ink)); box-shadow: 0 0 0 1px rgb(var(--ink) / .18); }
 .beta-particle-slider:focus-visible { outline: 2px solid rgb(var(--ink)); outline-offset: 4px; border-radius: 999px; }
+
+/* 1.0.3 micro-motion: data should feel as alive as the shell. */
+.relay-motion-expand { animation: relay-motion-expand 240ms cubic-bezier(.2,.72,.22,1) both; transform-origin: top; overflow: hidden; }
+.relay-motion-row-in { animation: relay-motion-row-in 220ms cubic-bezier(.2,.72,.22,1) both; }
+.relay-motion-row-out { animation: relay-motion-row-out 180ms cubic-bezier(.4,0,.2,1) both; pointer-events: none; }
+.relay-motion-check { animation: relay-motion-check 220ms cubic-bezier(.2,.9,.2,1) both; }
+.relay-motion-pop { animation: relay-motion-pop 220ms cubic-bezier(.2,.9,.2,1) both; }
+.relay-motion-crossfade { animation: relay-motion-crossfade 220ms ease both; }
+.relay-motion-slide-right { animation: relay-motion-slide-right 260ms cubic-bezier(.2,.72,.22,1) both; }
+.relay-motion-slide-left { animation: relay-motion-slide-left 260ms cubic-bezier(.2,.72,.22,1) both; }
+.relay-motion-sheet { animation: relay-motion-sheet 280ms cubic-bezier(.16,1,.3,1) both; }
+.relay-motion-badge { animation: relay-motion-badge 280ms cubic-bezier(.2,1.4,.3,1) both; }
+.relay-motion-block { transition: transform 220ms cubic-bezier(.2,.72,.22,1), opacity 180ms ease, background-color 170ms ease; }
+.relay-motion-block[data-moving="true"] { transform: scale(.985); opacity: .72; }
+.relay-motion-note-pane { animation: relay-motion-crossfade 180ms ease both; }
+.relay-motion-notification { animation: relay-motion-notification 280ms cubic-bezier(.16,1,.3,1) both; }
+.relay-motion-calendar-forward { animation: relay-motion-calendar-forward 260ms cubic-bezier(.2,.72,.22,1) both; }
+.relay-motion-calendar-back { animation: relay-motion-calendar-back 260ms cubic-bezier(.2,.72,.22,1) both; }
+.relay-motion-delete-button { transition: opacity 160ms ease, transform 160ms ease, background-color 170ms ease, color 170ms ease; }
+.group:hover .relay-motion-delete-button, .relay-motion-delete-button:focus-visible { transform: scale(1.04); }
+
 @media (hover:hover) {
   .beta-experience .relay-dock-link:hover { transform: none; background: transparent; color: rgb(var(--canvas)); transition: color 120ms 180ms; }
   .beta-experience .relay-dock-link:hover::before { animation: beta-card-flip 420ms cubic-bezier(.25,.7,.3,1) both; }
@@ -64,6 +85,20 @@
 }
 @keyframes beta-rail-enter { from { transform: translateX(-24px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes beta-header-enter { from { transform: translateY(-12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes beta-active-nav { from { opacity: .58; transform: translateX(-3px); } to { opacity: 1; transform: none; } }
+@keyframes relay-motion-expand { from { opacity: 0; transform: scaleY(.94) translateY(-5px); } to { opacity: 1; transform: none; } }
+@keyframes relay-motion-row-in { from { opacity: 0; transform: translateY(7px) scale(.99); } to { opacity: 1; transform: none; } }
+@keyframes relay-motion-row-out { from { opacity: 1; transform: none; max-height: 5rem; } to { opacity: 0; transform: translateY(-4px) scale(.985); max-height: 0; margin: 0; padding-top: 0; padding-bottom: 0; } }
+@keyframes relay-motion-check { 0% { transform: scale(.35) rotate(-18deg); opacity: 0; } 70% { transform: scale(1.12) rotate(2deg); opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes relay-motion-pop { 0% { transform: scale(.72); opacity: .4; } 70% { transform: scale(1.12); opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes relay-motion-crossfade { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+@keyframes relay-motion-slide-right { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+@keyframes relay-motion-slide-left { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+@keyframes relay-motion-sheet { from { opacity: 0; transform: translateY(28px) scale(.99); } to { opacity: 1; transform: none; } }
+@keyframes relay-motion-badge { 0% { transform: scale(.55); } 60% { transform: scale(1.18); } 100% { transform: none; } }
+@keyframes relay-motion-notification { from { opacity: 0; transform: translateY(-10px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes relay-motion-calendar-forward { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
+@keyframes relay-motion-calendar-back { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
 .beta-experience[data-ready="true"] .relay-desktop-dock { animation: beta-rail-enter 480ms cubic-bezier(.16,1,.3,1); }
 .beta-experience[data-ready="true"] .relay-app-header { animation: beta-header-enter 480ms cubic-bezier(.16,1,.3,1); }
 @media (max-width: 767px) {
