@@ -5,6 +5,7 @@ import { createCloudRenderer, fitCanvas } from '@/lib/particle-renderer';
 import { appPageUrl, appPathname, BASE_PATH } from '@/lib/config';
 import { BETA_INTRO_KEY, INTRO_DONE, introSeen, makeDust, reducedMotion } from '@/lib/particle-motion';
 import { readParticlePreferences } from '@/lib/particle-preferences';
+import { readSoundPreference } from '@/lib/sound-preferences';
 
 // A deliberate 2.7s formation and 3s hold lead into a brief 850ms flight.
 // Preserve the one-second blackout before the final tile reveal.
@@ -86,7 +87,6 @@ export function BetaIntro() {
     logo.onload = () => { if (elapsed < 800) { logoReady = true; resize(); } };
     logo.src = `${BASE_PATH}/relay-icon.svg`;
     const draw = (now: number) => {
-      // Freeze the cinematic clock in a background tab instead of skipping scenes.
       if (previous && !document.hidden) elapsed += now - previous;
       previous = now;
       ctx.globalAlpha = 1; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
@@ -106,7 +106,6 @@ export function BetaIntro() {
         if (t < 550) { ctx.globalAlpha = Math.max(0, 1 - t / 550); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(w / 2, h / 2, 6 * (1 + Math.sin(t / 550 * Math.PI) * 0.4), 0, Math.PI * 2); ctx.fill(); }
         ctx.globalAlpha = solid; ctx.drawImage(raster, 0, 0);
       } else if (t < 7600) {
-        // Random cells lift out of the exact word raster, becoming individual dots.
         const dissolve = Math.min(1, (t - 5700) / 1100);
         const pulse = t >= 6800 && t < 7300 ? Math.sin((t - 6800) / 500 * Math.PI) : 0;
         const explode = Math.max(0, (t - 7300) / 300);
@@ -181,8 +180,12 @@ export function BetaIntro() {
     <button ref={skipRef} className="beta-intro-skip" onClick={finish}>Skip intro</button>
     {!active && <button className="beta-intro-start" data-relay-sound="none" onClick={() => {
       if (reducedMotion()) { finish(); return; }
-      const audio = new Audio(`${BASE_PATH}/audio/startup-humordome.mp3`);
-      audio.volume = 0.28; audioRef.current = audio; void audio.play().catch(() => {});
+      if (readSoundPreference()) {
+        const audio = new Audio(`${BASE_PATH}/audio/startup-humordome.mp3`);
+        audio.volume = 0.28;
+        audioRef.current = audio;
+        void audio.play().catch(() => {});
+      }
       setActive(true); skipRef.current?.focus();
     }}><span className="beta-seed" /><span>tap to begin</span></button>}
   </div>;
