@@ -13,51 +13,123 @@ import { useEffect, useState } from 'react';
 
 type ContactsTab = 'contacts' | 'requests' | 'discover';
 
+const CONTACTS_LOAD_TIMEOUT_MS = 12_000;
+
+function withTimeout<T>(promise: PromiseLike<T>, ms = CONTACTS_LOAD_TIMEOUT_MS): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) => window.setTimeout(() => reject(new Error('Contacts request timed out')), ms)),
+  ]);
+}
+
 export default function ContactsPage() {
   const [state, setState] = useState<any>(null);
   const [tab, setTab] = useState<ContactsTab>('contacts');
 
   useEffect(() => {
     let active = true;
-    void (async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const [a, b, incoming, outgoing, preferences] = await Promise.all([
-        supabase.from('connections').select('id,created_at,other:profiles!connections_user_b_fkey(id,display_name,avatar_url,school,bio,role)').eq('user_a', user.id),
-        supabase.from('connections').select('id,created_at,other:profiles!connections_user_a_fkey(id,display_name,avatar_url,school,bio,role)').eq('user_b', user.id),
-        supabase.from('connection_requests').select('id,created_at,sender:profiles!connection_requests_sender_id_fkey(id,display_name,avatar_url,school,role)').eq('recipient_id', user.id).eq('status', 'pending'),
-        supabase.from('connection_requests').select('id,created_at,recipient:profiles!connection_requests_recipient_id_fkey(id,display_name,avatar_url,school,role)').eq('sender_id', user.id).eq('status', 'pending'),
-        supabase.from('contact_preferences').select('contact_id,nickname,color_key').eq('owner_id', user.id),
-      ]);
-      const failed = [a, b, incoming, outgoing, preferences].find((result) => result.error)?.error;
-      if (!active) return;
-      if (failed) {
-        setState({ error: failed.message });
-        return;
+    let userId: string | null = null;
+    let channel: ReturnType<ReturnType<typeof createClient>['channel']> | null = null;
+    let refreshTimer: number | null = null;
+    const supabase = createClient();
+
+    async function loadContacts(id: string) {
+      try {
+        const [a, b, incoming, outgoing, preferences] = await withTimeout(Promise.all([
+          supabase.from('connections').select('id,created_at,other:profiles!connections_user_b_fkey(id,display_name,avatar_url,school,bio,role)').eq('user_a', id),
+          supabase.from('connections').select('id,created_at,other:profiles!connections_user_a_fkey(id,display_name,avatar_url,school,bio,role)').eq('user_b', id),
+          supabase.from('connection_requests').select('id,created_at,sender:profiles!connection_requests_sender_id_fkey(id,display_name,avatar_url,school,role)').eq('recipient_id', id).eq('status', 'pending'),
+          supabase.from('connection_requests').select('id,created_at,recipient:profiles!connection_requests_recipient_id_fkey(id,display_name,avatar_url,school,role)').eq('sender_id', id).eq('status', 'pending'),
+          supabase.from('contact_preferences').select('contact_id,nickname,color_key').eq('owner_id', id),
+        ]));
+
+        const failed = [a, b, incoming, outgoing, preferences].find((result) => result.error)?.error;
+        if (!active) return;
+        if (failed) {
+          setState((current: any) => ({ ...(current ?? {}), error: failed.message }));
+          return;
+        }
+
+        const preferenceByContact = new Map((preferences.data ?? []).map((preference: any) => [preference.contact_id, preference]));
+        setState({
+          error: null,
+          contacts: [...(a.data ?? []), ...(b.data ?? [])]
+            .filter((row: any) => row.other)
+            .map((row: any) => ({ ...row, preference: preferenceByContact.get(row.other.id) ?? null }))
+            .sort((x, y) => new Date(y.created_at).getTime() - new Date(x.created_at).getTime()),
+          incoming: (incoming.data ?? []).filter((row: any) => row.sender),
+          outgoing: (outgoing.data ?? []).filter((row: any) => row.recipient),
+        });
+      } catch (error) {
+        if (!active) return;
+        setState((current: any) => ({
+          ...(current ?? {}),
+          error: error instanceof Error ? error.message : 'Contacts could not load.',
+        }));
       }
-      const preferenceByContact = new Map((preferences.data ?? []).map((preference: any) => [preference.contact_id, preference]));
-      setState({
-        contacts: [...(a.data ?? []), ...(b.data ?? [])]
-          .filter((row: any) => row.other)
-          .map((row: any) => ({ ...row, preference: preferenceByContact.get(row.other.id) ?? null }))
-          .sort((x, y) => new Date(y.created_at).getTime() - new Date(x.created_at).getTime()),
-        incoming: (incoming.data ?? []).filter((row: any) => row.sender),
-        outgoing: (outgoing.data ?? []).filter((row: any) => row.recipient),
-      });
+    }
+
+    function scheduleRefresh() {
+      if (!userId || !active) return;
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = null;
+        if (userId && active) void loadContacts(userId);
+      }, 180);
+    }
+
+    void (async () => {
+      try {
+        const { data: { user }, error } = await withTimeout(supabase.auth.getUser());
+        if (!active) return;
+        if (error) throw error;
+        if (!user) {
+          setState({ error: 'Your Relay session is not available. Sign in again.' });
+          return;
+        }
+
+        userId = user.id;
+        await loadContacts(user.id);
+        if (!active) return;
+
+        channel = supabase
+          .channel(`contacts:${user.id}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'connection_requests', filter: `recipient_id=eq.${user.id}` }, scheduleRefresh)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'connection_requests', filter: `sender_id=eq.${user.id}` }, scheduleRefresh)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'connections', filter: `user_a=eq.${user.id}` }, scheduleRefresh)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'connections', filter: `user_b=eq.${user.id}` }, scheduleRefresh)
+          .subscribe();
+      } catch (error) {
+        if (!active) return;
+        setState({ error: error instanceof Error ? error.message : 'Contacts could not load.' });
+      }
     })();
-    return () => { active = false; };
+
+    const refreshOnFocus = () => scheduleRefresh();
+    const refreshOnVisible = () => {
+      if (document.visibilityState === 'visible') scheduleRefresh();
+    };
+    window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', refreshOnVisible);
+
+    return () => {
+      active = false;
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer);
+      if (channel) void supabase.removeChannel(channel);
+      window.removeEventListener('focus', refreshOnFocus);
+      document.removeEventListener('visibilitychange', refreshOnVisible);
+    };
   }, []);
 
   if (!state) return <PageLoading />;
-  if (state.error) {
+  if (state.error && !state.contacts) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-6 md:px-6 md:py-8">
         <PageHeader title="Contacts" />
         <div className="mt-6 rounded-md border border-border p-5">
           <p className="text-sm text-ink">Contacts could not load.</p>
-          <p className="mt-1 text-xs text-ink-faint">Reload the page to try again.</p>
-          <button type="button" onClick={() => window.location.reload()} className="mt-4 min-h-11 rounded-md bg-ink px-4 text-sm font-medium text-canvas">Reload</button>
+          <p className="mt-1 text-xs text-ink-faint">{state.error}</p>
+          <button type="button" onClick={() => window.location.reload()} className="mt-4 min-h-11 rounded-md bg-ink px-4 text-sm font-medium text-canvas">Retry</button>
         </div>
       </div>
     );
@@ -89,6 +161,12 @@ export default function ContactsPage() {
       />
       <p className="mt-1 text-sm text-ink-faint">Your people, connection requests, and mutuals in one place.</p>
 
+      {state.error && (
+        <div className="mt-4 rounded-md border border-border bg-surface px-3 py-2 text-xs text-ink-muted">
+          Relay had trouble refreshing contacts. Your last loaded data is still shown.
+        </div>
+      )}
+
       <div className="mt-5 grid grid-cols-3 gap-1 rounded-xl border border-border bg-surface p-1 sm:mt-6" role="tablist" aria-label="Contacts sections">
         <TabButton active={tab === 'contacts'} onClick={() => setTab('contacts')} icon={UserRoundCheck} label="Contacts" count={state.contacts.length} />
         <TabButton active={tab === 'requests'} onClick={() => setTab('requests')} icon={UsersRound} label="Requests" count={requestCount || undefined} attention={state.incoming.length > 0} />
@@ -112,7 +190,7 @@ export default function ContactsPage() {
         <section className="mt-5 sm:mt-6" role="tabpanel">
           <div className="mb-4">
             <h2 className="text-sm font-medium text-ink-muted">Connection requests</h2>
-            <p className="mt-1 text-xs text-ink-faint">Incoming and sent requests stay here until they are handled.</p>
+            <p className="mt-1 text-xs text-ink-faint">Incoming and sent requests update automatically.</p>
           </div>
           {requestCount === 0 ? (
             <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center">
