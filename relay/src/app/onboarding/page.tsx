@@ -285,10 +285,10 @@ export default function OnboardingPage() {
               <OnboardingPanel eyebrow="01 · Identity" title="What should people call you?" body="Use the name people at school or work would recognize.">
                 <div className="mt-7 grid gap-4 sm:grid-cols-2">
                   <Field label="First name">
-                    <input autoFocus autoComplete="given-name" maxLength={40} value={firstName} onChange={(e) => setFirstName(e.target.value)} className="onboarding-input" placeholder="Levi" />
+                    <input autoFocus autoComplete="given-name" maxLength={40} value={firstName} onChange={(e) => setFirstName(e.target.value)} className="onboarding-input" placeholder="First name" />
                   </Field>
                   <Field label="Last name">
-                    <input autoComplete="family-name" maxLength={60} value={lastName} onChange={(e) => setLastName(e.target.value)} className="onboarding-input" placeholder="Lawson" />
+                    <input autoComplete="family-name" maxLength={60} value={lastName} onChange={(e) => setLastName(e.target.value)} className="onboarding-input" placeholder="Last name" />
                   </Field>
                 </div>
                 <NavButtons back={() => setStep('welcome')} next={nextFromName} />
@@ -310,7 +310,7 @@ export default function OnboardingPage() {
                         value={username}
                         onChange={(e) => setUsername(normalizeUsername(e.target.value))}
                         className="min-w-0 flex-1 bg-transparent px-1 py-3 text-base text-ink outline-none"
-                        placeholder="levilawson"
+                        placeholder="yourusername"
                       />
                       <AvailabilityMark value={availability} />
                     </div>
