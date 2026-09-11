@@ -24,6 +24,7 @@ export default function CalendarPage() {
   const [manageOpen, setManageOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [monthDirection, setMonthDirection] = useState<-1 | 0 | 1>(0);
 
   useEffect(() => { void load(); }, []);
 
@@ -82,11 +83,13 @@ export default function CalendarPage() {
 
   function goToMonth(offset: number) {
     const next = new Date(viewDate.getFullYear(), viewDate.getMonth() + offset, 1, 12);
+    setMonthDirection(offset < 0 ? -1 : 1);
     setViewDate(next);
     setSelectedDate(dateKeyFromDate(next));
+    window.setTimeout(() => setMonthDirection(0), 320);
   }
 
-  function goToToday() { const today = new Date(); setViewDate(startOfMonth(today)); setSelectedDate(dateKeyFromDate(today)); }
+  function goToToday() { const today = new Date(); setMonthDirection(0); setViewDate(startOfMonth(today)); setSelectedDate(dateKeyFromDate(today)); }
 
   if (!state) return <PageLoading />;
 
@@ -106,7 +109,7 @@ export default function CalendarPage() {
           <button type="button" onClick={goToToday} className="rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface">Today</button>
           <button type="button" onClick={() => goToMonth(1)} aria-label="Next month" className="flex h-9 w-9 items-center justify-center rounded-md text-ink-muted hover:bg-surface hover:text-ink"><ChevronRight size={17} /></button>
         </div>
-        <h2 className="text-base font-semibold text-ink md:text-lg">{viewDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h2>
+        <h2 key={viewDate.toISOString()} className="relay-motion-crossfade text-base font-semibold text-ink md:text-lg">{viewDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h2>
         <span className="hidden text-xs text-ink-faint sm:block">{visibleSources.size} calendars shown</span>
       </div>
 
@@ -117,14 +120,14 @@ export default function CalendarPage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">My calendars</p>
           <div className="mt-3 space-y-1">{sources.map((source) => <label key={source.id} className="flex cursor-pointer items-start gap-3 rounded-md px-2 py-2.5 hover:bg-surface">
             <input type="checkbox" checked={visibleSources.has(source.id)} onChange={() => toggleSource(source.id)} className="sr-only" />
-            <span className={`mt-1 h-3 w-3 shrink-0 rounded-sm border ${visibleSources.has(source.id) ? 'border-transparent' : 'border-border bg-transparent'}`} style={visibleSources.has(source.id) ? { backgroundColor: source.color } : undefined} />
+            <span className={`mt-1 h-3 w-3 shrink-0 rounded-sm border transition-transform ${visibleSources.has(source.id) ? 'border-transparent scale-100' : 'border-border bg-transparent scale-90'}`} style={visibleSources.has(source.id) ? { backgroundColor: source.color } : undefined} />
             <span className="min-w-0"><span className="block truncate text-sm font-medium text-ink">{source.label}</span><span className="mt-0.5 block text-xs text-ink-faint">{source.sublabel}</span></span>
           </label>)}</div>
           <button type="button" onClick={() => setVisibleSources(visibleSources.size === sources.length ? new Set() : new Set(sources.map((source) => source.id)))} className="mt-4 px-2 text-xs font-medium text-ink-muted underline underline-offset-4">{visibleSources.size === sources.length ? 'Hide all' : 'Show all'}</button>
         </aside>
 
         <div className="min-w-0 overflow-x-auto">
-          <div className="min-w-[44rem]">
+          <div key={`${viewDate.getFullYear()}-${viewDate.getMonth()}`} className={`min-w-[44rem] ${monthDirection === 1 ? 'relay-motion-calendar-forward' : monthDirection === -1 ? 'relay-motion-calendar-back' : ''}`}>
             <div className="grid grid-cols-7 border-b border-border bg-surface/40">{WEEKDAYS.map((day) => <div key={day} className="px-2 py-2 text-center text-xs font-medium text-ink-faint">{day}</div>)}</div>
             <div className="grid grid-cols-7">{monthDays.map((date) => {
               const key = dateKeyFromDate(date);
@@ -132,8 +135,8 @@ export default function CalendarPage() {
               const inMonth = date.getMonth() === viewDate.getMonth();
               const isToday = key === dateKeyFromDate(new Date());
               const selected = key === selectedDate;
-              return <button key={key} type="button" onClick={() => setSelectedDate(key)} className={`min-h-28 border-b border-r border-border p-1.5 text-left align-top transition-colors hover:bg-surface/70 ${selected ? 'bg-surface' : ''}`}>
-                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${isToday ? 'bg-ink font-semibold text-canvas' : inMonth ? 'text-ink' : 'text-ink-faint'}`}>{date.getDate()}</span>
+              return <button key={key} type="button" onClick={() => setSelectedDate(key)} className={`min-h-28 border-b border-r border-border p-1.5 text-left align-top transition-[background-color,transform] duration-200 hover:bg-surface/70 ${selected ? 'bg-surface' : ''}`}>
+                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs transition-transform ${isToday ? 'bg-ink font-semibold text-canvas' : inMonth ? 'text-ink' : 'text-ink-faint'} ${selected ? 'scale-105' : ''}`}>{date.getDate()}</span>
                 <span className="mt-1 block space-y-1">{items.slice(0, 3).map((item) => <span key={item.id} className="block truncate rounded px-1.5 py-1 text-xs font-medium text-ink" style={{ backgroundColor: `${item.color}22`, borderLeft: `2px solid ${item.color}` }}>{!item.isAllDay && `${formatTime(item.start)} `}{item.title}</span>)}{items.length > 3 && <span className="block px-1 text-xs text-ink-faint">+{items.length - 3} more</span>}</span>
               </button>;
             })}</div>
@@ -141,14 +144,16 @@ export default function CalendarPage() {
         </div>
 
         <aside className="border-t border-border p-4 xl:border-l xl:border-t-0">
-          <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Selected day</p>
-          <h3 className="mt-2 text-lg font-semibold text-ink">{formatSelectedDate(selectedDate)}</h3>
-          {selectedItems.length ? <ul className="mt-4 space-y-2">{selectedItems.map((item) => <li key={item.id} className="rounded-lg border border-border bg-surface/60 p-3" style={{ borderLeftColor: item.color, borderLeftWidth: 3 }}>
-            <p className="text-sm font-medium text-ink">{item.title}</p>
-            <p className="mt-1 text-xs text-ink-muted">{item.isAllDay ? 'All day' : formatEventRange(item.start, item.end)}</p>
-            <p className="mt-2 truncate text-xs text-ink-faint">{item.sourceLabel}{item.detail ? ` · ${item.detail}` : ''}</p>
-            {item.href && <a href={item.href} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-ink underline underline-offset-4">Open event <ExternalLink size={12} /></a>}
-          </li>)}</ul> : <div className="mt-4 rounded-lg border border-dashed border-border px-4 py-8 text-center"><CalendarDays size={20} className="mx-auto text-ink-faint" /><p className="mt-2 text-sm text-ink-faint">Nothing scheduled.</p></div>}
+          <div key={selectedDate} className="relay-motion-crossfade">
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Selected day</p>
+            <h3 className="mt-2 text-lg font-semibold text-ink">{formatSelectedDate(selectedDate)}</h3>
+            {selectedItems.length ? <ul className="mt-4 space-y-2">{selectedItems.map((item) => <li key={item.id} className="rounded-lg border border-border bg-surface/60 p-3" style={{ borderLeftColor: item.color, borderLeftWidth: 3 }}>
+              <p className="text-sm font-medium text-ink">{item.title}</p>
+              <p className="mt-1 text-xs text-ink-muted">{item.isAllDay ? 'All day' : formatEventRange(item.start, item.end)}</p>
+              <p className="mt-2 truncate text-xs text-ink-faint">{item.sourceLabel}{item.detail ? ` · ${item.detail}` : ''}</p>
+              {item.href && <a href={item.href} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-ink underline underline-offset-4">Open event <ExternalLink size={12} /></a>}
+            </li>)}</ul> : <div className="mt-4 rounded-lg border border-dashed border-border px-4 py-8 text-center"><CalendarDays size={20} className="mx-auto text-ink-faint" /><p className="mt-2 text-sm text-ink-faint">Nothing scheduled.</p></div>}
+          </div>
         </aside>
       </div>
     </section>
