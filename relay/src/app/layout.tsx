@@ -35,13 +35,46 @@ const themeInitScript = `
 })();
 `;
 
+const emergencyLauncherStyle = {
+  position: 'fixed' as const,
+  right: 'max(14px, env(safe-area-inset-right))',
+  bottom: 'max(14px, env(safe-area-inset-bottom))',
+  zIndex: 2147483647,
+  display: 'grid',
+  placeItems: 'center',
+  width: 42,
+  height: 42,
+  borderRadius: 999,
+  border: '1px solid rgba(168, 48, 48, 0.72)',
+  background: 'rgba(31, 4, 4, 0.94)',
+  color: '#ef7777',
+  boxShadow: '0 0 0 1px rgba(255,255,255,0.025), 0 8px 28px rgba(80,0,0,0.35)',
+  textDecoration: 'none',
+  fontSize: 17,
+  fontWeight: 800,
+  lineHeight: 1,
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="font-body"><PwaRegister /><UiSoundEffects /><BetaIntro />{children}</body>
+      <body className="font-body">
+        <PwaRegister />
+        <UiSoundEffects />
+        <BetaIntro />
+        {children}
+        <a
+          href={`${BASE_PATH}/emergency/index.html`}
+          aria-label="Open Relay Emergency Mode"
+          title="Relay Emergency Mode"
+          style={emergencyLauncherStyle}
+        >
+          !
+        </a>
+      </body>
     </html>
   );
 }
