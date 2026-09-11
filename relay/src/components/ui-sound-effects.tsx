@@ -1,6 +1,7 @@
 'use client';
 
 import { BASE_PATH } from '@/lib/config';
+import { readSoundPreference, SOUND_PREFERENCE_EVENT } from '@/lib/sound-preferences';
 import { useEffect } from 'react';
 
 const INTERACTIVE_SELECTOR = 'button:not(:disabled), a[href], [role="button"]';
@@ -47,6 +48,7 @@ export function UiSoundEffects() {
     hoverSound.preload = 'auto';
     hoverSound.volume = 0.11;
 
+    let soundEnabled = readSoundPreference();
     let clickIndex = 0;
     let lastHoverAt = 0;
     let lastPointerInteractive: HTMLElement | null = null;
@@ -56,14 +58,32 @@ export function UiSoundEffects() {
       target instanceof Element ? target.closest<HTMLElement>(INTERACTIVE_SELECTOR) : null
     );
 
+    const stopAll = () => {
+      hoverSound.pause();
+      hoverSound.currentTime = 0;
+      clickSounds.forEach((audio) => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+    };
+
     const playClick = () => {
+      if (!soundEnabled) return;
       const audio = clickSounds[clickIndex % clickSounds.length]!;
       clickIndex += 1;
       restart(audio);
     };
 
+    const onSoundPreference = (event: Event) => {
+      const detail = event instanceof CustomEvent && typeof event.detail === 'boolean'
+        ? event.detail
+        : readSoundPreference();
+      soundEnabled = detail;
+      if (!soundEnabled) stopAll();
+    };
+
     const onPointerDown = (event: PointerEvent) => {
-      if (event.button !== 0) return;
+      if (!soundEnabled || event.button !== 0) return;
       const interactive = findInteractive(event.target);
       if (!interactive || !canPlaySound(interactive)) return;
       playClick();
@@ -72,6 +92,7 @@ export function UiSoundEffects() {
     };
 
     const onClick = (event: MouseEvent) => {
+      if (!soundEnabled) return;
       const interactive = findInteractive(event.target);
       if (!interactive || !canPlaySound(interactive)) return;
 
@@ -90,6 +111,7 @@ export function UiSoundEffects() {
     };
 
     const onPointerOver = (event: PointerEvent) => {
+      if (!soundEnabled) return;
       if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
       const interactive = findInteractive(event.target);
       if (!interactive || !canPlaySound(interactive)) return;
@@ -106,13 +128,14 @@ export function UiSoundEffects() {
     // a document reload before the beta workspace could animate the route.
     document.addEventListener('click', onClick);
     document.addEventListener('pointerover', onPointerOver, true);
+    window.addEventListener(SOUND_PREFERENCE_EVENT, onSoundPreference);
 
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true);
       document.removeEventListener('click', onClick);
       document.removeEventListener('pointerover', onPointerOver, true);
-      hoverSound.pause();
-      clickSounds.forEach((audio) => audio.pause());
+      window.removeEventListener(SOUND_PREFERENCE_EVENT, onSoundPreference);
+      stopAll();
     };
   }, []);
 
