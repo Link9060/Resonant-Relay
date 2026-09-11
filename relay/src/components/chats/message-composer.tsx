@@ -8,7 +8,16 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 
 const MAX_MESSAGE_LENGTH = 4000;
 
-export function MessageComposer({ conversationId, onTypingChange, replyTo, onCancelReply }: { conversationId: string; onTypingChange?: (typing: boolean) => void; replyTo?: { id: string; label: string; body: string } | null; onCancelReply?: () => void }) {
+type MessageComposerProps = {
+  conversationId: string;
+  onTypingChange?: (typing: boolean) => void;
+  replyTo?: { id: string; label: string; body: string } | null;
+  replyToId?: string | null;
+  onCancelReply?: () => void;
+  onSent?: () => void;
+};
+
+export function MessageComposer({ conversationId, onTypingChange, replyTo, replyToId, onCancelReply, onSent }: MessageComposerProps) {
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -73,7 +82,7 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, onCan
     onTypingChange?.(false);
 
     startTransition(async () => {
-      const result = await sendMessage(conversationId, body, pendingFiles, replyTo?.id ?? null);
+      const result = await sendMessage(conversationId, body, pendingFiles, replyTo?.id ?? replyToId ?? null);
       if (!result.ok) {
         setError(result.error);
         setValue(body);
@@ -84,6 +93,7 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, onCan
         }
       } else {
         onCancelReply?.();
+        onSent?.();
       }
     });
 
