@@ -29,11 +29,11 @@
     <section id="signedOut" class="auth-card hidden">
       <div class="panel-label">Session unavailable</div>
       <h2>Emergency sign in</h2>
-      <p>Use your Relay email and password. This page is intentionally separate from the normal Relay interface.</p>
+      <p>Relay uses secure email sign-in links instead of passwords. Enter the same email you use for Relay and the link will return you directly to Emergency Mode.</p>
       <form id="loginForm" class="stack">
         <label>Email<input id="loginEmail" type="email" autocomplete="email" required /></label>
-        <label>Password<input id="loginPassword" type="password" autocomplete="current-password" required /></label>
-        <button class="primary-button" type="submit">Sign in</button>
+        <button id="loginButton" class="primary-button" type="submit">Email me an emergency sign-in link</button>
+        <div id="loginStatus" class="status-text" role="status"></div>
         <div id="loginError" class="error-text" role="alert"></div>
       </form>
     </section>
@@ -51,9 +51,7 @@
           <button id="refreshChats" class="ghost-button" type="button">Refresh</button>
         </div>
         <div class="split">
-          <aside class="conversation-pane">
-            <div id="conversationList" class="list"></div>
-          </aside>
+          <aside class="conversation-pane"><div id="conversationList" class="list"></div></aside>
           <section class="thread-pane">
             <div id="threadEmpty" class="empty-state">Select a conversation.</div>
             <div id="thread" class="thread hidden">
