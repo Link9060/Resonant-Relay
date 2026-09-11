@@ -61,9 +61,9 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
       const oldRow = payload.old as Reaction; const newRow = payload.new as Reaction;
       setReactions((current) => payload.eventType === 'DELETE' ? current.filter((item) => !(item.message_id === oldRow.message_id && item.user_id === oldRow.user_id && item.emoji === oldRow.emoji)) : [...current.filter((item) => !(item.message_id === newRow.message_id && item.user_id === newRow.user_id && item.emoji === newRow.emoji)), newRow]);
       if (payload.eventType !== 'DELETE' && newRow?.message_id && newRow?.emoji) {
-        const key = `${newRow.message_id}:${newRow.emoji}`;
-        setReactionPulse(key);
-        window.setTimeout(() => setReactionPulse((current) => current === key ? null : current), 280);
+        const pulseKey = `${newRow.message_id}:${newRow.emoji}`;
+        setReactionPulse(pulseKey);
+        window.setTimeout(() => setReactionPulse((current) => current === pulseKey ? null : current), 280);
       }
     }).subscribe();
     void (async () => { await supabase.realtime.setAuth(); if (!active) return; typingChannel = supabase.channel(`typing:${conversationId}`, { config: { private: true } }).on('broadcast', { event: 'typing' }, ({ payload }) => { const signal = payload as { userId?: string; typing?: boolean }; if (!signal.userId || signal.userId === currentUserId || !participantsById[signal.userId]) return; setTypingUsers((current) => { const next = { ...current }; if (signal.typing) next[signal.userId!] = Date.now() + 3500; else delete next[signal.userId!]; return next; }); }).subscribe(); typingChannelRef.current = typingChannel; })();
@@ -81,34 +81,10 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
   const messageById = useMemo(() => Object.fromEntries(messages.map((message) => [message.id, message])), [messages]);
 
   async function saveEdit(event: FormEvent, message: Message) { event.preventDefault(); setEditSaving(true); setEditError(null); const result = await editMessage(message.id, editValue); setEditSaving(false); if (!result.ok) { setEditError(result.error); return; } setMessages((current) => current.map((item) => item.id === message.id ? { ...result.data, reply_to_id: message.reply_to_id } : item)); setEditingId(null); }
-  async function changeReaction(messageId: string, emoji: string) {
-    const active = reactions.some((item) => item.message_id === messageId && item.user_id === currentUserId && item.emoji === emoji);
-    const before = reactions;
-    const pulseKey = `${messageId}:${emoji}`;
-    setReactionPulse(pulseKey);
-    window.setTimeout(() => setReactionPulse((current) => current === pulseKey ? null : current), 280);
-    setReactions(active ? reactions.filter((item) => !(item.message_id === messageId && item.user_id === currentUserId && item.emoji === emoji)) : [...reactions, { message_id: messageId, user_id: currentUserId, emoji, created_at: new Date().toISOString() }]);
-    const result = await toggleReaction(messageId, emoji, active);
-    if (!result.ok) setReactions(before);
-    setOpenMenuId(null);
-  }
+  async function changeReaction(messageId: string, emoji: string) { const active = reactions.some((item) => item.message_id === messageId && item.user_id === currentUserId && item.emoji === emoji); const before = reactions; const pulseKey = `${messageId}:${emoji}`; setReactionPulse(pulseKey); window.setTimeout(() => setReactionPulse((current) => current === pulseKey ? null : current), 280); setReactions(active ? reactions.filter((item) => !(item.message_id === messageId && item.user_id === currentUserId && item.emoji === emoji)) : [...reactions, { message_id: messageId, user_id: currentUserId, emoji, created_at: new Date().toISOString() }]); const result = await toggleReaction(messageId, emoji, active); if (!result.ok) setReactions(before); setOpenMenuId(null); }
   async function togglePin(messageId: string) { const next = !pinnedIds.has(messageId); const result = await setMessagePinned(messageId, next); if (!result.ok) return; setPinnedIds((current) => { const copy = new Set(current); if (next) copy.add(messageId); else copy.delete(messageId); return copy; }); setOpenMenuId(null); }
-  async function deleteForMe(messageId: string) {
-    if (!confirm('Hide this message for you? Other people will still see it.')) return;
-    const result = await hideMessage(messageId);
-    if (!result.ok) { setOpenMenuId(null); return; }
-    setRemovingMessageId(messageId);
-    window.setTimeout(() => { setMessages((current) => current.filter((message) => message.id !== messageId)); setRemovingMessageId((current) => current === messageId ? null : current); }, 180);
-    setOpenMenuId(null);
-  }
-  async function unsend(messageId: string) {
-    if (!confirm('Unsend this message for everyone? Its uploaded files will also be permanently deleted.')) return;
-    const result = await unsendMessage(messageId);
-    if (!result.ok) { alert(result.error); return; }
-    setRemovingMessageId(messageId);
-    window.setTimeout(() => { setMessages((current) => current.filter((message) => message.id !== messageId)); setRemovingMessageId((current) => current === messageId ? null : current); }, 180);
-    setOpenMenuId(null);
-  }
+  async function deleteForMe(messageId: string) { if (!confirm('Hide this message for you? Other people will still see it.')) return; const result = await hideMessage(messageId); if (!result.ok) { setOpenMenuId(null); return; } setRemovingMessageId(messageId); window.setTimeout(() => { setMessages((current) => current.filter((message) => message.id !== messageId)); setRemovingMessageId((current) => current === messageId ? null : current); }, 180); setOpenMenuId(null); }
+  async function unsend(messageId: string) { if (!confirm('Unsend this message for everyone? Its uploaded files will also be permanently deleted.')) return; const result = await unsendMessage(messageId); if (!result.ok) { alert(result.error); return; } setRemovingMessageId(messageId); window.setTimeout(() => { setMessages((current) => current.filter((message) => message.id !== messageId)); setRemovingMessageId((current) => current === messageId ? null : current); }, 180); setOpenMenuId(null); }
   async function toggleMute() { const next = !muted; const result = await setConversationPreferences(conversationId, { muted: next }); if (result.ok) setMuted(next); }
   async function rename() { const value = prompt('New group name', title)?.trim(); if (!value || !groupId) return; const result = await renameGroup(groupId, value); if (result.ok) setTitle(value); else setAdminError(result.error); }
   async function promote(userId: string) { if (!groupId) return; const result = await promoteGroupMember(groupId, userId); if (result.ok) window.location.reload(); else setAdminError(result.error); }
