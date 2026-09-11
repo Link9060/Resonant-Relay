@@ -97,27 +97,50 @@ export default function LoginPage() {
     setBusy(true);
     setMessage(null);
 
+    const normalizedEmail = email.trim();
     const supabase = createClient();
     await supabase.auth.signOut({ scope: 'local' });
 
-    const { error } = await supabase.functions.invoke('auth-email', {
-      body: { email: email.trim() },
+    const branded = await supabase.functions.invoke('auth-email', {
+      body: { email: normalizedEmail },
     });
 
-    if (error) {
-      let status = 500;
-      let detail = 'Relay could not send the sign-in email.';
+    if (!branded.error) {
+      setRetryAfter(null);
+      setMessage('Sign-in link sent. Check your inbox for the newest email from Relay.');
+      setBusy(false);
+      return;
+    }
 
-      if (error instanceof FunctionsHttpError) {
-        status = error.context.status;
-        const body = await error.context.json().catch(() => null) as { error?: string } | null;
-        if (body?.error) detail = body.error;
-      }
+    let status = 500;
+    let detail = 'Relay could not send the sign-in email.';
+    if (branded.error instanceof FunctionsHttpError) {
+      status = branded.error.context.status;
+      const body = await branded.error.context.json().catch(() => null) as { error?: string } | null;
+      if (body?.error) detail = body.error;
+    }
 
-      if (status === 429) {
+    if (status === 429) {
+      const nextAttempt = Date.now() + REQUEST_COOLDOWN_MS;
+      setRetryAfter(nextAttempt);
+      setMessage(`Too many sign-in emails were requested. Try again after ${retryTime(nextAttempt)}.`);
+      setBusy(false);
+      return;
+    }
+
+    // Keep Relay sign-in available while the branded sender is being configured.
+    // This fallback uses the existing verified Supabase/Resend SMTP path.
+    const fallback = await supabase.auth.signInWithOtp({
+      email: normalizedEmail,
+      options: { emailRedirectTo: currentAuthCallbackUrl() },
+    });
+
+    if (fallback.error) {
+      const isRateLimit = fallback.error.status === 429 || fallback.error.message.toLowerCase().includes('rate limit');
+      if (isRateLimit) {
         const nextAttempt = Date.now() + REQUEST_COOLDOWN_MS;
         setRetryAfter(nextAttempt);
-        setMessage(`Too many sign-in emails were requested. Try again after ${retryTime(nextAttempt)}.`);
+        setMessage(`That email was requested too recently. Try again after ${retryTime(nextAttempt)}.`);
       } else {
         setMessage(detail);
       }
