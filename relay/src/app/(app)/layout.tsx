@@ -16,6 +16,9 @@ const DOCK_COLLAPSED_KEY = 'relay-dock-collapsed';
 const DOCK_COLLAPSED_EVENT = 'relay-dock-collapsed-change';
 const APP_LOAD_TIMEOUT_MS = 12_000;
 
+type SupabaseResult<T> = { data: T; error: any };
+type AuthUserResult = SupabaseResult<{ user: any | null }>;
+
 function subscribeDockCollapsed(onStoreChange: () => void) {
   window.addEventListener('storage', onStoreChange);
   window.addEventListener(DOCK_COLLAPSED_EVENT, onStoreChange);
@@ -71,7 +74,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       let lastError: unknown = null;
       for (let attempt = 0; attempt < 2; attempt += 1) {
         try {
-          const result = await withTimeout(supabase.auth.getUser(), 'Authentication');
+          const result = await withTimeout<AuthUserResult>(supabase.auth.getUser(), 'Authentication');
           if (result.error) lastError = result.error;
           if (result.data.user) return result.data.user;
         } catch (error) {
@@ -94,7 +97,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
 
         if (IS_BETA) {
-          const { data: betaAccess, error: betaError } = await withTimeout(
+          const { data: betaAccess, error: betaError } = await withTimeout<SupabaseResult<any>>(
             supabase.rpc('beta_access_status'),
             'Beta access check',
           );
@@ -106,7 +109,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           }
         }
 
-        const [profileResult, notificationResult] = await withTimeout(
+        const [profileResult, notificationResult] = await withTimeout<[SupabaseResult<any>, SupabaseResult<any[]>]>(
           Promise.all([
             supabase.from('profiles').select('*').eq('id', user.id).single(),
             supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
