@@ -14,6 +14,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 
 const DOCK_COLLAPSED_KEY = 'relay-dock-collapsed';
 const DOCK_COLLAPSED_EVENT = 'relay-dock-collapsed-change';
+const APP_LOAD_TIMEOUT_MS = 12_000;
 
 function subscribeDockCollapsed(onStoreChange: () => void) {
   window.addEventListener('storage', onStoreChange);
@@ -36,40 +37,105 @@ function getServerDockCollapsedSnapshot() {
   return false;
 }
 
+function withTimeout<T>(promise: PromiseLike<T>, label: string, ms = APP_LOAD_TIMEOUT_MS): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+    Promise.resolve(promise).then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+async function wait(ms: number) {
+  await new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<{ userId: string; profile: any; notifications: any[] } | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [previewRole, setPreviewRoleState] = useState<AppRole>('user');
   const dockCollapsed = useSyncExternalStore(subscribeDockCollapsed, getDockCollapsedSnapshot, getServerDockCollapsedSnapshot);
 
   useEffect(() => {
     let active = true;
     const supabase = createClient() as any;
-    void (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!active) return;
-      if (!user) { window.location.replace(appPageUrl('/login')); return; }
 
-      if (IS_BETA) {
-        const { data: betaAccess, error: betaError } = await supabase.rpc('beta_access_status');
+    async function getAuthenticatedUser() {
+      let lastError: unknown = null;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const result = await withTimeout(supabase.auth.getUser(), 'Authentication');
+          if (result.error) lastError = result.error;
+          if (result.data.user) return result.data.user;
+        } catch (error) {
+          lastError = error;
+        }
+        if (attempt === 0) await wait(450);
+      }
+      if (lastError) throw lastError;
+      return null;
+    }
+
+    void (async () => {
+      setLoadError(null);
+      try {
+        const user = await getAuthenticatedUser();
         if (!active) return;
-        if (betaError || !betaAccess?.approved) {
-          window.location.replace(appPageUrl('/beta-access'));
+        if (!user) {
+          window.location.replace(appPageUrl('/login'));
           return;
         }
-      }
 
-      const [{ data: profile }, { data: notifications }] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
-        supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
-      ]);
-      if (!active) return;
-      if (!profile?.onboarding_completed_at) {
-        window.location.replace(appPageUrl('/onboarding'));
-        return;
+        if (IS_BETA) {
+          const { data: betaAccess, error: betaError } = await withTimeout(
+            supabase.rpc('beta_access_status'),
+            'Beta access check',
+          );
+          if (!active) return;
+          if (betaError) throw betaError;
+          if (!betaAccess?.approved) {
+            window.location.replace(appPageUrl('/beta-access'));
+            return;
+          }
+        }
+
+        const [profileResult, notificationResult] = await withTimeout(
+          Promise.all([
+            supabase.from('profiles').select('*').eq('id', user.id).single(),
+            supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
+          ]),
+          'Relay account data',
+        );
+        if (!active) return;
+        if (profileResult.error || !profileResult.data) {
+          throw profileResult.error ?? new Error('Your Relay profile could not be loaded.');
+        }
+
+        const profile = profileResult.data;
+        if (!profile.onboarding_completed_at) {
+          window.location.replace(appPageUrl('/onboarding'));
+          return;
+        }
+
+        setState({
+          userId: user.id,
+          profile,
+          notifications: notificationResult.error ? [] : (notificationResult.data ?? []),
+        });
+        const actualRole = (profile.role ?? 'user') as AppRole;
+        setPreviewRoleState(getRolePreview(actualRole));
+      } catch (error) {
+        if (!active) return;
+        console.error('Relay app-shell load failed', error);
+        setLoadError('Relay could not finish loading your account. Your data was not changed.');
       }
-      setState({ userId: user.id, profile, notifications: notifications ?? [] });
-      const actualRole = (profile?.role ?? 'user') as AppRole;
-      setPreviewRoleState(getRolePreview(actualRole));
     })();
 
     const onPreviewChange = (event: Event) => {
@@ -101,6 +167,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const Experience = IS_BETA ? BetaExperience : Fragment;
+
+  if (loadError) {
+    return (
+      <Experience>
+        <main className="flex min-h-screen items-center justify-center bg-canvas px-6 text-ink">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-7 text-center">
+            <div className="font-display text-2xl font-medium tracking-tight">Relay had trouble loading</div>
+            <p className="mt-3 text-sm leading-6 text-ink-muted">{loadError}</p>
+            <div className="mt-5 flex justify-center gap-2">
+              <button type="button" onClick={() => window.location.reload()} className="min-h-11 rounded-md bg-ink px-4 text-sm font-medium text-canvas">Retry</button>
+              <button type="button" onClick={() => void leaveDisabledAccount()} className="min-h-11 rounded-md border border-border px-4 text-sm font-medium text-ink hover:bg-surface-raised">Sign out</button>
+            </div>
+          </div>
+        </main>
+      </Experience>
+    );
+  }
+
   if (!state) return IS_BETA ? <BetaExperience><PageLoading /></BetaExperience> : <PageLoading />;
 
   if (state.profile?.banned_at) {
@@ -125,25 +210,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setPreviewRoleState('owner');
   }
 
-  const Experience = IS_BETA ? BetaExperience : Fragment;
   return (
     <Experience>
-    <div data-dock-collapsed={dockCollapsed} className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
-      <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={handleDockCollapsedChange} onboardingCompletedAt={state.profile?.onboarding_completed_at ?? null} />
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        {isPreviewing && (
-          <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 text-xs text-ink md:px-6">
-            <span>Previewing Relay as <strong>{effectiveRole === 'user' ? 'Normal User' : effectiveRole.charAt(0).toUpperCase() + effectiveRole.slice(1)}</strong>. Your real account is still Owner.</span>
-            <button type="button" onClick={returnToOwner} className="shrink-0 rounded-md border border-border px-2.5 py-1 font-medium hover:bg-surface-raised">Return to Owner View</button>
-          </div>
-        )}
-        <AppHeader profile={{ ...state.profile, role: effectiveRole }} role={effectiveRole} currentUserId={state.userId} notifications={state.notifications} />
-        <MobileStaffAlert role={effectiveRole} />
-        <main className="relay-mobile-main min-w-0 flex-1 md:pb-0">
-          <MobileRouteGate role={effectiveRole}>{children}</MobileRouteGate>
-        </main>
+      <div data-dock-collapsed={dockCollapsed} className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
+        <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={handleDockCollapsedChange} onboardingCompletedAt={state.profile?.onboarding_completed_at ?? null} />
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+          {isPreviewing && (
+            <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 text-xs text-ink md:px-6">
+              <span>Previewing Relay as <strong>{effectiveRole === 'user' ? 'Normal User' : effectiveRole.charAt(0).toUpperCase() + effectiveRole.slice(1)}</strong>. Your real account is still Owner.</span>
+              <button type="button" onClick={returnToOwner} className="shrink-0 rounded-md border border-border px-2.5 py-1 font-medium hover:bg-surface-raised">Return to Owner View</button>
+            </div>
+          )}
+          <AppHeader profile={{ ...state.profile, role: effectiveRole }} role={effectiveRole} currentUserId={state.userId} notifications={state.notifications} />
+          <MobileStaffAlert role={effectiveRole} />
+          <main className="relay-mobile-main min-w-0 flex-1 md:pb-0">
+            <MobileRouteGate role={effectiveRole}>{children}</MobileRouteGate>
+          </main>
+        </div>
       </div>
-    </div>
     </Experience>
   );
 }
