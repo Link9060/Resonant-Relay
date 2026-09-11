@@ -76,9 +76,14 @@ export default function EmailPage() {
 
   if (!accounts) return <PageLoading />;
 
+  const selectMailbox = (id: Mailbox) => {
+    setMailbox(id);
+    setSelectedId(null);
+  };
+
   const mailboxButton = (id: Mailbox, label: string, count: number, icon: React.ReactNode) => (
-    <button key={id} type="button" onClick={() => { setMailbox(id); setSelectedId(null); }} className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors ${mailbox === id ? 'bg-surface-raised font-medium text-ink' : 'text-ink-muted hover:bg-surface hover:text-ink'}`}>
-      <span className="text-ink-faint">{icon}</span><span className="min-w-0 flex-1 truncate">{label}</span><span className="text-xs tabular-nums text-ink-faint">{count}</span>
+    <button key={id} type="button" onClick={() => selectMailbox(id)} className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-[color,background-color,transform] duration-200 ${mailbox === id ? 'bg-surface-raised font-medium text-ink' : 'text-ink-muted hover:bg-surface hover:text-ink'}`}>
+      <span className={`text-ink-faint transition-transform duration-200 ${mailbox === id ? 'scale-110' : ''}`}>{icon}</span><span className="min-w-0 flex-1 truncate">{label}</span><span className="text-xs tabular-nums text-ink-faint">{count}</span>
     </button>
   );
 
@@ -97,15 +102,17 @@ export default function EmailPage() {
         <section className={`${selectedMessage ? 'hidden lg:flex' : 'flex'} min-w-0 flex-col border-r border-border`}>
           <div className="border-b border-border p-3">
             <div className="mb-3 flex gap-2 overflow-x-auto pb-0.5 lg:hidden">
-              {[{ id: 'all', label: 'All', count: counts.all }, { id: 'unread', label: 'Unread', count: counts.unread }, ...accounts.map((account) => ({ id: account.id, label: account.email_address, count: messages.filter((message) => message.accountId === account.id).length }))].map((item) => <button key={item.id} type="button" onClick={() => { setMailbox(item.id); setSelectedId(null); }} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${mailbox === item.id ? 'bg-ink text-canvas' : 'bg-surface text-ink-muted'}`}>{item.label} · {item.count}</button>)}
+              {[{ id: 'all', label: 'All', count: counts.all }, { id: 'unread', label: 'Unread', count: counts.unread }, ...accounts.map((account) => ({ id: account.id, label: account.email_address, count: messages.filter((message) => message.accountId === account.id).length }))].map((item) => <button key={item.id} type="button" onClick={() => selectMailbox(item.id)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-[background-color,color,transform] duration-200 ${mailbox === item.id ? 'bg-ink text-canvas scale-[1.02]' : 'bg-surface text-ink-muted'}`}>{item.label} · {item.count}</button>)}
             </div>
-            <div className="flex items-center justify-between gap-3"><div><h2 className="truncate text-sm font-semibold text-ink">{mailboxLabel}</h2><p className="mt-0.5 text-xs text-ink-faint">{filteredMessages.length} messages</p></div></div>
-            <label className="mt-3 flex items-center gap-2 rounded-lg bg-surface px-3 py-2.5 text-ink-faint"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this mailbox" className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint" /></label>
+            <div key={String(mailbox)} className="relay-motion-crossfade flex items-center justify-between gap-3"><div><h2 className="truncate text-sm font-semibold text-ink">{mailboxLabel}</h2><p className="mt-0.5 text-xs text-ink-faint">{filteredMessages.length} messages</p></div></div>
+            <label className="mt-3 flex items-center gap-2 rounded-lg bg-surface px-3 py-2.5 text-ink-faint transition-shadow focus-within:shadow-sm"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this mailbox" className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint" /></label>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto"><EmailMessageList messages={filteredMessages} selectedId={selectedId} onSelect={setSelectedId} /></div>
+          <div key={`${mailbox}:${query}`} className="relay-motion-crossfade min-h-0 flex-1 overflow-y-auto"><EmailMessageList messages={filteredMessages} selectedId={selectedId} onSelect={setSelectedId} /></div>
         </section>
 
-        <section className={`${selectedMessage ? 'block' : 'hidden lg:block'} min-w-0`}><EmailMessagePreview message={selectedMessage} onBack={() => setSelectedId(null)} /></section>
+        <section className={`${selectedMessage ? 'block' : 'hidden lg:block'} min-w-0 overflow-hidden`}>
+          <div key={selectedMessage?.id ?? 'empty'} className={selectedMessage ? 'relay-motion-slide-right h-full' : 'h-full'}><EmailMessagePreview message={selectedMessage} onBack={() => setSelectedId(null)} /></div>
+        </section>
       </div>
     </div>
 
