@@ -6,6 +6,7 @@ import { PageLoading } from '@/components/page-loading';
 import { SignOutButton } from '@/components/profile/sign-out-button';
 import { AccountDataControls } from '@/components/profile/account-data-controls';
 import { ParticleControls } from '@/components/profile/particle-controls';
+import { SoundControls } from '@/components/profile/sound-controls';
 import { appPageUrl, IS_BETA } from '@/lib/config';
 import { STARTUP_SESSION_KEY } from '@/components/startup-sequence';
 import { BETA_INTRO_KEY } from '@/lib/particle-motion';
@@ -209,6 +210,7 @@ export default function ProfilePage() {
         <h2 className="text-sm font-medium text-ink">Preferences</h2>
         <div className="mt-3 flex w-full flex-col items-start gap-3">
           {IS_BETA && <ParticleControls />}
+          <SoundControls />
           <PushToggle />
           <a href={appPageUrl('/onboarding?tour=1')} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface"><Play size={15} />Replay Relay tour</a>
           <button type="button" onClick={replayStartup} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface">
