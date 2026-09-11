@@ -93,15 +93,31 @@ export async function updateContactDiscoveryPrivacy(settings: DiscoveryPrivacy):
 
 export async function sendConnectionRequest(recipientId: string): Promise<ActionResult> {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: 'Not signed in.' };
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return { ok: false, error: 'Your session expired. Sign in again and retry.' };
+
   const { error } = await supabase.rpc('send_connection_request', { p_recipient_id: recipientId });
   if (error) {
     const message = error.message.toLowerCase();
     if (message.includes('too many')) return { ok: false, error: 'You have sent a few requests recently. Try again in a few minutes.' };
-    if (message.includes('pending') || message.includes('already connected')) return { ok: false, error: 'You already have an active connection request with this person.' };
+    if (message.includes('pending') || message.includes('already connected') || message.includes('already requested')) {
+      return { ok: false, error: 'You already have an active connection request with this person.' };
+    }
     return { ok: false, error: 'This person is unavailable right now.' };
   }
+
+  const { data: verification, error: verificationError } = await supabase
+    .from('connection_requests')
+    .select('id')
+    .eq('sender_id', user.id)
+    .eq('recipient_id', recipientId)
+    .eq('status', 'pending')
+    .maybeSingle();
+
+  if (verificationError || !verification) {
+    return { ok: false, error: 'Relay could not confirm that request was saved. Please retry.' };
+  }
+
   return { ok: true, data: undefined };
 }
 
