@@ -17,6 +17,9 @@ export function WeeklyTodoList() {
   const [addingDay, setAddingDay] = useState<string | null>(null);
   const [loadedRange, setLoadedRange] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [enteringId, setEnteringId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [completedPulseId, setCompletedPulseId] = useState<string | null>(null);
 
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)), [weekStart]);
   const startKey = localDateKey(days[0]);
@@ -65,24 +68,36 @@ export function WeeklyTodoList() {
     if (!result.ok) { setError(result.error); return; }
     setTodos((current) => [...current, result.data]);
     setDrafts((current) => ({ ...current, [dayKey]: '' }));
+    setEnteringId(result.data.id);
+    window.setTimeout(() => setEnteringId((current) => current === result.data.id ? null : current), 260);
   }
 
   async function toggleTask(todo: Todo) {
     setBusyId(todo.id);
     setError(null);
-    const result = await setTodoCompleted(todo.id, !todo.completed);
+    const nextCompleted = !todo.completed;
+    const result = await setTodoCompleted(todo.id, nextCompleted);
     setBusyId(null);
     if (!result.ok) { setError(result.error); return; }
     setTodos((current) => current.map((item) => item.id === todo.id ? result.data : item));
+    if (nextCompleted) {
+      setCompletedPulseId(todo.id);
+      window.setTimeout(() => setCompletedPulseId((current) => current === todo.id ? null : current), 300);
+    }
   }
 
   async function removeTask(todo: Todo) {
+    if (removingId) return;
+    setRemovingId(todo.id);
     setBusyId(todo.id);
     setError(null);
     const result = await deleteTodo(todo.id);
     setBusyId(null);
-    if (!result.ok) { setError(result.error); return; }
-    setTodos((current) => current.filter((item) => item.id !== todo.id));
+    if (!result.ok) { setRemovingId(null); setError(result.error); return; }
+    window.setTimeout(() => {
+      setTodos((current) => current.filter((item) => item.id !== todo.id));
+      setRemovingId((current) => current === todo.id ? null : current);
+    }, 180);
   }
 
   const weekLabel = `${days[0]!.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${days[6]!.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
@@ -117,20 +132,20 @@ export function WeeklyTodoList() {
                   <h2 className="text-base font-medium text-ink">{isToday ? 'Today' : day.toLocaleDateString(undefined, { weekday: 'long' })}</h2>
                   <p className="mt-0.5 text-sm text-ink-faint">{loading ? 'Loading…' : dayTodos.length === 0 ? 'Nothing planned' : remaining === 0 ? 'Everything done' : `${remaining} left`}</p>
                 </div>
-                <ChevronDown size={18} className={`text-ink-faint transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={18} className={`text-ink-faint transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isOpen && (
-                <div className="border-t border-border bg-surface px-4 py-4">
+                <div className="relay-motion-expand border-t border-border bg-surface px-4 py-4">
                   {dayTodos.length > 0 && (
                     <ul className="mb-3 space-y-1">
                       {dayTodos.map((todo) => (
-                        <li key={todo.id} className="group flex items-center gap-3 rounded-md px-2 py-2 hover:bg-surface-raised">
-                          <button type="button" disabled={busyId === todo.id} onClick={() => toggleTask(todo)} aria-label={todo.completed ? `Mark ${todo.title} incomplete` : `Complete ${todo.title}`} className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${todo.completed ? 'border-ink bg-ink text-canvas' : 'border-ink-faint text-transparent'} disabled:opacity-50`}>
-                            <Check size={13} strokeWidth={3} />
+                        <li key={todo.id} className={`group flex items-center gap-3 rounded-md px-2 py-2 transition-[background-color,opacity,transform] duration-200 hover:bg-surface-raised ${enteringId === todo.id ? 'relay-motion-row-in' : ''} ${removingId === todo.id ? 'relay-motion-row-out' : ''}`}>
+                          <button type="button" disabled={busyId === todo.id} onClick={() => toggleTask(todo)} aria-label={todo.completed ? `Mark ${todo.title} incomplete` : `Complete ${todo.title}`} className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all duration-200 ${todo.completed ? 'border-ink bg-ink text-canvas' : 'border-ink-faint text-transparent'} disabled:opacity-50`}>
+                            <Check size={13} strokeWidth={3} className={completedPulseId === todo.id ? 'relay-motion-check' : ''} />
                           </button>
-                          <span className={`min-w-0 flex-1 text-sm ${todo.completed ? 'text-ink-faint line-through' : 'text-ink'}`}>{todo.title}</span>
-                          <button type="button" disabled={busyId === todo.id} onClick={() => removeTask(todo)} aria-label={`Delete ${todo.title}`} className="flex h-8 w-8 items-center justify-center rounded-md text-ink-faint opacity-70 hover:bg-red-500/10 hover:text-red-600 group-hover:opacity-100 disabled:opacity-40"><Trash2 size={15} /></button>
+                          <span className={`min-w-0 flex-1 text-sm transition-[color,opacity,text-decoration-color] duration-200 ${todo.completed ? 'text-ink-faint line-through' : 'text-ink'}`}>{todo.title}</span>
+                          <button type="button" disabled={busyId === todo.id} onClick={() => removeTask(todo)} aria-label={`Delete ${todo.title}`} className="relay-motion-delete-button flex h-8 w-8 items-center justify-center rounded-md text-ink-faint opacity-70 hover:bg-red-500/10 hover:text-red-600 group-hover:opacity-100 disabled:opacity-40"><Trash2 size={15} /></button>
                         </li>
                       ))}
                     </ul>
