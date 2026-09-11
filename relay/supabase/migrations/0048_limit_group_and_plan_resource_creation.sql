@@ -158,7 +158,7 @@ begin
   if recent_hour >= 30 then raise exception 'plan creation limit reached — try again later'; end if;
 
   insert into public.plans (group_id, created_by, name, notes, response_type, response_prompt, repeat_rule, starts_on, repeat_until)
-  values (p_group_id, caller, trim(p_name), nullif(trim(coalesce(p_notes, '')), ''), p_response_type::public.plan_response_type, case when p_response_type = 'custom_text' then clean_prompt else null end, p_repeat_rule::public.plan_response_type, p_starts_on, p_repeat_until)
+  values (p_group_id, caller, trim(p_name), nullif(trim(coalesce(p_notes, '')), ''), p_response_type::public.plan_response_type, case when p_response_type = 'custom_text' then clean_prompt else null end, p_repeat_rule::public.plan_repeat_rule, p_starts_on, p_repeat_until)
   returning id into new_plan_id;
 
   if p_response_type = 'select_option' then
