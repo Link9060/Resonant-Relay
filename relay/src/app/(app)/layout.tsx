@@ -231,7 +231,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <MobileRouteGate role={effectiveRole}>{children}</MobileRouteGate>
           </main>
         </div>
-        <StaffCommandPaletteGlobal role={effectiveRole} />
+        <StaffCommandPaletteGlobal key={effectiveRole} role={effectiveRole} />
       </div>
     </Experience>
   );
