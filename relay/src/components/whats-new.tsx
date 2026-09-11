@@ -13,12 +13,12 @@ const DEVELOPMENT_RELEASE = {
   status: 'Beta · Development',
   publishedAt: '2026-09-10T10:30:00-05:00',
   title: 'Notes arrive in Relay',
-  summary: 'Relay 1.0.3 starts turning To Do into a personal knowledge workspace, with private block-based notes and clearer staff identities.',
+  summary: 'Relay 1.0.3 adds a dedicated private Notes workspace and clearer staff identities.',
   groups: [
     {
       label: 'New in beta',
       items: [
-        'Notes now live beneath To Do and sync privately with your Relay account.',
+        'Notes now have their own tab and sync privately with your Relay account.',
         'Build notes from text, headings, lists, checkboxes, and quotes, with automatic saving, search, pinning, and block reordering.',
         'Owner, Admin, and Moderator titles now appear beside people across profiles, contacts, and chats.',
       ],

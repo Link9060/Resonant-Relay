@@ -3,7 +3,7 @@
 ## 1.0.3 Beta
 
 - Added visible Relay role titles for Owners, Admins, and Moderators.
-- Added private, account-synced Notes beneath To Do.
+- Added a separate private, account-synced Notes tab alongside To Do.
 - Added block-based writing for text, headings, lists, checkboxes, and quotes.
 - Added note search, pinning, deletion, and automatic saving.
 - Structured Notes so later versions can connect notes, tasks, and files in a visual knowledge graph for RAVIN.

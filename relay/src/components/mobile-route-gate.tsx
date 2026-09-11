@@ -18,6 +18,7 @@ const DESKTOP_FIRST: Array<{
   { path: '/calendar', title: 'Full Calendar is on Relay for Mac', body: 'Your next events stay visible from Dashboard. Use Relay on a larger screen for full calendar management.', dashboard: true },
   { path: '/planner', title: 'Advanced Planner is on Relay for Mac', body: 'Upcoming plans stay visible from Dashboard. Creating and managing complex plans is intentionally desktop-first.', dashboard: true },
   { path: '/todo', title: 'Weekly task management is on Relay for Mac', body: 'You can still see, add, and complete today’s tasks directly from Dashboard.', dashboard: true },
+  { path: '/notes', title: 'Notes are on Relay for Mac', body: 'Open Relay on a larger screen to write, organize, and search your private notes.' },
   { path: '/quicklinks', title: 'Quick Links are on Relay for Mac', body: 'Your saved desktop shortcuts stay on the Mac where you created them.', dashboard: true },
   { path: '/admin/users', title: 'Full account inspection is on Relay for Mac', body: 'On iPhone, use Reports for urgent moderation. Deep user graphs, storage, sessions, and Owner controls are designed for a larger screen.' },
   { path: '/admin/analytics', title: 'Owner Analytics is on Relay for Mac', body: 'Detailed Relay analytics are intentionally desktop-first so the data stays readable and useful.' },

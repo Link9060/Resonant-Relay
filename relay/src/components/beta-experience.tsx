@@ -393,7 +393,7 @@ export function BetaExperience({ children }: { children: ReactNode }) {
       const url = new URL(link.href, window.location.href);
       if (url.origin !== window.location.origin || !url.pathname.startsWith(`${BASE_PATH}/`) || url.hash) return;
       const path = appPathname(url.pathname);
-      if (!/^\/(?:$|space\/?$|chats(?:\/|$)|todo(?:\/|$)|planner(?:\/|$)|calendar(?:\/|$)|email(?:\/|$)|quicklinks(?:\/|$)|contacts(?:\/|$)|profile(?:\/|$)|admin(?:\/|$)|support(?:\/|$)|notifications(?:\/|$))/.test(path)) return;
+      if (!/^\/(?:$|space\/?$|chats(?:\/|$)|todo(?:\/|$)|notes(?:\/|$)|planner(?:\/|$)|calendar(?:\/|$)|email(?:\/|$)|quicklinks(?:\/|$)|contacts(?:\/|$)|profile(?:\/|$)|admin(?:\/|$)|support(?:\/|$)|notifications(?:\/|$))/.test(path)) return;
       // Preserve native same-page query/filter behavior.
       if (url.pathname === window.location.pathname && url.search !== window.location.search) return;
       event.preventDefault();
