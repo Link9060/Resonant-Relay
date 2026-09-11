@@ -1,6 +1,7 @@
 'use client';
 
 import { BASE_PATH } from '@/lib/config';
+import { readSoundPreference } from '@/lib/sound-preferences';
 import { useEffect, useRef, useState } from 'react';
 
 export const STARTUP_SESSION_KEY = 'relay-startup-seen';
@@ -59,8 +60,6 @@ function ParticleWordmark({ active, onFormed }: { active: boolean; onFormed: () 
       const targetContext = targetCanvas.getContext('2d', { willReadFrequently: true });
       if (!targetContext) return;
 
-      // These values mirror the final startup lockup sizing so the particles and
-      // the finished mark occupy the exact same pixels throughout the transition.
       const relaySize = Math.max(58, Math.min(92, width * 0.16));
       const logoSize = relaySize * 0.92;
       const gap = Math.max(12.8, Math.min(21.6, width * 0.026));
@@ -80,9 +79,6 @@ function ParticleWordmark({ active, onFormed }: { active: boolean; onFormed: () 
       const groupLeft = width / 2 - groupWidth / 2;
       const textX = groupLeft + logoSize + gap;
 
-      // Render the real Relay icon into the same offscreen canvas used as the
-      // particle destination. Recoloring by alpha makes the result consistently
-      // white regardless of the current browser color scheme.
       let logoRendered = false;
       try {
         const logoImage = new Image();
@@ -180,9 +176,6 @@ function ParticleWordmark({ active, onFormed }: { active: boolean; onFormed: () 
           context.fill();
         }
 
-        // Instead of swapping to a separate DOM wordmark, fade the exact target
-        // raster in underneath the settled dots. This makes the dots genuinely
-        // become the final Relay mark with zero jump in position or scale.
         if (solidProgress > 0) {
           context.globalAlpha = solidProgress;
           context.drawImage(targetCanvas, 0, 0);
@@ -266,7 +259,7 @@ export function StartupSequence() {
 
   const activate = () => {
     const audio = startupAudioRef.current;
-    if (audio) {
+    if (audio && readSoundPreference()) {
       audio.currentTime = 0;
       void audio.play().catch(() => {
         // The intro starts from a click, but keep the animation usable if audio is blocked.
