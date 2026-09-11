@@ -87,7 +87,7 @@ export default function EmailPage() {
     </button>
   );
 
-  return <div className="mx-auto max-w-[94rem] px-4 py-8 md:px-6">
+  return <div className="relative mx-auto max-w-[94rem] px-4 py-8 md:px-6">
     <PageHeader title="Email" subtitle="Every inbox, organized by account." action={<button type="button" onClick={() => setManageOpen(true)} className="inline-flex items-center gap-2 rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface"><Settings2 size={16} /> Accounts</button>} />
 
     {error && !manageOpen && <div className="mt-5 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-500">{error}</div>}
@@ -116,7 +116,7 @@ export default function EmailPage() {
       </div>
     </div>
 
-    {accounts.length === 0 && <div className="pointer-events-none absolute inset-x-0 top-72 flex justify-center px-6"><button type="button" onClick={() => setManageOpen(true)} className="pointer-events-auto inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2.5 text-sm font-medium text-canvas"><Mail size={15} /> Connect an inbox</button></div>}
+    {accounts.length === 0 && <div className="pointer-events-none absolute inset-x-0 top-72 flex justify-center px-6"><button type="button" onClick={() => setManageOpen(true)} className="relay-motion-hero-in pointer-events-auto inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2.5 text-sm font-medium text-canvas"><Mail size={15} /> Connect an inbox</button></div>}
     {manageOpen && <ConnectedAccountsDialog accounts={accounts} busy={busy} error={error} title="Email accounts" onClose={() => setManageOpen(false)} onConnect={(provider) => void connect(provider)} onDisconnect={(account) => void disconnect(account)} />}
   </div>;
 }
