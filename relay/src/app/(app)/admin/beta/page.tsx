@@ -4,7 +4,7 @@ import { PageLoading } from '@/components/page-loading';
 import { StaffControlHeader } from '@/components/staff-control-header';
 import { createClient } from '@/lib/supabase/client';
 import { Check, Clock3, FlaskConical, Loader2, Search, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type BetaRequestRow = {
   request_id: string;
@@ -34,7 +34,7 @@ export default function OwnerBetaPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function load(nextFilter: Filter = filter, preferredId?: string | null) {
+  const load = useCallback(async (nextFilter: Filter, preferredId?: string | null) => {
     const supabase = createClient() as any;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -59,14 +59,14 @@ export default function OwnerBetaPage() {
     setSelectedId(target);
     const selected = rows.find((row) => row.request_id === target);
     setResponse(selected?.response_message ?? '');
-  }
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       void load('pending').catch((e: any) => setError(e?.message ?? 'Beta requests could not load.'));
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [load]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -165,7 +165,7 @@ export default function OwnerBetaPage() {
           {!selected ? (
             <div className="flex min-h-80 items-center justify-center text-sm text-ink-muted">Select a Beta request to review.</div>
           ) : (
-            <>
+            <div key={selected.request_id} className="relay-motion-crossfade">
               <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="text-xl font-semibold text-ink">{selected.display_name}</div>
@@ -200,7 +200,7 @@ export default function OwnerBetaPage() {
               ) : (
                 <div className="mt-4 rounded-xl border border-border bg-canvas p-4 text-xs leading-5 text-ink-muted">Reviewed by {selected.reviewed_by_name ?? 'Owner'}{selected.reviewed_at ? ` on ${new Date(selected.reviewed_at).toLocaleString()}` : ''}.</div>
               )}
-            </>
+            </div>
           )}
         </section>
       </div>
