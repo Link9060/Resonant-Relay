@@ -3,10 +3,12 @@
 import { PageLoading } from '@/components/page-loading';
 import { appUrl, IS_BETA } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
+import type { EmailOtpType } from '@supabase/supabase-js';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
 const LOGIN_PATH = appUrl('/login/');
+const EMAIL_OTP_TYPES = new Set<EmailOtpType>(['email', 'magiclink', 'invite', 'recovery', 'email_change']);
 
 async function goAfterSignIn() {
   const supabase = createClient() as any;
@@ -48,6 +50,28 @@ function Callback() {
       const callbackError = params.get('error_description');
       const code = params.get('code');
       const flowId = params.get('sb_flow_id');
+      const tokenHash = params.get('token_hash');
+      const otpType = params.get('type') as EmailOtpType | null;
+
+      // Branded Relay auth emails can link straight to this page with a
+      // token hash. The user sees resonantrelay.org in the email instead of
+      // the raw Supabase project hostname, while verification still happens
+      // securely through Supabase Auth in the browser.
+      if (tokenHash && otpType && EMAIL_OTP_TYPES.has(otpType)) {
+        const { data, error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: otpType,
+        });
+
+        if (!verifyError && data.session) {
+          await goAfterSignIn();
+          return;
+        }
+
+        console.error('Relay email token verification failed', verifyError);
+        setError('This sign-in link is no longer usable. Request a fresh link and try again.');
+        return;
+      }
 
       if (code) {
         const { data, error: exchangeError } =
