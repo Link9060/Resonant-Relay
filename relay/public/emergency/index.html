@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#090000" />
+  <title>Relay Emergency Mode</title>
+  <link rel="stylesheet" href="./emergency.css" />
+</head>
+<body>
+  <main id="boot" class="boot" aria-live="polite">
+    <button id="bootDot" class="boot-dot" aria-label="Start Relay Emergency Mode"></button>
+    <p id="bootHint" class="boot-hint">Emergency Relay</p>
+    <div id="bootWord" class="boot-word" aria-hidden="true">RELAY</div>
+  </main>
+
+  <main id="app" class="app hidden">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow"><span class="status-dot"></span> EMERGENCY MODE</div>
+        <h1>Relay</h1>
+      </div>
+      <div class="top-actions">
+        <span id="connectionState" class="connection-state">Connecting…</span>
+        <a id="exitEmergency" class="ghost-button" href="../../">Exit</a>
+      </div>
+    </header>
+
+    <section id="signedOut" class="auth-card hidden">
+      <div class="panel-label">Session unavailable</div>
+      <h2>Emergency sign in</h2>
+      <p>Use your Relay email and password. This page is intentionally separate from the normal Relay interface.</p>
+      <form id="loginForm" class="stack">
+        <label>Email<input id="loginEmail" type="email" autocomplete="email" required /></label>
+        <label>Password<input id="loginPassword" type="password" autocomplete="current-password" required /></label>
+        <button class="primary-button" type="submit">Sign in</button>
+        <div id="loginError" class="error-text" role="alert"></div>
+      </form>
+    </section>
+
+    <section id="workspace" class="workspace hidden">
+      <nav class="nav" aria-label="Emergency Relay sections">
+        <button class="nav-button active" data-view="chats">Chats</button>
+        <button class="nav-button" data-view="contacts">Contacts</button>
+        <button class="nav-button" data-view="profile">Profile</button>
+      </nav>
+
+      <section id="view-chats" class="view active-view">
+        <div class="section-head">
+          <div><div class="panel-label">Essential communications</div><h2>Chats</h2></div>
+          <button id="refreshChats" class="ghost-button" type="button">Refresh</button>
+        </div>
+        <div class="split">
+          <aside class="conversation-pane">
+            <div id="conversationList" class="list"></div>
+          </aside>
+          <section class="thread-pane">
+            <div id="threadEmpty" class="empty-state">Select a conversation.</div>
+            <div id="thread" class="thread hidden">
+              <div class="thread-head"><div><div class="panel-label">Conversation</div><h3 id="threadTitle">Chat</h3></div></div>
+              <div id="messageList" class="messages"></div>
+              <form id="messageForm" class="composer">
+                <textarea id="messageInput" maxlength="4000" rows="2" placeholder="Message…"></textarea>
+                <button class="primary-button" type="submit">Send</button>
+              </form>
+              <div id="messageError" class="error-text" role="alert"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-contacts" class="view">
+        <div class="section-head"><div><div class="panel-label">People you can reach</div><h2>Contacts</h2></div><button id="refreshContacts" class="ghost-button" type="button">Refresh</button></div>
+        <div id="contactList" class="contact-grid"></div>
+      </section>
+
+      <section id="view-profile" class="view">
+        <div class="section-head"><div><div class="panel-label">Account recovery controls</div><h2>Profile</h2></div></div>
+        <form id="profileForm" class="profile-form">
+          <div class="two-col">
+            <label>First name<input id="firstName" maxlength="40" required /></label>
+            <label>Last name<input id="lastName" maxlength="60" required /></label>
+          </div>
+          <label>Username<div class="input-prefix"><span>@</span><input id="username" maxlength="20" autocapitalize="none" autocorrect="off" /></div></label>
+          <label>Bio<textarea id="bio" maxlength="160" rows="3"></textarea></label>
+          <label>School<input id="school" maxlength="80" /></label>
+          <label>Graduation year<input id="graduationYear" inputmode="numeric" maxlength="4" /></label>
+          <label>Profile photo URL<input id="avatarUrl" inputmode="url" maxlength="500" placeholder="https://…" /></label>
+          <div class="profile-meta"><span>Relay Number</span><strong id="relayNumber">—</strong></div>
+          <button class="primary-button" type="submit">Save profile</button>
+          <div id="profileStatus" class="status-text" role="status"></div>
+        </form>
+      </section>
+    </section>
+  </main>
+
+  <script src="./emergency.js" defer></script>
+</body>
+</html>
