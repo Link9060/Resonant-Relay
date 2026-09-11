@@ -115,7 +115,7 @@ export function ContactsList({ contacts, onRemoved, onPreferenceUpdated }: Props
                 className="flex min-w-0 flex-1 items-center gap-3 text-left sm:pointer-events-none"
                 aria-label={`Open ${displayName}`}
               >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-semibold" style={{ color, backgroundColor: `${color}1f`, boxShadow: `inset 0 0 0 1px ${color}45` }}>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-semibold transition-transform duration-200" style={{ color, backgroundColor: `${color}1f`, boxShadow: `inset 0 0 0 1px ${color}45` }}>
                   {other.avatar_url ? <span className="relative h-full w-full"><Image src={other.avatar_url} alt="" fill sizes="44px" className="object-cover" unoptimized /></span> : displayName[0]?.toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -124,15 +124,15 @@ export function ContactsList({ contacts, onRemoved, onPreferenceUpdated }: Props
                   {!preference?.nickname && other.school && <p className="truncate text-xs text-ink-faint">{other.school}</p>}
                 </div>
               </button>
-              <button type="button" onClick={() => isEditing ? closeEdit() : beginEdit(contact)} aria-label={`Customize ${displayName}`} aria-expanded={isEditing} className="hidden h-10 w-10 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink sm:flex">
-                {isEditing ? <X size={17} /> : <Settings2 size={17} />}
+              <button type="button" onClick={() => isEditing ? closeEdit() : beginEdit(contact)} aria-label={`Customize ${displayName}`} aria-expanded={isEditing} className="hidden h-10 w-10 items-center justify-center rounded-md text-ink-muted transition-[background-color,color,transform] hover:bg-surface hover:text-ink sm:flex">
+                <span className={isEditing ? 'rotate-90 transition-transform duration-200' : 'transition-transform duration-200'}>{isEditing ? <X size={17} /> : <Settings2 size={17} />}</span>
               </button>
             </div>
 
             {isEditing && (
               <>
                 <button type="button" aria-label="Close contact details" onClick={closeEdit} className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] sm:hidden" />
-                <div className="fixed inset-x-0 bottom-0 z-50 max-h-[82dvh] overflow-y-auto rounded-t-3xl border-t border-border bg-surface px-4 pt-3 shadow-2xl sm:static sm:max-h-none sm:rounded-none sm:border-t sm:px-3 sm:py-4 sm:shadow-none" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+                <div className="relay-motion-sheet fixed inset-x-0 bottom-0 z-50 max-h-[82dvh] overflow-y-auto rounded-t-3xl border-t border-border bg-surface px-4 pt-3 shadow-2xl sm:static sm:max-h-none sm:rounded-none sm:border-t sm:px-3 sm:py-4 sm:shadow-none" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
                   <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border sm:hidden" />
                   <div className="mb-4 flex items-start justify-between gap-3 sm:hidden">
                     <div>
@@ -151,7 +151,7 @@ export function ContactsList({ contacts, onRemoved, onPreferenceUpdated }: Props
                     <div className="mt-2 flex flex-wrap gap-3 sm:gap-2">
                       {(Object.entries(CONTACT_COLORS) as Array<[ContactColorKey, string]>).map(([key, value]) => (
                         <button key={key} type="button" onClick={() => setColorKey(key)} aria-label={key} aria-pressed={colorKey === key} className="flex h-10 w-10 items-center justify-center rounded-full transition-transform hover:scale-110 sm:h-8 sm:w-8" style={{ backgroundColor: value, boxShadow: colorKey === key ? '0 0 0 2px rgb(var(--canvas)), 0 0 0 4px rgb(var(--ink))' : undefined }}>
-                          {colorKey === key && <Check size={15} className="text-white" strokeWidth={3} />}
+                          {colorKey === key && <Check size={15} className="relay-motion-check text-white" strokeWidth={3} />}
                         </button>
                       ))}
                     </div>
@@ -174,7 +174,7 @@ export function ContactsList({ contacts, onRemoved, onPreferenceUpdated }: Props
                   </div>
 
                   {confirmAction && (
-                    <div className={`mt-3 rounded-xl border p-3 ${confirmAction === 'block' ? 'border-red-500/30 bg-red-500/5' : 'border-border bg-canvas'}`}>
+                    <div className={`relay-motion-expand mt-3 rounded-xl border p-3 ${confirmAction === 'block' ? 'border-red-500/30 bg-red-500/5' : 'border-border bg-canvas'}`}>
                       <p className={`text-sm font-medium ${confirmAction === 'block' ? 'text-red-600' : 'text-ink'}`}>
                         {confirmAction === 'block' ? `Block ${other.display_name}?` : `Remove ${other.display_name} from your contacts?`}
                       </p>
