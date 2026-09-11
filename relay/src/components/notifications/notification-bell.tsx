@@ -6,11 +6,13 @@ import { createClient } from '@/lib/supabase/client';
 import type { Notification } from '@/lib/types/database';
 import { PushToggle } from '@/components/notifications/push-toggle';
 import { Bell, CalendarClock, Check, MessageCircle, Settings2, UserRoundCheck, UserRoundPlus, UsersRound } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export function NotificationBell({ currentUserId, initial }: { currentUserId: string; initial: Notification[] }) {
   const [notifications, setNotifications] = useState(initial);
   const [open, setOpen] = useState(false);
+  const [freshId, setFreshId] = useState<string | null>(null);
+  const previousUnreadRef = useRef(initial.filter((notification) => !notification.read_at).length);
 
   useEffect(() => {
     const supabase = createClient();
@@ -31,6 +33,10 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
             ? current.map((notification) => notification.id === incoming.id ? incoming : notification)
             : [incoming, ...current].slice(0, 20);
         });
+        if (payload.eventType === 'INSERT') {
+          setFreshId(incoming.id);
+          window.setTimeout(() => setFreshId((current) => current === incoming.id ? null : current), 340);
+        }
       })
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
@@ -46,6 +52,9 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
   }, [open]);
 
   const unreadCount = notifications.filter((notification) => !notification.read_at).length;
+  const badgeShouldPop = unreadCount > previousUnreadRef.current;
+  useEffect(() => { previousUnreadRef.current = unreadCount; }, [unreadCount]);
+
   const sections = useMemo(() => [
     { label: 'New', items: notifications.filter((notification) => !notification.read_at) },
     { label: 'Earlier', items: notifications.filter((notification) => notification.read_at) },
@@ -71,7 +80,7 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
       <button type="button" aria-label={unreadCount ? `Notifications, ${unreadCount} new` : 'Notifications'} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} className="relative flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink">
         <Bell size={18} />
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-canvas" aria-hidden="true">
+          <span key={unreadCount} className={`absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-canvas ${badgeShouldPop ? 'relay-motion-badge' : ''}`} aria-hidden="true">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -80,7 +89,7 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
       {open && (
         <>
           <button type="button" aria-label="Close notifications" className="fixed inset-0 z-30 cursor-default" onClick={() => setOpen(false)} />
-          <div role="dialog" aria-label="Notifications" className="fixed left-3 right-3 top-16 z-40 flex max-h-[calc(100vh-5rem)] flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-2xl md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-[26rem]">
+          <div role="dialog" aria-label="Notifications" className="relay-popover fixed left-3 right-3 top-16 z-40 flex max-h-[calc(100vh-5rem)] flex-col overflow-hidden rounded-xl border border-border bg-surface-raised shadow-2xl md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-[26rem]">
             <div className="flex min-h-14 items-center justify-between gap-4 border-b border-border px-4">
               <div className="flex items-baseline gap-2">
                 <h2 className="text-sm font-semibold text-ink">Notifications</h2>
@@ -115,7 +124,7 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
                 {sections.map((section) => (
                   <section key={section.label} aria-label={section.label}>
                     <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">{section.label}</p>
-                    <div>{section.items.map((notification) => <NotificationRow key={notification.id} notification={notification} onSelect={handleSelect} />)}</div>
+                    <div>{section.items.map((notification) => <NotificationRow key={notification.id} notification={notification} fresh={notification.id === freshId} onSelect={handleSelect} />)}</div>
                   </section>
                 ))}
               </div>
@@ -131,9 +140,9 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
   );
 }
 
-function NotificationRow({ notification, onSelect }: { notification: Notification; onSelect: (notification: Notification) => void }) {
+function NotificationRow({ notification, fresh, onSelect }: { notification: Notification; fresh: boolean; onSelect: (notification: Notification) => void }) {
   return (
-    <button type="button" onClick={() => void onSelect(notification)} className={`group flex w-full items-start gap-3 px-4 py-3 text-left outline-none transition-colors hover:bg-surface focus-visible:bg-surface ${notification.read_at ? '' : 'bg-surface/55'}`}>
+    <button type="button" onClick={() => void onSelect(notification)} className={`group flex w-full items-start gap-3 px-4 py-3 text-left outline-none transition-colors hover:bg-surface focus-visible:bg-surface ${notification.read_at ? '' : 'bg-surface/55'} ${fresh ? 'relay-motion-notification' : ''}`}>
       <span className="relative mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-canvas text-ink-muted">
         <NotificationTypeIcon notification={notification} />
         {!notification.read_at && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-accent ring-2 ring-surface-raised" />}
