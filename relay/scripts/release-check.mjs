@@ -24,6 +24,11 @@ for (const migration of [
   'supabase/migrations/0041_secure_push_dispatch.sql',
   'supabase/migrations/0042_security_function_grant_cleanup.sql',
   'supabase/migrations/0043_least_privilege_table_grants.sql',
+  'supabase/migrations/0044_revoke_google_integration_table_grants.sql',
+  'supabase/migrations/0045_harden_profile_table_grants.sql',
+  'supabase/migrations/0046_remove_anonymous_public_table_access.sql',
+  'supabase/migrations/0047_remove_anonymous_function_access.sql',
+  'supabase/migrations/0048_limit_group_and_plan_resource_creation.sql',
 ]) {
   if (!existsSync(join(root, migration))) failures.push(`${migration}: missing release migration`);
 }
