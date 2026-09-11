@@ -52,6 +52,7 @@ export function Dock({
     <>
       <nav
         aria-label="Main"
+        data-dock-collapsed={collapsed ? 'true' : 'false'}
         className={cn(
           'relay-desktop-dock fixed inset-y-0 left-0 z-30 hidden flex-col overflow-y-auto border-r border-border bg-surface py-6 transition-[width,padding] duration-200 md:flex',
           collapsed ? 'w-16 px-2' : 'w-60 px-3'
@@ -60,29 +61,27 @@ export function Dock({
         <a
           href={appPageUrl(IS_BETA ? '/space' : '/')}
           className={cn(
-            'relay-brand-lockup pb-8 font-display text-lg font-medium tracking-tight text-ink',
-            collapsed ? 'justify-center px-0' : 'px-3'
+            'relay-brand-lockup flex items-center overflow-hidden pb-8 font-display text-lg font-medium tracking-tight text-ink',
+            collapsed ? 'justify-center px-0' : 'gap-2 px-3'
           )}
           aria-label={IS_BETA ? 'Return to particle landing page' : `${APP_TITLE} home`}
           title={collapsed ? APP_TITLE : undefined}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 shrink-0 dark:invert" />
-          {!collapsed && (
-            <>
-              <span>Relay</span>
-              <span
-                className={cn(
-                  'rounded-full border px-1.5 py-0.5 text-[9px] font-medium leading-none tracking-normal',
-                  IS_BETA
-                    ? 'border-ink-muted bg-ink text-canvas'
-                    : 'border-border bg-surface-raised text-ink-faint'
-                )}
-              >
-                {RELEASE_LABEL}
-              </span>
-            </>
-          )}
+          <span className={cn('flex min-w-0 items-center gap-2 whitespace-nowrap transition-[opacity,max-width,transform] duration-200', collapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-40 translate-x-0 opacity-100')} aria-hidden={collapsed}>
+            <span>Relay</span>
+            <span
+              className={cn(
+                'rounded-full border px-1.5 py-0.5 text-[9px] font-medium leading-none tracking-normal',
+                IS_BETA
+                  ? 'border-ink-muted bg-ink text-canvas'
+                  : 'border-border bg-surface-raised text-ink-faint'
+              )}
+            >
+              {RELEASE_LABEL}
+            </span>
+          </span>
         </a>
 
         <ul className="flex flex-1 flex-col gap-1">
@@ -119,27 +118,27 @@ export function Dock({
             type="button"
             onClick={() => window.dispatchEvent(new Event(OPEN_WHATS_NEW_EVENT))}
             className={cn(
-              'relay-dock-link flex w-full items-center rounded-md py-2 text-sm text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink',
+              'relay-dock-link flex w-full items-center overflow-hidden rounded-md py-2 text-sm text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink',
               collapsed ? 'justify-center px-0' : 'gap-3 px-3'
             )}
             aria-label="What’s New"
             title={collapsed ? 'What’s New' : undefined}
           >
-            <History size={18} />
-            {!collapsed && <span>What&apos;s New</span>}
+            <History size={18} className="shrink-0" />
+            <span className={cn('whitespace-nowrap transition-[opacity,max-width,transform] duration-200', collapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-32 translate-x-0 opacity-100')} aria-hidden={collapsed}>What&apos;s New</span>
           </button>
           <button
             type="button"
             onClick={() => onCollapsedChange?.(!collapsed)}
             className={cn(
-              'relay-dock-link flex w-full items-center rounded-md py-2 text-sm text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink',
+              'relay-dock-link flex w-full items-center overflow-hidden rounded-md py-2 text-sm text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink',
               collapsed ? 'justify-center px-0' : 'gap-3 px-3'
             )}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand sidebar' : undefined}
           >
-            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-            {!collapsed && <span>Collapse</span>}
+            <span className="shrink-0 transition-transform duration-200">{collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}</span>
+            <span className={cn('whitespace-nowrap transition-[opacity,max-width,transform] duration-200', collapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-24 translate-x-0 opacity-100')} aria-hidden={collapsed}>Collapse</span>
           </button>
         </div>
       </nav>
@@ -184,7 +183,7 @@ function DockLink({
           active ? 'text-ink' : 'text-ink-faint'
         )}
       >
-        <Icon size={20} />
+        <Icon size={20} className={cn('transition-transform duration-200', active && 'scale-110')} />
         <span className="max-w-full truncate">{item.mobileLabel ?? item.label}</span>
       </a>
     );
@@ -198,13 +197,13 @@ function DockLink({
         aria-label={collapsed ? item.label : undefined}
         title={collapsed ? item.label : undefined}
         className={cn(
-          'relay-dock-link flex items-center rounded-md py-2 text-sm transition-colors',
+          'relay-dock-link flex items-center overflow-hidden rounded-md py-2 text-sm transition-colors',
           collapsed ? 'justify-center px-0' : 'gap-3 px-3',
           active ? 'bg-surface-raised text-ink' : 'text-ink-muted'
         )}
       >
-        <Icon size={18} className="shrink-0" />
-        {!collapsed && <span>{item.label}</span>}
+        <Icon size={18} className={cn('shrink-0 transition-transform duration-200', active && 'scale-105')} />
+        <span className={cn('whitespace-nowrap transition-[opacity,max-width,transform] duration-200', collapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-36 translate-x-0 opacity-100')} aria-hidden={collapsed}>{item.label}</span>
       </a>
     </li>
   );
