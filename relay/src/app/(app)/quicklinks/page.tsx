@@ -14,6 +14,8 @@ export default function QuickLinksPage() {
   const [label, setLabel] = useState('');
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [enteringId, setEnteringId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -40,9 +42,21 @@ export default function QuickLinksPage() {
     const normalized = normalizeUrl(url);
     if (!name) return setError('Give this shortcut a name.');
     if (!normalized) return setError('Enter a valid http or https address.');
-    setLinks((current) => [...current, { id: crypto.randomUUID(), label: name.slice(0, 60), url: normalized }]);
+    const next = { id: crypto.randomUUID(), label: name.slice(0, 60), url: normalized };
+    setLinks((current) => [...current, next]);
+    setEnteringId(next.id);
+    window.setTimeout(() => setEnteringId((current) => current === next.id ? null : current), 280);
     setLabel('');
     setUrl('');
+  }
+
+  function removeLink(id: string) {
+    if (removingId) return;
+    setRemovingId(id);
+    window.setTimeout(() => {
+      setLinks((current) => current.filter((item) => item.id !== id));
+      setRemovingId((current) => current === id ? null : current);
+    }, 180);
   }
 
   return (
@@ -71,14 +85,14 @@ export default function QuickLinksPage() {
       ) : (
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {sortedLinks.map((link) => (
-            <article key={link.id} className="group relative rounded-2xl border border-border bg-surface p-4 transition hover:-translate-y-0.5 hover:border-ink/20 hover:shadow-sm">
+            <article key={link.id} className={`group relative rounded-2xl border border-border bg-surface p-4 transition hover:-translate-y-0.5 hover:border-ink/20 hover:shadow-sm ${enteringId === link.id ? 'relay-motion-row-in' : ''} ${removingId === link.id ? 'relay-motion-row-out' : ''}`}>
               <a href={link.url} target="_blank" rel="noreferrer" className="block pr-9 focus:outline-none">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-canvas text-ink-muted"><ExternalLink size={15} /></span>
                 <h2 className="mt-4 truncate text-sm font-medium text-ink">{link.label}</h2>
                 <p className="mt-1 truncate text-xs text-ink-faint">{hostname(link.url)}</p>
                 <span className="absolute inset-0 rounded-2xl" />
               </a>
-              <button type="button" onClick={() => setLinks((current) => current.filter((item) => item.id !== link.id))} aria-label={`Remove ${link.label}`} className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-ink-faint opacity-0 transition hover:bg-canvas hover:text-red-500 focus:opacity-100 group-hover:opacity-100"><Trash2 size={14} /></button>
+              <button type="button" onClick={() => removeLink(link.id)} aria-label={`Remove ${link.label}`} className="relay-motion-delete-button absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-ink-faint opacity-0 hover:bg-canvas hover:text-red-500 focus:opacity-100 group-hover:opacity-100"><Trash2 size={14} /></button>
             </article>
           ))}
         </div>
