@@ -2,9 +2,9 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { appPageUrl, appUrl, BASE_PATH, BETA_SITE_URL, IS_BETA, PUBLIC_SITE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { FormEvent, useEffect, useState } from 'react';
 
-const EMAIL_RATE_LIMIT_COOLDOWN_MS = 60 * 60 * 1000;
 const REQUEST_COOLDOWN_MS = 60 * 1000;
 
 function currentAuthCallbackUrl() {
@@ -90,7 +90,7 @@ export default function LoginPage() {
     event.preventDefault();
 
     if (retryAfter) {
-      setMessage(`Relay has temporarily reached its sign-in email limit. Try again after ${retryTime(retryAfter)}.`);
+      setMessage(`That email was requested too recently. Try again after ${retryTime(retryAfter)}.`);
       return;
     }
 
@@ -100,30 +100,30 @@ export default function LoginPage() {
     const supabase = createClient();
     await supabase.auth.signOut({ scope: 'local' });
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        emailRedirectTo: currentAuthCallbackUrl(),
-      },
+    const { error } = await supabase.functions.invoke('auth-email', {
+      body: { email: email.trim() },
     });
 
     if (error) {
-      const isEmailLimit = error.code === 'over_email_send_rate_limit' || error.message.toLowerCase().includes('email rate limit');
-      const isRateLimit = error.status === 429 || isEmailLimit;
+      let status = 500;
+      let detail = 'Relay could not send the sign-in email.';
 
-      if (isRateLimit) {
-        const cooldown = isEmailLimit ? EMAIL_RATE_LIMIT_COOLDOWN_MS : REQUEST_COOLDOWN_MS;
-        const nextAttempt = Date.now() + cooldown;
+      if (error instanceof FunctionsHttpError) {
+        status = error.context.status;
+        const body = await error.context.json().catch(() => null) as { error?: string } | null;
+        if (body?.error) detail = body.error;
+      }
+
+      if (status === 429) {
+        const nextAttempt = Date.now() + REQUEST_COOLDOWN_MS;
         setRetryAfter(nextAttempt);
-        setMessage(isEmailLimit
-          ? `Relay has temporarily reached its sign-in email limit. Try again after ${retryTime(nextAttempt)}.`
-          : `That email was requested too recently. Try again after ${retryTime(nextAttempt)}.`);
+        setMessage(`Too many sign-in emails were requested. Try again after ${retryTime(nextAttempt)}.`);
       } else {
-        setMessage(`Relay couldn't send the sign-in email: ${error.message}`);
+        setMessage(detail);
       }
     } else {
       setRetryAfter(null);
-      setMessage('Sign-in link sent. Check your inbox and spam folder, then open the newest Relay email in this browser.');
+      setMessage('Sign-in link sent. Check your inbox for the newest email from Relay.');
     }
 
     setBusy(false);
