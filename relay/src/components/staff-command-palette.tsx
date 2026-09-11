@@ -83,13 +83,6 @@ export function StaffCommandPaletteGlobal({ role }: { role: AppRole }) {
     };
   }, [staff]);
 
-  useEffect(() => {
-    if (!staff) {
-      setOpen(false);
-      setQuery('');
-    }
-  }, [staff]);
-
   const commands = useMemo(() => {
     if (!staff) return [];
     const available = STAFF_COMMANDS.filter((item) => item.roles.includes(role));
