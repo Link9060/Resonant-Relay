@@ -6,7 +6,7 @@ import { OwnerUserInspector } from '@/components/staff/owner-user-inspector';
 import { AppRole, getRolePreview } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
 import { FlaskConical, Search, UserRound } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type UserRow = {
   id: string;
@@ -51,7 +51,7 @@ export default function StaffUsersPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function load(preferredId?: string | null) {
+  const load = useCallback(async (preferredId?: string | null, mode: DirectoryMode = 'all') => {
     const supabase = createClient() as any;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -80,18 +80,18 @@ export default function StaffUsersPage() {
     setUsers(rows);
     setBetaTesters(betaRows);
 
-    const visibleIds = directoryMode === 'beta' ? new Set(betaRows.map((row) => row.user_id)) : null;
+    const visibleIds = mode === 'beta' ? new Set(betaRows.map((row) => row.user_id)) : null;
     const available = visibleIds ? rows.filter((row) => visibleIds.has(row.id)) : rows;
     const target = preferredId && available.some((row) => row.id === preferredId) ? preferredId : available[0]?.id ?? null;
     setSelectedId((current) => current && available.some((row) => row.id === current) ? current : target);
-  }
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      void load().catch((e: any) => setError(e?.message ?? 'User inspector could not load.'));
+      void load(null, 'all').catch((e: any) => setError(e?.message ?? 'User inspector could not load.'));
     }, 0);
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [load]);
 
   const betaByUserId = useMemo(() => new Map(betaTesters.map((row) => [row.user_id, row])), [betaTesters]);
   const directoryUsers = useMemo(() => directoryMode === 'beta' ? users.filter((user) => betaByUserId.has(user.id)) : users, [directoryMode, users, betaByUserId]);
@@ -119,7 +119,7 @@ export default function StaffUsersPage() {
     setError(null);
     setBusy(true);
     const { error: actionError } = await (createClient() as any).rpc('set_user_role', { p_user_id: selected.id, p_role: nextRole });
-    if (actionError) setError(actionError.message); else await load(selected.id);
+    if (actionError) setError(actionError.message); else await load(selected.id, directoryMode);
     setBusy(false);
   }
 
@@ -134,7 +134,7 @@ export default function StaffUsersPage() {
     setError(null);
     setBusy(true);
     const { error: actionError } = await (createClient() as any).rpc('owner_set_user_ban', { p_user_id: selected.id, p_banned: banning, p_reason: reason || null });
-    if (actionError) setError(actionError.message); else await load(selected.id);
+    if (actionError) setError(actionError.message); else await load(selected.id, directoryMode);
     setBusy(false);
   }
 
@@ -144,7 +144,7 @@ export default function StaffUsersPage() {
     setError(null);
     setBusy(true);
     const { error: actionError } = await (createClient() as any).rpc('owner_force_sign_out', { p_user_id: selected.id });
-    if (actionError) setError(actionError.message); else await load(selected.id);
+    if (actionError) setError(actionError.message); else await load(selected.id, directoryMode);
     setBusy(false);
   }
 
@@ -155,7 +155,7 @@ export default function StaffUsersPage() {
     setError(null);
     setBusy(true);
     const { error: actionError } = await (createClient() as any).rpc('owner_delete_user', { p_user_id: selected.id });
-    if (actionError) setError(actionError.message); else await load(null);
+    if (actionError) setError(actionError.message); else await load(null, directoryMode);
     setBusy(false);
   }
 
@@ -166,7 +166,7 @@ export default function StaffUsersPage() {
     setError(null);
     setBusy(true);
     const { error: actionError } = await (createClient() as any).rpc('owner_revoke_beta_access', { p_user_id: selected.id, p_message: message.trim() || null });
-    if (actionError) setError(actionError.message); else await load(null);
+    if (actionError) setError(actionError.message); else await load(null, directoryMode);
     setBusy(false);
   }
 
@@ -212,7 +212,7 @@ export default function StaffUsersPage() {
           {!selected ? (
             <div className="flex min-h-80 items-center justify-center text-sm text-ink-muted">Select an account to inspect.</div>
           ) : (
-            <>
+            <div key={selected.id} className="relay-motion-crossfade">
               {selectedBeta && (
                 <div className="mb-5 flex flex-col gap-3 rounded-xl border border-border bg-canvas p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div><div className="flex items-center gap-2 text-sm font-semibold text-ink"><FlaskConical size={14} />Approved Beta tester</div><div className="mt-1 text-xs text-ink-muted">Approved {new Date(selectedBeta.approved_at).toLocaleString()}{selectedBeta.approved_by_name ? ` by ${selectedBeta.approved_by_name}` : ''}.</div></div>
@@ -224,7 +224,7 @@ export default function StaffUsersPage() {
               ) : (
                 <AdminUserInspector user={selected} />
               )}
-            </>
+            </div>
           )}
         </section>
       </div>
