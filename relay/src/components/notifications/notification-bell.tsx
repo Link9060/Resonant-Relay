@@ -6,13 +6,12 @@ import { createClient } from '@/lib/supabase/client';
 import type { Notification } from '@/lib/types/database';
 import { PushToggle } from '@/components/notifications/push-toggle';
 import { Bell, CalendarClock, Check, MessageCircle, Settings2, UserRoundCheck, UserRoundPlus, UsersRound } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export function NotificationBell({ currentUserId, initial }: { currentUserId: string; initial: Notification[] }) {
   const [notifications, setNotifications] = useState(initial);
   const [open, setOpen] = useState(false);
   const [freshId, setFreshId] = useState<string | null>(null);
-  const previousUnreadRef = useRef(initial.filter((notification) => !notification.read_at).length);
 
   useEffect(() => {
     const supabase = createClient();
@@ -52,9 +51,6 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
   }, [open]);
 
   const unreadCount = notifications.filter((notification) => !notification.read_at).length;
-  const badgeShouldPop = unreadCount > previousUnreadRef.current;
-  useEffect(() => { previousUnreadRef.current = unreadCount; }, [unreadCount]);
-
   const sections = useMemo(() => [
     { label: 'New', items: notifications.filter((notification) => !notification.read_at) },
     { label: 'Earlier', items: notifications.filter((notification) => notification.read_at) },
@@ -80,7 +76,7 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
       <button type="button" aria-label={unreadCount ? `Notifications, ${unreadCount} new` : 'Notifications'} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} className="relative flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink">
         <Bell size={18} />
         {unreadCount > 0 && (
-          <span key={unreadCount} className={`absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-canvas ${badgeShouldPop ? 'relay-motion-badge' : ''}`} aria-hidden="true">
+          <span key={`${unreadCount}:${freshId ?? 'steady'}`} className={`absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-canvas ${freshId ? 'relay-motion-badge' : ''}`} aria-hidden="true">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
