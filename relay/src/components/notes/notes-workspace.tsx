@@ -23,6 +23,10 @@ export function NotesWorkspace() {
   const [dirtyId, setDirtyId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [newNoteId, setNewNoteId] = useState<string | null>(null);
+  const [newBlockId, setNewBlockId] = useState<string | null>(null);
+  const [movingBlockId, setMovingBlockId] = useState<string | null>(null);
+  const [removingBlockId, setRemovingBlockId] = useState<string | null>(null);
   const notesRef = useRef(notes);
   notesRef.current = notes;
 
@@ -72,7 +76,9 @@ export function NotesWorkspace() {
     if (!result.ok) { setError(result.error); return; }
     setNotes((current) => sortNotes([result.data, ...current]));
     setSelectedId(result.data.id);
+    setNewNoteId(result.data.id);
     setSaveState('saved');
+    window.setTimeout(() => setNewNoteId((current) => current === result.data.id ? null : current), 280);
   }
 
   function selectNote(id: string) {
@@ -90,11 +96,14 @@ export function NotesWorkspace() {
   }
 
   function addBlock(type: NoteBlockType, afterIndex?: number) {
+    const block = newNoteBlock(type);
     changeSelected((note) => {
       const content = [...note.content];
-      content.splice(afterIndex === undefined ? content.length : afterIndex + 1, 0, newNoteBlock(type));
+      content.splice(afterIndex === undefined ? content.length : afterIndex + 1, 0, block);
       return { ...note, content };
     });
+    setNewBlockId(block.id);
+    window.setTimeout(() => setNewBlockId((current) => current === block.id ? null : current), 260);
   }
 
   function updateBlock(id: string, change: Partial<NoteBlock>) {
@@ -102,21 +111,31 @@ export function NotesWorkspace() {
   }
 
   function removeBlock(id: string) {
-    changeSelected((note) => {
-      const content = note.content.filter((block) => block.id !== id);
-      return { ...note, content: content.length ? content : [newNoteBlock()] };
-    });
+    if (removingBlockId) return;
+    setRemovingBlockId(id);
+    window.setTimeout(() => {
+      changeSelected((note) => {
+        const content = note.content.filter((block) => block.id !== id);
+        return { ...note, content: content.length ? content : [newNoteBlock()] };
+      });
+      setRemovingBlockId((current) => current === id ? null : current);
+    }, 170);
   }
 
   function moveBlock(index: number, direction: -1 | 1) {
+    if (!selected) return;
+    const block = selected.content[index];
+    if (!block) return;
+    setMovingBlockId(block.id);
     changeSelected((note) => {
       const destination = index + direction;
       if (destination < 0 || destination >= note.content.length) return note;
       const content = [...note.content];
-      const [block] = content.splice(index, 1);
-      content.splice(destination, 0, block!);
+      const [moved] = content.splice(index, 1);
+      content.splice(destination, 0, moved!);
       return { ...note, content };
     });
+    window.setTimeout(() => setMovingBlockId((current) => current === block.id ? null : current), 230);
   }
 
   function blockKeyDown(event: KeyboardEvent<HTMLTextAreaElement>, block: NoteBlock, index: number) {
@@ -163,7 +182,7 @@ export function NotesWorkspace() {
           <div className="max-h-64 overflow-y-auto border-t border-border md:max-h-[29.5rem]">
             {loading ? <div className="flex items-center justify-center gap-2 py-10 text-sm text-ink-faint"><Loader2 size={15} className="animate-spin" />Loading notes…</div> : filtered.length === 0 ? <p className="px-4 py-10 text-center text-sm text-ink-faint">{notes.length ? 'No notes match.' : 'Create your first note.'}</p> : (
               <ul className="divide-y divide-border">
-                {filtered.map((note) => <li key={note.id}><button type="button" onClick={() => selectNote(note.id)} className={`w-full px-3 py-3 text-left transition-colors ${selectedId === note.id ? 'bg-canvas' : 'hover:bg-surface'}`}>
+                {filtered.map((note) => <li key={note.id} className={newNoteId === note.id ? 'relay-motion-row-in' : ''}><button type="button" onClick={() => selectNote(note.id)} className={`w-full px-3 py-3 text-left transition-colors ${selectedId === note.id ? 'bg-canvas' : 'hover:bg-surface'}`}>
                   <div className="flex items-center gap-1.5"><span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{note.title || 'Untitled'}</span>{note.is_pinned && <Pin size={11} className="shrink-0 text-ink-faint" />}</div>
                   <p className="mt-1 truncate text-xs text-ink-faint">{noteSnippet(note) || 'Empty note'}</p>
                   <p className="mt-1.5 text-[10px] text-ink-faint">{formatUpdated(note.updated_at)}</p>
@@ -174,11 +193,11 @@ export function NotesWorkspace() {
         </aside>
 
         {selected ? (
-          <div className="flex min-w-0 flex-col bg-canvas">
+          <div key={selected.id} className="relay-motion-note-pane flex min-w-0 flex-col bg-canvas">
             <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
               <span className={`inline-flex items-center gap-1.5 text-xs ${saveState === 'error' ? 'text-red-500' : 'text-ink-faint'}`}>
                 {saveState === 'saving' && <Loader2 size={12} className="animate-spin" />}
-                {saveState === 'saved' && <Check size={12} />}
+                {saveState === 'saved' && <Check size={12} className="relay-motion-pop" />}
                 {saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved' : saveState === 'error' ? 'Not saved' : 'Autosaves'}
               </span>
               <div className="flex items-center gap-1">
@@ -189,7 +208,7 @@ export function NotesWorkspace() {
             <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-7 sm:py-7">
               <input value={selected.title} onChange={(event) => changeSelected((note) => ({ ...note, title: event.target.value.slice(0, 120) }))} maxLength={120} aria-label="Note title" placeholder="Untitled" className="w-full bg-transparent font-display text-2xl font-semibold tracking-tight text-ink outline-none placeholder:text-ink-faint sm:text-3xl" />
               <div className="mt-5 space-y-1">
-                {selected.content.map((block, index) => <NoteBlockEditor key={block.id} block={block} index={index} total={selected.content.length} onChange={(change) => updateBlock(block.id, change)} onRemove={() => removeBlock(block.id)} onMove={(direction) => moveBlock(index, direction)} onKeyDown={(event) => blockKeyDown(event, block, index)} />)}
+                {selected.content.map((block, index) => <div key={block.id} className={`${newBlockId === block.id ? 'relay-motion-row-in' : ''} ${removingBlockId === block.id ? 'relay-motion-row-out' : ''}`}><NoteBlockEditor block={block} index={index} total={selected.content.length} moving={movingBlockId === block.id} onChange={(change) => updateBlock(block.id, change)} onRemove={() => removeBlock(block.id)} onMove={(direction) => moveBlock(index, direction)} onKeyDown={(event) => blockKeyDown(event, block, index)} /></div>)}
               </div>
               <div className="mt-5 flex flex-wrap gap-1.5 border-t border-border pt-4" aria-label="Add a block">
                 {BLOCK_BUTTONS.map(({ type, label, icon: Icon }) => <button key={type} type="button" onClick={() => addBlock(type)} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:bg-surface-raised hover:text-ink"><Icon size={13} />{label}</button>)}
@@ -205,10 +224,10 @@ export function NotesWorkspace() {
   );
 }
 
-function NoteBlockEditor({ block, index, total, onChange, onRemove, onMove, onKeyDown }: { block: NoteBlock; index: number; total: number; onChange: (change: Partial<NoteBlock>) => void; onRemove: () => void; onMove: (direction: -1 | 1) => void; onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void }) {
+function NoteBlockEditor({ block, index, total, moving, onChange, onRemove, onMove, onKeyDown }: { block: NoteBlock; index: number; total: number; moving: boolean; onChange: (change: Partial<NoteBlock>) => void; onRemove: () => void; onMove: (direction: -1 | 1) => void; onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void }) {
   const marker = block.type === 'bullet' ? '•' : block.type === 'quote' ? '│' : null;
   return (
-    <div className="group flex items-start gap-2 rounded-md px-1 py-1 hover:bg-surface">
+    <div className="relay-motion-block group flex items-start gap-2 rounded-md px-1 py-1 hover:bg-surface" data-moving={moving ? 'true' : 'false'}>
       {block.type === 'todo' ? <input type="checkbox" checked={Boolean(block.checked)} onChange={(event) => onChange({ checked: event.target.checked })} aria-label="Complete note item" className="mt-2 h-4 w-4 shrink-0 rounded border-border accent-current" /> : marker ? <span className={`mt-1.5 shrink-0 text-ink-faint ${block.type === 'quote' ? 'font-semibold' : 'text-base'}`}>{marker}</span> : null}
       <textarea
         value={block.text}
@@ -228,18 +247,16 @@ function NoteBlockEditor({ block, index, total, onChange, onRemove, onMove, onKe
   );
 }
 
-function sortNotes(notes: Note[]) {
-  return [...notes].sort((a, b) => Number(b.is_pinned) - Number(a.is_pinned) || new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-}
-
-function noteSnippet(note: Note) {
-  return note.content.map((block) => block.text.trim()).filter(Boolean).join(' · ');
-}
-
+function noteSnippet(note: Note) { return note.content.map((block) => block.text.trim()).filter(Boolean).slice(0, 2).join(' · '); }
+function sortNotes(notes: Note[]) { return [...notes].sort((a, b) => Number(b.is_pinned) - Number(a.is_pinned) || b.updated_at.localeCompare(a.updated_at)); }
 function formatUpdated(value: string) {
   const date = new Date(value);
-  const today = new Date();
-  return date.toDateString() === today.toDateString()
-    ? `Today at ${date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
-    : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  if (Number.isNaN(date.getTime())) return '';
+  const diff = Math.max(0, Date.now() - date.getTime());
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return 'Updated now';
+  if (minutes < 60) return `Updated ${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Updated ${hours}h ago`;
+  return `Updated ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
 }
