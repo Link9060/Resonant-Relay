@@ -16,6 +16,6 @@ test('existing beta page transition system remains intact', () => {
   const source = read('src/lib/workspace-transition.ts');
   assert.match(source, /PANEL_CLOSE_MS = 640/);
   assert.match(source, /PANEL_OPEN_MS = 700/);
-  assert.match(source, /particles\('open'\)/);
-  assert.match(source, /particles\('close'\)/);
+  assert.match(source, /host\.particles\('open'\)/);
+  assert.match(source, /host\.particles\('close'\)/);
 });
