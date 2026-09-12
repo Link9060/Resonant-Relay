@@ -1,7 +1,7 @@
 'use client';
 
 import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
-import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, IS_BETA, RELEASE_LABEL } from '@/lib/config';
+import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, RELEASE_LABEL } from '@/lib/config';
 import { cn } from '@/lib/utils';
 import { CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, Mail, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -59,26 +59,19 @@ export function Dock({
         )}
       >
         <a
-          href={appPageUrl(IS_BETA ? '/space' : '/')}
+          href={appPageUrl('/space')}
           className={cn(
             'relay-brand-lockup flex items-center overflow-hidden pb-8 font-display text-lg font-medium tracking-tight text-ink',
             collapsed ? 'justify-center px-0' : 'gap-2 px-3'
           )}
-          aria-label={IS_BETA ? 'Return to particle landing page' : `${APP_TITLE} home`}
+          aria-label="Return to particle landing page"
           title={collapsed ? APP_TITLE : undefined}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 shrink-0 dark:invert" />
           <span className={cn('flex min-w-0 items-center gap-2 whitespace-nowrap transition-[opacity,max-width,transform] duration-200', collapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-40 translate-x-0 opacity-100')} aria-hidden={collapsed}>
             <span>Relay</span>
-            <span
-              className={cn(
-                'rounded-full border px-1.5 py-0.5 text-[9px] font-medium leading-none tracking-normal',
-                IS_BETA
-                  ? 'border-ink-muted bg-ink text-canvas'
-                  : 'border-border bg-surface-raised text-ink-faint'
-              )}
-            >
+            <span className="rounded-full border border-ink-muted bg-ink px-1.5 py-0.5 text-[9px] font-medium leading-none tracking-normal text-canvas">
               {RELEASE_LABEL}
             </span>
           </span>
