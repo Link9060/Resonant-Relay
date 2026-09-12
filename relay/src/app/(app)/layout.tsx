@@ -1,7 +1,6 @@
 'use client';
 
 import { BetaExperience } from '@/components/beta-experience';
-import { Fragment } from 'react';
 import { Dock } from '@/components/dock';
 import { AppHeader } from '@/components/app-header';
 import { MobileRouteGate } from '@/components/mobile-route-gate';
@@ -171,11 +170,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const Experience = IS_BETA ? BetaExperience : Fragment;
-
   if (loadError) {
     return (
-      <Experience>
+      <BetaExperience>
         <main className="flex min-h-screen items-center justify-center bg-canvas px-6 text-ink">
           <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-7 text-center">
             <div className="font-display text-2xl font-medium tracking-tight">Relay had trouble loading</div>
@@ -186,22 +183,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </main>
-      </Experience>
+      </BetaExperience>
     );
   }
 
-  if (!state) return IS_BETA ? <BetaExperience><PageLoading /></BetaExperience> : <PageLoading />;
+  if (!state) return <BetaExperience><PageLoading /></BetaExperience>;
 
   if (state.profile?.banned_at) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-canvas px-6">
-        <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-7 text-center">
-          <div className="font-display text-2xl font-medium tracking-tight text-ink">Relay account disabled</div>
-          <p className="mt-3 text-sm text-ink-muted">This account has been banned from Relay and cannot use the app right now.</p>
-          {state.profile?.ban_reason && <div className="mt-4 rounded-lg border border-border bg-canvas px-4 py-3 text-left text-sm text-ink-muted">Reason: {state.profile.ban_reason}</div>}
-          <button type="button" onClick={() => void leaveDisabledAccount()} className="mt-5 min-h-11 rounded-md border border-border px-4 text-sm font-medium text-ink hover:bg-surface-raised">Sign out</button>
-        </div>
-      </main>
+      <BetaExperience>
+        <main className="flex min-h-screen items-center justify-center bg-canvas px-6">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-7 text-center">
+            <div className="font-display text-2xl font-medium tracking-tight text-ink">Relay account disabled</div>
+            <p className="mt-3 text-sm text-ink-muted">This account has been banned from Relay and cannot use the app right now.</p>
+            {state.profile?.ban_reason && <div className="mt-4 rounded-lg border border-border bg-canvas px-4 py-3 text-left text-sm text-ink-muted">Reason: {state.profile.ban_reason}</div>}
+            <button type="button" onClick={() => void leaveDisabledAccount()} className="mt-5 min-h-11 rounded-md border border-border px-4 text-sm font-medium text-ink hover:bg-surface-raised">Sign out</button>
+          </div>
+        </main>
+      </BetaExperience>
     );
   }
 
@@ -215,7 +214,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <Experience>
+    <BetaExperience>
       <div data-dock-collapsed={dockCollapsed} className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
         <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={handleDockCollapsedChange} onboardingCompletedAt={state.profile?.onboarding_completed_at ?? null} />
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
@@ -233,6 +232,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
         <StaffCommandPaletteGlobal key={effectiveRole} role={effectiveRole} />
       </div>
-    </Experience>
+    </BetaExperience>
   );
 }
