@@ -1,4 +1,5 @@
 import { ThemeToggle } from '@/components/theme-toggle';
+import { ExperienceMenu } from '@/components/experience-menu';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { StaffInboxButton } from '@/components/staff/staff-inbox-button';
 import { appPageUrl, BASE_PATH, RELEASE_LABEL } from '@/lib/config';
@@ -7,87 +8,7 @@ import type { Notification, Profile } from '@/lib/types/database';
 import { cn, formatRelayNumber } from '@/lib/utils';
 import { MessageSquarePlus, ShieldCheck } from 'lucide-react';
 
-export function AppHeader({
-  profile,
-  role,
-  currentUserId,
-  notifications,
-}: {
-  profile: Profile | null;
-  role: AppRole;
-  currentUserId: string;
-  notifications: Notification[];
-}) {
-  const staffIdentity = role === 'owner'
-    ? { mark: '◆', label: 'Owner' }
-    : role === 'admin'
-      ? { mark: '◇', label: 'Admin' }
-      : role === 'moderator'
-        ? { mark: '●', label: 'Moderator' }
-        : null;
-
-  return (
-    <header className="relay-app-header flex min-h-14 items-center justify-between border-b border-border px-4 py-2.5 md:px-6 md:py-3">
-      <div className="flex min-w-0 items-center gap-2">
-        <a href={appPageUrl('/space')} aria-label="Return to particle landing page" className="beta-mobile-home">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-6 w-6 dark:invert" />
-        </a>
-        {profile && (
-          <p className="truncate text-xs text-ink-faint">
-            <span className="hidden sm:inline">Your Relay: </span><span className="font-mono text-ink-muted">{formatRelayNumber(profile.relay_number)}</span>
-          </p>
-        )}
-        <span className={cn('shrink-0 rounded-full border border-ink-muted bg-ink px-1.5 py-0.5 text-[9px] font-medium leading-none text-canvas')}>
-          {RELEASE_LABEL}
-        </span>
-        {staffIdentity && (
-          <a
-            href={appPageUrl('/admin')}
-            className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink transition-colors hover:bg-surface-raised sm:inline-flex"
-            aria-label={`Open ${staffIdentity.label} Control Center`}
-            title={`${staffIdentity.label} Control Center`}
-          >
-            <span aria-hidden="true">{staffIdentity.mark}</span>
-            {staffIdentity.label}
-          </a>
-        )}
-      </div>
-      <div className="flex shrink-0 items-center gap-1">
-        {staffIdentity && (
-          <a
-            href={appPageUrl('/admin/moderation')}
-            aria-label="Review staff reports"
-            title="Reports"
-            className="hidden h-10 w-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-surface hover:text-ink sm:flex md:hidden"
-          >
-            <ShieldCheck size={18} />
-          </a>
-        )}
-        <a
-          href={appPageUrl('/support')}
-          aria-label="Support and feedback"
-          title="Support & Feedback"
-          className="hidden h-10 w-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-surface hover:text-ink sm:flex md:flex"
-        >
-          <MessageSquarePlus size={18} />
-        </a>
-        <StaffInboxButton role={role} />
-        <NotificationBell currentUserId={currentUserId} initial={notifications} />
-        <ThemeToggle />
-        <a
-          href={appPageUrl('/profile')}
-          aria-label="Settings and profile"
-          className="ml-1 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-surface-raised text-xs font-medium text-ink"
-        >
-          {profile?.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
-          ) : (
-            profile?.display_name?.[0]?.toUpperCase() ?? '?'
-          )}
-        </a>
-      </div>
-    </header>
-  );
+export function AppHeader({ profile, role, currentUserId, notifications }: { profile: Profile | null; role: AppRole; currentUserId: string; notifications: Notification[] }) {
+  const staffIdentity = role === 'owner' ? { mark:'◆',label:'Owner' } : role === 'admin' ? { mark:'◇',label:'Admin' } : role === 'moderator' ? { mark:'●',label:'Moderator' } : null;
+  return <header className="relay-app-header flex min-h-14 items-center justify-between border-b border-border px-4 py-2.5 md:px-6 md:py-3"><div className="flex min-w-0 items-center gap-2"><a href={appPageUrl('/space')} aria-label="Return to particle landing page" className="beta-mobile-home"><img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-6 w-6 dark:invert" /></a>{profile&&<p className="truncate text-xs text-ink-faint"><span className="hidden sm:inline">Your Relay: </span><span className="font-mono text-ink-muted">{formatRelayNumber(profile.relay_number)}</span></p>}<span className={cn('shrink-0 rounded-full border border-ink-muted bg-ink px-1.5 py-0.5 text-[9px] font-medium leading-none text-canvas')}>{RELEASE_LABEL}</span>{staffIdentity&&<a href={appPageUrl('/admin')} className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink transition-colors hover:bg-surface-raised sm:inline-flex"><span>{staffIdentity.mark}</span>{staffIdentity.label}</a>}</div><div className="flex shrink-0 items-center gap-1">{staffIdentity&&<a href={appPageUrl('/admin/moderation')} aria-label="Review staff reports" title="Reports" className="hidden h-10 w-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-surface hover:text-ink sm:flex md:hidden"><ShieldCheck size={18}/></a>}<a href={appPageUrl('/support')} aria-label="Support and feedback" title="Support & Feedback" className="hidden h-10 w-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-surface hover:text-ink sm:flex"><MessageSquarePlus size={18}/></a><StaffInboxButton role={role}/><NotificationBell currentUserId={currentUserId} initial={notifications}/><ExperienceMenu/><ThemeToggle/><a href={appPageUrl('/profile')} aria-label="Settings and profile" className="ml-1 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-surface-raised text-xs font-medium text-ink">{profile?.avatar_url?<img src={profile.avatar_url} alt="" className="h-full w-full object-cover"/>:profile?.display_name?.[0]?.toUpperCase()??'?'}</a></div></header>;
 }
