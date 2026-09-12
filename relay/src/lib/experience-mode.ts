@@ -8,11 +8,15 @@ export const PALETTE_KEY = 'relay-experience-palette';
 export const INTENSITY_KEY = 'relay-experience-intensity';
 export const EXPERIENCE_EVENT = 'relay-experience-change';
 
+export const DEFAULT_EXPERIENCE: RelayExperience = 'relay';
+export const DEFAULT_PALETTE: RelayPalette = 'monochrome';
+export const DEFAULT_INTENSITY = 55;
+
 export const experiences: { id: RelayExperience; name: string; description: string }[] = [
-  { id: 'minimal', name: 'Minimal', description: 'Clean, fast and quiet. Almost no decorative motion.' },
-  { id: 'relay', name: 'Relay', description: 'The signature Relay experience: particles, glass and balanced motion.' },
-  { id: 'aura', name: 'Aura', description: 'Soft gradients, rounded surfaces and calm, dreamy motion.' },
-  { id: 'scifi', name: 'Sci-Fi', description: 'Maximum atmosphere: HUD details, glow, particles and expressive motion.' },
+  { id: 'minimal', name: 'Minimal', description: 'Flat, compact and quiet. Almost no decorative motion or glow.' },
+  { id: 'relay', name: 'Relay', description: 'The original Relay look: balanced particles, motion and clean surfaces.' },
+  { id: 'aura', name: 'Aura', description: 'Soft gradients, larger curves, translucent surfaces and calmer motion.' },
+  { id: 'scifi', name: 'Nexus', description: 'Technical and luminous: angular panels, grid atmosphere and reactive glow.' },
 ];
 
 export const palettes: { id: RelayPalette; name: string; swatches: string[] }[] = [
@@ -26,10 +30,12 @@ export const palettes: { id: RelayPalette; name: string; swatches: string[] }[] 
 ];
 
 export function readExperience() {
-  if (typeof window === 'undefined') return { experience: 'relay' as RelayExperience, palette: 'monochrome' as RelayPalette, intensity: 55 };
-  const experience = (localStorage.getItem(EXPERIENCE_KEY) || 'relay') as RelayExperience;
-  const palette = (localStorage.getItem(PALETTE_KEY) || 'monochrome') as RelayPalette;
-  const intensity = Math.max(0, Math.min(100, Number(localStorage.getItem(INTENSITY_KEY) || 55)));
+  if (typeof window === 'undefined') {
+    return { experience: DEFAULT_EXPERIENCE, palette: DEFAULT_PALETTE, intensity: DEFAULT_INTENSITY };
+  }
+  const experience = (localStorage.getItem(EXPERIENCE_KEY) || DEFAULT_EXPERIENCE) as RelayExperience;
+  const palette = (localStorage.getItem(PALETTE_KEY) || DEFAULT_PALETTE) as RelayPalette;
+  const intensity = Math.max(0, Math.min(100, Number(localStorage.getItem(INTENSITY_KEY) || DEFAULT_INTENSITY)));
   return { experience, palette, intensity };
 }
 
@@ -46,4 +52,14 @@ export function saveExperience(experience: RelayExperience, palette: RelayPalett
   localStorage.setItem(INTENSITY_KEY, String(intensity));
   applyExperience(experience, palette, intensity);
   window.dispatchEvent(new CustomEvent(EXPERIENCE_EVENT, { detail: { experience, palette, intensity } }));
+}
+
+export function resetExperience() {
+  localStorage.removeItem(EXPERIENCE_KEY);
+  localStorage.removeItem(PALETTE_KEY);
+  localStorage.removeItem(INTENSITY_KEY);
+  applyExperience(DEFAULT_EXPERIENCE, DEFAULT_PALETTE, DEFAULT_INTENSITY);
+  window.dispatchEvent(new CustomEvent(EXPERIENCE_EVENT, {
+    detail: { experience: DEFAULT_EXPERIENCE, palette: DEFAULT_PALETTE, intensity: DEFAULT_INTENSITY },
+  }));
 }
