@@ -20,6 +20,7 @@ import {
   type RelayExperience,
   type RelayPalette,
 } from '@/lib/experience-mode';
+import { IS_BETA } from '@/lib/config';
 import { Crosshair, RotateCcw } from 'lucide-react';
 import { useSyncExternalStore, type CSSProperties } from 'react';
 
@@ -97,7 +98,7 @@ export function ExperienceControls() {
           <h3 className="text-sm font-semibold text-ink">Relay Experience</h3>
           <p className="mt-1 text-xs leading-5 text-ink-faint">Choose how Relay moves, feels and uses color. Your palette and light or dark mode shape the final look.</p>
         </div>
-        <span className="shrink-0 rounded-full border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-[.12em] text-ink-muted">Beta</span>
+        {IS_BETA && <span className="shrink-0 rounded-full border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-[.12em] text-ink-muted">Beta</span>}
       </div>
 
       <div className="mt-4 grid auto-rows-fr gap-2 sm:grid-cols-2">
