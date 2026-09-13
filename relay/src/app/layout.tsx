@@ -6,6 +6,7 @@ import './beta-experience.css';
 import './experience.css';
 import './experience-polish.css';
 import './vivid-experience.css';
+import './experience-layout-safety.css';
 import { BetaIntro } from '@/components/beta-intro';
 import { ExperienceProvider } from '@/components/experience-provider';
 import { UiSoundEffects } from '@/components/ui-sound-effects';
