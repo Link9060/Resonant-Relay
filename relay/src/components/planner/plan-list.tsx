@@ -6,6 +6,8 @@ type PlanRow = {
   name: string;
   response_type: 'rsvp' | 'select_option' | 'custom_text';
   repeat_rule: 'never' | 'daily' | 'weekly' | 'custom';
+  start_time?: string | null;
+  end_time?: string | null;
   group: { id: string; name: string } | null;
   instances: { id: string; occurs_on: string }[];
 };
@@ -17,58 +19,51 @@ const REPEAT_LABEL: Record<PlanRow['repeat_rule'], string> = {
   custom: 'Custom dates',
 };
 
-export function PlanList({
-  plans,
-  memberCountByGroup,
-  responseCountByInstance,
-}: {
+export function PlanList({ plans, memberCountByGroup, responseCountByInstance }: {
   plans: PlanRow[];
   memberCountByGroup: Map<string, number>;
   responseCountByInstance: Map<string, number>;
 }) {
-  if (plans.length === 0) {
+  const today = localDateKey();
+  const activePlans = plans
+    .map((plan) => ({
+      plan,
+      upcoming: [...(plan.instances ?? [])].filter((instance) => instance.occurs_on >= today).sort((a, b) => a.occurs_on.localeCompare(b.occurs_on)),
+    }))
+    .filter(({ upcoming }) => upcoming.length > 0)
+    .sort((a, b) => (a.upcoming[0]?.occurs_on ?? '').localeCompare(b.upcoming[0]?.occurs_on ?? ''));
+
+  if (activePlans.length === 0) {
     return (
-      <div className="relay-motion-planner-empty rounded-md border border-dashed border-border py-14 text-center">
-        <p className="text-sm text-ink-muted">No plans yet.</p>
-        <p className="mt-1 text-xs text-ink-faint">
-          Create one for something recurring (Seminar) or a one-off (Saturday&apos;s ride).
-        </p>
+      <div className="relay-motion-planner-empty rounded-2xl border border-dashed border-border bg-surface/30 py-14 text-center">
+        <p className="text-sm font-medium text-ink-muted">No upcoming plans.</p>
+        <p className="mt-1 text-xs text-ink-faint">Create a plan and Relay will keep only the current and future days in this view.</p>
       </div>
     );
   }
 
-  const today = localDateKey();
-
   return (
-    <ul className="divide-y divide-border overflow-hidden rounded-md border border-border">
-      {plans.map((plan, index) => {
-        const sorted = [...plan.instances].sort((a, b) => a.occurs_on.localeCompare(b.occurs_on));
-        const nextInstance = sorted.find((i) => i.occurs_on >= today) ?? sorted[sorted.length - 1];
+    <ul className="grid gap-3">
+      {activePlans.map(({ plan, upcoming }, index) => {
+        const nextInstance = upcoming[0];
         const memberCount = plan.group ? memberCountByGroup.get(plan.group.id) ?? 0 : 0;
         const responseCount = nextInstance ? responseCountByInstance.get(nextInstance.id) ?? 0 : 0;
+        const nextLabel = nextInstance ? `${formatDate(nextInstance.occurs_on)} · ${formatTimeRange(plan.start_time, plan.end_time)}` : '';
 
         return (
-          <li
-            key={plan.id}
-            className="relay-motion-plan-card"
-            style={{ animationDelay: `${Math.min(index, 8) * 55}ms` }}
-          >
-            <a
-              href={appPageUrl(staticDetailPath('planner', plan.id))}
-              className="group flex items-center justify-between px-3 py-3 transition-[background-color,padding] hover:bg-surface hover:px-4"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-ink transition-transform duration-200 group-hover:translate-x-0.5">{plan.name}</p>
-                <p className="mt-0.5 text-xs text-ink-faint">
-                  {plan.group?.name} · {REPEAT_LABEL[plan.repeat_rule]}
-                  {nextInstance && ` · ${formatDate(nextInstance.occurs_on)}`}
-                </p>
+          <li key={plan.id} className="relay-motion-plan-card" style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}>
+            <a href={appPageUrl(staticDetailPath('planner', plan.id))} className="group block rounded-2xl border border-border bg-canvas p-4 transition hover:-translate-y-0.5 hover:bg-surface/45 hover:shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-sm font-semibold text-ink">{plan.name}</p>
+                    <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-medium text-ink-faint">{REPEAT_LABEL[plan.repeat_rule]}</span>
+                  </div>
+                  <p className="mt-1.5 text-xs text-ink-muted">{nextLabel}</p>
+                  <p className="mt-1 text-[11px] text-ink-faint">{plan.group?.name ?? 'Relay group'} · {upcoming.length} upcoming {upcoming.length === 1 ? 'day' : 'days'}</p>
+                </div>
+                {nextInstance && <span className="shrink-0 rounded-full border border-border bg-surface px-2.5 py-1 text-[11px] font-medium text-ink-muted">{responseCount}/{memberCount} responded</span>}
               </div>
-              {nextInstance && (
-                <span className="ml-3 shrink-0 rounded-full border border-transparent px-2 py-1 text-xs text-ink-faint transition-all duration-200 group-hover:border-border group-hover:bg-canvas group-hover:text-ink-muted">
-                  {responseCount}/{memberCount} responded
-                </span>
-              )}
             </a>
           </li>
         );
@@ -77,6 +72,19 @@ export function PlanList({
   );
 }
 
-function formatDate(isoDate: string): string {
-  return new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+function formatDate(isoDate: string) {
+  return new Date(`${isoDate}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function formatTimeRange(startTime?: string | null, endTime?: string | null) {
+  if (!startTime) return 'All day';
+  const start = formatTime(startTime);
+  return endTime ? `${start}–${formatTime(endTime)}` : start;
+}
+
+function formatTime(value: string) {
+  const [hours, minutes] = value.slice(0, 5).split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours || 0, minutes || 0, 0, 0);
+  return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
