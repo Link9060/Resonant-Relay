@@ -2,12 +2,18 @@
 
 import { LayoutControls } from '@/components/profile/layout-controls';
 import {
+  DASHBOARD_CUSTOM_PRESETS_EVENT,
+  DASHBOARD_CUSTOM_PRESETS_KEY,
   DASHBOARD_PRESETS,
   DASHBOARD_SIZE_PRESETS,
   DEFAULT_DASHBOARD_LAYOUT,
   applyDashboardPreset,
   applyDashboardSize,
+  deleteCustomDashboardPreset,
+  readCustomDashboardPresets,
   resizeDashboardWidget,
+  saveCustomDashboardPreset,
+  type DashboardCustomPreset,
   type DashboardWidgetId,
   type DashboardWidgetPreference,
   type DashboardWidgetSize,
@@ -21,12 +27,14 @@ import {
   LayoutGrid,
   Maximize2,
   RotateCcw,
+  Save,
   Search,
   SlidersHorizontal,
   Sparkles,
+  Trash2,
   X,
 } from 'lucide-react';
-import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 type StudioTab = 'widgets' | 'layout' | 'presets';
 type ResizeAxis = 'x' | 'y' | 'both';
@@ -67,6 +75,9 @@ export function DashboardStudio({
   const [showGrid, setShowGrid] = useState(true);
   const [draggingId, setDraggingId] = useState<DashboardWidgetId | null>(null);
   const [dragOrigin, setDragOrigin] = useState<'canvas' | 'library' | null>(null);
+  const [customPresets, setCustomPresets] = useState<DashboardCustomPreset[]>(() => readCustomDashboardPresets());
+  const [presetName, setPresetName] = useState('');
+  const [presetMessage, setPresetMessage] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const widgetsRef = useRef(widgets);
   const resizeRef = useRef<{
@@ -84,6 +95,19 @@ export function DashboardStudio({
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = previous; };
+  }, []);
+
+  useEffect(() => {
+    const sync = () => setCustomPresets(readCustomDashboardPresets());
+    const onStorage = (event: StorageEvent) => {
+      if (!event.key || event.key === DASHBOARD_CUSTOM_PRESETS_KEY) sync();
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener(DASHBOARD_CUSTOM_PRESETS_EVENT, sync);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(DASHBOARD_CUSTOM_PRESETS_EVENT, sync);
+    };
   }, []);
 
   useEffect(() => {
@@ -194,6 +218,30 @@ export function DashboardStudio({
   function applySize(size: Exclude<DashboardWidgetSize, 'custom'>) {
     if (!selected) return;
     onWidgetsChange(widgets.map((item) => item.id === selected.id ? applyDashboardSize(item, size) : item));
+  }
+
+  function saveCurrentPreset(event: FormEvent) {
+    event.preventDefault();
+    const result = saveCustomDashboardPreset(presetName, widgets);
+    if (!result) {
+      setPresetMessage('Give this preset a name first.');
+      return;
+    }
+    setCustomPresets(result.presets);
+    setPresetName('');
+    setPresetMessage(result.updated ? `Updated “${result.preset.name}”.` : `Saved “${result.preset.name}”.`);
+  }
+
+  function applyCustomPreset(preset: DashboardCustomPreset) {
+    onWidgetsChange(clone(preset.widgets));
+    onSelect(null);
+    setPresetMessage(`Applied “${preset.name}”.`);
+  }
+
+  function removeCustomPreset(preset: DashboardCustomPreset) {
+    if (!window.confirm(`Delete the preset “${preset.name}”?`)) return;
+    setCustomPresets(deleteCustomDashboardPreset(preset.id));
+    setPresetMessage(`Deleted “${preset.name}”.`);
   }
 
   return (
@@ -352,10 +400,43 @@ export function DashboardStudio({
 
             {tab === 'presets' && (
               <div>
-                <div className="mb-4"><h2 className="text-sm font-semibold text-ink">Starting layouts</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Presets update the live canvas immediately. Nothing is permanent until Save dashboard.</p></div>
+                <section className="mb-5 rounded-2xl border border-border bg-surface p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-border bg-canvas text-ink-muted"><Save size={15} /></div>
+                    <div><h2 className="text-sm font-semibold text-ink">Save current layout</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Capture the dashboard exactly as it looks now: widget order, visibility, width, and height.</p></div>
+                  </div>
+                  <form onSubmit={saveCurrentPreset} className="mt-4 flex gap-2">
+                    <input value={presetName} onChange={(event) => { setPresetName(event.target.value); setPresetMessage(null); }} maxLength={40} placeholder="Preset name…" aria-label="Custom preset name" className="min-w-0 flex-1 rounded-xl border border-border bg-canvas px-3 py-2.5 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-ink-muted" />
+                    <button type="submit" disabled={!presetName.trim()} className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl bg-ink px-3 text-xs font-semibold text-canvas disabled:opacity-35"><Save size={13} />Save</button>
+                  </form>
+                  <p className="mt-2 text-[11px] leading-4 text-ink-faint">Saved on this device. Reusing an existing name updates that preset instead of creating a duplicate.</p>
+                  {presetMessage && <p className="mt-3 rounded-lg border border-border bg-canvas px-3 py-2 text-xs text-ink-muted">{presetMessage}</p>}
+                </section>
+
+                {customPresets.length > 0 && (
+                  <section className="mb-5">
+                    <div className="mb-2 flex items-center justify-between gap-3"><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-ink-faint">Your presets</p><span className="text-[10px] tabular-nums text-ink-faint">{customPresets.length}/24</span></div>
+                    <div className="space-y-2">
+                      {customPresets.map((preset) => {
+                        const shown = preset.widgets.filter((widget) => widget.visible).length;
+                        return (
+                          <div key={preset.id} className="flex items-stretch gap-2 rounded-2xl border border-border bg-canvas p-2 transition hover:bg-surface">
+                            <button type="button" onClick={() => applyCustomPreset(preset)} className="min-w-0 flex-1 rounded-xl px-2 py-2 text-left">
+                              <div className="flex items-center gap-2"><span className="truncate font-medium text-ink">{preset.name}</span><span className="rounded-full border border-border px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[.1em] text-ink-faint">Custom</span></div>
+                              <p className="mt-1 text-[11px] text-ink-faint">{shown} visible widgets · exact sizes saved</p>
+                            </button>
+                            <button type="button" onClick={() => removeCustomPreset(preset)} aria-label={`Delete ${preset.name} preset`} title="Delete preset" className="grid w-10 shrink-0 place-items-center rounded-xl border border-border text-ink-faint transition hover:border-red-400/50 hover:bg-red-500/5 hover:text-red-600"><Trash2 size={14} /></button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+
+                <div className="mb-4"><h2 className="text-sm font-semibold text-ink">Built-in presets</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Presets update the live canvas immediately. Nothing is permanent until Save dashboard.</p></div>
                 <div className="space-y-2">
                   {DASHBOARD_PRESETS.map((preset) => (
-                    <button key={preset.id} type="button" onClick={() => { onWidgetsChange(applyDashboardPreset(widgets, preset.id)); onSelect(null); }} className="w-full rounded-2xl border border-border bg-canvas p-4 text-left transition hover:bg-surface"><div className="flex items-center justify-between gap-3"><span className="font-medium text-ink">{preset.name}</span><Sparkles size={14} className="text-ink-faint" /></div><p className="mt-1 text-xs leading-5 text-ink-faint">{preset.description}</p></button>
+                    <button key={preset.id} type="button" onClick={() => { onWidgetsChange(applyDashboardPreset(widgets, preset.id)); onSelect(null); setPresetMessage(null); }} className="w-full rounded-2xl border border-border bg-canvas p-4 text-left transition hover:bg-surface"><div className="flex items-center justify-between gap-3"><span className="font-medium text-ink">{preset.name}</span><Sparkles size={14} className="text-ink-faint" /></div><p className="mt-1 text-xs leading-5 text-ink-faint">{preset.description}</p></button>
                   ))}
                 </div>
               </div>
