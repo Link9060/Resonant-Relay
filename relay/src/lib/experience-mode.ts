@@ -1,6 +1,6 @@
 'use client';
 
-export type RelayExperience = 'flow' | 'still' | 'nexus' | 'aura' | 'slate' | 'spark' | 'lucid' | 'chroma';
+export type RelayExperience = 'flow' | 'still' | 'nexus' | 'aura' | 'slate' | 'spark' | 'lucid' | 'vivid';
 export type RelayPalette =
   | 'monochrome'
   | 'cobalt'
@@ -47,8 +47,8 @@ export const experiences: {
   { id: 'aura', name: 'Aura', description: 'Soft geometry, gentle movement and a calm, welcoming rhythm.', signature: 'Calm' },
   { id: 'slate', name: 'Slate', description: 'Editorial structure, strong typography and orderly sections.', signature: 'Organized' },
   { id: 'spark', name: 'Spark', description: 'Responsive, energetic interactions with expressive micro-motion.', signature: 'Playful' },
-  { id: 'lucid', name: 'Lucid', description: 'Layered translucent surfaces with blur, depth and reflection.', signature: 'Dimensional' },
-  { id: 'chroma', name: 'Chroma', description: 'A richer color system with spectrum highlights, colorful surfaces and vivid motion.', signature: 'Vivid' },
+  { id: 'lucid', name: 'Lucid', description: 'Layered translucent surfaces with controlled blur, depth and reflection.', signature: 'Dimensional' },
+  { id: 'vivid', name: 'Vivid', description: 'Uses your selected color more boldly across panels, borders, controls and surfaces with multiple shades of the same hue.', signature: 'Color-rich' },
 ];
 
 export const palettes: {
@@ -90,6 +90,7 @@ export function normalizeExperience(value: string | null): RelayExperience {
   if (value === 'relay') return 'flow';
   if (value === 'minimal') return 'still';
   if (value === 'scifi') return 'nexus';
+  if (value === 'chroma') return 'vivid';
   return experienceIds.has(value as RelayExperience) ? value as RelayExperience : DEFAULT_EXPERIENCE;
 }
 
