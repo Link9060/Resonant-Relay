@@ -4,11 +4,11 @@ import { ConnectedAccountsDialog, type ConnectedAccount, type IntegrationProvide
 import { PageLoading } from '@/components/page-loading';
 import { PageHeader } from '@/components/ui/page-header';
 import { createClient } from '@/lib/supabase/client';
-import { CalendarDays, ChevronLeft, ChevronRight, ExternalLink, Settings2 } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, ExternalLink, RefreshCw, Settings2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-type ProviderEvent = { id: string; summary: string; start: string; end?: string | null; isAllDay: boolean; htmlLink?: string | null; accountId: string; accountEmail: string; provider: IntegrationProvider };
-type RelayPlan = { instanceId: string; occursOn: string; planName: string; groupName?: string | null };
+type ProviderEvent = { id: string; summary: string; start: string; end?: string | null; isAllDay: boolean; htmlLink?: string | null; accountId: string; accountEmail: string; provider: IntegrationProvider; calendarName?: string | null };
+type RelayPlan = { instanceId: string; occursOn: string; planName: string; groupName?: string | null; startTime?: string | null; endTime?: string | null };
 type CalendarState = { accounts: ConnectedAccount[]; events: ProviderEvent[]; accountErrors: string[]; plans: RelayPlan[] };
 type CalendarItem = { id: string; title: string; dateKey: string; start: string; end?: string | null; isAllDay: boolean; sourceId: string; sourceLabel: string; href?: string | null; color: string; detail?: string | null };
 
@@ -32,17 +32,30 @@ export default function CalendarPage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
     const [accountResult, eventResult, membershipResult] = await Promise.all([
       supabase.functions.invoke('mail-hub', { body: { action: 'accounts' } }),
       supabase.functions.invoke('mail-hub', { body: { action: 'calendar_events' } }),
       supabase.from('group_members').select('group_id').eq('user_id', user.id),
     ]);
+
     const groupIds = (membershipResult.data ?? []).map((membership) => membership.group_id);
     let plans: RelayPlan[] = [];
     if (groupIds.length) {
-      const { data } = await supabase.from('plans').select('id,name,group:groups(name),instances:plan_instances(id,occurs_on)').in('group_id', groupIds);
-      plans = (data ?? []).flatMap((plan: any) => (plan.instances ?? []).map((instance: any) => ({ instanceId: instance.id, occursOn: instance.occurs_on, planName: plan.name, groupName: plan.group?.name })));
+      const { data } = await supabase
+        .from('plans')
+        .select('id,name,start_time,end_time,group:groups(name),instances:plan_instances(id,occurs_on)')
+        .in('group_id', groupIds);
+      plans = (data ?? []).flatMap((plan: any) => (plan.instances ?? []).map((instance: any) => ({
+        instanceId: instance.id,
+        occursOn: instance.occurs_on,
+        planName: plan.name,
+        groupName: plan.group?.name,
+        startTime: plan.start_time,
+        endTime: plan.end_time,
+      })));
     }
+
     const accounts: ConnectedAccount[] = accountResult.data?.accounts ?? [];
     setState({ accounts, events: eventResult.data?.events ?? [], accountErrors: eventResult.data?.accountErrors ?? [], plans });
     setVisibleSources(new Set(['relay', ...accounts.map((account) => account.id)]));
@@ -50,26 +63,59 @@ export default function CalendarPage() {
   }
 
   async function connect(provider: IntegrationProvider) {
-    setBusy(provider); setError(null);
+    setBusy(provider);
+    setError(null);
     const { data, error: invokeError } = await createClient().functions.invoke('mail-hub', { body: { action: 'connect_start', provider, next: '/calendar' } });
-    if (invokeError || !data?.url) { setError(data?.error ?? `${provider === 'google' ? 'Google' : 'Microsoft'} OAuth is not configured yet.`); setBusy(null); return; }
+    if (invokeError || !data?.url) {
+      setError(data?.error ?? `${provider === 'google' ? 'Google' : 'Microsoft'} OAuth is not configured yet.`);
+      setBusy(null);
+      return;
+    }
     window.location.assign(data.url);
   }
 
   async function disconnect(account: ConnectedAccount) {
     if (!window.confirm(`Disconnect ${account.email_address} from Relay email and calendar?`)) return;
-    setBusy(account.id); setError(null);
+    setBusy(account.id);
+    setError(null);
     const { error: invokeError } = await createClient().functions.invoke('mail-hub', { body: { action: 'disconnect', accountId: account.id } });
-    if (invokeError) { setError('Could not disconnect that account.'); setBusy(null); return; }
-    await load(); setBusy(null);
+    if (invokeError) {
+      setError('Could not disconnect that account.');
+      setBusy(null);
+      return;
+    }
+    await load();
+    setBusy(null);
   }
 
   const calendarItems = useMemo<CalendarItem[]>(() => {
     if (!state) return [];
-    const accountColor = new Map(state.accounts.map((account, index) => [account.id, ACCOUNT_COLORS[index % ACCOUNT_COLORS.length] ?? ACCOUNT_COLORS[0] ?? '#4f7ee8']));
+    const accountColor = new Map(state.accounts.map((account, index) => [account.id, ACCOUNT_COLORS[index % ACCOUNT_COLORS.length] ?? '#4f7ee8']));
     return [
-      ...state.events.map((event) => ({ id: event.id, title: event.summary || 'Untitled event', dateKey: dateKeyFromRaw(event.start, event.isAllDay), start: event.start, end: event.end, isAllDay: event.isAllDay, sourceId: event.accountId, sourceLabel: event.accountEmail, href: event.htmlLink, color: accountColor.get(event.accountId) ?? '#4f7ee8' })),
-      ...state.plans.map((plan) => ({ id: `relay:${plan.instanceId}`, title: plan.planName, dateKey: plan.occursOn, start: plan.occursOn, isAllDay: true, sourceId: 'relay', sourceLabel: 'Relay Plans', color: RELAY_COLOR, detail: plan.groupName })),
+      ...state.events.map((event) => ({
+        id: event.id,
+        title: event.summary || 'Untitled event',
+        dateKey: dateKeyFromRaw(event.start, event.isAllDay),
+        start: event.start,
+        end: event.end,
+        isAllDay: event.isAllDay,
+        sourceId: event.accountId,
+        sourceLabel: event.calendarName ? `${event.calendarName} · ${event.accountEmail}` : event.accountEmail,
+        href: event.htmlLink,
+        color: accountColor.get(event.accountId) ?? '#4f7ee8',
+      })),
+      ...state.plans.map((plan) => ({
+        id: `relay:${plan.instanceId}`,
+        title: plan.planName,
+        dateKey: plan.occursOn,
+        start: plan.startTime ? `${plan.occursOn}T${plan.startTime}` : plan.occursOn,
+        end: plan.startTime && plan.endTime ? `${plan.occursOn}T${plan.endTime}` : null,
+        isAllDay: !plan.startTime,
+        sourceId: 'relay',
+        sourceLabel: 'Relay Plans',
+        color: RELAY_COLOR,
+        detail: plan.groupName,
+      })),
     ];
   }, [state]);
 
@@ -78,7 +124,11 @@ export default function CalendarPage() {
   const selectedItems = useMemo(() => visibleItems.filter((item) => item.dateKey === selectedDate).sort((a, b) => a.start.localeCompare(b.start)), [selectedDate, visibleItems]);
 
   function toggleSource(sourceId: string) {
-    setVisibleSources((current) => { const next = new Set(current); if (next.has(sourceId)) next.delete(sourceId); else next.add(sourceId); return next; });
+    setVisibleSources((current) => {
+      const next = new Set(current);
+      if (next.has(sourceId)) next.delete(sourceId); else next.add(sourceId);
+      return next;
+    });
   }
 
   function goToMonth(offset: number) {
@@ -89,7 +139,12 @@ export default function CalendarPage() {
     window.setTimeout(() => setMonthDirection(0), 320);
   }
 
-  function goToToday() { const today = new Date(); setMonthDirection(0); setViewDate(startOfMonth(today)); setSelectedDate(dateKeyFromDate(today)); }
+  function goToToday() {
+    const today = new Date();
+    setMonthDirection(0);
+    setViewDate(startOfMonth(today));
+    setSelectedDate(dateKeyFromDate(today));
+  }
 
   if (!state) return <PageLoading />;
 
@@ -101,6 +156,13 @@ export default function CalendarPage() {
   return <div className="mx-auto max-w-[100rem] px-4 py-8 md:px-6">
     <PageHeader title="Calendar" subtitle="Your calendars and Relay plans in one view." action={<button type="button" onClick={() => setManageOpen(true)} className="inline-flex items-center gap-2 rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface"><Settings2 size={16} /> Calendars</button>} />
     {error && !manageOpen && <div className="mt-5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">{error}</div>}
+    {state.accountErrors.length > 0 && !manageOpen && (
+      <button type="button" onClick={() => setManageOpen(true)} className="mt-5 flex w-full items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-left text-sm text-amber-700 dark:text-amber-300">
+        <RefreshCw size={16} className="shrink-0" />
+        <span className="flex-1"><strong>Reconnect Google Calendar once.</strong> Relay needs the new read-only calendar-list permission to see calendars beyond Primary.</span>
+        <span className="text-xs font-semibold">Fix</span>
+      </button>
+    )}
 
     <section className="mt-6 overflow-hidden rounded-xl border border-border bg-canvas shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
@@ -166,6 +228,6 @@ function startOfMonth(date: Date) { return new Date(date.getFullYear(), date.get
 function dateKeyFromDate(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
 function dateKeyFromRaw(raw: string, allDay: boolean) { if (allDay && /^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10); return dateKeyFromDate(new Date(raw)); }
 function buildMonthGrid(month: Date) { const first = startOfMonth(month); const start = new Date(first.getFullYear(), first.getMonth(), 1 - first.getDay(), 12); return Array.from({ length: 42 }, (_, index) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + index, 12)); }
-function formatTime(raw: string) { const date = new Date(raw); return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); }
-function formatEventRange(start: string, end?: string | null) { const startLabel = formatTime(start); if (!end) return startLabel; return `${startLabel} – ${formatTime(end)}`; }
-function formatSelectedDate(key: string) { const [year = 2000, month = 1, day = 1] = key.split('-').map(Number); return new Date(year, month - 1, day, 12).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }); }
+function formatSelectedDate(value: string) { return new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }); }
+function formatTime(value: string) { return new Date(value).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); }
+function formatEventRange(start: string, end?: string | null) { const startLabel = formatTime(start); if (!end) return startLabel; return `${startLabel}–${formatTime(end)}`; }

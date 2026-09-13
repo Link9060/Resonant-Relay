@@ -1,0 +1,6 @@
+/* Still owns the keyboard-first shortcut layer. Keep its UI impossible to leak into other experiences. */
+@media (min-width: 768px) {
+  html:not([data-relay-experience='still']) :is(.relay-still-help-trigger, .relay-still-overlay) {
+    display: none !important;
+  }
+}
