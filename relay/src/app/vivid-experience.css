@@ -1,0 +1,138 @@
+/* Expanded Relay palettes. */
+html[data-relay-palette='fuchsia'] { --accent: 192 38 211; --accent-secondary: 192 38 211; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(34%) sepia(97%) saturate(2910%) hue-rotate(274deg) brightness(91%) contrast(93%) drop-shadow(0 0 9px rgb(var(--accent) / .12)); }
+html.dark[data-relay-palette='fuchsia'] { --accent: 232 121 249; --accent-secondary: 232 121 249; --accent-contrast: 10 10 11; }
+html[data-relay-palette='scarlet'] { --accent: 220 38 38; --accent-secondary: 220 38 38; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(28%) sepia(86%) saturate(3011%) hue-rotate(346deg) brightness(97%) contrast(91%) drop-shadow(0 0 9px rgb(var(--accent) / .12)); }
+html.dark[data-relay-palette='scarlet'] { --accent: 248 113 113; --accent-secondary: 248 113 113; --accent-contrast: 10 10 11; }
+html[data-relay-palette='orange'] { --accent: 234 88 12; --accent-secondary: 234 88 12; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(43%) sepia(93%) saturate(2805%) hue-rotate(356deg) brightness(95%) contrast(93%) drop-shadow(0 0 9px rgb(var(--accent) / .12)); }
+html.dark[data-relay-palette='orange'] { --accent: 251 146 60; --accent-secondary: 251 146 60; --accent-contrast: 10 10 11; }
+html[data-relay-palette='lime'] { --accent: 101 163 13; --accent-secondary: 101 163 13; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(59%) sepia(74%) saturate(1072%) hue-rotate(39deg) brightness(91%) contrast(91%) drop-shadow(0 0 9px rgb(var(--accent) / .12)); }
+html.dark[data-relay-palette='lime'] { --accent: 163 230 53; --accent-secondary: 163 230 53; --accent-contrast: 10 10 11; }
+html[data-relay-palette='sky'] { --accent: 2 132 199; --accent-secondary: 2 132 199; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(46%) sepia(92%) saturate(1732%) hue-rotate(164deg) brightness(90%) contrast(98%) drop-shadow(0 0 9px rgb(var(--accent) / .12)); }
+html.dark[data-relay-palette='sky'] { --accent: 56 189 248; --accent-secondary: 56 189 248; --accent-contrast: 10 10 11; }
+html[data-relay-palette='indigo'] { --accent: 79 70 229; --accent-secondary: 79 70 229; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(37%) sepia(87%) saturate(1984%) hue-rotate(225deg) brightness(92%) contrast(92%) drop-shadow(0 0 9px rgb(var(--accent) / .12)); }
+html.dark[data-relay-palette='indigo'] { --accent: 129 140 248; --accent-secondary: 129 140 248; --accent-contrast: 10 10 11; }
+html[data-relay-palette='candy'] { --accent: 219 39 119; --accent-secondary: 124 58 237; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(38%) sepia(78%) saturate(2711%) hue-rotate(306deg) brightness(92%) contrast(92%) drop-shadow(0 0 9px rgb(var(--accent) / .14)); }
+html.dark[data-relay-palette='candy'] { --accent: 244 114 182; --accent-secondary: 167 139 250; --accent-contrast: 10 10 11; }
+html[data-relay-palette='solar'] { --accent: 234 88 12; --accent-secondary: 202 138 4; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(43%) sepia(93%) saturate(2805%) hue-rotate(356deg) brightness(95%) contrast(93%) drop-shadow(0 0 9px rgb(var(--accent) / .14)); }
+html.dark[data-relay-palette='solar'] { --accent: 251 146 60; --accent-secondary: 253 224 71; --accent-contrast: 10 10 11; }
+html[data-relay-palette='pulse'] { --accent: 192 38 211; --accent-secondary: 8 145 178; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(34%) sepia(97%) saturate(2910%) hue-rotate(274deg) brightness(91%) contrast(93%) drop-shadow(0 0 9px rgb(var(--accent) / .14)); }
+html.dark[data-relay-palette='pulse'] { --accent: 232 121 249; --accent-secondary: 34 211 238; --accent-contrast: 10 10 11; }
+html[data-relay-palette='citrus'] { --accent: 101 163 13; --accent-secondary: 234 88 12; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(59%) sepia(74%) saturate(1072%) hue-rotate(39deg) brightness(91%) contrast(91%) drop-shadow(0 0 9px rgb(var(--accent) / .14)); }
+html.dark[data-relay-palette='citrus'] { --accent: 163 230 53; --accent-secondary: 251 146 60; --accent-contrast: 10 10 11; }
+html[data-relay-palette='dusk'] { --accent: 79 70 229; --accent-secondary: 225 29 72; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(37%) sepia(87%) saturate(1984%) hue-rotate(225deg) brightness(92%) contrast(92%) drop-shadow(0 0 9px rgb(var(--accent) / .14)); }
+html.dark[data-relay-palette='dusk'] { --accent: 129 140 248; --accent-secondary: 251 113 133; --accent-contrast: 10 10 11; }
+
+/* VIVID — one selected hue, used in more places and at more strengths. */
+html[data-relay-experience='vivid'] body {
+  background-color: rgb(var(--canvas));
+  background-image:
+    radial-gradient(circle at 10% 8%, rgb(var(--accent) / calc(.035 + .055 * var(--relay-experience-intensity))), transparent 32%),
+    radial-gradient(circle at 90% 90%, rgb(var(--accent) / calc(.02 + .035 * var(--relay-experience-intensity))), transparent 36%);
+  background-attachment: fixed;
+}
+
+html[data-relay-experience='vivid'] .beta-cloud {
+  opacity: calc(.68 + .18 * var(--relay-experience-intensity));
+  filter: var(--relay-particle-filter) drop-shadow(0 0 12px rgb(var(--accent) / .16)) !important;
+}
+html[data-relay-experience='vivid'] .beta-particle-effects { opacity: .86; }
+
+html[data-relay-experience='vivid'] .relay-mobile-main {
+  overflow: clip;
+  border-color: rgb(var(--accent) / .2) !important;
+  background:
+    linear-gradient(145deg, rgb(var(--accent) / .045), transparent 28% 72%, rgb(var(--accent) / .025)),
+    rgb(var(--canvas) / .96) !important;
+  box-shadow:
+    inset 0 1px rgb(var(--accent) / .08),
+    0 18px 50px rgb(var(--ink) / .055),
+    0 0 calc(34px * var(--relay-experience-intensity)) rgb(var(--accent) / .04) !important;
+}
+
+html[data-relay-experience='vivid'] :is(.relay-app-header, .relay-desktop-dock, .relay-mobile-nav) {
+  border-color: rgb(var(--accent) / .14) !important;
+  background:
+    linear-gradient(125deg, rgb(var(--accent) / .035), transparent 42%),
+    rgb(var(--canvas) / .94) !important;
+  box-shadow: inset 0 1px rgb(var(--accent) / .06) !important;
+  backdrop-filter: blur(14px) saturate(1.06);
+}
+
+html[data-relay-experience='vivid'] .relay-dock-link[aria-current='page'] {
+  border-color: rgb(var(--accent) / .34) !important;
+  background: rgb(var(--accent) / .13) !important;
+  color: rgb(var(--accent)) !important;
+  box-shadow: inset 3px 0 rgb(var(--accent)), 0 6px 18px rgb(var(--accent) / .07) !important;
+}
+
+html[data-relay-experience='vivid'] .relay-app-shell :where(.bg-surface, .bg-surface-raised) {
+  border-color: rgb(var(--accent) / .12) !important;
+  background-color: rgb(var(--surface-raised) / .88) !important;
+  background-image: linear-gradient(145deg, rgb(var(--accent) / .035), transparent 50%) !important;
+  box-shadow: inset 0 1px rgb(var(--accent) / .04), 0 8px 24px rgb(var(--ink) / .035);
+}
+
+html[data-relay-experience='vivid'] :is(.relay-motion-dashboard-card, article.bg-surface, article.bg-surface-raised, section.bg-surface, section.bg-surface-raised):nth-of-type(3n + 1) {
+  background-color: color-mix(in srgb, rgb(var(--surface-raised)) 91%, rgb(var(--accent)) 9%) !important;
+}
+html[data-relay-experience='vivid'] :is(.relay-motion-dashboard-card, article.bg-surface, article.bg-surface-raised, section.bg-surface, section.bg-surface-raised):nth-of-type(3n + 2) {
+  background-color: color-mix(in srgb, rgb(var(--surface-raised)) 95%, rgb(var(--accent)) 5%) !important;
+}
+html[data-relay-experience='vivid'] :is(.relay-motion-dashboard-card, article.bg-surface, article.bg-surface-raised, section.bg-surface, section.bg-surface-raised):nth-of-type(3n) {
+  background-color: color-mix(in srgb, rgb(var(--surface-raised)) 88%, rgb(var(--accent)) 12%) !important;
+}
+
+html[data-relay-experience='vivid'] .relay-app-shell :where(button.bg-ink, a.bg-ink) {
+  background: rgb(var(--accent)) !important;
+  color: rgb(var(--accent-contrast)) !important;
+  box-shadow: 0 7px 18px rgb(var(--accent) / .13);
+}
+
+html[data-relay-experience='vivid'] [role='tab'][aria-selected='true'] {
+  color: rgb(var(--accent));
+  background: rgb(var(--accent) / .06);
+  box-shadow: inset 0 -2px 0 rgb(var(--accent));
+}
+
+html[data-relay-experience='vivid'] .relay-popover {
+  border-color: rgb(var(--accent) / .16) !important;
+  background:
+    linear-gradient(145deg, rgb(var(--accent) / .025), transparent 50%),
+    rgb(var(--canvas) / .97) !important;
+  box-shadow: 0 20px 56px rgb(0 0 0 / .19), 0 0 24px rgb(var(--accent) / .045) !important;
+}
+
+html[data-relay-experience='vivid'] .relay-attention-signal {
+  background: rgb(var(--accent)) !important;
+  box-shadow: 0 0 0 2px rgb(var(--canvas)), 0 0 14px rgb(var(--accent) / .23);
+}
+
+html[data-relay-experience='vivid'] :is(input, textarea, select):focus {
+  border-color: rgb(var(--accent) / .42) !important;
+  box-shadow: 0 0 0 3px rgb(var(--accent) / .08) !important;
+}
+
+[data-experience-preview='vivid'] .relay-mode-preview {
+  align-items: center;
+  justify-content: space-around;
+  border-color: rgb(var(--accent) / .22);
+  background: linear-gradient(135deg, rgb(var(--accent) / .15), rgb(var(--accent) / .04)), rgb(var(--surface));
+}
+[data-experience-preview='vivid'] .relay-mode-preview i { height: 72%; width: .35rem; background: rgb(var(--accent)); }
+[data-experience-preview='vivid'] .relay-mode-preview i:nth-child(1) { opacity: .35; transform: translateY(2px); }
+[data-experience-preview='vivid'] .relay-mode-preview i:nth-child(2) { opacity: 1; transform: translateY(-2px); }
+[data-experience-preview='vivid'] .relay-mode-preview i:nth-child(3) { opacity: .62; transform: translateY(1px); }
+
+@media (hover: hover) {
+  html[data-relay-experience='vivid'] .relay-dock-link:hover::before { background: rgb(var(--accent)) !important; }
+  html[data-relay-experience='vivid'] .relay-app-shell :where(button:not(:disabled), a[href]):hover {
+    box-shadow: 0 8px 22px rgb(var(--accent) / .085);
+  }
+  html[data-relay-experience='vivid'] :is(.relay-motion-dashboard-card, article.bg-surface, article.bg-surface-raised):hover {
+    transform: translateY(-2px) scale(1.002);
+    border-color: rgb(var(--accent) / .26) !important;
+    box-shadow: 0 13px 30px rgb(var(--accent) / .065);
+  }
+}
+
+html[data-relay-lock-in='true'][data-relay-experience='vivid'] body { background-image: none !important; }

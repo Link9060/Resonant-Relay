@@ -1,0 +1,73 @@
+/* Modes may change material, color and motion, but never the app's geometry. */
+
+/* Keep the experience picker structurally neutral in every mode. */
+.relay-experience-popover {
+  width: min(34rem, calc(100vw - 1.5rem));
+  max-height: min(82dvh, 48rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  transform: none !important;
+  transform-style: flat !important;
+  perspective: none !important;
+  isolation: isolate;
+}
+.relay-experience-popover .relay-experience-controls {
+  min-width: 0;
+  transform: none !important;
+  transform-style: flat !important;
+}
+.relay-experience-popover :is(.relay-experience-option, .relay-accent-option, .relay-lock-in-toggle) {
+  min-width: 0;
+  transform-style: flat !important;
+}
+
+/* LUCID: glass without stacking-context or 3D layout weirdness. */
+html[data-relay-experience='lucid'] body { perspective: none !important; }
+html[data-relay-experience='lucid'] .relay-mobile-main,
+html[data-relay-experience='lucid'] .relay-app-shell :where(.bg-surface, .bg-surface-raised),
+html[data-relay-experience='lucid'] .relay-popover {
+  transform-style: flat !important;
+}
+html[data-relay-experience='lucid'] .relay-mobile-main::before,
+html[data-relay-experience='lucid'] .relay-mobile-main::after {
+  display: none !important;
+}
+html[data-relay-experience='lucid'] .relay-mobile-main {
+  contain: paint;
+}
+html[data-relay-experience='lucid'] .relay-popover {
+  contain: layout;
+}
+html[data-relay-experience='lucid'] .relay-popover :where(button, a, input, textarea, select) {
+  transform: none !important;
+}
+
+/* Keep Lucid cards expressive without tilting their boxes out of the grid. */
+@media (hover: hover) {
+  html[data-relay-experience='lucid'] .relay-mobile-main :where(.relay-motion-dashboard-card, article.bg-surface, article.bg-surface-raised):hover {
+    transform: translateY(-2px) scale(1.002) !important;
+  }
+}
+
+/* VIVID: color changes must not create new positioning or stacking behavior. */
+html[data-relay-experience='vivid'] .relay-mobile-main,
+html[data-relay-experience='vivid'] .relay-app-shell :where(.bg-surface, .bg-surface-raised),
+html[data-relay-experience='vivid'] .relay-popover {
+  transform-style: flat !important;
+}
+html[data-relay-experience='vivid'] .relay-mobile-main > * {
+  min-width: 0;
+}
+html[data-relay-experience='vivid'] .relay-popover {
+  contain: layout;
+}
+
+@media (max-width: 639px) {
+  .relay-experience-popover {
+    left: .75rem !important;
+    right: .75rem !important;
+    width: auto;
+    max-height: calc(100dvh - 5rem);
+  }
+}

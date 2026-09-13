@@ -1,0 +1,4 @@
+/* Vivid always uses one hue, even when a two-color palette is selected. */
+html[data-relay-experience='vivid'] {
+  --accent-secondary: var(--accent);
+}

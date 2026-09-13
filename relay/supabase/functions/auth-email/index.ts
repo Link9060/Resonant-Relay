@@ -9,6 +9,7 @@ const ALLOWED_ORIGINS = new Set([
 
 const PUBLIC_CALLBACK = 'https://resonantrelay.org/auth/callback/';
 const BETA_CALLBACK = 'https://link9060.github.io/Resonant-Relay/auth/callback/';
+const EMERGENCY_CALLBACK = 'https://link9060.github.io/Resonant-Relay/emergency/index.html';
 
 function cors(origin: string | null) {
   const allowed = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://resonantrelay.org';
@@ -38,9 +39,9 @@ function randomPassword() {
   return btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '') + 'Aa9!';
 }
 
-function emailHtml(link: string, isSignup: boolean) {
-  const heading = isSignup ? 'Confirm your Relay account' : 'Sign in to Relay';
-  const action = isSignup ? 'Confirm account' : 'Sign in to Relay';
+function emailHtml(link: string, isSignup: boolean, emergency: boolean) {
+  const heading = emergency ? 'Open Relay Emergency Mode' : isSignup ? 'Confirm your Relay account' : 'Sign in to Relay';
+  const action = emergency ? 'Open Emergency Relay' : isSignup ? 'Confirm account' : 'Sign in to Relay';
   return `<!doctype html><html><body style="margin:0;background:#ffffff;color:#111111;font-family:Arial,Helvetica,sans-serif"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding-top:40px;padding-right:20px;padding-bottom:40px;padding-left:20px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px"><tr><td style="font-size:24px;line-height:32px;font-weight:600;color:#111111">${heading}</td></tr><tr><td style="padding-top:12px;font-size:14px;line-height:22px;color:#555555">Use the secure button below to continue. This link expires shortly and can only be used once.</td></tr><tr><td style="padding-top:24px"><a href="${link}" style="display:inline-block;background-color:#111111;color:#ffffff;text-decoration:none;font-size:14px;line-height:20px;font-weight:600;padding-top:12px;padding-right:18px;padding-bottom:12px;padding-left:18px;border-radius:6px">${action}</a></td></tr><tr><td style="padding-top:24px;font-size:12px;line-height:19px;color:#777777">If you did not request this email, you can ignore it.</td></tr></table></td></tr></table></body></html>`;
 }
 
@@ -66,7 +67,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Relay email sign-in is temporarily unavailable.' }, 503, origin);
   }
 
-  let payload: { email?: unknown };
+  let payload: { email?: unknown; emergency?: unknown };
   try {
     payload = await req.json();
   } catch {
@@ -74,6 +75,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const email = typeof payload.email === 'string' ? payload.email.trim().toLowerCase() : '';
+  const emergency = payload.emergency === true && origin === 'https://link9060.github.io';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
     return json({ error: 'Enter a valid email address.' }, 400, origin);
   }
@@ -97,10 +99,16 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Relay could not prepare a sign-in email.' }, 503, origin);
   }
 
-  const callback = origin === 'https://link9060.github.io' ? BETA_CALLBACK : PUBLIC_CALLBACK;
+  // Emergency Mode is recovery-only: it never creates a new Relay account.
+  // Return the same generic success response for unknown addresses so the
+  // endpoint does not become an account-enumeration oracle.
+  if (emergency && !existing) return json({ ok: true }, 200, origin);
+
+  const normalCallback = origin === 'https://link9060.github.io' ? BETA_CALLBACK : PUBLIC_CALLBACK;
+  const callback = emergency ? EMERGENCY_CALLBACK : normalCallback;
   const params = existing
-    ? { type: 'magiclink' as const, email, options: { redirectTo: callback } }
-    : { type: 'signup' as const, email, password: randomPassword(), options: { redirectTo: callback } };
+    ? { type: 'magiclink' as const, email, options: { redirectTo: normalCallback } }
+    : { type: 'signup' as const, email, password: randomPassword(), options: { redirectTo: normalCallback } };
 
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink(params);
   if (linkError || !linkData?.properties?.hashed_token || !linkData.properties.verification_type) {
@@ -111,7 +119,7 @@ Deno.serve(async (req: Request) => {
   const verificationType = linkData.properties.verification_type;
   const link = `${callback}?token_hash=${encodeURIComponent(linkData.properties.hashed_token)}&type=${encodeURIComponent(verificationType)}`;
   const isSignup = verificationType === 'signup';
-  const subject = isSignup ? 'Confirm your Relay account' : 'Sign in to Relay';
+  const subject = emergency ? 'Open Relay Emergency Mode' : isSignup ? 'Confirm your Relay account' : 'Sign in to Relay';
   const text = `${subject}\n\nOpen this secure Relay link to continue. It expires shortly and can only be used once.\n\n${link}\n\nIf you did not request this email, you can ignore it.`;
 
   const send = await fetch('https://api.resend.com/emails', {
@@ -125,8 +133,8 @@ Deno.serve(async (req: Request) => {
       to: [email],
       subject,
       text,
-      html: emailHtml(link, isSignup),
-      tags: [{ name: 'purpose', value: 'auth' }],
+      html: emailHtml(link, isSignup, emergency),
+      tags: [{ name: 'purpose', value: emergency ? 'emergency-auth' : 'auth' }],
     }),
   });
 

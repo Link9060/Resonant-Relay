@@ -77,7 +77,7 @@ export function Dock({
           </span>
         </a>
 
-        <ul className="flex flex-1 flex-col gap-1">
+        <ul className="relay-primary-cluster flex flex-1 flex-col gap-1">
           {DESKTOP_DOCK_ITEMS.map((item) => (
             <DockLink
               key={item.href}
@@ -183,7 +183,7 @@ function DockLink({
   }
 
   return (
-    <li>
+    <li className="relay-primary-slot">
       <a
         href={appPageUrl(item.href)}
         aria-current={active ? 'page' : undefined}
