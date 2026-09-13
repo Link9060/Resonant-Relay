@@ -57,6 +57,7 @@ type DashboardEvent = {
   source: string;
   href: string | null;
   external?: boolean;
+  isAllDay?: boolean;
 };
 
 type InboxMessage = {
@@ -170,7 +171,7 @@ export default function DashboardPage() {
 
       const [planResult, emailResult, calendarResult] = await Promise.all([
         groupIds.length
-          ? supabase.from('plans').select('id,name,group:groups(name),instances:plan_instances(id,occurs_on)').in('group_id', groupIds)
+          ? supabase.from('plans').select('id,name,start_time,end_time,group:groups(name),instances:plan_instances(id,occurs_on)').in('group_id', groupIds)
           : Promise.resolve({ data: [], error: null }),
         emailConnected
           ? supabase.functions.invoke('mail-hub', { body: { action: 'messages' } })
@@ -186,9 +187,10 @@ export default function DashboardPage() {
           .map((instance: any) => ({
             id: `relay-${instance.id}`,
             title: plan.name,
-            startsAt: `${instance.occurs_on}T12:00:00`,
+            startsAt: plan.start_time ? `${instance.occurs_on}T${plan.start_time}` : `${instance.occurs_on}T12:00:00`,
             source: plan.group?.name ?? 'Relay plan',
             href: `/planner/view/?id=${encodeURIComponent(plan.id)}`,
+            isAllDay: !plan.start_time,
           })),
       );
 
@@ -196,9 +198,10 @@ export default function DashboardPage() {
         id: `calendar-${event.id}`,
         title: event.summary,
         startsAt: event.isAllDay ? `${event.start}T12:00:00` : event.start,
-        source: event.accountEmail ?? `${event.provider === 'microsoft' ? 'Microsoft' : 'Google'} Calendar`,
+        source: event.calendarName ? `${event.calendarName} · ${event.accountEmail}` : event.accountEmail ?? `${event.provider === 'microsoft' ? 'Microsoft' : 'Google'} Calendar`,
         href: event.htmlLink || null,
         external: true,
+        isAllDay: Boolean(event.isAllDay),
       }));
 
       if (!active) return;
@@ -460,7 +463,7 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
       case 'calendar':
         return <DashboardCard index={index} compact={compact} icon={<CalendarDays size={18} />} title="Next Up" href="/calendar" linkLabel="Calendar">{state.events.length ? <EventList events={state.events.slice(0, listLimit)} compact={compact} /> : <EmptyState>{state.calendarConnected ? 'Nothing else is scheduled.' : 'Connect Calendar for your full schedule.'}</EmptyState>}</DashboardCard>;
       case 'today':
-        return <DashboardCard index={index} compact={compact} icon={<Gauge size={18} />} title="Today"><div className={`grid gap-3 ${wide ? 'sm:grid-cols-3' : ''}`}><MiniPanel label="Tasks" value={tasksLeft ? `${tasksLeft} left` : 'All clear'} detail={todayTodos[0]?.title ?? 'No tasks due'} />{!compact && <MiniPanel label="Next" value={state.events[0] ? formatEventTime(state.events[0].startsAt) : 'Open'} detail={state.events[0]?.title ?? 'No upcoming event'} />}{wide && <MiniPanel label="Messages" value={unreadChats ? `${unreadChats} unread` : 'Caught up'} detail={state.chatNotifications[0]?.title ?? 'No new chats'} />}</div></DashboardCard>;
+        return <DashboardCard index={index} compact={compact} icon={<Gauge size={18} />} title="Today"><div className={`grid gap-3 ${wide ? 'sm:grid-cols-3' : ''}`}><MiniPanel label="Tasks" value={tasksLeft ? `${tasksLeft} left` : 'All clear'} detail={todayTodos[0]?.title ?? 'No tasks due'} />{!compact && <MiniPanel label="Next" value={state.events[0] ? formatDashboardEventTime(state.events[0]) : 'Open'} detail={state.events[0]?.title ?? 'No upcoming event'} />}{wide && <MiniPanel label="Messages" value={unreadChats ? `${unreadChats} unread` : 'Caught up'} detail={state.chatNotifications[0]?.title ?? 'No new chats'} />}</div></DashboardCard>;
       case 'email':
         return <DashboardCard index={index} compact={compact} icon={<Inbox size={18} />} title="Inbox" href="/email" linkLabel="Inbox">{!state.emailConnected ? <EmptyState>Connect Google or Microsoft email first.</EmptyState> : state.emails.length ? <ul className="divide-y divide-border">{state.emails.slice(0, listLimit).map((email) => <li key={email.id} className="flex items-start gap-3 py-2.5"><span className={`mt-1.5 h-2 w-2 rounded-full ${email.isUnread ? 'bg-blue-500' : 'bg-border'}`} /><div className="min-w-0 flex-1"><p className={`truncate text-sm text-ink ${email.isUnread ? 'font-semibold' : ''}`}>{email.subject}</p>{!compact && <p className="mt-1 truncate text-xs text-ink-faint">{cleanSender(email.from)}</p>}</div></li>)}</ul> : <EmptyState>Your inbox is clear.</EmptyState>}</DashboardCard>;
       case 'chats':
@@ -484,12 +487,12 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
         return <DashboardCard index={index} compact={compact} icon={<Sun size={18} />} title="Sunrise / Sunset">{weather ? <div className={`grid gap-3 ${compact ? 'grid-cols-1' : 'grid-cols-2'}`}><MiniPanel label="Sunrise" value={formatClock(weather.sunrise)} detail="Morning" />{!compact && <MiniPanel label="Sunset" value={formatClock(weather.sunset)} detail="Evening" />}</div> : <EmptyState>Enable Weather first.</EmptyState>}</DashboardCard>;
       case 'countdowns': {
         const event = state.events[0];
-        return <DashboardCard index={index} compact={compact} icon={<FileClock size={18} />} title="Countdowns">{event ? <div className="rounded-xl bg-surface p-3"><p className="truncate text-sm font-semibold text-ink">{event.title}</p><p className={`mt-2 font-display ${compact ? 'text-lg' : 'text-2xl'} font-medium text-ink`}>{formatCountdown(event.startsAt)}</p></div> : <EmptyState>Add an event to start a countdown.</EmptyState>}</DashboardCard>;
+        return <DashboardCard index={index} compact={compact} icon={<FileClock size={18} />} title="Countdowns">{event ? <div className="rounded-xl bg-surface p-3"><p className="truncate text-sm font-semibold text-ink">{event.title}</p><p className={`mt-2 font-display ${compact ? 'text-lg' : 'text-2xl'} font-medium text-ink`}>{event.isAllDay ? 'Today' : formatCountdown(event.startsAt)}</p></div> : <EmptyState>Add an event to start a countdown.</EmptyState>}</DashboardCard>;
       }
       case 'schoolschedule':
         return <DashboardCard index={index} compact={compact} icon={<School size={18} />} title="School Schedule" href="/calendar" linkLabel="Calendar">{state.events.length ? <EventList events={state.events.slice(0, listLimit)} compact={compact} /> : <EmptyState>Add your class schedule to Calendar.</EmptyState>}</DashboardCard>;
       case 'ravinbrief':
-        return <DashboardCard index={index} compact={compact} icon={<WandSparkles size={18} />} title="RAVIN Brief" badge="Preview"><div className={`grid gap-3 ${wide ? 'sm:grid-cols-3' : ''}`}><MiniPanel label="Priority" value={tasksLeft ? `${tasksLeft} tasks` : 'Clear'} detail={todayTodos.find((todo) => !todo.completed)?.title ?? 'Nothing urgent'} />{!compact && <MiniPanel label="Schedule" value={state.events[0] ? formatEventTime(state.events[0].startsAt) : 'Open'} detail={state.events[0]?.title ?? 'No next event'} />}{wide && <MiniPanel label="Inbox" value={unreadChats ? `${unreadChats} chats` : 'Quiet'} detail="Full AI brief arrives with RAVIN" />}</div></DashboardCard>;
+        return <DashboardCard index={index} compact={compact} icon={<WandSparkles size={18} />} title="RAVIN Brief" badge="Preview"><div className={`grid gap-3 ${wide ? 'sm:grid-cols-3' : ''}`}><MiniPanel label="Priority" value={tasksLeft ? `${tasksLeft} tasks` : 'Clear'} detail={todayTodos.find((todo) => !todo.completed)?.title ?? 'Nothing urgent'} />{!compact && <MiniPanel label="Schedule" value={state.events[0] ? formatDashboardEventTime(state.events[0]) : 'Open'} detail={state.events[0]?.title ?? 'No next event'} />}{wide && <MiniPanel label="Inbox" value={unreadChats ? `${unreadChats} chats` : 'Quiet'} detail="Full AI brief arrives with RAVIN" />}</div></DashboardCard>;
       case 'nowplaying':
         return <PlaceholderCard index={index} compact={compact} icon={<Music2 size={18} />} title="Now Playing" text="Music controls will appear here when Relay’s music connector is enabled." />;
       case 'pinnedpeople':
@@ -555,7 +558,7 @@ function PlaceholderCard({ icon, title, text, href, index, compact }: { icon: Re
 
 function EventList({ events, compact }: { events: DashboardEvent[]; compact: boolean }) {
   return <ul className="divide-y divide-border">{events.map((event) => {
-    const content = <><div className="min-w-0"><p className="truncate text-sm font-medium text-ink">{event.title}</p>{!compact && <p className="mt-1 truncate text-xs text-ink-faint">{event.source}</p>}</div><time className="shrink-0 text-xs text-ink-muted">{formatEventTime(event.startsAt)}</time></>;
+    const content = <><div className="min-w-0"><p className="truncate text-sm font-medium text-ink">{event.title}</p>{!compact && <p className="mt-1 truncate text-xs text-ink-faint">{event.source}</p>}</div><time className="shrink-0 text-xs text-ink-muted">{formatDashboardEventTime(event)}</time></>;
     return <li key={event.id}>{event.href ? <a href={event.external ? event.href : appPageUrl(event.href)} target={event.external ? '_blank' : undefined} rel={event.external ? 'noreferrer' : undefined} className="flex items-start justify-between gap-3 py-2.5 hover:opacity-70">{content}</a> : <div className="flex items-start justify-between gap-3 py-2.5">{content}</div>}</li>;
   })}</ul>;
 }
@@ -579,6 +582,7 @@ function QuickLink({ href, icon, label }: { href: string; icon: ReactNode; label
 function cleanSender(sender: string) { return sender.replace(/<.*>/, '').trim() || sender; }
 function formatShortDate(raw: string) { const date = new Date(raw); return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
 function formatEventTime(raw: string) { const date = new Date(raw); return localDateKey(date) === localDateKey() ? date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); }
+function formatDashboardEventTime(event: DashboardEvent) { return event.isAllDay ? (localDateKey(new Date(event.startsAt)) === localDateKey() ? 'All day' : formatShortDate(event.startsAt)) : formatEventTime(event.startsAt); }
 function formatRelative(raw: string) { const minutes = Math.max(0, Math.round((Date.now() - new Date(raw).getTime()) / 60_000)); return minutes < 1 ? 'now' : minutes < 60 ? `${minutes}m` : minutes < 1440 ? `${Math.floor(minutes / 60)}h` : `${Math.floor(minutes / 1440)}d`; }
 function formatTimer(seconds: number) { return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; }
 function dayProgress(now: Date) { const start = new Date(now); start.setHours(7, 0, 0, 0); const end = new Date(now); end.setHours(23, 0, 0, 0); return Math.max(0, Math.min(100, Math.round(((now.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100))); }
