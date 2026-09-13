@@ -33,14 +33,11 @@ html[data-relay-experience='lucid'] .relay-mobile-main::before,
 html[data-relay-experience='lucid'] .relay-mobile-main::after {
   display: none !important;
 }
-html[data-relay-experience='lucid'] .relay-mobile-main,
-html[data-relay-experience='lucid'] .relay-app-header,
-html[data-relay-experience='lucid'] .relay-desktop-dock,
-html[data-relay-experience='lucid'] .relay-mobile-nav {
+html[data-relay-experience='lucid'] .relay-mobile-main {
   contain: paint;
 }
 html[data-relay-experience='lucid'] .relay-popover {
-  contain: layout paint;
+  contain: layout;
 }
 html[data-relay-experience='lucid'] .relay-popover :where(button, a, input, textarea, select) {
   transform: none !important;
@@ -63,7 +60,7 @@ html[data-relay-experience='vivid'] .relay-mobile-main > * {
   min-width: 0;
 }
 html[data-relay-experience='vivid'] .relay-popover {
-  contain: layout paint;
+  contain: layout;
 }
 
 @media (max-width: 639px) {
