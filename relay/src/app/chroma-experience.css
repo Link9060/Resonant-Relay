@@ -1,3 +1,27 @@
+/* Expanded Relay palettes. These sit after experience.css so every existing mode can use them. */
+html[data-relay-palette='fuchsia'] { --accent: 192 38 211; --accent-secondary: 192 38 211; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(34%) sepia(97%) saturate(2910%) hue-rotate(274deg) brightness(91%) contrast(93%) drop-shadow(0 0 9px rgb(var(--accent) / .12)); }
+html.dark[data-relay-palette='fuchsia'] { --accent: 232 121 249; --accent-secondary: 232 121 249; --accent-contrast: 10 10 11; }
+html[data-relay-palette='scarlet'] { --accent: 220 38 38; --accent-secondary: 220 38 38; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(28%) sepia(86%) saturate(3011%) hue-rotate(346deg) brightness(97%) contrast(91%) drop-shadow(0 0 9px rgb(var(--accent) / .12)); }
+html.dark[data-relay-palette='scarlet'] { --accent: 248 113 113; --accent-secondary: 248 113 113; --accent-contrast: 10 10 11; }
+html[data-relay-palette='orange'] { --accent: 234 88 12; --accent-secondary: 234 88 12; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(43%) sepia(93%) saturate(2805%) hue-rotate(356deg) brightness(95%) contrast(93%) drop-shadow(0 0 9px rgb(var(--accent) / .12)); }
+html.dark[data-relay-palette='orange'] { --accent: 251 146 60; --accent-secondary: 251 146 60; --accent-contrast: 10 10 11; }
+html[data-relay-palette='lime'] { --accent: 101 163 13; --accent-secondary: 101 163 13; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(59%) sepia(74%) saturate(1072%) hue-rotate(39deg) brightness(91%) contrast(91%) drop-shadow(0 0 9px rgb(var(--accent) / .12)); }
+html.dark[data-relay-palette='lime'] { --accent: 163 230 53; --accent-secondary: 163 230 53; --accent-contrast: 10 10 11; }
+html[data-relay-palette='sky'] { --accent: 2 132 199; --accent-secondary: 2 132 199; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(46%) sepia(92%) saturate(1732%) hue-rotate(164deg) brightness(90%) contrast(98%) drop-shadow(0 0 9px rgb(var(--accent) / .12)); }
+html.dark[data-relay-palette='sky'] { --accent: 56 189 248; --accent-secondary: 56 189 248; --accent-contrast: 10 10 11; }
+html[data-relay-palette='indigo'] { --accent: 79 70 229; --accent-secondary: 79 70 229; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(37%) sepia(87%) saturate(1984%) hue-rotate(225deg) brightness(92%) contrast(92%) drop-shadow(0 0 9px rgb(var(--accent) / .12)); }
+html.dark[data-relay-palette='indigo'] { --accent: 129 140 248; --accent-secondary: 129 140 248; --accent-contrast: 10 10 11; }
+html[data-relay-palette='candy'] { --accent: 219 39 119; --accent-secondary: 124 58 237; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(38%) sepia(78%) saturate(2711%) hue-rotate(306deg) brightness(92%) contrast(92%) drop-shadow(0 0 9px rgb(var(--accent-secondary) / .18)); }
+html.dark[data-relay-palette='candy'] { --accent: 244 114 182; --accent-secondary: 167 139 250; --accent-contrast: 10 10 11; }
+html[data-relay-palette='solar'] { --accent: 234 88 12; --accent-secondary: 202 138 4; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(43%) sepia(93%) saturate(2805%) hue-rotate(356deg) brightness(95%) contrast(93%) drop-shadow(0 0 9px rgb(var(--accent-secondary) / .18)); }
+html.dark[data-relay-palette='solar'] { --accent: 251 146 60; --accent-secondary: 253 224 71; --accent-contrast: 10 10 11; }
+html[data-relay-palette='pulse'] { --accent: 192 38 211; --accent-secondary: 8 145 178; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(34%) sepia(97%) saturate(2910%) hue-rotate(274deg) brightness(91%) contrast(93%) drop-shadow(0 0 10px rgb(var(--accent-secondary) / .2)); }
+html.dark[data-relay-palette='pulse'] { --accent: 232 121 249; --accent-secondary: 34 211 238; --accent-contrast: 10 10 11; }
+html[data-relay-palette='citrus'] { --accent: 101 163 13; --accent-secondary: 234 88 12; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(59%) sepia(74%) saturate(1072%) hue-rotate(39deg) brightness(91%) contrast(91%) drop-shadow(0 0 10px rgb(var(--accent-secondary) / .18)); }
+html.dark[data-relay-palette='citrus'] { --accent: 163 230 53; --accent-secondary: 251 146 60; --accent-contrast: 10 10 11; }
+html[data-relay-palette='dusk'] { --accent: 79 70 229; --accent-secondary: 225 29 72; --accent-contrast: 255 255 255; --relay-particle-filter: brightness(0) saturate(100%) invert(37%) sepia(87%) saturate(1984%) hue-rotate(225deg) brightness(92%) contrast(92%) drop-shadow(0 0 10px rgb(var(--accent-secondary) / .18)); }
+html.dark[data-relay-palette='dusk'] { --accent: 129 140 248; --accent-secondary: 251 113 133; --accent-contrast: 10 10 11; }
+
 /* CHROMA — a deliberately colorful Relay experience.
  * The selected palette anchors the interface while secondary spectrum colors
  * keep the UI lively without sacrificing readability. */
