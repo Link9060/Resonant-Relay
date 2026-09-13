@@ -9,24 +9,17 @@ export const OPEN_WHATS_NEW_EVENT = 'relay-open-whats-new';
 const SEEN_VERSION_KEY = 'relay-whats-new-seen-version';
 
 const DEVELOPMENT_RELEASE = {
-  version: '1.0.3',
+  version: '1.0.5',
   status: 'Beta · Development',
-  publishedAt: '2026-09-10T10:30:00-05:00',
-  title: 'Notes arrive in Relay',
-  summary: 'Relay 1.0.3 adds a dedicated private Notes workspace and clearer staff identities.',
+  publishedAt: '2026-09-13T12:00:00-05:00',
+  title: 'The next Relay beta',
+  summary: 'Relay 1.0.5 starts from the 1.0.4 public baseline. New beta work will appear here as it lands.',
   groups: [
     {
-      label: 'New in beta',
+      label: 'Starting point',
       items: [
-        'Notes now have their own tab and sync privately with your Relay account.',
-        'Build notes from text, headings, lists, checkboxes, and quotes, with automatic saving, search, pinning, and block reordering.',
-        'Owner, Admin, and Moderator titles now appear beside people across profiles, contacts, and chats.',
-      ],
-    },
-    {
-      label: 'Foundation',
-      items: [
-        'Notes use structured blocks and stable IDs so a future visual knowledge graph can connect notes, tasks, and files for RAVIN.',
+        'All Relay Experience modes, expanded palettes, Emergency Mode, and the 1.0.4 stability fixes carry forward into the next beta.',
+        'Beta-only labels stay visible here so it is always clear when you are testing the development channel.',
       ],
     },
   ],
@@ -34,23 +27,73 @@ const DEVELOPMENT_RELEASE = {
 
 const PUBLIC_RELEASES = [
   {
-    version: '1.0.2',
+    version: '1.0.4',
     status: 'Public release',
-    publishedAt: '2026-09-10T10:00:00-05:00',
-    title: 'A clearer Relay update',
-    summary: 'Update history is now built into Relay, returning users get a quick one-time update brief, and notification setup is easier to understand.',
+    publishedAt: '2026-09-13T11:45:00-05:00',
+    title: 'Make Relay yours',
+    summary: 'Relay 1.0.4 brings the full Relay Experience system to public, expands color choices, improves particle continuity, and adds Emergency Mode as a resilient fallback.',
     groups: [
       {
         label: 'New',
         items: [
-          'What’s New now keeps Relay updates in one easy-to-find place.',
+          'Relay Experience lets you switch between Flow, Still, Nexus, Aura, Slate, Spark, Lucid, and Vivid.',
+          'A much larger color palette includes additional single colors and two-color combinations.',
+          'Vivid uses the selected primary color across panels, controls, borders, and particles in multiple shades.',
+          'Emergency Mode provides a lightweight fallback for essential Relay access if the main interface has trouble loading.',
+        ],
+      },
+      {
+        label: 'Improved',
+        items: [
+          'Landing, loading, and transition particles now keep your selected palette instead of snapping back to white.',
+          'Lucid keeps its glass depth without distorting panel geometry or clipping popovers.',
+          'Still and Slate keep controls readable on hover, and Slate adds the mouse-following sidebar accent rail.',
+          'The Experience picker is better organized and stays usable as the number of modes and palettes grows.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.0.3',
+    status: 'Public release',
+    publishedAt: '2026-09-10T10:30:00-05:00',
+    title: 'Notes arrive in Relay',
+    summary: 'Relay 1.0.3 added a dedicated private Notes workspace and clearer staff identities.',
+    groups: [
+      {
+        label: 'New',
+        items: [
+          'Notes have their own tab and sync privately with your Relay account.',
+          'Build notes from text, headings, lists, checkboxes, and quotes, with automatic saving, search, pinning, and block reordering.',
+          'Owner, Admin, and Moderator titles appear beside people across profiles, contacts, and chats.',
+        ],
+      },
+      {
+        label: 'Foundation',
+        items: [
+          'Notes use structured blocks and stable IDs so a future visual knowledge graph can connect notes, tasks, and files for RAVIN.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.0.2',
+    status: 'Public release',
+    publishedAt: '2026-09-10T10:00:00-05:00',
+    title: 'A clearer Relay update',
+    summary: 'Update history is built into Relay, returning users get a quick one-time update brief, and notification setup is easier to understand.',
+    groups: [
+      {
+        label: 'New',
+        items: [
+          'What’s New keeps Relay updates in one easy-to-find place.',
           'Returning users get a one-time summary after Relay updates.',
         ],
       },
       {
         label: 'Improved',
         items: [
-          'Notification setup now reminds you to allow your browser in your device notification settings.',
+          'Notification setup reminds you to allow your browser in your device notification settings.',
           'Release information uses simple wording instead of developer-style changelog language.',
         ],
       },

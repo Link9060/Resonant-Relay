@@ -76,7 +76,7 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
       <button type="button" aria-label={unreadCount ? `Notifications, ${unreadCount} new` : 'Notifications'} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} className="relative flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink">
         <Bell size={18} />
         {unreadCount > 0 && (
-          <span key={`${unreadCount}:${freshId ?? 'steady'}`} className={`absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-canvas ${freshId ? 'relay-motion-badge' : ''}`} aria-hidden="true">
+          <span key={`${unreadCount}:${freshId ?? 'steady'}`} className={`relay-attention-signal absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-canvas ${freshId ? 'relay-motion-badge' : ''}`} aria-hidden="true">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
