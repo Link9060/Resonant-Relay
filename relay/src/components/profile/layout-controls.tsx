@@ -17,8 +17,20 @@ function getSnapshot(): RelayLayout {
   try { return normalizeLayout(window.localStorage.getItem(LAYOUT_KEY)); } catch { return DEFAULT_LAYOUT; }
 }
 
-export function LayoutControls() {
-  const layout = useSyncExternalStore(subscribe, getSnapshot, () => DEFAULT_LAYOUT);
+export function LayoutControls({ value, onChange }: { value?: RelayLayout; onChange?: (layout: RelayLayout) => void } = {}) {
+  const storedLayout = useSyncExternalStore(subscribe, getSnapshot, () => DEFAULT_LAYOUT);
+  const layout = value ?? storedLayout;
+  const controlled = value !== undefined && Boolean(onChange);
+
+  function choose(next: RelayLayout) {
+    if (controlled) onChange?.(next);
+    else saveLayout(next);
+  }
+
+  function reset() {
+    if (controlled) onChange?.(DEFAULT_LAYOUT);
+    else resetLayout();
+  }
 
   return (
     <div className="relay-layout-controls w-full rounded-2xl border border-border bg-surface p-4">
@@ -38,7 +50,7 @@ export function LayoutControls() {
               key={option.id}
               type="button"
               aria-pressed={active}
-              onClick={() => saveLayout(option.id)}
+              onClick={() => choose(option.id)}
               className={`relay-layout-option rounded-xl border p-3 text-left transition ${active ? 'border-ink bg-ink text-canvas' : 'border-border bg-canvas text-ink hover:bg-surface-raised'}`}
             >
               <span className="flex items-start justify-between gap-3">
@@ -56,7 +68,7 @@ export function LayoutControls() {
 
       <button
         type="button"
-        onClick={resetLayout}
+        onClick={reset}
         disabled={layout === DEFAULT_LAYOUT}
         className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-canvas px-3 text-sm font-medium text-ink transition hover:bg-surface-raised disabled:cursor-default disabled:opacity-40"
       >
