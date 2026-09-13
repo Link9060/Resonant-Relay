@@ -18,7 +18,8 @@ export interface CreatePlanInput {
 }
 
 export async function createPlan(input: CreatePlanInput): Promise<ActionResult<{ planId: string }>> {
-  const { data, error } = await createClient().rpc('create_plan_v3', {
+  const supabase = createClient();
+  const { data, error } = await (supabase.rpc as any)('create_plan_v3', {
     p_group_id: input.groupId,
     p_name: input.name,
     p_notes: input.notes || null,
@@ -33,7 +34,9 @@ export async function createPlan(input: CreatePlanInput): Promise<ActionResult<{
     p_end_time: input.startTime ? input.endTime : null,
   });
 
-  return error ? { ok: false, error: error.message } : { ok: true, data: { planId: data } };
+  if (error) return { ok: false, error: error.message };
+  if (typeof data !== 'string') return { ok: false, error: 'Relay could not create that plan.' };
+  return { ok: true, data: { planId: data } };
 }
 
 export async function submitPlanResponse(
