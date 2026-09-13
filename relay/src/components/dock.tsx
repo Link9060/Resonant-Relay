@@ -50,6 +50,7 @@ export function Dock({
 
   return (
     <>
+      <span aria-hidden="true" data-dock-collapsed={collapsed ? 'true' : 'false'} className="relay-desktop-dock relay-particle-geometry-proxy" />
       <nav
         aria-label="Main"
         data-dock-collapsed={collapsed ? 'true' : 'false'}
@@ -124,7 +125,7 @@ export function Dock({
             type="button"
             onClick={() => onCollapsedChange?.(!collapsed)}
             className={cn(
-              'relay-dock-link flex w-full items-center overflow-hidden rounded-md py-2 text-sm text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink',
+              'relay-collapse-toggle relay-dock-link flex w-full items-center overflow-hidden rounded-md py-2 text-sm text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink',
               collapsed ? 'justify-center px-0' : 'gap-3 px-3'
             )}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}

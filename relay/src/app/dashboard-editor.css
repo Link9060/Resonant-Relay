@@ -1,0 +1,90 @@
+@media (min-width: 768px) {
+  .relay-dashboard-editing {
+    padding-bottom: 7rem !important;
+  }
+
+  .relay-dashboard-preview-sticky {
+    position: sticky;
+    top: 12px;
+    z-index: 24;
+    max-height: min(46vh, 460px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 1px solid rgb(var(--border));
+    border-radius: 16px;
+    background: rgb(var(--canvas) / .96);
+    padding: 12px;
+    box-shadow: 0 18px 55px rgb(var(--ink) / .09);
+    backdrop-filter: blur(18px);
+  }
+
+  .relay-dashboard-preview-surface {
+    width: min(78vw, 860px);
+    margin: 0 auto;
+  }
+
+  .relay-dashboard-preview-surface .relay-dashboard-grid {
+    gap: .7rem;
+  }
+
+  .relay-dashboard-preview-surface .relay-motion-dashboard-card {
+    padding: .8rem !important;
+  }
+
+  .relay-dashboard-preview-surface .relay-motion-dashboard-card header {
+    margin-bottom: .55rem !important;
+  }
+
+  .relay-dashboard-preview-surface .relay-motion-dashboard-strip {
+    min-height: 74px !important;
+  }
+
+  .relay-dashboard-preview-surface :where(.text-sm) {
+    font-size: .76rem !important;
+    line-height: 1.15rem !important;
+  }
+
+  .relay-dashboard-preview-surface :where(.text-xs) {
+    font-size: .66rem !important;
+  }
+
+  .relay-dashboard-preview-surface :where(input) {
+    min-height: 34px;
+    padding-top: .4rem !important;
+    padding-bottom: .4rem !important;
+  }
+
+  .relay-dashboard-preview-surface .relay-dashboard-widget[data-dragging='true'] {
+    opacity: .34;
+    transform: scale(.985);
+  }
+
+  .relay-dashboard-customizer {
+    position: relative;
+    z-index: 10;
+  }
+
+  .relay-dashboard-editor-actions {
+    position: fixed;
+    right: 24px;
+    bottom: 22px;
+    z-index: 110;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid rgb(var(--border));
+    border-radius: 12px;
+    background: rgb(var(--canvas) / .96);
+    padding: 5px;
+    box-shadow: 0 14px 45px rgb(var(--ink) / .12);
+    backdrop-filter: blur(16px);
+  }
+
+  html[data-relay-experience='still'] .relay-dashboard-preview-sticky,
+  html[data-relay-experience='still'] .relay-dashboard-editor-actions {
+    border-color: rgb(var(--border));
+    border-radius: 2px;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+}

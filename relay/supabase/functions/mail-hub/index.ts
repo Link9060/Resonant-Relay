@@ -8,7 +8,9 @@ const PRODUCTION_ORIGIN = 'https://resonantrelay.org';
 const WWW_PRODUCTION_ORIGIN = 'https://www.resonantrelay.org';
 const LOCAL_ORIGIN = 'http://localhost:3000';
 const ALLOWED_ORIGINS = new Set([BETA_ORIGIN, PRODUCTION_ORIGIN, WWW_PRODUCTION_ORIGIN, LOCAL_ORIGIN]);
-const GOOGLE_SCOPE = 'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.events.readonly';
+const GOOGLE_EVENT_SCOPE = 'https://www.googleapis.com/auth/calendar.events.readonly';
+const GOOGLE_CALENDAR_LIST_SCOPE = 'https://www.googleapis.com/auth/calendar.calendarlist.readonly';
+const GOOGLE_SCOPE = `openid email profile https://www.googleapis.com/auth/gmail.readonly ${GOOGLE_EVENT_SCOPE} ${GOOGLE_CALENDAR_LIST_SCOPE}`;
 const MICROSOFT_SCOPE = 'openid profile email offline_access User.Read Mail.Read Calendars.Read';
 
 function cors(req: Request) {
@@ -47,10 +49,7 @@ function redirect(
   const url = new URL(`${appBase(safeReturnOrigin(returnOrigin))}${safePath}`);
   url.searchParams.set(provider, result);
   if (reason) url.searchParams.set('reason', reason);
-  return new Response(null, {
-    status: 302,
-    headers: { Location: url.toString(), 'Cache-Control': 'no-store' },
-  });
+  return new Response(null, { status: 302, headers: { Location: url.toString(), 'Cache-Control': 'no-store' } });
 }
 
 function base64url(bytes: Uint8Array) {
@@ -71,6 +70,10 @@ async function hashHex(value: string) {
 
 function providerOf(value: unknown): Provider | null {
   return value === 'google' || value === 'microsoft' ? value : null;
+}
+
+function grantedScopes(account: any) {
+  return new Set(String(account.granted_scope ?? '').split(/\s+/).filter(Boolean));
 }
 
 Deno.serve(async (req: Request) => {
@@ -118,9 +121,7 @@ Deno.serve(async (req: Request) => {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id);
       if ((count ?? 0) >= 3) return json(req, { error: 'Relay supports up to three email accounts.' }, 409);
-      if (!configured(provider)) {
-        return json(req, { error: `${provider === 'google' ? 'Google' : 'Microsoft'} OAuth is not configured yet.` }, 503);
-      }
+      if (!configured(provider)) return json(req, { error: `${provider === 'google' ? 'Google' : 'Microsoft'} OAuth is not configured yet.` }, 503);
 
       const state = randomValue();
       const verifier = randomValue(64);
@@ -198,10 +199,7 @@ Deno.serve(async (req: Request) => {
         }
       }));
       return json(req, {
-        messages: groups
-          .flat()
-          .sort((a, b) => new Date(b.receivedAt ?? 0).getTime() - new Date(a.receivedAt ?? 0).getTime())
-          .slice(0, 30),
+        messages: groups.flat().sort((a, b) => new Date(b.receivedAt ?? 0).getTime() - new Date(a.receivedAt ?? 0).getTime()).slice(0, 30),
       });
     }
 
@@ -211,7 +209,9 @@ Deno.serve(async (req: Request) => {
         try {
           const token = await accessToken(admin, account);
           if (!token) return { events: [], error: account.email_address };
-          return { events: await eventsFor(account, token), error: null };
+          const events = await eventsFor(account, token);
+          const needsCalendarListReconnect = account.provider === 'google' && !grantedScopes(account).has(GOOGLE_CALENDAR_LIST_SCOPE);
+          return { events, error: needsCalendarListReconnect ? account.email_address : null };
         } catch (error) {
           console.error(error);
           return { events: [], error: account.email_address };
@@ -249,11 +249,7 @@ async function callback(url: URL, admin: any, supabaseUrl: string) {
   const rawState = url.searchParams.get('state');
   if (!rawState) return redirect('google', 'error', 'missing_response');
 
-  const { data: state } = await admin
-    .from('email_oauth_states')
-    .select('*')
-    .eq('state_hash', await hashHex(rawState))
-    .maybeSingle();
+  const { data: state } = await admin.from('email_oauth_states').select('*').eq('state_hash', await hashHex(rawState)).maybeSingle();
   if (!state) return redirect('google', 'error', 'invalid_state');
 
   const provider = providerOf(state.provider) ?? 'google';
@@ -263,20 +259,12 @@ async function callback(url: URL, admin: any, supabaseUrl: string) {
 
   const providerError = url.searchParams.get('error');
   const code = url.searchParams.get('code');
-  if (providerError || !code) {
-    return redirect(provider, 'error', providerError || 'missing_response', returnPath, returnOrigin);
-  }
-  if (new Date(state.expires_at).getTime() <= Date.now()) {
-    return redirect(provider, 'error', 'expired', returnPath, returnOrigin);
-  }
-  if (!configured(provider)) {
-    return redirect(provider, 'error', 'not_configured', returnPath, returnOrigin);
-  }
+  if (providerError || !code) return redirect(provider, 'error', providerError || 'missing_response', returnPath, returnOrigin);
+  if (new Date(state.expires_at).getTime() <= Date.now()) return redirect(provider, 'error', 'expired', returnPath, returnOrigin);
+  if (!configured(provider)) return redirect(provider, 'error', 'not_configured', returnPath, returnOrigin);
 
   const callbackUrl = `${supabaseUrl}/functions/v1/mail-hub/callback`;
-  const tokenUrl = provider === 'google'
-    ? 'https://oauth2.googleapis.com/token'
-    : 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
+  const tokenUrl = provider === 'google' ? 'https://oauth2.googleapis.com/token' : 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
   const tokenResponse = await fetch(tokenUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -308,9 +296,7 @@ async function callback(url: URL, admin: any, supabaseUrl: string) {
     granted_scope: tokens.scope ?? (provider === 'google' ? GOOGLE_SCOPE : MICROSOFT_SCOPE),
     connected_at: new Date().toISOString(),
   }, { onConflict: 'user_id,provider,provider_account_id' });
-  if (error) {
-    return redirect(provider, 'error', error.message.includes('three') ? 'account_limit' : 'save_failed', returnPath, returnOrigin);
-  }
+  if (error) return redirect(provider, 'error', error.message.includes('three') ? 'account_limit' : 'save_failed', returnPath, returnOrigin);
   return redirect(provider, 'connected', undefined, returnPath, returnOrigin);
 }
 
@@ -329,17 +315,13 @@ async function identityFor(provider: Provider, token: string) {
 }
 
 async function accessToken(admin: any, account: any) {
-  if (
-    account.access_token
-    && account.access_token_expires_at
-    && new Date(account.access_token_expires_at).getTime() > Date.now() + 60_000
-  ) return account.access_token;
+  if (account.access_token && account.access_token_expires_at && new Date(account.access_token_expires_at).getTime() > Date.now() + 60_000) {
+    return account.access_token;
+  }
 
   const provider = account.provider as Provider;
   const response = await fetch(
-    provider === 'google'
-      ? 'https://oauth2.googleapis.com/token'
-      : 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+    provider === 'google' ? 'https://oauth2.googleapis.com/token' : 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -373,9 +355,7 @@ async function messagesFor(account: any, token: string) {
       '$select': 'id,subject,from,receivedDateTime,isRead,bodyPreview,webLink',
       '$orderby': 'receivedDateTime desc',
     });
-    const response = await fetch(`https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?${query}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await fetch(`https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?${query}`, { headers: { Authorization: `Bearer ${token}` } });
     if (!response.ok) throw new Error(`Microsoft mail error (${response.status}).`);
     const data = await response.json();
     return (data.value ?? []).map((message: any) => ({
@@ -392,18 +372,14 @@ async function messagesFor(account: any, token: string) {
     }));
   }
 
-  const listResponse = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=15&labelIds=INBOX', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const listResponse = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=15&labelIds=INBOX', { headers: { Authorization: `Bearer ${token}` } });
   if (!listResponse.ok) throw new Error(`Gmail error (${listResponse.status}).`);
   const list = await listResponse.json();
 
   return (await Promise.all((list.messages ?? []).map(async (message: any) => {
     const query = new URLSearchParams({ format: 'metadata' });
     ['Subject', 'From', 'Date'].forEach((name) => query.append('metadataHeaders', name));
-    const response = await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${message.id}?${query}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${message.id}?${query}`, { headers: { Authorization: `Bearer ${token}` } });
     if (!response.ok) return null;
     const data = await response.json();
     const header = (name: string) => data.payload.headers.find((item: any) => item.name === name)?.value ?? '';
@@ -430,7 +406,7 @@ async function eventsFor(account: any, token: string) {
     const query = new URLSearchParams({
       startDateTime: timeMin,
       endDateTime: timeMax,
-      '$top': '30',
+      '$top': '40',
       '$orderby': 'start/dateTime',
       '$select': 'id,subject,start,end,isAllDay,webLink',
     });
@@ -452,27 +428,52 @@ async function eventsFor(account: any, token: string) {
     }));
   }
 
-  const query = new URLSearchParams({
-    singleEvents: 'true',
-    orderBy: 'startTime',
-    timeMin,
-    timeMax,
-    maxResults: '30',
-  });
-  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${query}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!response.ok) throw new Error(`Google calendar error (${response.status}).`);
-  const data = await response.json();
-  return (data.items ?? []).map((event: any) => ({
-    id: `${account.id}:${event.id}`,
-    summary: event.summary || '(Untitled event)',
-    start: event.start?.dateTime ?? event.start?.date,
-    end: event.end?.dateTime ?? event.end?.date,
-    isAllDay: Boolean(event.start?.date),
-    htmlLink: event.htmlLink ?? null,
-    accountId: account.id,
-    accountEmail: account.email_address,
-    provider: account.provider,
+  const scopes = grantedScopes(account);
+  let calendars: Array<{ id: string; summary?: string | null }> = [{ id: 'primary', summary: 'Primary' }];
+
+  if (scopes.has(GOOGLE_CALENDAR_LIST_SCOPE)) {
+    const listResponse = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=50&showHidden=false', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!listResponse.ok) throw new Error(`Google calendar list error (${listResponse.status}).`);
+    const list = await listResponse.json();
+    calendars = (list.items ?? [])
+      .filter((calendar: any) => calendar.accessRole !== 'freeBusyReader')
+      .map((calendar: any) => ({ id: calendar.id, summary: calendar.summaryOverride ?? calendar.summary ?? null }))
+      .slice(0, 20);
+    if (!calendars.length) calendars = [{ id: 'primary', summary: 'Primary' }];
+  }
+
+  const eventGroups = await Promise.all(calendars.map(async (calendar) => {
+    const query = new URLSearchParams({
+      singleEvents: 'true',
+      orderBy: 'startTime',
+      timeMin,
+      timeMax,
+      maxResults: '40',
+    });
+    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendar.id)}/events?${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      console.error(`Google calendar events error (${response.status}) for ${calendar.id}`);
+      return [];
+    }
+    const data = await response.json();
+    return (data.items ?? []).map((event: any) => ({
+      id: `${account.id}:${calendar.id}:${event.id}`,
+      summary: event.summary || '(Untitled event)',
+      start: event.start?.dateTime ?? event.start?.date,
+      end: event.end?.dateTime ?? event.end?.date,
+      isAllDay: Boolean(event.start?.date),
+      htmlLink: event.htmlLink ?? null,
+      accountId: account.id,
+      accountEmail: account.email_address,
+      provider: account.provider,
+      calendarId: calendar.id,
+      calendarName: calendar.summary ?? null,
+    }));
   }));
+
+  return eventGroups.flat();
 }
