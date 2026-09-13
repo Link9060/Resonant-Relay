@@ -13,12 +13,12 @@ import {
   dashboardSpan,
   normalizeDashboardLayout,
   readDashboardLayout,
-  resetDashboardLayout,
   saveDashboardLayout,
   type DashboardWidgetId,
   type DashboardWidgetPreference,
   type DashboardWidgetSize,
 } from '@/lib/dashboard-layout';
+import { readLayout, saveLayout, type RelayLayout } from '@/lib/layout-mode';
 import { createClient } from '@/lib/supabase/client';
 import type { Notification, Todo } from '@/lib/types/database';
 import {
@@ -85,6 +85,10 @@ const SIZE_LABELS: Record<DashboardWidgetSize, string> = {
   wide: 'Wide',
 };
 
+function cloneWidgets(items: DashboardWidgetPreference[]) {
+  return items.map((widget) => ({ ...widget }));
+}
+
 export default function DashboardPage() {
   const [state, setState] = useState<DashboardState | null>(null);
   const [now, setNow] = useState(() => new Date());
@@ -96,7 +100,10 @@ export default function DashboardPage() {
   const [freshNotificationId, setFreshNotificationId] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const [editingDashboard, setEditingDashboard] = useState(false);
-  const [widgets, setWidgets] = useState<DashboardWidgetPreference[]>(() => DEFAULT_DASHBOARD_LAYOUT.map((widget) => ({ ...widget })));
+  const [widgets, setWidgets] = useState<DashboardWidgetPreference[]>(() => cloneWidgets(DEFAULT_DASHBOARD_LAYOUT));
+  const [editBaseline, setEditBaseline] = useState<DashboardWidgetPreference[] | null>(null);
+  const [layoutDraft, setLayoutDraft] = useState<RelayLayout>('classic');
+  const [layoutBaseline, setLayoutBaseline] = useState<RelayLayout | null>(null);
   const [draggingWidget, setDraggingWidget] = useState<DashboardWidgetId | null>(null);
 
   useEffect(() => {
@@ -106,17 +113,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 768px)');
-    const syncDesktop = () => {
-      setIsDesktop(media.matches);
-      if (!media.matches) setEditingDashboard(false);
-    };
+    const syncDesktop = () => setIsDesktop(media.matches);
     syncDesktop();
     media.addEventListener('change', syncDesktop);
     return () => media.removeEventListener('change', syncDesktop);
   }, []);
 
   useEffect(() => {
-    const sync = () => setWidgets(readDashboardLayout());
+    const sync = () => {
+      if (!editingDashboard) setWidgets(readDashboardLayout());
+    };
     sync();
     const storage = (event: StorageEvent) => {
       if (!event.key || event.key === DASHBOARD_LAYOUT_KEY) sync();
@@ -127,7 +133,7 @@ export default function DashboardPage() {
       window.removeEventListener('storage', storage);
       window.removeEventListener(DASHBOARD_LAYOUT_EVENT, sync);
     };
-  }, []);
+  }, [editingDashboard]);
 
   useEffect(() => {
     let active = true;
@@ -274,16 +280,49 @@ export default function DashboardPage() {
     }
   }
 
+  function beginCustomize() {
+    const currentWidgets = cloneWidgets(widgets);
+    const currentLayout = readLayout();
+    setEditBaseline(currentWidgets);
+    setLayoutBaseline(currentLayout);
+    setLayoutDraft(currentLayout);
+    setEditingDashboard(true);
+  }
+
   function updateWidgets(next: DashboardWidgetPreference[]) {
     setWidgets(normalizeDashboardLayout(next));
-    saveDashboardLayout(next);
+  }
+
+  function previewLayout(next: RelayLayout) {
+    setLayoutDraft(next);
+    document.documentElement.dataset.relayLayout = next;
+  }
+
+  function saveAndExit() {
+    saveDashboardLayout(widgets);
+    saveLayout(layoutDraft);
+    setEditBaseline(null);
+    setLayoutBaseline(null);
+    setEditingDashboard(false);
+  }
+
+  function cancelCustomize() {
+    if (editBaseline) setWidgets(cloneWidgets(editBaseline));
+    if (layoutBaseline) {
+      document.documentElement.dataset.relayLayout = layoutBaseline;
+      setLayoutDraft(layoutBaseline);
+    }
+    setDraggingWidget(null);
+    setEditBaseline(null);
+    setLayoutBaseline(null);
+    setEditingDashboard(false);
   }
 
   function moveWidget(id: DashboardWidgetId, direction: -1 | 1) {
     const index = widgets.findIndex((widget) => widget.id === id);
     const nextIndex = index + direction;
     if (index < 0 || nextIndex < 0 || nextIndex >= widgets.length) return;
-    const next = widgets.map((widget) => ({ ...widget }));
+    const next = cloneWidgets(widgets);
     const [moved] = next.splice(index, 1);
     if (!moved) return;
     next.splice(nextIndex, 0, moved);
@@ -303,7 +342,7 @@ export default function DashboardPage() {
     const from = widgets.findIndex((widget) => widget.id === draggingWidget);
     const to = widgets.findIndex((widget) => widget.id === targetId);
     if (from < 0 || to < 0) return setDraggingWidget(null);
-    const next = widgets.map((widget) => ({ ...widget }));
+    const next = cloneWidgets(widgets);
     const [moved] = next.splice(from, 1);
     if (!moved) return setDraggingWidget(null);
     next.splice(to, 0, moved);
@@ -312,8 +351,7 @@ export default function DashboardPage() {
   }
 
   function resetWidgets() {
-    resetDashboardLayout();
-    setWidgets(DEFAULT_DASHBOARD_LAYOUT.map((widget) => ({ ...widget })));
+    setWidgets(cloneWidgets(DEFAULT_DASHBOARD_LAYOUT));
   }
 
   if (!state) return <PageLoading />;
@@ -322,68 +360,9 @@ export default function DashboardPage() {
   const unreadChats = state.chatNotifications.filter((notification) => !notification.read_at).length;
   const activeWidgets = isDesktop ? widgets : DEFAULT_DASHBOARD_LAYOUT;
 
-  return (
-    <div className={`relay-dashboard mx-auto max-w-6xl px-4 py-7 md:px-6 md:py-9 ${editingDashboard ? 'relay-dashboard-editing' : ''}`}>
-      <header className="relay-motion-hero-in flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm text-ink-muted">{now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-          <h1 className="mt-1 font-display text-3xl font-medium tracking-tight text-ink">{state.firstName ? `Hey, ${state.firstName}.` : 'Hey.'}</h1>
-        </div>
-        <div className="flex items-end gap-4 sm:text-right">
-          <div>
-            <p className="font-display text-3xl font-medium tabular-nums tracking-tight text-ink">{now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.16em] text-ink-faint">Your day at a glance</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setEditingDashboard((current) => !current)}
-            className={`hidden min-h-10 items-center gap-2 rounded-lg border px-3 text-sm font-medium transition md:inline-flex ${editingDashboard ? 'border-ink bg-ink text-canvas' : 'border-border bg-surface-raised text-ink hover:bg-surface'}`}
-          >
-            {editingDashboard ? <X size={15} /> : <Settings2 size={15} />}
-            {editingDashboard ? 'Done' : 'Customize'}
-          </button>
-        </div>
-      </header>
-
-      {editingDashboard && isDesktop && (
-        <section className="relay-dashboard-customizer mt-6 rounded-2xl border border-border bg-surface-raised p-4 md:p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-ink"><LayoutDashboard size={17} /><h2 className="text-sm font-semibold">Customize desktop Relay</h2></div>
-              <p className="mt-1 text-xs leading-5 text-ink-faint">Drag visible cards to reorder them, choose their width, or hide anything you do not need. These settings only affect this desktop browser.</p>
-            </div>
-            <button type="button" onClick={resetWidgets} className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-border bg-canvas px-3 text-xs font-medium text-ink hover:bg-surface"><RotateCcw size={13} />Reset widgets</button>
-          </div>
-
-          <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,.72fr)]">
-            <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[.15em] text-ink-faint">Dashboard widgets</p>
-              <div className="space-y-2">
-                {widgets.map((widget, index) => (
-                  <div key={widget.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-canvas p-2.5">
-                    <GripVertical size={15} className="text-ink-faint" />
-                    <div className="min-w-32 flex-1">
-                      <div className="text-sm font-medium text-ink">{WIDGET_LABELS[widget.id]}</div>
-                      <div className="text-[10px] uppercase tracking-wide text-ink-faint">{widget.visible ? SIZE_LABELS[widget.size] : 'Hidden'}</div>
-                    </div>
-                    <div className="flex items-center gap-1 rounded-lg border border-border bg-surface p-1">
-                      {(['small', 'medium', 'wide'] as DashboardWidgetSize[]).map((size) => (
-                        <button key={size} type="button" disabled={!widget.visible} onClick={() => setWidgetSize(widget.id, size)} className={`rounded-md px-2 py-1 text-[10px] font-medium transition ${widget.size === size && widget.visible ? 'bg-ink text-canvas' : 'text-ink-muted hover:bg-surface-raised'} disabled:opacity-35`}>{SIZE_LABELS[size]}</button>
-                      ))}
-                    </div>
-                    <button type="button" onClick={() => moveWidget(widget.id, -1)} disabled={index === 0} aria-label={`Move ${WIDGET_LABELS[widget.id]} up`} className="grid h-8 w-8 place-items-center rounded-md border border-border text-ink-muted hover:bg-surface disabled:opacity-30"><ArrowUp size={13} /></button>
-                    <button type="button" onClick={() => moveWidget(widget.id, 1)} disabled={index === widgets.length - 1} aria-label={`Move ${WIDGET_LABELS[widget.id]} down`} className="grid h-8 w-8 place-items-center rounded-md border border-border text-ink-muted hover:bg-surface disabled:opacity-30"><ArrowDown size={13} /></button>
-                    <button type="button" onClick={() => toggleWidget(widget.id)} aria-label={`${widget.visible ? 'Hide' : 'Show'} ${WIDGET_LABELS[widget.id]}`} className="grid h-8 w-8 place-items-center rounded-md border border-border text-ink-muted hover:bg-surface">{widget.visible ? <Eye size={14} /> : <EyeOff size={14} />}</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <LayoutControls />
-          </div>
-        </section>
-      )}
-
-      <div className="relay-dashboard-grid mt-7 grid grid-cols-1 gap-5 md:grid-cols-12">
+  const dashboardGrid = (
+    <>
+      <div className={`relay-dashboard-grid grid grid-cols-1 gap-5 md:grid-cols-12 ${editingDashboard && isDesktop ? 'mt-0' : 'mt-7'}`}>
         {activeWidgets.filter((widget) => widget.visible).map((widget, index) => (
           <div
             key={widget.id}
@@ -416,8 +395,89 @@ export default function DashboardPage() {
       </div>
 
       {isDesktop && activeWidgets.every((widget) => !widget.visible) && (
-        <button type="button" onClick={() => setEditingDashboard(true)} className="mt-7 w-full rounded-2xl border border-dashed border-border bg-surface px-5 py-12 text-center text-sm text-ink-muted hover:bg-surface-raised">Your dashboard is empty. Customize it to add widgets.</button>
+        <button type="button" onClick={editingDashboard ? undefined : beginCustomize} className="mt-7 w-full rounded-2xl border border-dashed border-border bg-surface px-5 py-12 text-center text-sm text-ink-muted hover:bg-surface-raised">Your dashboard is empty. {editingDashboard ? 'Use the controls below to add widgets.' : 'Customize it to add widgets.'}</button>
       )}
+    </>
+  );
+
+  return (
+    <div className={`relay-dashboard mx-auto max-w-6xl px-4 py-7 md:px-6 md:py-9 ${editingDashboard ? 'relay-dashboard-editing' : ''}`}>
+      <header className="relay-motion-hero-in flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm text-ink-muted">{now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+          <h1 className="mt-1 font-display text-3xl font-medium tracking-tight text-ink">{state.firstName ? `Hey, ${state.firstName}.` : 'Hey.'}</h1>
+        </div>
+        <div className="flex items-end gap-4 sm:text-right">
+          <div>
+            <p className="font-display text-3xl font-medium tabular-nums tracking-tight text-ink">{now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.16em] text-ink-faint">Your day at a glance</p>
+          </div>
+          {!editingDashboard && (
+            <button
+              type="button"
+              onClick={beginCustomize}
+              className="hidden min-h-10 items-center gap-2 rounded-lg border border-border bg-surface-raised px-3 text-sm font-medium text-ink transition hover:bg-surface md:inline-flex"
+            >
+              <Settings2 size={15} />Customize
+            </button>
+          )}
+        </div>
+      </header>
+
+      {editingDashboard && isDesktop ? (
+        <>
+          <div className="relay-dashboard-preview-sticky mt-6">
+            <div className="relay-dashboard-preview-surface">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[.16em] text-ink-faint">Live preview</span>
+                <span className="text-[11px] text-ink-faint">Drag cards here to reorder</span>
+              </div>
+              {dashboardGrid}
+            </div>
+          </div>
+
+          <section className="relay-dashboard-customizer mt-8 rounded-2xl border border-border bg-surface-raised p-4 md:p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-ink"><LayoutDashboard size={17} /><h2 className="text-sm font-semibold">Customize desktop Relay</h2></div>
+                <p className="mt-1 text-xs leading-5 text-ink-faint">Changes are only a preview until you press Save & Exit. Cancel returns both the dashboard and desktop shell to exactly how they were.</p>
+              </div>
+              <button type="button" onClick={resetWidgets} className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-border bg-canvas px-3 text-xs font-medium text-ink hover:bg-surface"><RotateCcw size={13} />Reset widgets</button>
+            </div>
+
+            <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,.72fr)]">
+              <div>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[.15em] text-ink-faint">Dashboard widgets</p>
+                <div className="space-y-2">
+                  {widgets.map((widget, index) => (
+                    <div key={widget.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-canvas p-2.5">
+                      <GripVertical size={15} className="text-ink-faint" />
+                      <div className="min-w-32 flex-1">
+                        <div className="text-sm font-medium text-ink">{WIDGET_LABELS[widget.id]}</div>
+                        <div className="text-[10px] uppercase tracking-wide text-ink-faint">{widget.visible ? SIZE_LABELS[widget.size] : 'Hidden'}</div>
+                      </div>
+                      <div className="flex items-center gap-1 rounded-lg border border-border bg-surface p-1">
+                        {(['small', 'medium', 'wide'] as DashboardWidgetSize[]).map((size) => (
+                          <button key={size} type="button" disabled={!widget.visible} onClick={() => setWidgetSize(widget.id, size)} className={`rounded-md px-2 py-1 text-[10px] font-medium transition ${widget.size === size && widget.visible ? 'bg-ink text-canvas' : 'text-ink-muted hover:bg-surface-raised'} disabled:opacity-35`}>{SIZE_LABELS[size]}</button>
+                        ))}
+                      </div>
+                      <button type="button" onClick={() => moveWidget(widget.id, -1)} disabled={index === 0} aria-label={`Move ${WIDGET_LABELS[widget.id]} up`} className="grid h-8 w-8 place-items-center rounded-md border border-border text-ink-muted hover:bg-surface disabled:opacity-30"><ArrowUp size={13} /></button>
+                      <button type="button" onClick={() => moveWidget(widget.id, 1)} disabled={index === widgets.length - 1} aria-label={`Move ${WIDGET_LABELS[widget.id]} down`} className="grid h-8 w-8 place-items-center rounded-md border border-border text-ink-muted hover:bg-surface disabled:opacity-30"><ArrowDown size={13} /></button>
+                      <button type="button" onClick={() => toggleWidget(widget.id)} aria-label={`${widget.visible ? 'Hide' : 'Show'} ${WIDGET_LABELS[widget.id]}`} className="grid h-8 w-8 place-items-center rounded-md border border-border text-ink-muted hover:bg-surface">{widget.visible ? <Eye size={14} /> : <EyeOff size={14} />}</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <LayoutControls value={layoutDraft} onChange={previewLayout} />
+            </div>
+          </section>
+
+          <div className="relay-dashboard-editor-actions" role="group" aria-label="Dashboard customization actions">
+            <button type="button" onClick={cancelCustomize} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-4 text-sm font-medium text-ink-muted hover:text-ink"><X size={15} />Cancel</button>
+            <button type="button" onClick={saveAndExit} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-ink px-4 text-sm font-medium text-canvas"><Check size={15} />Save & Exit</button>
+          </div>
+        </>
+      ) : dashboardGrid}
     </div>
   );
 }
