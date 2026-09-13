@@ -96,6 +96,18 @@ html[data-relay-experience='still'] .relay-experience-menu-trigger-still:hover {
     background: rgb(var(--canvas)) !important;
   }
 
+  html[data-relay-experience='still'][data-relay-layout='topbar'] .relay-desktop-dock {
+    border-right: 0 !important;
+    border-bottom: 1px solid rgb(var(--border)) !important;
+  }
+
+  html[data-relay-experience='still'][data-relay-layout='floating'] .relay-desktop-dock {
+    border: 1px solid rgb(var(--border)) !important;
+    background: rgb(var(--surface-raised)) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
   html[data-relay-experience='still'] .relay-app-header {
     min-height: 3.25rem;
     border-bottom: 1px solid rgb(var(--border)) !important;
@@ -187,6 +199,15 @@ html[data-relay-experience='still'] .relay-experience-menu-trigger-still:hover {
   html[data-relay-experience='still'] .relay-app-shell[data-dock-collapsed='false'] .relay-still-help-trigger,
   html[data-relay-experience='still'] .relay-app-shell[data-dock-collapsed='false'] .relay-still-shortcut-card {
     left: 252px;
+  }
+
+  html[data-relay-experience='still'][data-relay-layout='focus'] :is(.relay-still-help-trigger, .relay-still-shortcut-card) {
+    left: 82px !important;
+  }
+
+  html[data-relay-experience='still'][data-relay-layout='topbar'] :is(.relay-still-help-trigger, .relay-still-shortcut-card),
+  html[data-relay-experience='still'][data-relay-layout='floating'] :is(.relay-still-help-trigger, .relay-still-shortcut-card) {
+    left: 18px !important;
   }
 
   html[data-relay-experience='still'] .relay-still-help-trigger kbd {
