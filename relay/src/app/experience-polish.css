@@ -1,0 +1,165 @@
+/* Experience polish pass: keep mode personality without sacrificing readability. */
+
+/* Keep the particle system on the selected accent palette across landing, loading and transitions. */
+html[data-relay-palette='monochrome'] {
+  --relay-particle-filter: drop-shadow(0 0 8px rgb(var(--accent) / .08));
+}
+html[data-relay-palette='cobalt'] {
+  --relay-particle-filter: brightness(0) saturate(100%) invert(49%) sepia(87%) saturate(2663%) hue-rotate(202deg) brightness(101%) contrast(96%) drop-shadow(0 0 9px rgb(var(--accent) / .12));
+}
+html[data-relay-palette='violet'] {
+  --relay-particle-filter: brightness(0) saturate(100%) invert(52%) sepia(49%) saturate(3360%) hue-rotate(231deg) brightness(101%) contrast(96%) drop-shadow(0 0 9px rgb(var(--accent) / .12));
+}
+html[data-relay-palette='rose'] {
+  --relay-particle-filter: brightness(0) saturate(100%) invert(47%) sepia(77%) saturate(3838%) hue-rotate(326deg) brightness(99%) contrast(101%) drop-shadow(0 0 9px rgb(var(--accent) / .12));
+}
+html[data-relay-palette='cyan'] {
+  --relay-particle-filter: brightness(0) saturate(100%) invert(66%) sepia(54%) saturate(1325%) hue-rotate(142deg) brightness(96%) contrast(95%) drop-shadow(0 0 9px rgb(var(--accent) / .12));
+}
+html[data-relay-palette='emerald'] {
+  --relay-particle-filter: brightness(0) saturate(100%) invert(62%) sepia(77%) saturate(490%) hue-rotate(98deg) brightness(94%) contrast(93%) drop-shadow(0 0 9px rgb(var(--accent) / .12));
+}
+html[data-relay-palette='amber'] {
+  --relay-particle-filter: brightness(0) saturate(100%) invert(79%) sepia(80%) saturate(1518%) hue-rotate(346deg) brightness(102%) contrast(97%) drop-shadow(0 0 9px rgb(var(--accent) / .12));
+}
+html[data-relay-palette='aurora'] {
+  --relay-particle-filter: brightness(0) saturate(100%) invert(52%) sepia(49%) saturate(3360%) hue-rotate(231deg) brightness(101%) contrast(96%) drop-shadow(0 0 8px rgb(var(--accent-secondary) / .18));
+}
+html[data-relay-palette='ember'] {
+  --relay-particle-filter: brightness(0) saturate(100%) invert(47%) sepia(77%) saturate(3838%) hue-rotate(326deg) brightness(99%) contrast(101%) drop-shadow(0 0 8px rgb(var(--accent-secondary) / .18));
+}
+html[data-relay-palette='tide'] {
+  --relay-particle-filter: brightness(0) saturate(100%) invert(49%) sepia(87%) saturate(2663%) hue-rotate(202deg) brightness(101%) contrast(96%) drop-shadow(0 0 8px rgb(var(--accent-secondary) / .18));
+}
+
+html[data-relay-palette] :is(.beta-cloud, .beta-particle-effects, .beta-intro canvas) {
+  filter: var(--relay-particle-filter) !important;
+  transition: filter 220ms ease, opacity 220ms ease;
+}
+html[data-relay-experience='lucid'][data-relay-palette] .beta-cloud {
+  filter: var(--relay-particle-filter) blur(.22px) !important;
+}
+
+/* STILL + SLATE: the beta flip hover used to turn text into the canvas color after its fill was disabled. */
+@media (hover: hover) {
+  html[data-relay-experience='still'] .beta-experience .relay-dock-link:hover,
+  html[data-relay-experience='slate'] .beta-experience .relay-dock-link:hover {
+    color: rgb(var(--ink)) !important;
+    background: rgb(var(--surface-raised) / .72) !important;
+    box-shadow: none !important;
+    transition: color 110ms ease, background-color 110ms ease, transform 110ms ease !important;
+  }
+  html[data-relay-experience='still'] .beta-experience .relay-dock-link:hover::before,
+  html[data-relay-experience='slate'] .beta-experience .relay-dock-link:hover::before {
+    display: none !important;
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
+
+/* SLATE: a thin accent rail follows the pointer through the primary navigation. */
+html[data-relay-experience='slate'] .relay-desktop-dock::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: var(--slate-pointer-y, 220px);
+  z-index: 5;
+  width: 2px;
+  height: 42px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgb(var(--accent) / .24), rgb(var(--accent)), rgb(var(--accent) / .24));
+  box-shadow: 0 0 12px rgb(var(--accent) / .2);
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: top 95ms cubic-bezier(.2,.72,.22,1), opacity 120ms ease;
+  pointer-events: none;
+}
+html[data-relay-experience='slate'] .relay-desktop-dock[data-slate-hover='true']::after { opacity: 1; }
+html[data-relay-experience='slate'] .relay-desktop-dock[data-slate-hover='true'] .relay-primary-cluster .relay-dock-link[aria-current='page'] {
+  border-left-color: transparent;
+  box-shadow: none;
+}
+
+/* LUCID: keep the glass language, but stop every layer from becoming a giant gradient. */
+html[data-relay-experience='lucid'] body {
+  background-image:
+    radial-gradient(circle at 14% 8%, rgb(var(--accent) / .018), transparent 34%),
+    radial-gradient(circle at 88% 90%, rgb(var(--accent-secondary) / .014), transparent 38%) !important;
+}
+html[data-relay-experience='lucid'] .relay-mobile-main {
+  border-color: rgb(var(--border) / .82) !important;
+  background-color: rgb(var(--canvas) / .8) !important;
+  background-image: linear-gradient(145deg, rgb(255 255 255 / .035), transparent 32% 82%, rgb(var(--ink) / .012)) !important;
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / .12),
+    inset 1px 0 rgb(var(--accent-secondary) / .035),
+    inset -1px 0 rgb(var(--accent) / .035),
+    0 18px 46px rgb(var(--ink) / .06) !important;
+  backdrop-filter: blur(calc(10px + 6px * var(--relay-experience-intensity))) saturate(1.08) !important;
+}
+html[data-relay-experience='lucid'] .relay-mobile-main::before {
+  border-color: rgb(255 255 255 / .08) !important;
+  box-shadow: inset 1px 0 rgb(var(--accent-secondary) / .025), inset -1px 0 rgb(var(--accent) / .025) !important;
+}
+html[data-relay-experience='lucid'] .relay-mobile-main::after {
+  inset: -18% -12% !important;
+  background: linear-gradient(112deg, transparent 43%, rgb(255 255 255 / .025) 49%, rgb(var(--accent) / .012) 51%, transparent 57%) !important;
+  animation: none !important;
+  opacity: .45 !important;
+  transform: none !important;
+}
+html[data-relay-experience='lucid'] :is(.relay-app-header, .relay-desktop-dock, .relay-mobile-nav) {
+  border-color: rgb(var(--border) / .82) !important;
+  background-color: rgb(var(--canvas) / .82) !important;
+  background-image: linear-gradient(145deg, rgb(255 255 255 / .028), transparent 52%) !important;
+  box-shadow: inset 0 1px rgb(255 255 255 / .08) !important;
+  backdrop-filter: blur(18px) saturate(1.08) !important;
+}
+html[data-relay-experience='lucid'] .relay-app-shell :where(.bg-surface, .bg-surface-raised) {
+  border-color: rgb(var(--border) / .82) !important;
+  background-color: rgb(var(--surface-raised) / .74) !important;
+  background-image: linear-gradient(145deg, rgb(255 255 255 / .026), transparent 48%) !important;
+  box-shadow: inset 0 1px rgb(255 255 255 / .08), 0 9px 24px rgb(var(--ink) / .04) !important;
+  backdrop-filter: blur(12px) saturate(1.06) !important;
+}
+html[data-relay-experience='lucid'] .relay-popover {
+  isolation: isolate;
+  border-color: rgb(var(--border)) !important;
+  background: rgb(var(--canvas) / .94) !important;
+  background-image: linear-gradient(145deg, rgb(255 255 255 / .025), transparent 56%) !important;
+  box-shadow: 0 18px 52px rgb(0 0 0 / .22), inset 0 1px rgb(255 255 255 / .06) !important;
+  backdrop-filter: blur(16px) saturate(1.06) !important;
+  transform-style: flat !important;
+}
+html[data-relay-experience='lucid'] .relay-popover [class*='bg-canvas'] {
+  background-color: rgb(var(--canvas) / .82) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+}
+html[data-relay-experience='lucid'] .relay-popover [class*='bg-surface'] {
+  background-color: rgb(var(--surface) / .72) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+}
+html[data-relay-experience='lucid'] .relay-popover .text-ink-faint {
+  color: rgb(var(--ink-muted)) !important;
+}
+html[data-relay-experience='lucid'] .relay-popover :is(button, a):hover {
+  background-color: rgb(var(--surface-raised) / .9) !important;
+}
+html[data-relay-experience='lucid'] .relay-primary-cluster::before {
+  border-color: rgb(255 255 255 / .1) !important;
+  background: linear-gradient(145deg, rgb(255 255 255 / .075), transparent 50%), rgb(var(--surface-raised) / .5) !important;
+  box-shadow: inset 0 1px rgb(255 255 255 / .12), 0 5px 16px rgb(var(--ink) / .055) !important;
+  backdrop-filter: blur(13px) saturate(1.16) !important;
+}
+
+@media (hover: hover) {
+  html[data-relay-experience='lucid'] .relay-app-shell :where(button:not(:disabled), a[href]):hover {
+    box-shadow: 0 6px 18px rgb(var(--ink) / .055) !important;
+  }
+  html[data-relay-experience='lucid'] .relay-mobile-main :where(.relay-motion-dashboard-card, article.bg-surface, article.bg-surface-raised):hover {
+    transform: translateY(-2px) rotateX(.45deg) scale(1.002) !important;
+    box-shadow: inset 0 1px rgb(255 255 255 / .09), 0 12px 28px rgb(var(--ink) / .055) !important;
+  }
+}
