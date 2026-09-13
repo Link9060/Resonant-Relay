@@ -7,6 +7,7 @@ import { MobileRouteGate } from '@/components/mobile-route-gate';
 import { MobileStaffAlert } from '@/components/mobile-staff-alert';
 import { PageLoading } from '@/components/page-loading';
 import { StaffCommandPaletteGlobal } from '@/components/staff-command-palette';
+import { StillShortcuts } from '@/components/still-shortcuts';
 import { appPageUrl, IS_BETA } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT, setRolePreview } from '@/lib/role-preview';
@@ -230,6 +231,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <MobileRouteGate role={effectiveRole}>{children}</MobileRouteGate>
           </main>
         </div>
+        <StillShortcuts />
         <StaffCommandPaletteGlobal key={effectiveRole} role={effectiveRole} />
       </div>
     </BetaExperience>
