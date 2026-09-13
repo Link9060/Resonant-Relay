@@ -107,8 +107,18 @@ export function ExperienceControls() {
               onClick={() => update(experience, option.id)}
               className="relay-accent-option flex items-center gap-2 rounded-lg border border-border bg-canvas px-2.5 py-2 text-left text-xs text-ink"
             >
-              <span className="h-3.5 w-3.5 shrink-0 rounded-full" style={{ backgroundColor: option.light }} aria-hidden="true" />
-              <span>{option.name}</span>
+              <span
+                className="relay-accent-swatch h-3.5 w-3.5 shrink-0 rounded-full"
+                style={{
+                  '--swatch-light-a': option.light,
+                  '--swatch-light-b': option.secondaryLight,
+                  '--swatch-dark-a': option.dark,
+                  '--swatch-dark-b': option.secondaryDark,
+                } as CSSProperties}
+                aria-hidden="true"
+              />
+              <span className="min-w-0 flex-1 truncate">{option.name}</span>
+              {option.duo && <span className="text-[8px] font-semibold uppercase tracking-wider text-ink-faint">Duo</span>}
             </button>
           ))}
         </div>

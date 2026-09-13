@@ -60,11 +60,21 @@ export function ParticleField() {
     let pointerX = 0, pointerY = 0, pointerClientX = 0, pointerClientY = 0;
     let mouseX = 0, mouseY = 0, hover = 0, targetHover = 0;
     let dark = document.documentElement.classList.contains('dark');
-    const readAccentColor = () => {
-      const value = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    const readAccentColor = (token: '--accent' | '--accent-secondary') => {
+      const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
       return value ? `rgb(${value.split(/\s+/).join(', ')})` : dark ? '#fff' : '#111';
     };
-    let accentColor = readAccentColor();
+    let accentColor = readAccentColor('--accent');
+    let accentSecondaryColor = readAccentColor('--accent-secondary');
+    let accentPaint: string | CanvasGradient = accentColor;
+    const syncAccentPaint = () => {
+      accentColor = readAccentColor('--accent');
+      accentSecondaryColor = readAccentColor('--accent-secondary');
+      const gradient = fx.createLinearGradient(0, h, Math.max(1, w), 0);
+      gradient.addColorStop(0, accentColor);
+      gradient.addColorStop(1, accentSecondaryColor);
+      accentPaint = gradient;
+    };
     let cue: (ParticleCue & { started: number }) | null = null;
     let impact: { x: number; y: number; started: number } | null = null;
     let bounds = { left: 24, top: 80, width: 0, height: 0 };
@@ -141,6 +151,7 @@ export function ParticleField() {
     const resize = () => {
       w = window.innerWidth; h = window.innerHeight;
       fitCanvas(background, bg, w, h); fitCanvas(canvas, fx, w, h);
+      syncAccentPaint();
       measure(); wake();
     };
     const drawWorkspaceCue = (kind: 'open' | 'close', progress: number) => {
@@ -155,7 +166,7 @@ export function ParticleField() {
       });
 
       const dotAlpha = opening ? 1 : smooth(progress / 0.14);
-      fx.fillStyle = accentColor;
+      fx.fillStyle = accentPaint;
       for (const point of pageParticles) {
         const local = opening
           ? easeInOut((progress - 0.025 - point.delay) / 0.65)
@@ -179,9 +190,12 @@ export function ParticleField() {
       const loading = loadingState === 'true';
       const settling = loadingState === 'settling';
       const minimalLoading = root.dataset.minimalLoading === 'true';
+      const persistentLucidCloud = document.documentElement.dataset.relayExperience === 'lucid'
+        && document.documentElement.dataset.relayLockIn !== 'true';
       const showCloud = root.dataset.ready === 'true' && (
         (root.dataset.space === 'true' && !loading && !settling)
         || ((loading || settling) && !minimalLoading)
+        || persistentLucidCloud
       );
       if (!showCloud && !cue && !impact) {
         bg.clearRect(0, 0, w, h); fx.clearRect(0, 0, w, h);
@@ -209,7 +223,7 @@ export function ParticleField() {
       });
       if (impact && impactProgress < 1 && !media.matches) {
         const radius = 18 + Math.pow(impactProgress, 0.72) * Math.min(areaWidth * 0.38, 330);
-        fx.fillStyle = accentColor;
+        fx.fillStyle = accentPaint;
         for (let i = 0; i < Math.min(260, sparks.length); i++) {
           const s = sparks[i]!;
           const r = radius + (s.depth - 0.5) * 38;
@@ -243,7 +257,7 @@ export function ParticleField() {
     observer.observe(root, { attributes: true, subtree: true, childList: true, attributeFilter: ['data-space', 'data-ready', 'data-loading', 'data-dock-collapsed'] });
     const layoutObserver = new ResizeObserver(() => { measure(); wake(); });
     root.querySelectorAll('.relay-desktop-dock, .relay-mobile-main').forEach(element => layoutObserver.observe(element));
-    const themeObserver = new MutationObserver(() => { dark = document.documentElement.classList.contains('dark'); accentColor = readAccentColor(); wake(); });
+    const themeObserver = new MutationObserver(() => { dark = document.documentElement.classList.contains('dark'); syncAccentPaint(); wake(); });
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     const onCue = (event: Event) => {
       const next = (event as CustomEvent<ParticleCue>).detail;
@@ -282,7 +296,7 @@ export function ParticleField() {
     };
     const onExperience = () => {
       preferences = scaleForExperience(basePreferences);
-      accentColor = readAccentColor();
+      syncAccentPaint();
       syncMinimalLoading();
       window.clearTimeout(preferenceTimer);
       preferenceTimer = window.setTimeout(() => {

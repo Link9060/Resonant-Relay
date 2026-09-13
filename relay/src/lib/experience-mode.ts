@@ -1,7 +1,7 @@
 'use client';
 
 export type RelayExperience = 'flow' | 'still' | 'nexus' | 'aura' | 'slate' | 'spark' | 'lucid';
-export type RelayPalette = 'monochrome' | 'cobalt' | 'violet' | 'rose' | 'cyan' | 'emerald' | 'amber';
+export type RelayPalette = 'monochrome' | 'cobalt' | 'violet' | 'rose' | 'cyan' | 'emerald' | 'amber' | 'aurora' | 'ember' | 'tide';
 
 export const EXPERIENCE_KEY = 'relay-experience-mode';
 export const PALETTE_KEY = 'relay-experience-palette';
@@ -29,14 +29,25 @@ export const experiences: {
   { id: 'lucid', name: 'Lucid', description: 'Layered translucent surfaces with blur, depth and reflection.', signature: 'Dimensional' },
 ];
 
-export const palettes: { id: RelayPalette; name: string; light: string; dark: string }[] = [
-  { id: 'monochrome', name: 'Monochrome', light: '#111111', dark: '#f4f4f5' },
-  { id: 'cobalt', name: 'Cobalt', light: '#2563eb', dark: '#60a5fa' },
-  { id: 'violet', name: 'Violet', light: '#7c3aed', dark: '#a78bfa' },
-  { id: 'rose', name: 'Rose', light: '#e11d48', dark: '#fb7185' },
-  { id: 'cyan', name: 'Cyan', light: '#0891b2', dark: '#22d3ee' },
-  { id: 'emerald', name: 'Emerald', light: '#059669', dark: '#34d399' },
-  { id: 'amber', name: 'Amber', light: '#d97706', dark: '#fbbf24' },
+export const palettes: {
+  id: RelayPalette;
+  name: string;
+  light: string;
+  dark: string;
+  secondaryLight: string;
+  secondaryDark: string;
+  duo?: boolean;
+}[] = [
+  { id: 'monochrome', name: 'Monochrome', light: '#111111', dark: '#f4f4f5', secondaryLight: '#111111', secondaryDark: '#f4f4f5' },
+  { id: 'cobalt', name: 'Cobalt', light: '#2563eb', dark: '#60a5fa', secondaryLight: '#2563eb', secondaryDark: '#60a5fa' },
+  { id: 'violet', name: 'Violet', light: '#7c3aed', dark: '#a78bfa', secondaryLight: '#7c3aed', secondaryDark: '#a78bfa' },
+  { id: 'rose', name: 'Rose', light: '#e11d48', dark: '#fb7185', secondaryLight: '#e11d48', secondaryDark: '#fb7185' },
+  { id: 'cyan', name: 'Cyan', light: '#0891b2', dark: '#22d3ee', secondaryLight: '#0891b2', secondaryDark: '#22d3ee' },
+  { id: 'emerald', name: 'Emerald', light: '#059669', dark: '#34d399', secondaryLight: '#059669', secondaryDark: '#34d399' },
+  { id: 'amber', name: 'Amber', light: '#d97706', dark: '#fbbf24', secondaryLight: '#d97706', secondaryDark: '#fbbf24' },
+  { id: 'aurora', name: 'Aurora', light: '#7c3aed', dark: '#a78bfa', secondaryLight: '#0891b2', secondaryDark: '#22d3ee', duo: true },
+  { id: 'ember', name: 'Ember', light: '#e11d48', dark: '#fb7185', secondaryLight: '#d97706', secondaryDark: '#fbbf24', duo: true },
+  { id: 'tide', name: 'Tide', light: '#2563eb', dark: '#60a5fa', secondaryLight: '#059669', secondaryDark: '#34d399', duo: true },
 ];
 
 const experienceIds = new Set<RelayExperience>(experiences.map(({ id }) => id));
