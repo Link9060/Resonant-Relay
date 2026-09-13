@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 
 export function ExperienceProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    const apply = () => { const current = readExperience(); applyExperience(current.experience, current.palette, current.intensity); };
+    const apply = () => { const current = readExperience(); applyExperience(current.experience, current.palette, current.intensity, current.lockIn); };
     apply();
     window.addEventListener(EXPERIENCE_EVENT, apply);
     window.addEventListener('storage', apply);
