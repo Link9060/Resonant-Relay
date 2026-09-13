@@ -29,16 +29,18 @@ export function StillShortcuts() {
   const pathname = usePathname();
   const [helpOpen, setHelpOpen] = useState(false);
   const [experienceOpen, setExperienceOpen] = useState(false);
-  const [active, setActive] = useState(false);
+  const [desktopActive, setDesktopActive] = useState(false);
+  const [isStill, setIsStill] = useState(false);
 
   const shortcutMap = useMemo(() => new Map(SHORTCUTS.map((item) => [item.key.toLowerCase(), item.href])), []);
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 768px)');
     const sync = () => {
-      const next = document.documentElement.dataset.relayExperience === 'still' && media.matches;
-      setActive(next);
-      if (!next) {
+      const desktop = media.matches;
+      setDesktopActive(desktop);
+      setIsStill(desktop && document.documentElement.dataset.relayExperience === 'still');
+      if (!desktop) {
         setHelpOpen(false);
         setExperienceOpen(false);
       }
@@ -55,7 +57,7 @@ export function StillShortcuts() {
   }, []);
 
   useEffect(() => {
-    if (!active) return;
+    if (!desktopActive) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTypingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -98,28 +100,32 @@ export function StillShortcuts() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [active, router, shortcutMap]);
+  }, [desktopActive, router, shortcutMap]);
 
-  if (!active) return null;
+  if (!desktopActive) return null;
 
   return (
     <>
-      <button
-        type="button"
-        className="relay-still-help-trigger"
-        aria-label="Show Still keyboard shortcuts"
-        aria-expanded={helpOpen}
-        onClick={() => { setHelpOpen((value) => !value); setExperienceOpen(false); }}
-      >
-        ?
-      </button>
+      {isStill && (
+        <button
+          type="button"
+          className="relay-still-help-trigger"
+          aria-label="Show Relay keyboard shortcuts"
+          aria-expanded={helpOpen}
+          onClick={() => { setHelpOpen((value) => !value); setExperienceOpen(false); }}
+        >
+          ?
+        </button>
+      )}
 
-      <div className="relay-still-location" aria-hidden="true">
-        {pathname.replace(/\/$/, '').endsWith('/space') ? 'Resonant Relay' : ''}
-      </div>
+      {isStill && (
+        <div className="relay-still-location" aria-hidden="true">
+          {pathname.replace(/\/$/, '').endsWith('/space') ? 'Resonant Relay' : ''}
+        </div>
+      )}
 
       {helpOpen && (
-        <aside className="relay-still-overlay relay-still-shortcut-card" aria-label="Still shortcuts">
+        <aside className="relay-still-overlay relay-still-shortcut-card" aria-label="Relay keyboard shortcuts">
           <div className="relay-still-overlay-title">Shortcuts</div>
           <div className="relay-still-shortcut-list">
             {SHORTCUTS.map((item) => <div key={item.key} className="relay-still-shortcut-row"><kbd>{item.key}</kbd><span>{item.label}</span></div>)}

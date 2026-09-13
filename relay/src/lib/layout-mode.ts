@@ -3,7 +3,7 @@
 export const LAYOUT_KEY = 'relay-desktop-layout';
 export const LAYOUT_EVENT = 'relay-desktop-layout-change';
 
-export type RelayLayout = 'classic' | 'compact' | 'focus' | 'topbar' | 'floating';
+export type RelayLayout = 'classic' | 'focus' | 'topbar' | 'floating';
 
 export const DEFAULT_LAYOUT: RelayLayout = 'classic';
 
@@ -14,8 +14,7 @@ export const layouts: Array<{
   description: string;
 }> = [
   { id: 'classic', name: 'Classic', signature: 'Sidebar', description: 'The standard Relay layout with a full left sidebar.' },
-  { id: 'compact', name: 'Compact', signature: 'Dense', description: 'A tighter sidebar and denser spacing for more information on screen.' },
-  { id: 'focus', name: 'Focus Rail', signature: 'Hover rail', description: 'A slim icon rail that expands when you move into it.' },
+  { id: 'focus', name: 'Focus Rail', signature: 'Hover rail', description: 'A slim icon rail that expands automatically when you move into it.' },
   { id: 'topbar', name: 'Topbar', signature: 'Horizontal', description: 'Moves primary navigation across the top and frees the left edge.' },
   { id: 'floating', name: 'Floating Dock', signature: 'Bottom dock', description: 'Moves primary navigation into a floating desktop dock along the bottom.' },
 ];
