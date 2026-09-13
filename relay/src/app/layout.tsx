@@ -10,6 +10,7 @@ import './vivid-single-hue.css';
 import './experience-layout-safety.css';
 import './desktop-layouts.css';
 import './still-minimal.css';
+import './global-shortcuts.css';
 import './dashboard-editor.css';
 import { BetaIntro } from '@/components/beta-intro';
 import { ExperienceProvider } from '@/components/experience-provider';
