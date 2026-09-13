@@ -1,4 +1,4 @@
-const CACHE = 'relay-shell-v4';
+const CACHE = 'relay-shell-v5';
 const SCOPE_URL = new URL(self.registration.scope);
 const BASE = SCOPE_URL.pathname.replace(/\/$/, '');
 
