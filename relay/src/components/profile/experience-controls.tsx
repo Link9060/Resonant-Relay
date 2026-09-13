@@ -68,7 +68,7 @@ export function ExperienceControls() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-sm font-semibold text-ink">Relay Experience</h3>
-          <p className="mt-1 text-xs leading-5 text-ink-faint">Choose how Relay moves and feels. Light or dark mode always keeps the interface neutral.</p>
+          <p className="mt-1 text-xs leading-5 text-ink-faint">Choose how Relay moves, feels and uses color. Your palette and light or dark mode shape the final look.</p>
         </div>
         <span className="rounded-full border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-[.12em] text-ink-muted">Beta</span>
       </div>
@@ -96,8 +96,11 @@ export function ExperienceControls() {
       </div>
 
       <div className="mt-5 border-t border-border pt-4">
-        <div className="text-xs font-medium text-ink-muted">Accent color</div>
-        <p className="mt-1 text-[11px] leading-4 text-ink-faint">Used only for primary actions, active controls, signals and small animation details.</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-xs font-medium text-ink-muted">Color palette</div>
+          <span className="text-[9px] font-semibold uppercase tracking-[.12em] text-ink-faint">{palettes.length} options</span>
+        </div>
+        <p className="mt-1 text-[11px] leading-4 text-ink-faint">Most modes use color as an accent. Chroma carries your palette deeper into surfaces, cards, particles and motion.</p>
         <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {palettes.map((option) => (
             <button
