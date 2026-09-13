@@ -4,6 +4,7 @@ import './brand.css';
 import './mobile.css';
 import './beta-experience.css';
 import './experience.css';
+import './experience-polish.css';
 import { BetaIntro } from '@/components/beta-intro';
 import { ExperienceProvider } from '@/components/experience-provider';
 import { UiSoundEffects } from '@/components/ui-sound-effects';
