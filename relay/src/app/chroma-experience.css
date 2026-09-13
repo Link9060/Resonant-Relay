@@ -1,0 +1,183 @@
+/* CHROMA — a deliberately colorful Relay experience.
+ * The selected palette anchors the interface while secondary spectrum colors
+ * keep the UI lively without sacrificing readability. */
+
+html[data-relay-experience='chroma'] {
+  --chroma-pink: 244 114 182;
+  --chroma-violet: 167 139 250;
+  --chroma-cyan: 34 211 238;
+  --chroma-green: 52 211 153;
+  --chroma-amber: 251 191 36;
+}
+
+html[data-relay-experience='chroma'] body {
+  background-color: rgb(var(--canvas));
+  background-image:
+    radial-gradient(circle at 8% 10%, rgb(var(--accent) / calc(.025 + .055 * var(--relay-experience-intensity))), transparent 30%),
+    radial-gradient(circle at 88% 12%, rgb(var(--chroma-pink) / calc(.018 + .04 * var(--relay-experience-intensity))), transparent 28%),
+    radial-gradient(circle at 82% 86%, rgb(var(--accent-secondary) / calc(.02 + .045 * var(--relay-experience-intensity))), transparent 32%),
+    radial-gradient(circle at 14% 88%, rgb(var(--chroma-cyan) / calc(.016 + .035 * var(--relay-experience-intensity))), transparent 30%);
+  background-attachment: fixed;
+}
+
+html[data-relay-experience='chroma'] .beta-cloud {
+  opacity: calc(.62 + .22 * var(--relay-experience-intensity));
+  filter: var(--relay-particle-filter) drop-shadow(0 0 12px rgb(var(--accent-secondary) / .16)) !important;
+}
+html[data-relay-experience='chroma'] .beta-particle-effects { opacity: .86; }
+
+html[data-relay-experience='chroma'] .relay-mobile-main {
+  position: relative;
+  overflow: clip;
+  isolation: isolate;
+  border-color: rgb(var(--accent) / .16) !important;
+  background:
+    linear-gradient(140deg, rgb(var(--accent) / .028), transparent 24% 70%, rgb(var(--accent-secondary) / .025)),
+    rgb(var(--canvas) / .94) !important;
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / .07),
+    0 18px 54px rgb(var(--ink) / .055),
+    0 0 calc(42px * var(--relay-experience-intensity)) rgb(var(--accent) / .035);
+}
+
+html[data-relay-experience='chroma'] .relay-mobile-main::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(90deg,
+      rgb(var(--accent) / .055),
+      rgb(var(--chroma-violet) / .04) 24%,
+      transparent 42% 58%,
+      rgb(var(--chroma-cyan) / .035) 76%,
+      rgb(var(--accent-secondary) / .05));
+  opacity: calc(.38 + .34 * var(--relay-experience-intensity));
+  pointer-events: none;
+}
+
+html[data-relay-experience='chroma'] .relay-mobile-main > * { position: relative; z-index: 1; }
+
+html[data-relay-experience='chroma'] :is(.relay-app-header, .relay-desktop-dock, .relay-mobile-nav) {
+  border-color: rgb(var(--accent) / .11) !important;
+  background:
+    linear-gradient(120deg, rgb(var(--accent) / .022), transparent 28% 72%, rgb(var(--accent-secondary) / .022)),
+    rgb(var(--canvas) / .91) !important;
+  backdrop-filter: blur(16px) saturate(1.08);
+}
+
+html[data-relay-experience='chroma'] .relay-app-header {
+  box-shadow: inset 0 -1px rgb(var(--accent-secondary) / .08);
+}
+
+html[data-relay-experience='chroma'] .relay-desktop-dock {
+  box-shadow: inset -1px 0 rgb(var(--accent) / .075);
+}
+
+html[data-relay-experience='chroma'] .relay-dock-link[aria-current='page'] {
+  border-color: rgb(var(--accent) / .3) !important;
+  background:
+    linear-gradient(110deg, rgb(var(--accent) / .16), rgb(var(--accent-secondary) / .075)) !important;
+  color: rgb(var(--accent)) !important;
+  box-shadow:
+    inset 2px 0 rgb(var(--accent)),
+    0 5px 20px rgb(var(--accent) / .055) !important;
+}
+
+html[data-relay-experience='chroma'] .relay-app-shell :where(.bg-surface, .bg-surface-raised) {
+  position: relative;
+  border-color: rgb(var(--border) / .9) !important;
+  background-color: rgb(var(--surface-raised) / .82) !important;
+  background-image: linear-gradient(135deg, rgb(var(--accent) / .018), transparent 42%, rgb(var(--accent-secondary) / .018)) !important;
+  box-shadow: 0 8px 24px rgb(var(--ink) / .035);
+}
+
+html[data-relay-experience='chroma'] .relay-motion-dashboard-card:nth-of-type(5n + 1),
+html[data-relay-experience='chroma'] article:nth-of-type(5n + 1) { --chroma-card: var(--accent); }
+html[data-relay-experience='chroma'] .relay-motion-dashboard-card:nth-of-type(5n + 2),
+html[data-relay-experience='chroma'] article:nth-of-type(5n + 2) { --chroma-card: var(--chroma-violet); }
+html[data-relay-experience='chroma'] .relay-motion-dashboard-card:nth-of-type(5n + 3),
+html[data-relay-experience='chroma'] article:nth-of-type(5n + 3) { --chroma-card: var(--chroma-cyan); }
+html[data-relay-experience='chroma'] .relay-motion-dashboard-card:nth-of-type(5n + 4),
+html[data-relay-experience='chroma'] article:nth-of-type(5n + 4) { --chroma-card: var(--chroma-green); }
+html[data-relay-experience='chroma'] .relay-motion-dashboard-card:nth-of-type(5n),
+html[data-relay-experience='chroma'] article:nth-of-type(5n) { --chroma-card: var(--accent-secondary); }
+
+html[data-relay-experience='chroma'] :is(.relay-motion-dashboard-card, article.bg-surface, article.bg-surface-raised)::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 34%;
+  height: 2px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgb(var(--chroma-card, var(--accent)) / .8), transparent);
+  opacity: calc(.4 + .42 * var(--relay-experience-intensity));
+  pointer-events: none;
+}
+
+html[data-relay-experience='chroma'] .relay-app-shell :where(button.bg-ink, a.bg-ink) {
+  background-image: linear-gradient(115deg, rgb(var(--accent)), rgb(var(--accent-secondary)) 62%, rgb(var(--chroma-violet))) !important;
+  box-shadow: 0 6px 18px rgb(var(--accent) / .12);
+}
+
+html[data-relay-experience='chroma'] [role='tab'][aria-selected='true'] {
+  color: rgb(var(--accent));
+  box-shadow: inset 0 -2px 0 rgb(var(--accent)), inset 0 -4px 0 rgb(var(--accent-secondary) / .22);
+}
+
+html[data-relay-experience='chroma'] .relay-popover {
+  border-color: rgb(var(--accent) / .13) !important;
+  background:
+    linear-gradient(145deg, rgb(var(--accent) / .025), transparent 45%, rgb(var(--accent-secondary) / .02)),
+    rgb(var(--canvas) / .96) !important;
+  box-shadow: 0 20px 60px rgb(0 0 0 / .2), 0 0 28px rgb(var(--accent) / .04) !important;
+}
+
+html[data-relay-experience='chroma'] .relay-attention-signal {
+  background: linear-gradient(135deg, rgb(var(--accent)), rgb(var(--chroma-pink))) !important;
+  box-shadow: 0 0 0 2px rgb(var(--canvas)), 0 0 14px rgb(var(--chroma-pink) / .22);
+}
+
+html[data-relay-experience='chroma'] .relay-experience-intensity::-webkit-slider-runnable-track,
+html[data-relay-experience='chroma'] .beta-particle-slider::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg,
+    rgb(var(--accent)),
+    rgb(var(--chroma-violet)),
+    rgb(var(--chroma-cyan)),
+    rgb(var(--accent-secondary)) var(--particle-fill, 55%),
+    rgb(var(--border)) var(--particle-fill, 55%) 100%) !important;
+}
+
+[data-experience-preview='chroma'] .relay-mode-preview {
+  align-items: center;
+  justify-content: space-around;
+  background:
+    linear-gradient(135deg, rgb(var(--accent) / .12), rgb(var(--accent-secondary) / .08)),
+    rgb(var(--surface));
+}
+[data-experience-preview='chroma'] .relay-mode-preview i { height: 72%; width: .35rem; }
+[data-experience-preview='chroma'] .relay-mode-preview i:nth-child(1) { background: rgb(var(--accent)); transform: translateY(2px); }
+[data-experience-preview='chroma'] .relay-mode-preview i:nth-child(2) { background: rgb(var(--chroma-violet)); transform: translateY(-2px); }
+[data-experience-preview='chroma'] .relay-mode-preview i:nth-child(3) { background: rgb(var(--chroma-cyan)); transform: translateY(1px); }
+
+@media (hover: hover) {
+  html[data-relay-experience='chroma'] .relay-dock-link:hover::before {
+    background: linear-gradient(110deg, rgb(var(--accent)), rgb(var(--accent-secondary)), rgb(var(--chroma-violet))) !important;
+  }
+  html[data-relay-experience='chroma'] .relay-app-shell :where(button:not(:disabled), a[href]):hover {
+    box-shadow: 0 8px 22px rgb(var(--accent) / .085);
+  }
+  html[data-relay-experience='chroma'] :is(.relay-motion-dashboard-card, article.bg-surface, article.bg-surface-raised):hover {
+    transform: translateY(-3px) scale(1.003);
+    border-color: rgb(var(--chroma-card, var(--accent)) / .26) !important;
+    box-shadow: 0 14px 34px rgb(var(--chroma-card, var(--accent)) / .065);
+  }
+}
+
+html[data-relay-lock-in='true'][data-relay-experience='chroma'] body {
+  background-image: none !important;
+}
+html[data-relay-lock-in='true'][data-relay-experience='chroma'] .relay-mobile-main::before,
+html[data-relay-lock-in='true'][data-relay-experience='chroma'] :is(.relay-motion-dashboard-card, article.bg-surface, article.bg-surface-raised)::before {
+  display: none !important;
+}
