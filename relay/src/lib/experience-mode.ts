@@ -1,7 +1,28 @@
 'use client';
 
-export type RelayExperience = 'flow' | 'still' | 'nexus' | 'aura' | 'slate' | 'spark' | 'lucid';
-export type RelayPalette = 'monochrome' | 'cobalt' | 'violet' | 'rose' | 'cyan' | 'emerald' | 'amber' | 'aurora' | 'ember' | 'tide';
+export type RelayExperience = 'flow' | 'still' | 'nexus' | 'aura' | 'slate' | 'spark' | 'lucid' | 'chroma';
+export type RelayPalette =
+  | 'monochrome'
+  | 'cobalt'
+  | 'violet'
+  | 'rose'
+  | 'cyan'
+  | 'emerald'
+  | 'amber'
+  | 'fuchsia'
+  | 'scarlet'
+  | 'orange'
+  | 'lime'
+  | 'sky'
+  | 'indigo'
+  | 'aurora'
+  | 'ember'
+  | 'tide'
+  | 'candy'
+  | 'solar'
+  | 'pulse'
+  | 'citrus'
+  | 'dusk';
 
 export const EXPERIENCE_KEY = 'relay-experience-mode';
 export const PALETTE_KEY = 'relay-experience-palette';
@@ -27,6 +48,7 @@ export const experiences: {
   { id: 'slate', name: 'Slate', description: 'Editorial structure, strong typography and orderly sections.', signature: 'Organized' },
   { id: 'spark', name: 'Spark', description: 'Responsive, energetic interactions with expressive micro-motion.', signature: 'Playful' },
   { id: 'lucid', name: 'Lucid', description: 'Layered translucent surfaces with blur, depth and reflection.', signature: 'Dimensional' },
+  { id: 'chroma', name: 'Chroma', description: 'A richer color system with spectrum highlights, colorful surfaces and vivid motion.', signature: 'Vivid' },
 ];
 
 export const palettes: {
@@ -45,9 +67,20 @@ export const palettes: {
   { id: 'cyan', name: 'Cyan', light: '#0891b2', dark: '#22d3ee', secondaryLight: '#0891b2', secondaryDark: '#22d3ee' },
   { id: 'emerald', name: 'Emerald', light: '#059669', dark: '#34d399', secondaryLight: '#059669', secondaryDark: '#34d399' },
   { id: 'amber', name: 'Amber', light: '#d97706', dark: '#fbbf24', secondaryLight: '#d97706', secondaryDark: '#fbbf24' },
+  { id: 'fuchsia', name: 'Fuchsia', light: '#c026d3', dark: '#e879f9', secondaryLight: '#c026d3', secondaryDark: '#e879f9' },
+  { id: 'scarlet', name: 'Scarlet', light: '#dc2626', dark: '#f87171', secondaryLight: '#dc2626', secondaryDark: '#f87171' },
+  { id: 'orange', name: 'Orange', light: '#ea580c', dark: '#fb923c', secondaryLight: '#ea580c', secondaryDark: '#fb923c' },
+  { id: 'lime', name: 'Lime', light: '#65a30d', dark: '#a3e635', secondaryLight: '#65a30d', secondaryDark: '#a3e635' },
+  { id: 'sky', name: 'Sky', light: '#0284c7', dark: '#38bdf8', secondaryLight: '#0284c7', secondaryDark: '#38bdf8' },
+  { id: 'indigo', name: 'Indigo', light: '#4f46e5', dark: '#818cf8', secondaryLight: '#4f46e5', secondaryDark: '#818cf8' },
   { id: 'aurora', name: 'Aurora', light: '#7c3aed', dark: '#a78bfa', secondaryLight: '#0891b2', secondaryDark: '#22d3ee', duo: true },
   { id: 'ember', name: 'Ember', light: '#e11d48', dark: '#fb7185', secondaryLight: '#d97706', secondaryDark: '#fbbf24', duo: true },
   { id: 'tide', name: 'Tide', light: '#2563eb', dark: '#60a5fa', secondaryLight: '#059669', secondaryDark: '#34d399', duo: true },
+  { id: 'candy', name: 'Candy', light: '#db2777', dark: '#f472b6', secondaryLight: '#7c3aed', secondaryDark: '#a78bfa', duo: true },
+  { id: 'solar', name: 'Solar', light: '#ea580c', dark: '#fb923c', secondaryLight: '#ca8a04', secondaryDark: '#fde047', duo: true },
+  { id: 'pulse', name: 'Pulse', light: '#c026d3', dark: '#e879f9', secondaryLight: '#0891b2', secondaryDark: '#22d3ee', duo: true },
+  { id: 'citrus', name: 'Citrus', light: '#65a30d', dark: '#a3e635', secondaryLight: '#ea580c', secondaryDark: '#fb923c', duo: true },
+  { id: 'dusk', name: 'Dusk', light: '#4f46e5', dark: '#818cf8', secondaryLight: '#e11d48', secondaryDark: '#fb7185', duo: true },
 ];
 
 const experienceIds = new Set<RelayExperience>(experiences.map(({ id }) => id));
