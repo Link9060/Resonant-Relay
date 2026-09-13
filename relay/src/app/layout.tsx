@@ -9,6 +9,7 @@ import './vivid-experience.css';
 import './vivid-single-hue.css';
 import './experience-layout-safety.css';
 import './desktop-layouts.css';
+import './still-minimal.css';
 import { BetaIntro } from '@/components/beta-intro';
 import { ExperienceProvider } from '@/components/experience-provider';
 import { LayoutProvider } from '@/components/layout-provider';
