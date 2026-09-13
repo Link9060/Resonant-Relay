@@ -1,0 +1,190 @@
+/* STILL — desktop becomes a keyboard-first, nearly invisible shell. */
+@media (min-width: 768px) {
+  html[data-relay-experience='still'] {
+    --canvas: 255 255 255;
+    --surface: 255 255 255;
+    --surface-raised: 255 255 255;
+    --ink: 0 0 0;
+    --ink-muted: 74 74 74;
+    --ink-faint: 138 138 138;
+    --border: 238 238 238;
+    --accent: 0 0 0;
+    --accent-secondary: 0 0 0;
+    --accent-contrast: 255 255 255;
+  }
+
+  html.dark[data-relay-experience='still'] {
+    --canvas: 0 0 0;
+    --surface: 0 0 0;
+    --surface-raised: 3 3 3;
+    --ink: 255 255 255;
+    --ink-muted: 180 180 180;
+    --ink-faint: 92 92 92;
+    --border: 20 20 20;
+    --accent: 255 255 255;
+    --accent-secondary: 255 255 255;
+    --accent-contrast: 0 0 0;
+  }
+
+  html[data-relay-experience='still'] body,
+  html[data-relay-experience='still'] .beta-experience,
+  html[data-relay-experience='still'] .relay-app-shell,
+  html[data-relay-experience='still'] .relay-mobile-main {
+    background: rgb(var(--canvas)) !important;
+    background-image: none !important;
+  }
+
+  html[data-relay-experience='still'] .relay-app-shell {
+    padding-left: 0 !important;
+  }
+
+  html[data-relay-experience='still'] .relay-desktop-dock,
+  html[data-relay-experience='still'] .relay-app-header,
+  html[data-relay-experience='still'] .relay-mobile-staff-alert,
+  html[data-relay-experience='still'] a[aria-label='Open Relay Emergency Mode'] {
+    display: none !important;
+  }
+
+  html[data-relay-experience='still'] .relay-mobile-main {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html[data-relay-experience='still'] .beta-landing-title {
+    color: rgb(var(--ink)) !important;
+    font-size: clamp(1.55rem, 2.6vw, 2.25rem) !important;
+    font-weight: 500 !important;
+    letter-spacing: -0.035em !important;
+    text-shadow: none !important;
+  }
+
+  html[data-relay-experience='still'] .relay-dashboard {
+    max-width: 72rem;
+  }
+
+  html[data-relay-experience='still'] .relay-dashboard :is(.relay-motion-dashboard-card, .relay-motion-dashboard-strip) {
+    border-color: transparent !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html[data-relay-experience='still'] .relay-dashboard .relay-motion-dashboard-card {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  html[data-relay-experience='still'] .relay-dashboard :is(.rounded-2xl, .rounded-xl, .rounded-lg) {
+    box-shadow: none !important;
+  }
+
+  html[data-relay-experience='still'] .relay-dashboard :where(button, a) {
+    box-shadow: none !important;
+  }
+
+  html[data-relay-experience='still'] .relay-dashboard :where(button.bg-ink, a.bg-ink) {
+    background: rgb(var(--ink)) !important;
+    background-image: none !important;
+    color: rgb(var(--canvas)) !important;
+  }
+
+  html[data-relay-experience='still'] .relay-still-help-trigger {
+    position: fixed;
+    left: 20px;
+    bottom: 18px;
+    z-index: 90;
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    border: 0;
+    background: transparent;
+    color: rgb(var(--ink-faint));
+    font: 500 15px/1 var(--font-mono);
+    cursor: pointer;
+  }
+
+  html[data-relay-experience='still'] .relay-still-help-trigger:hover,
+  html[data-relay-experience='still'] .relay-still-help-trigger:focus-visible {
+    color: rgb(var(--ink));
+    background: transparent !important;
+    transform: none !important;
+  }
+
+  html[data-relay-experience='still'] .relay-still-location {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 0;
+    transform: translate(-50%, -50%);
+    color: transparent;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  html[data-relay-experience='still'] .relay-still-overlay {
+    position: fixed;
+    z-index: 95;
+    border: 1px solid rgb(var(--border));
+    border-radius: 2px;
+    background: rgb(var(--canvas));
+    color: rgb(var(--ink));
+    box-shadow: none;
+  }
+
+  html[data-relay-experience='still'] .relay-still-shortcut-card {
+    left: 20px;
+    bottom: 54px;
+    width: min(320px, calc(100vw - 40px));
+    padding: 16px;
+  }
+
+  html[data-relay-experience='still'] .relay-still-overlay-title {
+    margin-bottom: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgb(var(--ink-faint));
+  }
+
+  html[data-relay-experience='still'] .relay-still-shortcut-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  html[data-relay-experience='still'] .relay-still-shortcut-row {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    align-items: center;
+    min-height: 24px;
+    color: rgb(var(--ink-muted));
+    font-size: 12px;
+  }
+
+  html[data-relay-experience='still'] .relay-still-shortcut-row kbd {
+    width: fit-content;
+    min-width: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: rgb(var(--ink));
+    font: 500 11px/1.2 var(--font-mono);
+  }
+
+  html[data-relay-experience='still'] .relay-still-experience-card {
+    left: 50%;
+    top: 50%;
+    width: min(560px, calc(100vw - 56px));
+    max-height: min(720px, calc(100vh - 56px));
+    overflow: auto;
+    transform: translate(-50%, -50%);
+    padding: 8px;
+  }
+
+  html[data-relay-experience='still'] .relay-still-experience-card :is(.rounded-2xl, .rounded-xl, .rounded-lg) {
+    border-radius: 2px !important;
+    box-shadow: none !important;
+  }
+}
