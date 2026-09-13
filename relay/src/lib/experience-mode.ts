@@ -42,7 +42,7 @@ export const experiences: {
   signature: string;
 }[] = [
   { id: 'flow', name: 'Flow', description: 'Balanced motion, particles and familiar Relay surfaces.', signature: 'Balanced' },
-  { id: 'still', name: 'Still', description: 'Flat, fast and distraction-free with no decorative particles.', signature: 'Focused' },
+  { id: 'still', name: 'Still', description: 'Quiet structure, restrained motion and focused surfaces with only essential signals.', signature: 'Quiet' },
   { id: 'nexus', name: 'Nexus', description: 'A reactive network with angular panels and signal-like motion.', signature: 'Cinematic' },
   { id: 'aura', name: 'Aura', description: 'Soft geometry, gentle movement and a calm, welcoming rhythm.', signature: 'Calm' },
   { id: 'slate', name: 'Slate', description: 'Editorial structure, strong typography and orderly sections.', signature: 'Organized' },

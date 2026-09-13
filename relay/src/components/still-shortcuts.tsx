@@ -2,7 +2,7 @@
 
 import { ExperienceControls } from '@/components/profile/experience-controls';
 import { BASE_PATH, appPageUrl } from '@/lib/config';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 const SHORTCUTS = [
@@ -27,7 +27,6 @@ function isInteractiveTarget(target: EventTarget | null) {
 
 export function StillShortcuts() {
   const router = useRouter();
-  const pathname = usePathname();
   const [helpOpen, setHelpOpen] = useState(false);
   const [experienceOpen, setExperienceOpen] = useState(false);
   const [desktopActive, setDesktopActive] = useState(false);
@@ -39,9 +38,10 @@ export function StillShortcuts() {
     const media = window.matchMedia('(min-width: 768px)');
     const sync = () => {
       const desktop = media.matches;
+      const still = desktop && document.documentElement.dataset.relayExperience === 'still';
       setDesktopActive(desktop);
-      setIsStill(desktop && document.documentElement.dataset.relayExperience === 'still');
-      if (!desktop) {
+      setIsStill(still);
+      if (!still) {
         setHelpOpen(false);
         setExperienceOpen(false);
       }
@@ -58,7 +58,7 @@ export function StillShortcuts() {
   }, []);
 
   useEffect(() => {
-    if (!desktopActive) return;
+    if (!desktopActive || !isStill) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (isInteractiveTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -101,33 +101,26 @@ export function StillShortcuts() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [desktopActive, router, shortcutMap]);
+  }, [desktopActive, isStill, router, shortcutMap]);
 
-  if (!desktopActive) return null;
+  if (!desktopActive || !isStill) return null;
 
   return (
     <>
-      {isStill && (
-        <button
-          type="button"
-          className="relay-still-help-trigger"
-          aria-label="Show Relay keyboard shortcuts"
-          aria-expanded={helpOpen}
-          onClick={() => { setHelpOpen((value) => !value); setExperienceOpen(false); }}
-        >
-          ?
-        </button>
-      )}
-
-      {isStill && (
-        <div className="relay-still-location" aria-hidden="true">
-          {pathname.replace(/\/$/, '').endsWith('/space') ? 'Resonant Relay' : ''}
-        </div>
-      )}
+      <button
+        type="button"
+        className="relay-still-help-trigger"
+        aria-label="Show Still keyboard shortcuts"
+        aria-expanded={helpOpen}
+        onClick={() => { setHelpOpen((value) => !value); setExperienceOpen(false); }}
+      >
+        <kbd>?</kbd>
+        <span>Keys</span>
+      </button>
 
       {helpOpen && (
-        <aside className="relay-still-overlay relay-still-shortcut-card" aria-label="Relay keyboard shortcuts">
-          <div className="relay-still-overlay-title">Shortcuts</div>
+        <aside className="relay-still-overlay relay-still-shortcut-card" aria-label="Still keyboard shortcuts">
+          <div className="relay-still-overlay-title">Still shortcuts</div>
           <div className="relay-still-shortcut-list">
             {SHORTCUTS.map((item) => <div key={item.key} className="relay-still-shortcut-row"><kbd>{item.key}</kbd><span>{item.label}</span></div>)}
             <div className="relay-still-shortcut-row"><kbd>D</kbd><span>Light / dark</span></div>
