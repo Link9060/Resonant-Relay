@@ -39,7 +39,7 @@ import {
   Settings2,
   X,
 } from 'lucide-react';
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 type DashboardEvent = {
@@ -285,6 +285,7 @@ export default function DashboardPage() {
     if (index < 0 || nextIndex < 0 || nextIndex >= widgets.length) return;
     const next = widgets.map((widget) => ({ ...widget }));
     const [moved] = next.splice(index, 1);
+    if (!moved) return;
     next.splice(nextIndex, 0, moved);
     updateWidgets(next);
   }
@@ -304,6 +305,7 @@ export default function DashboardPage() {
     if (from < 0 || to < 0) return setDraggingWidget(null);
     const next = widgets.map((widget) => ({ ...widget }));
     const [moved] = next.splice(from, 1);
+    if (!moved) return setDraggingWidget(null);
     next.splice(to, 0, moved);
     setDraggingWidget(null);
     updateWidgets(next);
