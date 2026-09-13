@@ -1,12 +1,12 @@
 'use client';
 
 import { ExperienceControls } from '@/components/profile/experience-controls';
-import { BASE_PATH, DASHBOARD_PATH, appPageUrl } from '@/lib/config';
+import { BASE_PATH, appPageUrl } from '@/lib/config';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 const SHORTCUTS = [
-  { key: 'Space', label: 'Dashboard', href: DASHBOARD_PATH },
+  { key: 'Space', label: 'Dashboard', href: '/' },
   { key: 'C', label: 'Chats', href: '/chats' },
   { key: 'T', label: 'To Do', href: '/todo' },
   { key: 'N', label: 'Notes', href: '/notes' },
