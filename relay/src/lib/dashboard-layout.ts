@@ -1,6 +1,28 @@
 'use client';
 
-export type DashboardWidgetId = 'overview' | 'tasks' | 'calendar' | 'email' | 'chats' | 'quicklinks';
+export type DashboardWidgetId =
+  | 'overview'
+  | 'weather'
+  | 'tasks'
+  | 'calendar'
+  | 'today'
+  | 'email'
+  | 'chats'
+  | 'quicknote'
+  | 'focus'
+  | 'nowplaying'
+  | 'pinnedpeople'
+  | 'quicklinks'
+  | 'dayprogress'
+  | 'schoolschedule'
+  | 'assignments'
+  | 'momentum'
+  | 'sun'
+  | 'countdowns'
+  | 'recentfiles'
+  | 'ravinbrief'
+  | 'askravin';
+
 export type DashboardWidgetSize = 'small' | 'medium' | 'wide';
 
 export type DashboardWidgetPreference = {
@@ -14,11 +36,26 @@ export const DASHBOARD_LAYOUT_EVENT = 'relay-dashboard-layout-change';
 
 export const DEFAULT_DASHBOARD_LAYOUT: DashboardWidgetPreference[] = [
   { id: 'overview', size: 'wide', visible: true },
+  { id: 'weather', size: 'medium', visible: true },
+  { id: 'askravin', size: 'medium', visible: true },
   { id: 'tasks', size: 'medium', visible: true },
   { id: 'calendar', size: 'medium', visible: true },
   { id: 'email', size: 'medium', visible: true },
   { id: 'chats', size: 'medium', visible: true },
   { id: 'quicklinks', size: 'wide', visible: true },
+  { id: 'today', size: 'wide', visible: false },
+  { id: 'quicknote', size: 'medium', visible: false },
+  { id: 'focus', size: 'small', visible: false },
+  { id: 'nowplaying', size: 'medium', visible: false },
+  { id: 'pinnedpeople', size: 'medium', visible: false },
+  { id: 'dayprogress', size: 'small', visible: false },
+  { id: 'schoolschedule', size: 'medium', visible: false },
+  { id: 'assignments', size: 'medium', visible: false },
+  { id: 'momentum', size: 'small', visible: false },
+  { id: 'sun', size: 'small', visible: false },
+  { id: 'countdowns', size: 'medium', visible: false },
+  { id: 'recentfiles', size: 'medium', visible: false },
+  { id: 'ravinbrief', size: 'wide', visible: false },
 ];
 
 const validIds = new Set<DashboardWidgetId>(DEFAULT_DASHBOARD_LAYOUT.map((widget) => widget.id));
