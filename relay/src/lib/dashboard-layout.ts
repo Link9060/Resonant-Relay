@@ -45,8 +45,18 @@ export type DashboardWidgetPreference = {
 
 export type DashboardPresetId = 'balanced' | 'school' | 'focus' | 'communication' | 'blank';
 
+export type DashboardCustomPreset = {
+  id: string;
+  name: string;
+  widgets: DashboardWidgetPreference[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export const DASHBOARD_LAYOUT_KEY = 'relay-dashboard-layout-v1';
 export const DASHBOARD_LAYOUT_EVENT = 'relay-dashboard-layout-change';
+export const DASHBOARD_CUSTOM_PRESETS_KEY = 'relay-dashboard-custom-presets-v1';
+export const DASHBOARD_CUSTOM_PRESETS_EVENT = 'relay-dashboard-custom-presets-change';
 
 export const DASHBOARD_SIZE_PRESETS: Record<Exclude<DashboardWidgetSize, 'custom'>, { label: string; cols: number; rows: number }> = {
   'extra-small': { label: 'Extra small', cols: 3, rows: 1 },
@@ -113,6 +123,15 @@ function dimensionsForLegacySize(size: string | undefined) {
   return DASHBOARD_SIZE_PRESETS.medium;
 }
 
+function cleanPresetName(name: string) {
+  return name.trim().replace(/\s+/g, ' ').slice(0, 40);
+}
+
+function createPresetId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return `preset-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function closestDashboardSize(cols: number, rows: number): DashboardWidgetSize {
   const exact = Object.entries(DASHBOARD_SIZE_PRESETS).find(([, value]) => value.cols === cols && value.rows === rows);
   return exact ? exact[0] as DashboardWidgetSize : 'custom';
@@ -139,7 +158,6 @@ export function normalizeDashboardLayout(value: unknown): DashboardWidgetPrefere
     const id = item.id as DashboardWidgetId;
     if (!validIds.has(id) || seen.has(id)) continue;
     seen.add(id);
-    const fallback = DEFAULT_DASHBOARD_LAYOUT.find((candidate) => candidate.id === id) ?? DEFAULT_DASHBOARD_LAYOUT[0];
     const legacy = dimensionsForLegacySize(item.size);
     const cols = typeof item.cols === 'number' ? clamp(item.cols, 2, 12) : legacy.cols;
     const rows = typeof item.rows === 'number' ? clamp(item.rows, 1, 6) : legacy.rows;
@@ -153,12 +171,31 @@ export function normalizeDashboardLayout(value: unknown): DashboardWidgetPrefere
         : closestDashboardSize(cols, rows),
       visible: item.visible !== false,
     });
-    if (!fallback) continue;
   }
   for (const item of DEFAULT_DASHBOARD_LAYOUT) {
     if (!seen.has(item.id)) normalized.push({ ...item });
   }
   return normalized;
+}
+
+function normalizeCustomPreset(value: unknown): DashboardCustomPreset | null {
+  if (!value || typeof value !== 'object') return null;
+  const raw = value as { id?: unknown; name?: unknown; widgets?: unknown; createdAt?: unknown; updatedAt?: unknown };
+  if (typeof raw.id !== 'string' || !raw.id.trim()) return null;
+  if (typeof raw.name !== 'string') return null;
+  const name = cleanPresetName(raw.name);
+  if (!name) return null;
+  if (!Array.isArray(raw.widgets)) return null;
+  const now = new Date().toISOString();
+  const createdAt = typeof raw.createdAt === 'string' && raw.createdAt ? raw.createdAt : now;
+  const updatedAt = typeof raw.updatedAt === 'string' && raw.updatedAt ? raw.updatedAt : createdAt;
+  return {
+    id: raw.id,
+    name,
+    widgets: normalizeDashboardLayout(raw.widgets),
+    createdAt,
+    updatedAt,
+  };
 }
 
 export function readDashboardLayout(): DashboardWidgetPreference[] {
@@ -184,6 +221,61 @@ export function saveDashboardLayout(layout: DashboardWidgetPreference[]) {
 
 export function resetDashboardLayout() {
   saveDashboardLayout(DEFAULT_DASHBOARD_LAYOUT);
+}
+
+export function readCustomDashboardPresets(): DashboardCustomPreset[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(DASHBOARD_CUSTOM_PRESETS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map(normalizeCustomPreset)
+      .filter((preset): preset is DashboardCustomPreset => Boolean(preset))
+      .slice(0, 24);
+  } catch {
+    return [];
+  }
+}
+
+function writeCustomDashboardPresets(presets: DashboardCustomPreset[]) {
+  const normalized = presets
+    .map(normalizeCustomPreset)
+    .filter((preset): preset is DashboardCustomPreset => Boolean(preset))
+    .slice(0, 24);
+  if (typeof window === 'undefined') return normalized;
+  try {
+    window.localStorage.setItem(DASHBOARD_CUSTOM_PRESETS_KEY, JSON.stringify(normalized));
+    window.dispatchEvent(new CustomEvent(DASHBOARD_CUSTOM_PRESETS_EVENT, { detail: normalized }));
+  } catch {
+    // Storage can be unavailable in strict/private contexts.
+  }
+  return normalized;
+}
+
+export function saveCustomDashboardPreset(name: string, layout: DashboardWidgetPreference[]) {
+  const cleanName = cleanPresetName(name);
+  if (!cleanName) return null;
+  const current = readCustomDashboardPresets();
+  const now = new Date().toISOString();
+  const existingIndex = current.findIndex((preset) => preset.name.toLowerCase() === cleanName.toLowerCase());
+  const existing = existingIndex >= 0 ? current[existingIndex] : null;
+  const preset: DashboardCustomPreset = {
+    id: existing?.id ?? createPresetId(),
+    name: cleanName,
+    widgets: normalizeDashboardLayout(layout),
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
+  };
+  const next = [...current];
+  if (existingIndex >= 0) next.splice(existingIndex, 1, preset);
+  else next.unshift(preset);
+  return { preset, presets: writeCustomDashboardPresets(next), updated: existingIndex >= 0 };
+}
+
+export function deleteCustomDashboardPreset(id: string) {
+  return writeCustomDashboardPresets(readCustomDashboardPresets().filter((preset) => preset.id !== id));
 }
 
 export function dashboardSpan(value: DashboardWidgetPreference | DashboardWidgetSize) {
