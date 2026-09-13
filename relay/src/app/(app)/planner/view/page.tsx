@@ -38,19 +38,19 @@ function PlanView() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !active) return;
 
-      const { data: plan } = await supabase
-        .from('plans')
+      const { data: rawPlan } = await (supabase.from('plans') as any)
         .select('id,name,notes,response_type,response_prompt,repeat_rule,created_by,starts_on,repeat_until,start_time,end_time,group:groups(id,name),options:plan_options(id,label,sort_order),instances:plan_instances(id,occurs_on)')
         .eq('id', id)
         .single();
+      const plan = rawPlan as any;
 
       if (!plan) {
         setState({ error: 'Plan not found.' } as PlanState);
         return;
       }
 
-      const group = (plan as any).group;
-      const allInstances = [...((plan as any).instances ?? [])].sort((a: Instance, b: Instance) => a.occurs_on.localeCompare(b.occurs_on));
+      const group = plan.group;
+      const allInstances = [...(plan.instances ?? [])].sort((a: Instance, b: Instance) => a.occurs_on.localeCompare(b.occurs_on));
       const today = localDateKey();
       const upcomingInstances = allInstances.filter((instance: Instance) => instance.occurs_on >= today);
       const instanceIds = upcomingInstances.map((instance: Instance) => instance.id);
@@ -68,7 +68,7 @@ function PlanView() {
         plan,
         group,
         instances: upcomingInstances,
-        options: [...((plan as any).options ?? [])].sort((a: any, b: any) => a.sort_order - b.sort_order),
+        options: [...(plan.options ?? [])].sort((a: any, b: any) => a.sort_order - b.sort_order),
         members: (members ?? []).map((member: any) => member.profile).filter(Boolean),
         responses: responseResult.data ?? [],
         userId: user.id,
