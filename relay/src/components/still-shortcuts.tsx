@@ -18,10 +18,11 @@ const SHORTCUTS = [
   { key: ',', label: 'Settings', href: '/profile' },
 ] as const;
 
-function isTypingTarget(target: EventTarget | null) {
+function isInteractiveTarget(target: EventTarget | null) {
   const element = target as HTMLElement | null;
   if (!element) return false;
-  return element.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(element.tagName);
+  if (element.isContentEditable) return true;
+  return Boolean(element.closest('input, textarea, select, button, a[href], [role="button"], [role="menuitem"], [role="option"], [role="tab"]'));
 }
 
 export function StillShortcuts() {
@@ -60,7 +61,7 @@ export function StillShortcuts() {
     if (!desktopActive) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isTypingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isInteractiveTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
 
       if (event.key === 'Escape') {
         setHelpOpen(false);
