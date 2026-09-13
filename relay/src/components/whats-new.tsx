@@ -12,14 +12,23 @@ const DEVELOPMENT_RELEASE = {
   version: '1.0.5',
   status: 'Beta · Development',
   publishedAt: '2026-09-13T12:00:00-05:00',
-  title: 'The next Relay beta',
-  summary: 'Relay 1.0.5 starts from the 1.0.4 public baseline. New beta work will appear here as it lands.',
+  title: 'Your Relay, your layout',
+  summary: 'Beta 1.0.5 adds desktop layout presets and a customizable dashboard while keeping mobile intentionally simple.',
   groups: [
     {
-      label: 'Starting point',
+      label: 'New in beta',
       items: [
-        'All Relay Experience modes, expanded palettes, Emergency Mode, and the 1.0.4 stability fixes carry forward into the next beta.',
-        'Beta-only labels stay visible here so it is always clear when you are testing the development channel.',
+        'Desktop Relay can switch between Classic, Compact, Focus Rail, Topbar, and Floating Dock layouts.',
+        'The Dashboard can be customized with drag-and-drop ordering, Small, Medium, and Wide widget sizes, and hide or show controls.',
+        'Widget sizes change how much information they show instead of only stretching the same content.',
+        'A single reset restores the default dashboard arrangement whenever you want to start over.',
+      ],
+    },
+    {
+      label: 'Desktop first',
+      items: [
+        'Mobile keeps its existing fixed navigation and default dashboard arrangement instead of inheriting desktop-style layout controls.',
+        'For this beta pass, desktop layout and widget preferences are saved to the current browser while the interaction model is tested.',
       ],
     },
   ],
