@@ -1,7 +1,7 @@
 'use client';
 
 import { ExperienceControls } from '@/components/profile/experience-controls';
-import { DASHBOARD_PATH, appPageUrl } from '@/lib/config';
+import { BASE_PATH, DASHBOARD_PATH, appPageUrl } from '@/lib/config';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -34,24 +34,28 @@ export function StillShortcuts() {
   const shortcutMap = useMemo(() => new Map(SHORTCUTS.map((item) => [item.key.toLowerCase(), item.href])), []);
 
   useEffect(() => {
-    const sync = () => setActive(document.documentElement.dataset.relayExperience === 'still' && window.matchMedia('(min-width: 768px)').matches);
-    sync();
+    const media = window.matchMedia('(min-width: 768px)');
+    const sync = () => {
+      const next = document.documentElement.dataset.relayExperience === 'still' && media.matches;
+      setActive(next);
+      if (!next) {
+        setHelpOpen(false);
+        setExperienceOpen(false);
+      }
+    };
+    const initialFrame = window.requestAnimationFrame(sync);
     const observer = new MutationObserver(sync);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-relay-experience'] });
-    const media = window.matchMedia('(min-width: 768px)');
     media.addEventListener('change', sync);
     return () => {
+      window.cancelAnimationFrame(initialFrame);
       observer.disconnect();
       media.removeEventListener('change', sync);
     };
   }, []);
 
   useEffect(() => {
-    if (!active) {
-      setHelpOpen(false);
-      setExperienceOpen(false);
-      return;
-    }
+    if (!active) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTypingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -88,7 +92,8 @@ export function StillShortcuts() {
       const href = shortcutMap.get(lookup);
       if (!href) return;
       event.preventDefault();
-      router.push(appPageUrl(href).replace(/^https?:\/\/[^/]+/, ''));
+      const appHref = appPageUrl(href);
+      router.push(appHref.startsWith(BASE_PATH) ? appHref.slice(BASE_PATH.length) || '/' : appHref);
     };
 
     window.addEventListener('keydown', onKeyDown);
@@ -110,7 +115,7 @@ export function StillShortcuts() {
       </button>
 
       <div className="relay-still-location" aria-hidden="true">
-        {pathname.replace(/\/$/, '') === '/space' ? 'Resonant Relay' : ''}
+        {pathname.replace(/\/$/, '').endsWith('/space') ? 'Resonant Relay' : ''}
       </div>
 
       {helpOpen && (
