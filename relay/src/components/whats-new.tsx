@@ -9,32 +9,57 @@ export const OPEN_WHATS_NEW_EVENT = 'relay-open-whats-new';
 const SEEN_VERSION_KEY = 'relay-whats-new-seen-version';
 
 const DEVELOPMENT_RELEASE = {
-  version: '1.0.5',
+  version: '1.0.6',
   status: 'Beta · Development',
-  publishedAt: '2026-09-13T12:00:00-05:00',
-  title: 'Your Relay, your layout',
-  summary: 'Beta 1.0.5 adds desktop layout presets and a customizable dashboard while keeping mobile intentionally simple.',
+  publishedAt: '2026-09-13T20:40:00Z',
+  title: 'The next Relay beta',
+  summary: 'Beta 1.0.6 starts from the complete 1.0.5 public release. New development work will appear here as it lands.',
   groups: [
     {
-      label: 'New in beta',
+      label: 'Starting point',
       items: [
-        'Desktop Relay can switch between Classic, Compact, Focus Rail, Topbar, and Floating Dock layouts.',
-        'The Dashboard can be customized with drag-and-drop ordering, Small, Medium, and Wide widget sizes, and hide or show controls.',
-        'Widget sizes change how much information they show instead of only stretching the same content.',
-        'A single reset restores the default dashboard arrangement whenever you want to start over.',
-      ],
-    },
-    {
-      label: 'Desktop first',
-      items: [
-        'Mobile keeps its existing fixed navigation and default dashboard arrangement instead of inheriting desktop-style layout controls.',
-        'For this beta pass, desktop layout and widget preferences are saved to the current browser while the interaction model is tested.',
+        'Dashboard Studio, custom presets, desktop layouts, Planner timing, connected Calendar improvements, and the refined Still experience all carry forward from 1.0.5.',
+        'Beta-only labels stay visible on the development channel so it is always clear when you are testing the next Relay build.',
       ],
     },
   ],
 } as const;
 
 const PUBLIC_RELEASES = [
+  {
+    version: '1.0.5',
+    status: 'Public release',
+    publishedAt: '2026-09-13T20:35:00Z',
+    title: 'Your Relay, your layout',
+    summary: 'Relay 1.0.5 turns the dashboard into a real workspace, expands planning and Calendar intelligence, and gives desktop Relay more control without making mobile more complicated.',
+    groups: [
+      {
+        label: 'Dashboard Studio',
+        items: [
+          'Customize the dashboard in a dedicated full-screen Studio with a persistent live preview.',
+          'Drag widgets to reorder them, drag hidden widgets onto the canvas, and resize width or height on a 12-column snap grid.',
+          'Use built-in layouts or save your own reusable dashboard presets, including widget visibility, order, width, and height.',
+          'The expanded widget library includes Weather, Quick Note, Focus, Assignments, Day Progress, School Schedule, RAVIN previews, and more.',
+        ],
+      },
+      {
+        label: 'Planning and Calendar',
+        items: [
+          'Planner items can use real start and end times, and recurring plans present upcoming occurrences without cluttering the active view with past dates.',
+          'Planner creation, schedule summaries, occurrence selection, and overview cards are clearer and faster to scan.',
+          'Connected Google Calendar can discover subscribed and shared calendars, and all-day events stay truly all-day.',
+        ],
+      },
+      {
+        label: 'Desktop and Still',
+        items: [
+          'Desktop Relay supports Classic, Focus Rail, Topbar, and Floating Dock layouts while mobile keeps its stable navigation model.',
+          'Still has been rebuilt as a quiet structured experience with visible navigation, restrained motion, subtle hierarchy, and sparse accent signals.',
+          'Still keyboard shortcuts are scoped to Still itself, and its experience controls are easier to discover and exit.',
+        ],
+      },
+    ],
+  },
   {
     version: '1.0.4',
     status: 'Public release',
