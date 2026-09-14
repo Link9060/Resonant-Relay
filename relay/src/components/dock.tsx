@@ -1,7 +1,7 @@
 'use client';
 
 import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
-import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, RELEASE_LABEL } from '@/lib/config';
+import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, COMPACT_RELEASE_LABEL, RELEASE_LABEL } from '@/lib/config';
 import { cn } from '@/lib/utils';
 import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, Mail, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -75,8 +75,8 @@ export function Dock({
           <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 shrink-0 dark:invert" />
           <span className={cn('flex min-w-0 items-center gap-2 whitespace-nowrap transition-[opacity,max-width,transform] duration-200', collapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-48 translate-x-0 opacity-100')} aria-hidden={collapsed}>
             <span>Relay</span>
-            <span className="rounded-full border border-ink-muted bg-ink px-1.5 py-0.5 text-[9px] font-medium leading-none tracking-normal text-canvas">
-              {RELEASE_LABEL}
+            <span title={RELEASE_LABEL} aria-label={RELEASE_LABEL} className="max-w-24 truncate rounded-full border border-ink-muted bg-ink px-1.5 py-0.5 text-[9px] font-medium leading-none tracking-normal text-canvas">
+              {COMPACT_RELEASE_LABEL}
             </span>
           </span>
         </a>
