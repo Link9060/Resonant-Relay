@@ -1,5 +1,6 @@
 'use client';
 
+import { CustomDateCalendar } from '@/components/planner/custom-date-calendar';
 import { createPlan } from '@/lib/actions/planner';
 import { appPageUrl, staticDetailPath } from '@/lib/config';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -10,7 +11,13 @@ type Group = { id: string; name: string };
 type ResponseType = 'rsvp' | 'select_option' | 'custom_text';
 type RepeatRule = 'never' | 'daily' | 'weekly' | 'custom';
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export function NewPlanDialog({ groups }: { groups: Group[] }) {
   const [open, setOpen] = useState(false);
@@ -73,7 +80,7 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
       options,
       responsePrompt,
       repeatRule,
-      startsOn,
+      startsOn: repeatRule === 'custom' ? customDates[0] ?? startsOn : startsOn,
       repeatUntil: repeatRule === 'daily' || repeatRule === 'weekly' ? repeatUntil || null : null,
       customDates,
       startTime: startTime || null,
@@ -131,16 +138,9 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
               </Field>
 
               {repeatRule === 'custom' ? (
-                <Field label="Dates">
-                  <div className="space-y-2">
-                    {customDates.map((date, index) => (
-                      <div key={`${index}-${date}`} className="flex gap-2">
-                        <input type="date" value={date} onChange={(event) => setCustomDates((current) => current.map((value, itemIndex) => itemIndex === index ? event.target.value : value))} className={inputClass} />
-                        {customDates.length > 1 && <button type="button" onClick={() => setCustomDates((current) => current.filter((_, itemIndex) => itemIndex !== index))} aria-label="Remove date" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-border text-ink-faint hover:bg-surface hover:text-ink"><X size={15} /></button>}
-                      </div>
-                    ))}
-                    <button type="button" onClick={() => setCustomDates((current) => [...current, today()])} className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-muted hover:text-ink"><Plus size={13} />Add another date</button>
-                  </div>
+                <Field label="Pick the days">
+                  <CustomDateCalendar value={customDates} onChange={setCustomDates} minDate={today()} />
+                  <p className="mt-2 text-[11px] leading-4 text-ink-faint">Click any day box to add or remove it. Use the arrows to move between months.</p>
                 </Field>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
