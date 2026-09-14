@@ -90,10 +90,10 @@
 }
 
 /* Dashboard Studio desktop scroll architecture.
-   The shell itself never scrolls. The editor grid is the single vertical
-   scroll surface, so the preview and inspector always consume the same wheel
-   and trackpad input. The inspector must not be a sticky/overflow container;
-   only its small tab bar is allowed to stick inside the shared scroller. */
+   The Studio header stays fixed while the preview and inspector behave as
+   two independent vertical panes. Wheel/trackpad input over the dashboard
+   scrolls the dashboard; input over Widgets / Layout / Presets scrolls only
+   that inspector. Neither pane can steal or extend the other's scroll range. */
 @media (min-width: 1024px) {
   .relay-dashboard > .fixed.inset-0.z-\[90\] {
     display: flex;
@@ -113,6 +113,14 @@
   .relay-dashboard > .fixed.inset-0.z-\[90\] > .grid {
     min-height: 0;
     flex: 1 1 auto;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .relay-dashboard > .fixed.inset-0.z-\[90\] > .grid > main,
+  .relay-dashboard > .fixed.inset-0.z-\[90\] > .grid > aside {
+    min-height: 0;
+    max-height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior-y: contain;
@@ -122,10 +130,8 @@
   }
 
   .relay-dashboard > .fixed.inset-0.z-\[90\] > .grid > aside {
-    position: static !important;
+    position: relative !important;
     top: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
     align-self: stretch;
   }
 
