@@ -78,6 +78,9 @@ const widget = (id: DashboardWidgetId, size: Exclude<DashboardWidgetSize, 'custo
   rows: DASHBOARD_SIZE_PRESETS[size].rows,
 });
 
+// Only widgets with a real data source or working interaction belong in the
+// library. Placeholder IDs remain in the type for saved-layout compatibility,
+// but normalizeDashboardLayout drops them until their integrations exist.
 export const DEFAULT_DASHBOARD_LAYOUT: DashboardWidgetPreference[] = [
   widget('overview', 'extra-wide', true),
   widget('weather', 'medium', true),
@@ -90,15 +93,12 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardWidgetPreference[] = [
   widget('today', 'extra-wide', false),
   widget('quicknote', 'medium', false),
   widget('focus', 'small', false),
-  widget('nowplaying', 'medium', false),
-  widget('pinnedpeople', 'medium', false),
   widget('dayprogress', 'extra-small', false),
   widget('schoolschedule', 'medium', false),
   widget('assignments', 'medium', false),
   widget('momentum', 'extra-small', false),
   widget('sun', 'small', false),
   widget('countdowns', 'medium', false),
-  widget('recentfiles', 'medium', false),
   widget('ravinbrief', 'extra-wide', false),
 ];
 
@@ -106,7 +106,7 @@ export const DASHBOARD_PRESETS: Array<{ id: DashboardPresetId; name: string; des
   { id: 'balanced', name: 'Balanced', description: 'Weather, RAVIN, tasks, calendar, inbox, and chats.' },
   { id: 'school', name: 'School', description: 'Schedule, assignments, tasks, countdowns, and weather.' },
   { id: 'focus', name: 'Focus', description: 'Tasks, focus timer, next up, quick note, and day progress.' },
-  { id: 'communication', name: 'Communication', description: 'Chats, inbox, pinned people, and Ask RAVIN.' },
+  { id: 'communication', name: 'Communication', description: 'Chats, inbox, and RAVIN together.' },
   { id: 'blank', name: 'Blank Canvas', description: 'Hide everything and build the dashboard yourself.' },
 ];
 
@@ -313,9 +313,9 @@ export function applyDashboardPreset(layout: DashboardWidgetPreference[], preset
     ['tasks', 'focus', 'calendar', 'quicknote', 'dayprogress', 'weather'],
     { tasks: 'medium', focus: 'small', calendar: 'medium', quicknote: 'medium', dayprogress: 'extra-small', weather: 'small' });
   if (preset === 'communication') return setVisible(layout,
-    ['chats', 'email', 'pinnedpeople', 'askravin', 'ravinbrief'],
-    ['askravin', 'chats', 'email', 'pinnedpeople', 'ravinbrief'],
-    { askravin: 'wide', chats: 'medium', email: 'medium', pinnedpeople: 'medium', ravinbrief: 'extra-wide' });
+    ['chats', 'email', 'askravin', 'ravinbrief'],
+    ['askravin', 'chats', 'email', 'ravinbrief'],
+    { askravin: 'wide', chats: 'medium', email: 'medium', ravinbrief: 'extra-wide' });
   return setVisible(layout,
     ['overview', 'weather', 'askravin', 'tasks', 'calendar', 'email', 'chats', 'quicklinks'],
     ['overview', 'weather', 'askravin', 'tasks', 'calendar', 'email', 'chats', 'quicklinks'],

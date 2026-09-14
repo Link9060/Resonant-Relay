@@ -17,6 +17,18 @@ export interface CreatePlanInput {
   endTime: string | null;
 }
 
+export interface UpdatePlanInput {
+  planId: string;
+  name: string;
+  notes: string;
+  repeatRule: 'never' | 'daily' | 'weekly' | 'custom';
+  startsOn: string;
+  repeatUntil: string | null;
+  customDates: string[];
+  startTime: string | null;
+  endTime: string | null;
+}
+
 export async function createPlan(input: CreatePlanInput): Promise<ActionResult<{ planId: string }>> {
   const supabase = createClient();
   const { data, error } = await (supabase.rpc as any)('create_plan_v3', {
@@ -36,6 +48,25 @@ export async function createPlan(input: CreatePlanInput): Promise<ActionResult<{
 
   if (error) return { ok: false, error: error.message };
   if (typeof data !== 'string') return { ok: false, error: 'Relay could not create that plan.' };
+  return { ok: true, data: { planId: data } };
+}
+
+export async function updatePlan(input: UpdatePlanInput): Promise<ActionResult<{ planId: string }>> {
+  const supabase = createClient();
+  const { data, error } = await (supabase.rpc as any)('update_plan_v1', {
+    p_plan_id: input.planId,
+    p_name: input.name,
+    p_notes: input.notes || null,
+    p_repeat_rule: input.repeatRule,
+    p_starts_on: input.startsOn,
+    p_repeat_until: input.repeatRule === 'daily' || input.repeatRule === 'weekly' ? input.repeatUntil : null,
+    p_custom_dates: input.repeatRule === 'custom' ? input.customDates : null,
+    p_start_time: input.startTime,
+    p_end_time: input.startTime ? input.endTime : null,
+  });
+
+  if (error) return { ok: false, error: error.message };
+  if (typeof data !== 'string') return { ok: false, error: 'Relay could not update that plan.' };
   return { ok: true, data: { planId: data } };
 }
 
