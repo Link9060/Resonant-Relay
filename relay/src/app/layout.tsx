@@ -13,6 +13,7 @@ import './still-minimal.css';
 import './global-shortcuts.css';
 import './dashboard-editor.css';
 import './dashboard-widgets.css';
+import './startup-safety.css';
 import { BetaIntro } from '@/components/beta-intro';
 import { ExperienceProvider } from '@/components/experience-provider';
 import { LayoutProvider } from '@/components/layout-provider';
