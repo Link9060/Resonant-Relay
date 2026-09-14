@@ -88,3 +88,19 @@
     backdrop-filter: none;
   }
 }
+
+/* Dashboard Studio must have one scroll owner. The inspector used to become
+   its own scroll container at desktop widths, which trapped trackpad/wheel
+   input and recreated the old "can't reach the bottom" behavior. */
+@media (min-width: 1024px) {
+  .fixed.inset-0.z-\[90\] {
+    scrollbar-gutter: stable;
+    touch-action: pan-y;
+  }
+
+  .fixed.inset-0.z-\[90\] > .grid > aside {
+    max-height: none !important;
+    overflow: visible !important;
+    align-self: start;
+  }
+}
