@@ -1,0 +1,43 @@
+/* Dashboard widget-specific layout guards. */
+
+/*
+ * Keep the To-Do quick-add composer reachable even when today's list is long.
+ * The card itself becomes a vertical flex layout, the task list owns the
+ * remaining height and scrolls internally, and the composer stays pinned in
+ * the card instead of being pushed below the clipped widget boundary.
+ *
+ * href$="/todo" works for both the public app (/todo) and the GitHub Pages
+ * beta base path (/Resonant-Relay/todo).
+ */
+.relay-motion-dashboard-card:has(> header a[href$="/todo"]) {
+  display: flex;
+  flex-direction: column;
+}
+
+.relay-motion-dashboard-card:has(> header a[href$="/todo"]) > header {
+  flex: 0 0 auto;
+}
+
+.relay-motion-dashboard-card:has(> header a[href$="/todo"]) > ul {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 0.25rem;
+}
+
+.relay-motion-dashboard-card:has(> header a[href$="/todo"]) > form {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  background: var(--surface-raised);
+}
+
+.relay-motion-dashboard-card:has(> header a[href$="/todo"]) > form input {
+  min-width: 0;
+}
+
+.relay-motion-dashboard-card:has(> header a[href$="/todo"]) > p:last-child {
+  flex: 0 0 auto;
+}
