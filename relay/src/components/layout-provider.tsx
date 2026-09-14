@@ -17,7 +17,9 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       let layout = DEFAULT_LAYOUT;
-      try { layout = normalizeLayout(window.localStorage.getItem(LAYOUT_KEY)); } catch { /* ignore */ }
+      if (root.dataset.relayVisualPrefsReady === 'true') {
+        try { layout = normalizeLayout(window.localStorage.getItem(LAYOUT_KEY)); } catch { /* ignore */ }
+      }
       root.dataset.relayLayout = layout;
     };
 
@@ -27,9 +29,8 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     const onLayout = () => apply();
 
     apply();
-    // Route transitions can briefly rebuild app chrome. Reassert the persisted
-    // desktop layout after the next paint so Planner/Calendar/etc. cannot fall
-    // back to the Classic sidebar while the rest of the app keeps another mode.
+    // Route transitions can briefly rebuild app chrome. Reassert the authenticated
+    // account layout after the next paint, or Classic while account prefs load.
     const routeFrame = window.requestAnimationFrame(apply);
     media.addEventListener('change', apply);
     window.addEventListener('storage', onStorage);
