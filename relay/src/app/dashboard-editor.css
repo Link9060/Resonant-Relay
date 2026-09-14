@@ -1,3 +1,35 @@
+/* Dashboard Studio is a full-screen workspace. Experience modes must not trap
+   it inside transformed/clipped app content, and normal Relay chrome should be
+   out of the way while the editor is open. */
+html:has(.relay-dashboard > .fixed.inset-0.z-\[90\]) .relay-mobile-main {
+  contain: none !important;
+  overflow: visible !important;
+  transform: none !important;
+  filter: none !important;
+  clip-path: none !important;
+}
+
+html:has(.relay-dashboard > .fixed.inset-0.z-\[90\]) .relay-app-header,
+html:has(.relay-dashboard > .fixed.inset-0.z-\[90\]) .relay-desktop-dock:not(.relay-particle-geometry-proxy),
+html:has(.relay-dashboard > .fixed.inset-0.z-\[90\]) .relay-mobile-nav {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.relay-dashboard > .fixed.inset-0.z-\[90\] {
+  z-index: 2147483000 !important;
+  isolation: isolate;
+}
+
+.relay-dashboard > .fixed.inset-0.z-\[90\] > header {
+  z-index: 2147483001 !important;
+}
+
+.relay-dashboard > .fixed.inset-0.z-\[90\] > header button {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
 @media (min-width: 768px) {
   .relay-dashboard-editing {
     padding-bottom: 7rem !important;
