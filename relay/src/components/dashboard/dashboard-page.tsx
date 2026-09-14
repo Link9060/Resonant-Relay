@@ -283,12 +283,12 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
 
   useEffect(() => {
     if (!focusRunning || focusSeconds <= 0) return;
-    const timer = window.setInterval(() => setFocusSeconds((value) => Math.max(0, value - 1)), 1_000);
-    return () => window.clearInterval(timer);
-  }, [focusRunning, focusSeconds]);
-
-  useEffect(() => {
-    if (focusSeconds === 0 && focusRunning) setFocusRunning(false);
+    const timer = window.setTimeout(() => {
+      const next = Math.max(0, focusSeconds - 1);
+      setFocusSeconds(next);
+      if (next === 0) setFocusRunning(false);
+    }, 1_000);
+    return () => window.clearTimeout(timer);
   }, [focusRunning, focusSeconds]);
 
   useEffect(() => {
