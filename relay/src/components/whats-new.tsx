@@ -9,16 +9,16 @@ export const OPEN_WHATS_NEW_EVENT = 'relay-open-whats-new';
 const SEEN_VERSION_KEY = 'relay-whats-new-seen-version';
 
 const DEVELOPMENT_RELEASE = {
-  version: '1.0.6',
+  version: '1.0.7',
   status: 'Beta · Development',
-  publishedAt: '2026-09-13T20:40:00Z',
+  publishedAt: '2026-09-14T01:35:00Z',
   title: 'The next Relay beta',
-  summary: 'Beta 1.0.6 starts from the complete 1.0.5 public release. New development work will appear here as it lands.',
+  summary: 'Beta 1.0.7 starts from the complete 1.0.6 Planning Update. New development work will appear here as it lands.',
   groups: [
     {
       label: 'Starting point',
       items: [
-        'Dashboard Studio, custom presets, desktop layouts, Planner timing, connected Calendar improvements, and the refined Still experience all carry forward from 1.0.5.',
+        'Schedule, creator-editable Planner items, custom-date calendars, account-synced dashboard presets, and the stabilized dashboard all carry forward from 1.0.6.',
         'Beta-only labels stay visible on the development channel so it is always clear when you are testing the next Relay build.',
       ],
     },
@@ -26,6 +26,41 @@ const DEVELOPMENT_RELEASE = {
 } as const;
 
 const PUBLIC_RELEASES = [
+  {
+    version: '1.0.6',
+    status: 'Public release · Planning Update',
+    publishedAt: '2026-09-14T01:30:00Z',
+    title: 'Planning Update',
+    summary: 'Relay 1.0.6 turns planning into a daily workflow with a real Schedule timeline, stronger Planner editing, and a more reliable dashboard experience.',
+    groups: [
+      {
+        label: 'Schedule',
+        items: [
+          'Schedule adds a vertical daily timeline with week navigation, a live NOW line, and a clear view of the day on desktop and mobile.',
+          'Timed Google, Microsoft, and Relay Planner events appear as fixed commitments while personal blocks and scheduled To-Dos stay flexible.',
+          'Give To-Dos an estimated duration, keep unfinished work in the Unscheduled tray, then drag tasks onto the timeline or use Next spot to find an open block.',
+          'Create personal Focus, Break, Routine, or Personal blocks and move flexible blocks as the day changes.',
+        ],
+      },
+      {
+        label: 'Planner',
+        items: [
+          'Plan creators can edit the plan name, notes, repeat pattern, weekdays, date range, and start/end times after creating it.',
+          'Custom-date plans use a compact month calendar where individual day boxes can be selected or removed with a click.',
+          'Editing preserves past occurrences and responses on unchanged future dates while only changing the future dates the creator actually edits.',
+        ],
+      },
+      {
+        label: 'Dashboard and polish',
+        items: [
+          'Dashboard timing widgets now share live upcoming-event logic so Next Up, Today, School Schedule, and Countdowns stop showing timed events after they begin.',
+          'Dashboard Studio uses independent desktop scroll panes for the live preview and customization inspector, with its controls kept in reach.',
+          'Focus, Assignments, Weather, sunrise/sunset, and other non-RAVIN widgets received a functionality and stale-data audit; unsupported placeholder widgets were removed for now.',
+          'Sign-in now clearly asks for a personal account and warns against school-administered, work-managed, or other administrator-controlled email accounts.',
+        ],
+      },
+    ],
+  },
   {
     version: '1.0.5',
     status: 'Public release',
