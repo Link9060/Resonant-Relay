@@ -1,0 +1,37 @@
+/* Startup is brand chrome, not an Experience surface.
+   Saved Experience, palette, and Lock-In preferences must never hide, recolor,
+   transform, clip, or otherwise alter the boot sequence. */
+.startup-shell,
+.beta-intro {
+  isolation: isolate;
+  filter: none !important;
+  transform: none !important;
+}
+
+html[data-relay-experience] .startup-shell .startup-particle-canvas,
+html[data-relay-lock-in='true'] .startup-shell .startup-particle-canvas {
+  display: block !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+html[data-relay-palette] .beta-intro canvas,
+html[data-relay-experience] .beta-intro canvas,
+html[data-relay-lock-in='true'] .beta-intro canvas {
+  display: block !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+/* Keep boot layers above Experience-created stacking contexts. */
+.startup-shell,
+.beta-intro {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden !important;
+}
+
+.startup-shell { z-index: 2147483600 !important; }
+.beta-intro { z-index: 2147483590 !important; }
