@@ -11,7 +11,7 @@
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 65%, transparent);
   }
   html[data-relay-layout='focus'] .relay-desktop-dock:not(.relay-particle-geometry-proxy):hover,
-  html[data-relay-layout='focus'] .relay-desktop-dock:not(.relay-particle-geometry-proxy):focus-within {
+  html[data-relay-layout='focus'] .relay-desktop-dock:not(.relay-particle-geometry-proxy):has(:focus-visible) {
     width: 15rem !important;
     padding-left: .75rem !important;
     padding-right: .75rem !important;
@@ -34,8 +34,8 @@
   }
   html[data-relay-layout='focus'] .relay-desktop-dock:hover .relay-brand-lockup > span,
   html[data-relay-layout='focus'] .relay-desktop-dock:hover .relay-dock-link > span:last-child,
-  html[data-relay-layout='focus'] .relay-desktop-dock:focus-within .relay-brand-lockup > span,
-  html[data-relay-layout='focus'] .relay-desktop-dock:focus-within .relay-dock-link > span:last-child {
+  html[data-relay-layout='focus'] .relay-desktop-dock:has(:focus-visible) .relay-brand-lockup > span,
+  html[data-relay-layout='focus'] .relay-desktop-dock:has(:focus-visible) .relay-dock-link > span:last-child {
     max-width: 10rem !important;
     opacity: 1 !important;
     transform: translateX(0) !important;
@@ -46,7 +46,7 @@
     padding-right: 0 !important;
   }
   html[data-relay-layout='focus'] .relay-desktop-dock:hover .relay-dock-link,
-  html[data-relay-layout='focus'] .relay-desktop-dock:focus-within .relay-dock-link {
+  html[data-relay-layout='focus'] .relay-desktop-dock:has(:focus-visible) .relay-dock-link {
     justify-content: flex-start !important;
     gap: .75rem !important;
     padding-left: .75rem !important;
