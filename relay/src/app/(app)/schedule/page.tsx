@@ -15,7 +15,7 @@ import {
 } from '@/lib/actions/schedule';
 import { addDays, localDateKey, mondayOfWeek } from '@/lib/date';
 import { createClient } from '@/lib/supabase/client';
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3, GripVertical, ListTodo, Lock, Plus, Trash2, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock3, GripVertical, ListTodo, Lock, Plus, Trash2, X } from 'lucide-react';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 type ProviderEvent = {
@@ -452,8 +452,8 @@ function sourceClasses(source: TimelineItem['source']) {
 }
 
 function parseDateKey(key: string) {
-  const [year, month, day] = key.split('-').map(Number);
-  return new Date(year, (month ?? 1) - 1, day ?? 1, 12);
+  const [year = 1970, month = 1, day = 1] = key.split('-').map(Number);
+  return new Date(year, month - 1, day, 12);
 }
 
 function eventDateKey(event: ProviderEvent) {
@@ -463,8 +463,8 @@ function eventDateKey(event: ProviderEvent) {
 }
 
 function timeToMinutes(value: string) {
-  const [hours, minutes] = value.split(':').map(Number);
-  return (hours || 0) * 60 + (minutes || 0);
+  const [hours = 0, minutes = 0] = value.split(':').map(Number);
+  return hours * 60 + minutes;
 }
 
 function minutesToTime(total: number) {
@@ -514,9 +514,9 @@ function minuteFromPointer(clientY: number, rect: DOMRect) {
 
 function findNextAvailable(earliest: number, duration: number, items: TimelineItem[]) {
   let candidate = Math.max(START_MINUTE, snap(earliest));
-  const busy = items.map((item) => [item.startMinute, item.endMinute] as const).sort((a, b) => a[0] - b[0]);
+  const occupied = items.map((item) => [item.startMinute, item.endMinute] as const).sort((a, b) => a[0] - b[0]);
   while (candidate + duration <= END_MINUTE) {
-    const collision = busy.find(([start, end]) => candidate < end && candidate + duration > start);
+    const collision = occupied.find(([start, end]) => candidate < end && candidate + duration > start);
     if (!collision) return candidate;
     candidate = snap(collision[1]);
   }
