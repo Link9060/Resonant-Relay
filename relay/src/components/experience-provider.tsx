@@ -1,6 +1,14 @@
 'use client';
 
-import { applyExperience, EXPERIENCE_EVENT, readExperience } from '@/lib/experience-mode';
+import {
+  DEFAULT_EXPERIENCE,
+  DEFAULT_INTENSITY,
+  DEFAULT_LOCK_IN,
+  DEFAULT_PALETTE,
+  applyExperience,
+  EXPERIENCE_EVENT,
+  readExperience,
+} from '@/lib/experience-mode';
 import { useEffect } from 'react';
 
 export function ExperienceProvider({ children }: { children: React.ReactNode }) {
@@ -13,7 +21,10 @@ export function ExperienceProvider({ children }: { children: React.ReactNode }) 
     };
 
     const apply = () => {
-      const current = readExperience();
+      const ready = document.documentElement.dataset.relayVisualPrefsReady === 'true';
+      const current = ready
+        ? readExperience()
+        : { experience: DEFAULT_EXPERIENCE, palette: DEFAULT_PALETTE, intensity: DEFAULT_INTENSITY, lockIn: DEFAULT_LOCK_IN };
       applyExperience(current.experience, current.palette, current.intensity, current.lockIn);
       if (current.experience !== 'slate') clearSlatePointer();
     };
