@@ -1,5 +1,6 @@
 'use client';
 
+import { EditPlanDialog } from '@/components/planner/edit-plan-dialog';
 import { deletePlan } from '@/lib/actions/planner';
 import { appPageUrl } from '@/lib/config';
 import { Clock3, Trash2 } from 'lucide-react';
@@ -11,14 +12,28 @@ const REPEAT_LABEL: Record<string, string> = {
   custom: 'Custom schedule',
 };
 
+type HeaderPlan = {
+  id: string;
+  name: string;
+  notes: string | null;
+  repeat_rule: 'never' | 'daily' | 'weekly' | 'custom';
+  starts_on: string;
+  repeat_until: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  instances?: Array<{ id?: string; occurs_on: string }>;
+};
+
 export function PlanHeader({
   plan,
   groupName,
   canDelete,
+  canEdit,
 }: {
-  plan: { id: string; name: string; notes: string | null; repeat_rule: string; start_time?: string | null; end_time?: string | null };
+  plan: HeaderPlan;
   groupName: string;
   canDelete: boolean;
+  canEdit: boolean;
 }) {
   return (
     <div className="flex items-start justify-between gap-4">
@@ -33,19 +48,25 @@ export function PlanHeader({
         </div>
         {plan.notes && <p className="mt-3 max-w-xl text-sm leading-6 text-ink-muted">{plan.notes}</p>}
       </div>
-      {canDelete && (
-        <button
-          type="button"
-          onClick={async () => {
-            if (!window.confirm('Delete this plan?')) return;
-            const result = await deletePlan(plan.id);
-            if (result.ok) window.location.assign(appPageUrl('/planner'));
-          }}
-          aria-label="Delete plan"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-transparent text-ink-faint transition hover:border-border hover:bg-surface hover:text-red-500"
-        >
-          <Trash2 size={16} />
-        </button>
+
+      {(canEdit || canDelete) && (
+        <div className="flex shrink-0 items-center gap-2">
+          {canEdit && <EditPlanDialog plan={plan} />}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!window.confirm('Delete this plan?')) return;
+                const result = await deletePlan(plan.id);
+                if (result.ok) window.location.assign(appPageUrl('/planner'));
+              }}
+              aria-label="Delete plan"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-transparent text-ink-faint transition hover:border-border hover:bg-surface hover:text-red-500"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
