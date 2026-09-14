@@ -89,18 +89,49 @@
   }
 }
 
-/* Dashboard Studio must have one scroll owner. The inspector used to become
-   its own scroll container at desktop widths, which trapped trackpad/wheel
-   input and recreated the old "can't reach the bottom" behavior. */
+/* Dashboard Studio desktop scroll architecture.
+   The shell itself never scrolls. The editor grid is the single vertical
+   scroll surface, so the preview and inspector always consume the same wheel
+   and trackpad input. The inspector must not be a sticky/overflow container;
+   only its small tab bar is allowed to stick inside the shared scroller. */
 @media (min-width: 1024px) {
-  .fixed.inset-0.z-\[90\] {
+  .relay-dashboard > .fixed.inset-0.z-\[90\] {
+    display: flex;
+    height: 100dvh;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
+
+  .relay-dashboard > .fixed.inset-0.z-\[90\] > header {
+    position: relative !important;
+    top: auto !important;
+    flex: 0 0 auto;
+  }
+
+  .relay-dashboard > .fixed.inset-0.z-\[90\] > .grid {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
     scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
   }
 
-  .fixed.inset-0.z-\[90\] > .grid > aside {
+  .relay-dashboard > .fixed.inset-0.z-\[90\] > .grid > aside {
+    position: static !important;
+    top: auto !important;
     max-height: none !important;
     overflow: visible !important;
-    align-self: start;
+    align-self: stretch;
+  }
+
+  .relay-dashboard > .fixed.inset-0.z-\[90\] > .grid > aside > :first-child {
+    position: sticky;
+    top: 0;
+    z-index: 20;
   }
 }
