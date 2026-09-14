@@ -3,7 +3,7 @@
 import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
 import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, RELEASE_LABEL } from '@/lib/config';
 import { cn } from '@/lib/utils';
-import { CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, Mail, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, Users, type LucideIcon } from 'lucide-react';
+import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, Mail, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 const DESKTOP_DOCK_ITEMS = [
@@ -12,6 +12,7 @@ const DESKTOP_DOCK_ITEMS = [
   { href: '/todo', label: 'To Do', icon: ListTodo },
   { href: '/notes', label: 'Notes', icon: NotebookPen },
   { href: '/planner', label: 'Planner', mobileLabel: 'Plans', icon: SquareCheck },
+  { href: '/schedule', label: 'Schedule', icon: CalendarClock },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
   { href: '/email', label: 'Email', icon: Mail },
   { href: '/quicklinks', label: 'Quick Links', icon: Link2 },
@@ -37,6 +38,7 @@ export function Dock({
     ? [
         { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
         { href: '/chats', label: 'Chats', icon: MessageCircle },
+        { href: '/schedule', label: 'Schedule', icon: CalendarClock },
         { href: '/admin/moderation', label: 'Reports', icon: ShieldCheck },
         { href: '/contacts', label: 'Contacts', icon: Users },
         { href: '/profile', label: 'Settings', icon: Settings },
@@ -44,6 +46,7 @@ export function Dock({
     : [
         { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
         { href: '/chats', label: 'Chats', icon: MessageCircle },
+        { href: '/schedule', label: 'Schedule', icon: CalendarClock },
         { href: '/contacts', label: 'Contacts', icon: Users },
         { href: '/profile', label: 'Settings', icon: Settings },
       ];
@@ -143,7 +146,7 @@ export function Dock({
         aria-label="Relay Mobile"
         className={cn(
           'relay-mobile-nav fixed inset-x-0 bottom-0 z-30 grid border-t border-border bg-surface/95 backdrop-blur-xl md:hidden',
-          canOpenStaff ? 'grid-cols-5' : 'grid-cols-4'
+          canOpenStaff ? 'grid-cols-6' : 'grid-cols-5'
         )}
       >
         {mobileItems.map((item) => (
