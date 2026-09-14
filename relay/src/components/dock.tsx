@@ -65,15 +65,15 @@ export function Dock({
         <a
           href={appPageUrl('/space')}
           className={cn(
-            'relay-brand-lockup flex min-h-7 items-center overflow-hidden pb-8 font-display text-lg font-medium tracking-tight text-ink',
+            'relay-brand-lockup flex min-h-9 items-center overflow-visible pb-7 pt-1 font-display text-lg font-medium leading-[1.25] tracking-tight text-ink',
             collapsed ? 'justify-center px-0' : 'gap-2 px-3'
           )}
           aria-label="Return to particle landing page"
           title={collapsed ? APP_TITLE : undefined}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 shrink-0 dark:invert" />
-          <span className={cn('min-w-0 whitespace-nowrap transition-[opacity,max-width,transform] duration-200', collapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-32 translate-x-0 opacity-100')} aria-hidden={collapsed}>Relay</span>
+          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 shrink-0 self-center object-contain dark:invert" />
+          <span className={cn('inline-flex min-h-7 min-w-0 items-center whitespace-nowrap leading-[1.25] transition-[opacity,max-width,transform] duration-200', collapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-32 translate-x-0 opacity-100')} aria-hidden={collapsed}>Relay</span>
         </a>
 
         <ul className="relay-primary-cluster flex flex-1 flex-col gap-1">
