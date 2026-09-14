@@ -9,9 +9,11 @@ import { MobileStaffAlert } from '@/components/mobile-staff-alert';
 import { PageLoading } from '@/components/page-loading';
 import { StaffCommandPaletteGlobal } from '@/components/staff-command-palette';
 import { StillShortcuts } from '@/components/still-shortcuts';
+import { VisualPreferencesAccountSync } from '@/components/visual-preferences-account-sync';
 import { appPageUrl, IS_BETA } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT, setRolePreview } from '@/lib/role-preview';
+import { syncVisualPreferencesWithAccount } from '@/lib/visual-preferences-account';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 
 const DOCK_COLLAPSED_KEY = 'relay-dock-collapsed';
@@ -129,6 +131,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        // Layout, experience and palette are account preferences. Resolve them
+        // before exposing the app shell so another account's browser cache can
+        // never become this user's starting appearance.
+        try {
+          await syncVisualPreferencesWithAccount(user.id);
+        } catch (error) {
+          console.error('Relay visual preference sync failed; using defaults', error);
+        }
+        if (!active) return;
+
         setState({
           userId: user.id,
           profile,
@@ -218,6 +230,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <BetaExperience>
       <DashboardPresetAccountSync />
+      <VisualPreferencesAccountSync userId={state.userId} />
       <div data-dock-collapsed={dockCollapsed} className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
         <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={handleDockCollapsedChange} onboardingCompletedAt={state.profile?.onboarding_completed_at ?? null} />
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
