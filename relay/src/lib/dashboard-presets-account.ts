@@ -35,6 +35,8 @@ type UiPreferencesDatabase = Omit<Database, 'public'> & {
   };
 };
 
+const DASHBOARD_PRESET_CACHE_OWNER_KEY = 'relay-dashboard-custom-presets-owner-v1';
+
 function client() {
   return createClient() as unknown as SupabaseClient<UiPreferencesDatabase>;
 }
@@ -98,9 +100,38 @@ function mergePresets(local: DashboardCustomPreset[], remote: DashboardCustomPre
   return merged;
 }
 
-function cachePresets(presets: DashboardCustomPreset[]) {
+function readCacheOwner() {
+  try {
+    return window.localStorage.getItem(DASHBOARD_PRESET_CACHE_OWNER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function cacheBelongsTo(userId: string) {
+  return readCacheOwner() === userId;
+}
+
+function prepareCacheForUser(userId: string) {
+  if (cacheBelongsTo(userId)) return true;
+
+  try {
+    // The legacy cache key is shared by every account on this browser origin.
+    // Never merge an unowned or differently-owned cache into the current user.
+    window.localStorage.removeItem(DASHBOARD_CUSTOM_PRESETS_KEY);
+    window.localStorage.setItem(DASHBOARD_PRESET_CACHE_OWNER_KEY, userId);
+    window.dispatchEvent(new CustomEvent(DASHBOARD_CUSTOM_PRESETS_EVENT, { detail: [] }));
+  } catch {
+    // Account storage still works when local storage is unavailable.
+  }
+
+  return false;
+}
+
+function cachePresets(presets: DashboardCustomPreset[], userId: string) {
   const normalized = normalizePresets(presets);
   try {
+    window.localStorage.setItem(DASHBOARD_PRESET_CACHE_OWNER_KEY, userId);
     window.localStorage.setItem(DASHBOARD_CUSTOM_PRESETS_KEY, JSON.stringify(normalized));
     window.dispatchEvent(new CustomEvent(DASHBOARD_CUSTOM_PRESETS_EVENT, { detail: normalized }));
   } catch {
@@ -118,6 +149,14 @@ async function currentUserId() {
 export async function persistCustomDashboardPresetsToAccount(presets: DashboardCustomPreset[]) {
   const userId = await currentUserId();
   if (!userId) return false;
+
+  // A preset change that fires before account reconciliation must never upload a
+  // previous account's browser cache into the newly authenticated account.
+  if (!cacheBelongsTo(userId)) {
+    prepareCacheForUser(userId);
+    return false;
+  }
+
   const normalized = normalizePresets(presets);
   const { error } = await client()
     .from('user_ui_preferences')
@@ -130,9 +169,13 @@ export async function persistCustomDashboardPresetsToAccount(presets: DashboardC
 }
 
 export async function syncCustomDashboardPresetsWithAccount() {
-  const local = readCustomDashboardPresets();
   const userId = await currentUserId();
-  if (!userId) return local;
+  if (!userId) return [];
+
+  // Only a cache explicitly owned by this authenticated account is eligible to
+  // merge. Old unscoped caches and caches left by another account are discarded.
+  const canUseLocalCache = prepareCacheForUser(userId);
+  const local = canUseLocalCache ? readCustomDashboardPresets() : [];
 
   const supabase = client();
   const { data, error } = await supabase
@@ -144,7 +187,7 @@ export async function syncCustomDashboardPresetsWithAccount() {
   if (error) return local;
 
   const remote = normalizePresets(data?.dashboard_presets ?? []);
-  const merged = cachePresets(mergePresets(local, remote));
+  const merged = cachePresets(mergePresets(local, remote), userId);
 
   if (!data || JSON.stringify(remote) !== JSON.stringify(merged)) {
     await supabase
