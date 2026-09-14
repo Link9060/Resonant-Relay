@@ -20,6 +20,7 @@ type PlanState = {
   responses: any[];
   userId: string;
   canDelete: boolean;
+  canEdit: boolean;
   error?: string;
 };
 
@@ -65,7 +66,7 @@ function PlanView() {
 
       if (!active) return;
       setState({
-        plan,
+        plan: { ...plan, instances: allInstances },
         group,
         instances: upcomingInstances,
         options: [...(plan.options ?? [])].sort((a: any, b: any) => a.sort_order - b.sort_order),
@@ -73,6 +74,7 @@ function PlanView() {
         responses: responseResult.data ?? [],
         userId: user.id,
         canDelete: plan.created_by === user.id || membership?.role === 'admin',
+        canEdit: plan.created_by === user.id,
       });
       setSelectedInstanceId(upcomingInstances[0]?.id ?? null);
     })();
@@ -91,7 +93,7 @@ function PlanView() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
-      <PlanHeader plan={state.plan} groupName={state.group.name} canDelete={state.canDelete} />
+      <PlanHeader plan={state.plan} groupName={state.group.name} canDelete={state.canDelete} canEdit={state.canEdit} />
 
       {state.instances.length === 0 ? (
         <div className="mt-7 rounded-2xl border border-dashed border-border bg-surface/40 px-5 py-10 text-center">

@@ -165,9 +165,16 @@ export default function LoginPage() {
           {IS_BETA ? 'Early Relay builds for approved testers.' : 'The place you open to figure out your day.'}
         </p>
 
+        <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left">
+          <p className="text-sm font-semibold text-ink">Use a personal email account</p>
+          <p className="mt-1 text-xs leading-5 text-ink-muted">
+            <strong>Do not use a school-administered, work-managed, or other administrator-controlled email.</strong> Managed accounts can block Relay sign-in or connected-service permissions and may be disabled by the organization later.
+          </p>
+        </div>
+
         {googleEnabled && (
           <>
-            <button onClick={handleGoogleSignIn} disabled={busy} className="mt-10 flex w-full items-center justify-center gap-3 rounded-md border border-border bg-surface-raised px-4 py-3 text-sm font-medium text-ink transition-colors hover:bg-surface">
+            <button onClick={handleGoogleSignIn} disabled={busy} className="mt-6 flex w-full items-center justify-center gap-3 rounded-md border border-border bg-surface-raised px-4 py-3 text-sm font-medium text-ink transition-colors hover:bg-surface">
               <GoogleIcon />
               Continue with Google
             </button>
@@ -175,8 +182,8 @@ export default function LoginPage() {
           </>
         )}
 
-        <form onSubmit={handleEmailSignIn} className={`${googleEnabled ? '' : 'mt-10 '}space-y-3 text-left`}>
-          <label htmlFor="email" className="block text-xs font-medium text-ink-muted">Email address</label>
+        <form onSubmit={handleEmailSignIn} className={`${googleEnabled ? '' : 'mt-6 '}space-y-3 text-left`}>
+          <label htmlFor="email" className="block text-xs font-medium text-ink-muted">Personal email address</label>
           <input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="w-full rounded-md border border-border bg-surface-raised px-3 py-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-ink-muted" />
           <button type="submit" disabled={busy || Boolean(retryAfter)} className="w-full rounded-md bg-ink px-4 py-3 text-sm font-medium text-canvas transition-opacity disabled:opacity-50">
             {retryAfter ? `Try again after ${retryTime(retryAfter)}` : 'Email me a sign-in link'}

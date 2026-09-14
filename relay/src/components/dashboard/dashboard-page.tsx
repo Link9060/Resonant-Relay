@@ -106,16 +106,16 @@ export const WIDGET_META: Record<DashboardWidgetId, { label: string; description
   chats: { label: 'Chats', description: 'Newest Relay conversations and unread messages.' },
   quicknote: { label: 'Quick Note', description: 'Capture a thought and send it into Relay Notes.' },
   focus: { label: 'Focus', description: 'A simple focus timer with quick presets.' },
-  nowplaying: { label: 'Now Playing', description: 'Music controls when a music connector is enabled.' },
-  pinnedpeople: { label: 'Pinned People', description: 'Fast access to your favorite Relay contacts.' },
-  quicklinks: { label: 'Quick Actions', description: 'Create tasks, plans, chats, or notes fast.' },
+  nowplaying: { label: 'Now Playing', description: 'Reserved for a future music connection.' },
+  pinnedpeople: { label: 'Pinned People', description: 'Reserved for future favorite-contact controls.' },
+  quicklinks: { label: 'Quick Actions', description: 'Jump straight into To-Do, Planner, Chats, or Notes.' },
   dayprogress: { label: 'Day Progress', description: 'A glanceable progress meter for your day.' },
   schoolschedule: { label: 'School Schedule', description: 'Classes and school events pulled from Calendar.' },
-  assignments: { label: 'Assignments', description: 'Upcoming dated To-Do items.' },
+  assignments: { label: 'Assignments', description: 'Upcoming incomplete dated To-Do items.' },
   momentum: { label: 'Momentum', description: 'Today’s completed-vs-total task progress.' },
   sun: { label: 'Sunrise / Sunset', description: 'Today’s sunrise and sunset from local weather.' },
-  countdowns: { label: 'Countdowns', description: 'Time until your next event.' },
-  recentfiles: { label: 'Recent Files', description: 'A home for recent Relay and connected files.' },
+  countdowns: { label: 'Countdowns', description: 'Time until your next timed event.' },
+  recentfiles: { label: 'Recent Files', description: 'Reserved for a future connected-files source.' },
   ravinbrief: { label: 'RAVIN Brief', description: 'A preview of your future AI daily briefing.' },
   askravin: { label: 'Ask RAVIN', description: 'A teaser prompt box with the RAVIN voice orb.' },
 };
@@ -130,7 +130,10 @@ function readCachedWeather(): WeatherSnapshot | null {
     const raw = window.localStorage.getItem(WEATHER_CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as WeatherSnapshot;
-    return typeof parsed.temperature === 'number' ? parsed : null;
+    if (typeof parsed.temperature !== 'number') return null;
+    const fetchedAt = new Date(parsed.fetchedAt);
+    if (Number.isNaN(fetchedAt.getTime()) || localDateKey(fetchedAt) !== localDateKey()) return null;
+    return parsed;
   } catch {
     return null;
   }
@@ -280,8 +283,12 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
 
   useEffect(() => {
     if (!focusRunning || focusSeconds <= 0) return;
-    const timer = window.setInterval(() => setFocusSeconds((value) => Math.max(0, value - 1)), 1_000);
-    return () => window.clearInterval(timer);
+    const timer = window.setTimeout(() => {
+      const next = Math.max(0, focusSeconds - 1);
+      setFocusSeconds(next);
+      if (next === 0) setFocusRunning(false);
+    }, 1_000);
+    return () => window.clearTimeout(timer);
   }, [focusRunning, focusSeconds]);
 
   useEffect(() => {
@@ -314,7 +321,20 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
 
   const today = localDateKey(now);
   const todayTodos = useMemo(() => state.todos.filter((todo) => todo.due_on === today), [state.todos, today]);
-  const futureTodos = useMemo(() => state.todos.filter((todo) => todo.due_on > today), [state.todos, today]);
+  const futureTodos = useMemo(() => state.todos.filter((todo) => todo.due_on > today && !todo.completed), [state.todos, today]);
+  const upcomingEvents = useMemo(() => {
+    const nowMs = now.getTime();
+    return state.events.filter((event) => {
+      const eventDate = new Date(event.startsAt);
+      if (Number.isNaN(eventDate.getTime())) return false;
+      if (event.isAllDay) return localDateKey(eventDate) >= today;
+      return eventDate.getTime() >= nowMs;
+    });
+  }, [now, state.events, today]);
+  const nextCountdownEvent = useMemo(
+    () => upcomingEvents.find((event) => !event.isAllDay) ?? upcomingEvents[0] ?? null,
+    [upcomingEvents],
+  );
   const tasksLeft = todayTodos.filter((todo) => !todo.completed).length;
   const completedToday = todayTodos.filter((todo) => todo.completed).length;
   const unreadChats = state.chatNotifications.filter((notification) => !notification.read_at).length;
@@ -453,7 +473,7 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
 
     switch (widget.id) {
       case 'overview':
-        return <section className="grid h-full grid-cols-3 overflow-hidden rounded-lg border border-border bg-surface-raised"><OverviewStat value={tasksLeft} label="tasks left" /><OverviewStat value={state.events.length} label="upcoming" /><OverviewStat value={unreadChats} label="new chats" /></section>;
+        return <section className="grid h-full grid-cols-3 overflow-hidden rounded-lg border border-border bg-surface-raised"><OverviewStat value={tasksLeft} label="tasks left" /><OverviewStat value={upcomingEvents.length} label="upcoming" /><OverviewStat value={unreadChats} label="new chats" /></section>;
       case 'weather':
         return <DashboardCard index={index} compact={compact} icon={<CloudSun size={18} />} title="Weather">{weather ? <><div className="flex items-end justify-between gap-3"><div><p className={`${compact ? 'text-2xl' : 'text-4xl'} font-display font-medium text-ink`}>{Math.round(weather.temperature)}{weather.unit}</p><p className="mt-1 text-sm text-ink-muted">{weatherLabel(weather.weatherCode)}</p></div>{!compact && <div className="text-right text-xs text-ink-faint"><p>Feels {Math.round(weather.apparent)}{weather.unit}</p><p className="mt-1">H {Math.round(weather.high)}° · L {Math.round(weather.low)}°</p></div>}</div>{!compact && widget.rows >= 2 && <div className="mt-4 grid grid-cols-2 gap-2"><MiniPanel label="Rain" value={`${Math.round(weather.precip)}%`} detail="chance today" /><MiniPanel label="Updated" value={formatRelative(weather.fetchedAt)} detail="local weather" /></div>}{widget.rows >= 2 && <button type="button" onClick={loadWeather} className="mt-3 text-xs font-medium text-ink-muted hover:text-ink">Refresh weather</button>}</> : <div className="rounded-xl bg-surface p-3"><p className="text-sm text-ink-muted">Use your location to show local weather.</p><button type="button" onClick={loadWeather} disabled={weatherBusy} className="mt-3 rounded-lg bg-ink px-3 py-2 text-xs font-semibold text-canvas disabled:opacity-50">{weatherBusy ? 'Loading…' : 'Use my location'}</button>{weatherMessage && !compact && <p className="mt-2 text-xs text-ink-faint">{weatherMessage}</p>}</div>}</DashboardCard>;
       case 'askravin':
@@ -461,23 +481,23 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
       case 'tasks':
         return <DashboardCard index={index} compact={compact} icon={<ListTodo size={18} />} title="To-Do" href="/todo" linkLabel="Open week">{state.taskError ? <EmptyState>Tasks could not load.</EmptyState> : todayTodos.length === 0 ? <EmptyState>Nothing on your list yet.</EmptyState> : <ul className="space-y-1">{todayTodos.slice(0, listLimit).map((todo) => <li key={todo.id} className="flex items-center gap-3 rounded-md px-1 py-1.5"><button type="button" disabled={taskBusy === todo.id} onClick={() => toggleTodayTask(todo)} className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${todo.completed ? 'border-ink bg-ink text-canvas' : 'border-ink-faint text-transparent'}`}><Check size={13} /></button><span className={`truncate text-sm ${todo.completed ? 'text-ink-faint line-through' : 'text-ink'}`}>{todo.title}</span></li>)}</ul>}{!compact && widget.rows >= 2 && <form onSubmit={addTodayTask} className="mt-3 flex gap-2 border-t border-border pt-3"><input value={taskDraft} onChange={(event) => setTaskDraft(event.target.value)} placeholder="Quick add for today…" className="min-w-0 flex-1 rounded-md border border-border bg-canvas px-3 py-2 text-sm text-ink outline-none" /><button type="submit" disabled={taskBusy === 'new' || !taskDraft.trim()} className="grid h-9 w-9 place-items-center rounded-md bg-ink text-canvas disabled:opacity-40"><Plus size={16} /></button></form>}{taskMessage && <p className="mt-2 text-xs text-red-600">{taskMessage}</p>}</DashboardCard>;
       case 'calendar':
-        return <DashboardCard index={index} compact={compact} icon={<CalendarDays size={18} />} title="Next Up" href="/calendar" linkLabel="Calendar">{state.events.length ? <EventList events={state.events.slice(0, listLimit)} compact={compact} /> : <EmptyState>{state.calendarConnected ? 'Nothing else is scheduled.' : 'Connect Calendar for your full schedule.'}</EmptyState>}</DashboardCard>;
+        return <DashboardCard index={index} compact={compact} icon={<CalendarDays size={18} />} title="Next Up" href="/calendar" linkLabel="Calendar">{upcomingEvents.length ? <EventList events={upcomingEvents.slice(0, listLimit)} compact={compact} /> : <EmptyState>{state.calendarConnected ? 'Nothing else is scheduled.' : 'Connect Calendar for your full schedule.'}</EmptyState>}</DashboardCard>;
       case 'today':
-        return <DashboardCard index={index} compact={compact} icon={<Gauge size={18} />} title="Today"><div className={`grid gap-3 ${wide ? 'sm:grid-cols-3' : ''}`}><MiniPanel label="Tasks" value={tasksLeft ? `${tasksLeft} left` : 'All clear'} detail={todayTodos[0]?.title ?? 'No tasks due'} />{!compact && <MiniPanel label="Next" value={state.events[0] ? formatDashboardEventTime(state.events[0]) : 'Open'} detail={state.events[0]?.title ?? 'No upcoming event'} />}{wide && <MiniPanel label="Messages" value={unreadChats ? `${unreadChats} unread` : 'Caught up'} detail={state.chatNotifications[0]?.title ?? 'No new chats'} />}</div></DashboardCard>;
+        return <DashboardCard index={index} compact={compact} icon={<Gauge size={18} />} title="Today"><div className={`grid gap-3 ${wide ? 'sm:grid-cols-3' : ''}`}><MiniPanel label="Tasks" value={tasksLeft ? `${tasksLeft} left` : 'All clear'} detail={todayTodos.find((todo) => !todo.completed)?.title ?? 'No tasks due'} />{!compact && <MiniPanel label="Next" value={upcomingEvents[0] ? formatDashboardEventTime(upcomingEvents[0]) : 'Open'} detail={upcomingEvents[0]?.title ?? 'No upcoming event'} />}{wide && <MiniPanel label="Messages" value={unreadChats ? `${unreadChats} unread` : 'Caught up'} detail={state.chatNotifications[0]?.title ?? 'No new chats'} />}</div></DashboardCard>;
       case 'email':
         return <DashboardCard index={index} compact={compact} icon={<Inbox size={18} />} title="Inbox" href="/email" linkLabel="Inbox">{!state.emailConnected ? <EmptyState>Connect Google or Microsoft email first.</EmptyState> : state.emails.length ? <ul className="divide-y divide-border">{state.emails.slice(0, listLimit).map((email) => <li key={email.id} className="flex items-start gap-3 py-2.5"><span className={`mt-1.5 h-2 w-2 rounded-full ${email.isUnread ? 'bg-blue-500' : 'bg-border'}`} /><div className="min-w-0 flex-1"><p className={`truncate text-sm text-ink ${email.isUnread ? 'font-semibold' : ''}`}>{email.subject}</p>{!compact && <p className="mt-1 truncate text-xs text-ink-faint">{cleanSender(email.from)}</p>}</div></li>)}</ul> : <EmptyState>Your inbox is clear.</EmptyState>}</DashboardCard>;
       case 'chats':
         return <DashboardCard index={index} compact={compact} icon={<MessageCircle size={18} />} title="Chats" href="/chats" linkLabel="Chats">{state.chatNotifications.length ? <ul className="divide-y divide-border">{state.chatNotifications.slice(0, listLimit).map((notification) => <li key={notification.id}><a href={appPageUrl(normalizeAppLink(notification.link ?? '/chats'))} onClick={() => openNotification(notification)} className="flex items-start gap-3 py-2.5"><span className={`mt-1.5 h-2 w-2 rounded-full ${notification.read_at ? 'bg-border' : 'bg-blue-500'}`} /><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-ink">{notification.title}</p>{!compact && <p className="mt-1 truncate text-xs text-ink-faint">{notification.body}</p>}</div></a></li>)}</ul> : <EmptyState>No new chat notifications.</EmptyState>}</DashboardCard>;
       case 'quicknote':
-        return <DashboardCard index={index} compact={compact} icon={<NotebookPen size={18} />} title="Quick Note" href="/notes" linkLabel="Notes"><textarea value={quickNote} onChange={(event) => updateQuickNote(event.target.value)} rows={roomy ? 8 : compact ? 2 : 4} placeholder="Capture something before it disappears…" className="w-full resize-none rounded-xl border border-border bg-canvas p-3 text-sm leading-6 text-ink outline-none" />{widget.rows >= 2 && <div className="mt-2 flex items-center justify-between gap-3"><span className="truncate text-xs text-ink-faint">{quickNoteStatus ?? 'Auto-saves here.'}</span><button type="button" onClick={saveQuickNote} disabled={!quickNote.trim()} className="rounded-lg bg-ink px-3 py-2 text-xs font-semibold text-canvas disabled:opacity-35">Save</button></div>}</DashboardCard>;
+        return <DashboardCard index={index} compact={compact} icon={<NotebookPen size={18} />} title="Quick Note" href="/notes" linkLabel="Notes"><textarea value={quickNote} onChange={(event) => updateQuickNote(event.target.value)} rows={roomy ? 8 : compact ? 2 : 4} placeholder="Capture something before it disappears…" className="w-full resize-none rounded-xl border border-border bg-canvas p-3 text-sm leading-6 text-ink outline-none" />{widget.rows >= 2 && <div className="mt-2 flex items-center justify-between gap-3"><span className="truncate text-xs text-ink-faint">{quickNoteStatus ?? 'Draft saved locally.'}</span><button type="button" onClick={saveQuickNote} disabled={!quickNote.trim()} className="rounded-lg bg-ink px-3 py-2 text-xs font-semibold text-canvas disabled:opacity-35">Save to Notes</button></div>}</DashboardCard>;
       case 'focus':
-        return <DashboardCard index={index} compact={compact} icon={<TimerReset size={18} />} title="Focus"><div className="text-center"><p className={`${compact ? 'text-2xl' : 'text-4xl'} font-mono font-semibold text-ink`}>{formatTimer(focusSeconds)}</p>{!compact && <p className="mt-1 text-xs text-ink-faint">{focusRunning ? 'Focus session running' : 'Pick a block and lock in'}</p>}</div><div className="mt-3 flex justify-center gap-2"><button type="button" onClick={() => setFocusRunning((value) => !value)} className="grid h-9 w-9 place-items-center rounded-full bg-ink text-canvas">{focusRunning ? <Pause size={15} /> : <Play size={15} />}</button><button type="button" onClick={() => { setFocusRunning(false); setFocusSeconds(25 * 60); }} className="grid h-9 w-9 place-items-center rounded-full border border-border text-ink-muted"><RotateCcw size={14} /></button></div>{!compact && widget.rows >= 2 && <div className="mt-3 grid grid-cols-3 gap-2">{[25, 45, 60].map((minutes) => <button key={minutes} type="button" onClick={() => { setFocusRunning(false); setFocusSeconds(minutes * 60); }} className="rounded-lg border border-border bg-canvas px-2 py-2 text-xs text-ink-muted">{minutes}m</button>)}</div>}</DashboardCard>;
+        return <DashboardCard index={index} compact={compact} icon={<TimerReset size={18} />} title="Focus"><div className="text-center"><p className={`${compact ? 'text-2xl' : 'text-4xl'} font-mono font-semibold text-ink`}>{formatTimer(focusSeconds)}</p>{!compact && <p className="mt-1 text-xs text-ink-faint">{focusSeconds === 0 ? 'Session complete' : focusRunning ? 'Focus session running' : 'Pick a block and lock in'}</p>}</div><div className="mt-3 flex justify-center gap-2"><button type="button" onClick={() => { if (focusSeconds === 0) setFocusSeconds(25 * 60); setFocusRunning((value) => !value); }} className="grid h-9 w-9 place-items-center rounded-full bg-ink text-canvas">{focusRunning ? <Pause size={15} /> : <Play size={15} />}</button><button type="button" onClick={() => { setFocusRunning(false); setFocusSeconds(25 * 60); }} className="grid h-9 w-9 place-items-center rounded-full border border-border text-ink-muted"><RotateCcw size={14} /></button></div>{!compact && widget.rows >= 2 && <div className="mt-3 grid grid-cols-3 gap-2">{[25, 45, 60].map((minutes) => <button key={minutes} type="button" onClick={() => { setFocusRunning(false); setFocusSeconds(minutes * 60); }} className="rounded-lg border border-border bg-canvas px-2 py-2 text-xs text-ink-muted">{minutes}m</button>)}</div>}</DashboardCard>;
       case 'dayprogress': {
         const progress = dayProgress(now);
         return <DashboardCard index={index} compact={compact} icon={<Gauge size={18} />} title="Day Progress"><div className="flex items-end justify-between"><p className={`${compact ? 'text-2xl' : 'text-4xl'} font-display font-medium text-ink`}>{progress}%</p>{!compact && <p className="text-xs text-ink-faint">7 AM → 11 PM</p>}</div><div className="mt-3 h-2 overflow-hidden rounded-full bg-surface"><div className="h-full rounded-full bg-ink" style={{ width: `${progress}%` }} /></div></DashboardCard>;
       }
       case 'assignments':
-        return <DashboardCard index={index} compact={compact} icon={<BookOpen size={18} />} title="Assignments" href="/todo" linkLabel="To-Do">{futureTodos.length ? <ul className="divide-y divide-border">{futureTodos.slice(0, listLimit).map((todo) => <li key={todo.id} className="flex items-center justify-between gap-3 py-2.5"><p className="truncate text-sm text-ink">{todo.title}</p><time className="shrink-0 text-xs text-ink-faint">{formatShortDate(`${todo.due_on}T12:00:00`)}</time></li>)}</ul> : <EmptyState>No upcoming dated tasks.</EmptyState>}</DashboardCard>;
+        return <DashboardCard index={index} compact={compact} icon={<BookOpen size={18} />} title="Assignments" href="/todo" linkLabel="To-Do">{futureTodos.length ? <ul className="divide-y divide-border">{futureTodos.slice(0, listLimit).map((todo) => <li key={todo.id} className="flex items-center justify-between gap-3 py-2.5"><p className="truncate text-sm text-ink">{todo.title}</p><time className="shrink-0 text-xs text-ink-faint">{formatShortDate(`${todo.due_on}T12:00:00`)}</time></li>)}</ul> : <EmptyState>No upcoming incomplete tasks.</EmptyState>}</DashboardCard>;
       case 'momentum': {
         const total = todayTodos.length;
         const percent = total ? Math.round((completedToday / total) * 100) : 0;
@@ -486,11 +506,12 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
       case 'sun':
         return <DashboardCard index={index} compact={compact} icon={<Sun size={18} />} title="Sunrise / Sunset">{weather ? <div className={`grid gap-3 ${compact ? 'grid-cols-1' : 'grid-cols-2'}`}><MiniPanel label="Sunrise" value={formatClock(weather.sunrise)} detail="Morning" />{!compact && <MiniPanel label="Sunset" value={formatClock(weather.sunset)} detail="Evening" />}</div> : <EmptyState>Enable Weather first.</EmptyState>}</DashboardCard>;
       case 'countdowns': {
-        const event = state.events[0];
-        return <DashboardCard index={index} compact={compact} icon={<FileClock size={18} />} title="Countdowns">{event ? <div className="rounded-xl bg-surface p-3"><p className="truncate text-sm font-semibold text-ink">{event.title}</p><p className={`mt-2 font-display ${compact ? 'text-lg' : 'text-2xl'} font-medium text-ink`}>{event.isAllDay ? 'Today' : formatCountdown(event.startsAt)}</p></div> : <EmptyState>Add an event to start a countdown.</EmptyState>}</DashboardCard>;
+        const event = nextCountdownEvent;
+        const allDayLabel = event ? (localDateKey(new Date(event.startsAt)) === today ? 'Today' : formatShortDate(event.startsAt)) : '';
+        return <DashboardCard index={index} compact={compact} icon={<FileClock size={18} />} title="Countdowns">{event ? <div className="rounded-xl bg-surface p-3"><p className="truncate text-sm font-semibold text-ink">{event.title}</p><p className={`mt-2 font-display ${compact ? 'text-lg' : 'text-2xl'} font-medium text-ink`}>{event.isAllDay ? allDayLabel : formatCountdown(event.startsAt, now)}</p>{!compact && <p className="mt-1 truncate text-xs text-ink-faint">{event.source}</p>}</div> : <EmptyState>No upcoming timed events.</EmptyState>}</DashboardCard>;
       }
       case 'schoolschedule':
-        return <DashboardCard index={index} compact={compact} icon={<School size={18} />} title="School Schedule" href="/calendar" linkLabel="Calendar">{state.events.length ? <EventList events={state.events.slice(0, listLimit)} compact={compact} /> : <EmptyState>Add your class schedule to Calendar.</EmptyState>}</DashboardCard>;
+        return <DashboardCard index={index} compact={compact} icon={<School size={18} />} title="School Schedule" href="/calendar" linkLabel="Calendar">{upcomingEvents.length ? <EventList events={upcomingEvents.slice(0, listLimit)} compact={compact} /> : <EmptyState>Add your class schedule to Calendar.</EmptyState>}</DashboardCard>;
       case 'ravinbrief':
         return <DashboardCard index={index} compact={compact} icon={<WandSparkles size={18} />} title="RAVIN Brief" badge="Preview"><div className={`grid gap-3 ${wide ? 'sm:grid-cols-3' : ''}`}><MiniPanel label="Priority" value={tasksLeft ? `${tasksLeft} tasks` : 'Clear'} detail={todayTodos.find((todo) => !todo.completed)?.title ?? 'Nothing urgent'} />{!compact && <MiniPanel label="Schedule" value={state.events[0] ? formatDashboardEventTime(state.events[0]) : 'Open'} detail={state.events[0]?.title ?? 'No next event'} />}{wide && <MiniPanel label="Inbox" value={unreadChats ? `${unreadChats} chats` : 'Quiet'} detail="Full AI brief arrives with RAVIN" />}</div></DashboardCard>;
       case 'nowplaying':
@@ -500,7 +521,7 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
       case 'recentfiles':
         return <PlaceholderCard index={index} compact={compact} icon={<FileClock size={18} />} title="Recent Files" text="Recent Relay and connected files will live here once file connectors are enabled." href="/notes" />;
       case 'quicklinks':
-        return <section className={`grid h-full gap-3 ${wide ? 'sm:grid-cols-4' : widget.cols >= 6 ? 'sm:grid-cols-2' : 'grid-cols-1'}`}><QuickLink href="/todo" icon={<ListTodo size={17} />} label="New task" />{widget.rows >= 2 && <QuickLink href="/planner" icon={<CalendarDays size={17} />} label="New plan" />}<QuickLink href="/chats" icon={<MessageCircle size={17} />} label="New chat" />{widget.rows >= 2 && <QuickLink href="/notes" icon={<NotebookPen size={17} />} label="New note" />}</section>;
+        return <section className={`grid h-full gap-3 ${wide ? 'sm:grid-cols-4' : widget.cols >= 6 ? 'sm:grid-cols-2' : 'grid-cols-1'}`}><QuickLink href="/todo" icon={<ListTodo size={17} />} label="To-Do" />{widget.rows >= 2 && <QuickLink href="/planner" icon={<CalendarDays size={17} />} label="Planner" />}<QuickLink href="/chats" icon={<MessageCircle size={17} />} label="Chats" />{widget.rows >= 2 && <QuickLink href="/notes" icon={<NotebookPen size={17} />} label="Notes" />}</section>;
     }
   }
 
@@ -587,5 +608,5 @@ function formatRelative(raw: string) { const minutes = Math.max(0, Math.round((D
 function formatTimer(seconds: number) { return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`; }
 function dayProgress(now: Date) { const start = new Date(now); start.setHours(7, 0, 0, 0); const end = new Date(now); end.setHours(23, 0, 0, 0); return Math.max(0, Math.min(100, Math.round(((now.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100))); }
 function formatClock(raw: string) { const date = new Date(raw); return Number.isNaN(date.getTime()) ? '—' : date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); }
-function formatCountdown(raw: string) { const diff = new Date(raw).getTime() - Date.now(); if (diff <= 0) return 'Starting now'; const minutes = Math.floor(diff / 60_000); if (minutes < 60) return `${minutes} min`; const hours = Math.floor(minutes / 60); if (hours < 24) return `${hours}h ${minutes % 60}m`; return `${Math.floor(hours / 24)}d ${hours % 24}h`; }
+function formatCountdown(raw: string, now: Date) { const diff = new Date(raw).getTime() - now.getTime(); if (diff <= 0) return 'Starting now'; const minutes = Math.floor(diff / 60_000); if (minutes < 1) return 'Under 1 min'; if (minutes < 60) return `${minutes} min`; const hours = Math.floor(minutes / 60); if (hours < 24) return `${hours}h ${minutes % 60}m`; return `${Math.floor(hours / 24)}d ${hours % 24}h`; }
 function weatherLabel(code: number) { if (code === 0) return 'Clear'; if (code <= 3) return 'Partly cloudy'; if (code === 45 || code === 48) return 'Foggy'; if (code >= 51 && code <= 67) return 'Rain'; if (code >= 71 && code <= 77) return 'Snow'; if (code >= 80 && code <= 82) return 'Showers'; if (code >= 95) return 'Thunderstorms'; return 'Mixed conditions'; }
