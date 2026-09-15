@@ -612,7 +612,17 @@ function submitWeatherZip(event: FormEvent) {
 }
 
 function DashboardCard({ icon, title, href, linkLabel, badge, children, index, compact = false }: { icon: ReactNode; title: string; href?: string; linkLabel?: string; badge?: string; children: ReactNode; index: number; compact?: boolean }) {
-  return <section className={`relay-motion-dashboard-card h-full min-h-0 overflow-hidden rounded-lg border border-border bg-surface-raised ${compact ? 'p-3' : 'p-4 sm:p-5'}`} style={{ animationDelay: `${150 + index * 70}ms` }}><header className={`${compact ? 'mb-2' : 'mb-3'} flex items-center justify-between gap-3`}><div className="flex min-w-0 items-center gap-2 text-ink"><span className="shrink-0 text-ink-muted">{icon}</span><h2 className={`truncate font-medium ${compact ? 'text-sm' : ''}`}>{title}</h2>{badge && !compact && <span className="rounded-full border border-border px-2 py-0.5 text-[9px] font-semibold uppercase text-ink-faint">{badge}</span>}</div>{href && linkLabel && !compact && <a href={appPageUrl(href)} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-ink-muted">{linkLabel}<ArrowRight size={13} /></a>}</header>{children}</section>;
+  return (
+    <section className={`relay-motion-dashboard-card flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-surface-raised ${compact ? 'p-3' : 'p-4 sm:p-5'}`} style={{ animationDelay: `${150 + index * 70}ms` }}>
+      <header className={`${compact ? 'mb-2' : 'mb-3'} flex shrink-0 items-center justify-between gap-3`}>
+        <div className="flex min-w-0 items-center gap-2 text-ink"><span className="shrink-0 text-ink-muted">{icon}</span><h2 className={`truncate font-medium ${compact ? 'text-sm' : ''}`}>{title}</h2>{badge && !compact && <span className="rounded-full border border-border px-2 py-0.5 text-[9px] font-semibold uppercase text-ink-faint">{badge}</span>}</div>
+        {href && linkLabel && !compact && <a href={appPageUrl(href)} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-ink-muted">{linkLabel}<ArrowRight size={13} /></a>}
+      </header>
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain pr-1">
+        {children}
+      </div>
+    </section>
+  );
 }
 
 function PlaceholderCard({ icon, title, text, href, index, compact }: { icon: ReactNode; title: string; text: string; href?: string; index: number; compact: boolean }) {
