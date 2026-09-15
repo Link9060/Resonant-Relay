@@ -1,4 +1,4 @@
-const CACHE = 'relay-shell-v5';
+const CACHE = 'relay-shell-v6';
 const SCOPE_URL = new URL(self.registration.scope);
 const BASE = SCOPE_URL.pathname.replace(/\/$/, '');
 
@@ -8,7 +8,7 @@ function appPath(path = '/') {
   return `${BASE}${normalized}` || '/';
 }
 
-const SHELL = [appPath('/'), appPath('/offline/'), appPath('/manifest.webmanifest'), appPath('/relay-icon.svg')];
+const SHELL = [appPath('/'), appPath('/offline/'), appPath('/manifest.webmanifest'), appPath('/relay-icon.svg'), appPath('/favicon-32.png'), appPath('/relay-icon-192.png'), appPath('/relay-icon-512.png'), appPath('/relay-icon-maskable-512.png'), appPath('/apple-touch-icon.png')];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -69,7 +69,7 @@ self.addEventListener('push', (event) => {
     tag: payload.id || undefined,
     renotify: Boolean(payload.id),
     silent: false,
-    icon: appPath('/relay-icon.svg'),
+    icon: appPath('/relay-icon-192.png'),
     badge: appPath('/relay-icon.svg'),
     data: { link: payload.link || appPath('/') },
   }));
