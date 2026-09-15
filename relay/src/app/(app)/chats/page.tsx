@@ -79,7 +79,7 @@ export default function ChatsPage() {
                 .order('created_at', { ascending: false }),
               supabase
                 .from('conversation_preferences')
-                .select('conversation_id,muted,pinned_at')
+                .select('conversation_id,muted,pinned_at,deleted_at')
                 .eq('user_id', id)
                 .in('conversation_id', ids),
             ]),
@@ -108,7 +108,13 @@ export default function ChatsPage() {
         const preferenceByConversation = Object.fromEntries(
           conversationPreferenceRows.map((item: any) => [item.conversation_id, item]),
         );
-        conversations.sort((a: any, b: any) => {
+        const visibleConversations = conversations.filter((conversation: any) => {
+          const deletedAt = preferenceByConversation[conversation.id]?.deleted_at;
+          if (!deletedAt) return true;
+          if (!conversation.last_message_at) return false;
+          return new Date(conversation.last_message_at).getTime() > new Date(deletedAt).getTime();
+        });
+        visibleConversations.sort((a: any, b: any) => {
           const aPin = preferenceByConversation[a.id]?.pinned_at;
           const bPin = preferenceByConversation[b.id]?.pinned_at;
           if (aPin && !bPin) return -1;
@@ -158,7 +164,7 @@ export default function ChatsPage() {
         const preferencesById = Object.fromEntries(
           preferenceRows.map((preference: any) => [preference.contact_id, preference]),
         );
-        const titles = Object.fromEntries(conversations.map((conversation: any) => {
+        const titles = Object.fromEntries(visibleConversations.map((conversation: any) => {
           const other = conversation.participants.find((participant: any) => participant.user_id !== id && participant.profile);
           return [
             conversation.id,
@@ -173,7 +179,7 @@ export default function ChatsPage() {
         if (!active) return;
         setState({
           userId: id,
-          conversations,
+          conversations: visibleConversations,
           previews,
           contacts: contacts.map((contact: any) => ({ ...contact, preference: preferencesById[contact.id] ?? null })),
           preferencesById,
@@ -257,10 +263,12 @@ export default function ChatsPage() {
     }
   }
 
-  const shownResults = useMemo(
-    () => results?.map((item) => ({ ...item, title: state?.titles[item.conversation_id] ?? 'Conversation' })) ?? [],
-    [results, state],
-  );
+  const shownResults = useMemo(() => {
+    const visibleIds = new Set<string>((state?.conversations ?? []).map((conversation: any) => conversation.id));
+    return results
+      ?.filter((item) => visibleIds.has(item.conversation_id))
+      .map((item) => ({ ...item, title: state?.titles[item.conversation_id] ?? 'Conversation' })) ?? [];
+  }, [results, state]);
 
   if (!state && !loadError) return <PageLoading />;
 
@@ -325,7 +333,14 @@ export default function ChatsPage() {
         </section>
       ) : (
         <div className="mt-6">
-          <ConversationList conversations={state.conversations} currentUserId={state.userId} previewByConversation={state.previews} preferencesById={state.preferencesById} conversationPreferences={state.preferenceByConversation} />
+          <ConversationList
+            conversations={state.conversations}
+            currentUserId={state.userId}
+            previewByConversation={state.previews}
+            preferencesById={state.preferencesById}
+            conversationPreferences={state.preferenceByConversation}
+            onDeleted={(conversationId) => setState((current: any) => ({ ...current, conversations: current.conversations.filter((conversation: any) => conversation.id !== conversationId) }))}
+          />
         </div>
       )}
     </div>
