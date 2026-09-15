@@ -1,27 +1,32 @@
 'use client';
 
+import { RelayEventDialog, type RelayCalendarEvent } from '@/components/calendar/relay-event-dialog';
 import { ConnectedAccountsDialog, type ConnectedAccount, type IntegrationProvider } from '@/components/integrations/connected-accounts-dialog';
 import { PageLoading } from '@/components/page-loading';
 import { PageHeader } from '@/components/ui/page-header';
 import { createClient } from '@/lib/supabase/client';
-import { CalendarDays, ChevronLeft, ChevronRight, ExternalLink, RefreshCw, Settings2 } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, ExternalLink, Pencil, Plus, RefreshCw, Settings2, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type ProviderEvent = { id: string; summary: string; start: string; end?: string | null; isAllDay: boolean; htmlLink?: string | null; accountId: string; accountEmail: string; provider: IntegrationProvider; calendarName?: string | null };
 type RelayPlan = { instanceId: string; occursOn: string; planName: string; groupName?: string | null; startTime?: string | null; endTime?: string | null };
-type CalendarState = { accounts: ConnectedAccount[]; events: ProviderEvent[]; accountErrors: string[]; plans: RelayPlan[] };
-type CalendarItem = { id: string; title: string; dateKey: string; start: string; end?: string | null; isAllDay: boolean; sourceId: string; sourceLabel: string; href?: string | null; color: string; detail?: string | null };
+type CalendarState = { accounts: ConnectedAccount[]; events: ProviderEvent[]; accountErrors: string[]; plans: RelayPlan[]; relayEvents: RelayCalendarEvent[] };
+type CalendarItem = { id: string; title: string; dateKey: string; start: string; end?: string | null; isAllDay: boolean; sourceId: string; sourceLabel: string; href?: string | null; color: string; detail?: string | null; relayEvent?: RelayCalendarEvent | null };
+
+type EditorState = { date: string; event?: RelayCalendarEvent | null };
 
 const ACCOUNT_COLORS = ['#4f7ee8', '#e36d6d', '#9270dc'];
-const RELAY_COLOR = '#7c8798';
+const RELAY_EVENT_COLOR = '#5f7f72';
+const RELAY_PLAN_COLOR = '#7c8798';
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function CalendarPage() {
   const [state, setState] = useState<CalendarState | null>(null);
   const [viewDate, setViewDate] = useState(() => startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState(() => dateKeyFromDate(new Date()));
-  const [visibleSources, setVisibleSources] = useState<Set<string>>(new Set(['relay']));
+  const [visibleSources, setVisibleSources] = useState<Set<string>>(new Set(['relay-events', 'relay-plans']));
   const [manageOpen, setManageOpen] = useState(false);
+  const [editor, setEditor] = useState<EditorState | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [monthDirection, setMonthDirection] = useState<-1 | 0 | 1>(0);
@@ -29,17 +34,18 @@ export default function CalendarPage() {
   useEffect(() => { void load(); }, []);
 
   async function load() {
-    const supabase = createClient();
+    const supabase = createClient() as any;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [accountResult, eventResult, membershipResult] = await Promise.all([
+    const [accountResult, eventResult, membershipResult, relayEventResult] = await Promise.all([
       supabase.functions.invoke('mail-hub', { body: { action: 'accounts' } }),
       supabase.functions.invoke('mail-hub', { body: { action: 'calendar_events' } }),
       supabase.from('group_members').select('group_id').eq('user_id', user.id),
+      supabase.from('relay_calendar_events').select('*').eq('user_id', user.id).order('event_date').order('start_time'),
     ]);
 
-    const groupIds = (membershipResult.data ?? []).map((membership) => membership.group_id);
+    const groupIds = (membershipResult.data ?? []).map((membership: any) => membership.group_id);
     let plans: RelayPlan[] = [];
     if (groupIds.length) {
       const { data } = await supabase
@@ -57,9 +63,15 @@ export default function CalendarPage() {
     }
 
     const accounts: ConnectedAccount[] = accountResult.data?.accounts ?? [];
-    setState({ accounts, events: eventResult.data?.events ?? [], accountErrors: eventResult.data?.accountErrors ?? [], plans });
-    setVisibleSources(new Set(['relay', ...accounts.map((account) => account.id)]));
-    if (accountResult.error || eventResult.error) setError('Some calendar data could not load.');
+    setState({
+      accounts,
+      events: eventResult.data?.events ?? [],
+      accountErrors: eventResult.data?.accountErrors ?? [],
+      plans,
+      relayEvents: relayEventResult.data ?? [],
+    });
+    setVisibleSources(new Set(['relay-events', 'relay-plans', ...accounts.map((account) => account.id)]));
+    if (accountResult.error || eventResult.error || relayEventResult.error) setError('Some calendar data could not load. Relay events require the 1.0.7 database migration.');
   }
 
   async function connect(provider: IntegrationProvider) {
@@ -88,6 +100,38 @@ export default function CalendarPage() {
     setBusy(null);
   }
 
+  async function deleteRelayEvent(event: RelayCalendarEvent) {
+    if (!window.confirm(`Delete “${event.title}” from your Relay calendar?`)) return;
+    setBusy(`event:${event.id}`);
+    const supabase = createClient() as any;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setBusy(null); return; }
+    const { error: deleteError } = await supabase.from('relay_calendar_events').delete().eq('id', event.id).eq('user_id', user.id);
+    setBusy(null);
+    if (deleteError) {
+      setError('That Relay event could not be deleted.');
+      return;
+    }
+    setState((current) => current ? { ...current, relayEvents: current.relayEvents.filter((item) => item.id !== event.id) } : current);
+  }
+
+  function handleSaved(saved: RelayCalendarEvent) {
+    setState((current) => {
+      if (!current) return current;
+      const exists = current.relayEvents.some((item) => item.id === saved.id);
+      return {
+        ...current,
+        relayEvents: exists
+          ? current.relayEvents.map((item) => item.id === saved.id ? saved : item)
+          : [...current.relayEvents, saved],
+      };
+    });
+    setSelectedDate(saved.event_date);
+    setViewDate(startOfMonth(new Date(`${saved.event_date}T12:00:00`)));
+    setVisibleSources((current) => new Set([...current, 'relay-events']));
+    setEditor(null);
+  }
+
   const calendarItems = useMemo<CalendarItem[]>(() => {
     if (!state) return [];
     const accountColor = new Map(state.accounts.map((account, index) => [account.id, ACCOUNT_COLORS[index % ACCOUNT_COLORS.length] ?? '#4f7ee8']));
@@ -104,16 +148,29 @@ export default function CalendarPage() {
         href: event.htmlLink,
         color: accountColor.get(event.accountId) ?? '#4f7ee8',
       })),
+      ...state.relayEvents.map((event) => ({
+        id: `relay-event:${event.id}`,
+        title: event.title,
+        dateKey: event.event_date,
+        start: event.start_time ? `${event.event_date}T${event.start_time}` : event.event_date,
+        end: event.end_time ? `${event.event_date}T${event.end_time}` : null,
+        isAllDay: event.is_all_day,
+        sourceId: 'relay-events',
+        sourceLabel: 'Relay Calendar',
+        color: RELAY_EVENT_COLOR,
+        detail: event.details,
+        relayEvent: event,
+      })),
       ...state.plans.map((plan) => ({
-        id: `relay:${plan.instanceId}`,
+        id: `relay-plan:${plan.instanceId}`,
         title: plan.planName,
         dateKey: plan.occursOn,
         start: plan.startTime ? `${plan.occursOn}T${plan.startTime}` : plan.occursOn,
         end: plan.startTime && plan.endTime ? `${plan.occursOn}T${plan.endTime}` : null,
         isAllDay: !plan.startTime,
-        sourceId: 'relay',
+        sourceId: 'relay-plans',
         sourceLabel: 'Relay Plans',
-        color: RELAY_COLOR,
+        color: RELAY_PLAN_COLOR,
         detail: plan.groupName,
       })),
     ];
@@ -149,17 +206,22 @@ export default function CalendarPage() {
   if (!state) return <PageLoading />;
 
   const sources = [
-    ...state.accounts.map((account, index) => ({ id: account.id, label: account.email_address, sublabel: account.provider === 'google' ? 'Google Calendar' : 'Microsoft Calendar', color: ACCOUNT_COLORS[index % ACCOUNT_COLORS.length] ?? '#4f7ee8' })),
-    { id: 'relay', label: 'Relay Plans', sublabel: 'Group schedules', color: RELAY_COLOR },
+    ...state.accounts.map((account, index) => ({ id: account.id, label: account.email_address, sublabel: account.provider === 'google' ? 'Google Calendar · read only' : 'Microsoft Calendar · read only', color: ACCOUNT_COLORS[index % ACCOUNT_COLORS.length] ?? '#4f7ee8' })),
+    { id: 'relay-events', label: 'Relay Calendar', sublabel: 'Private · editable', color: RELAY_EVENT_COLOR },
+    { id: 'relay-plans', label: 'Relay Plans', sublabel: 'Group schedules', color: RELAY_PLAN_COLOR },
   ];
 
   return <div className="mx-auto max-w-[100rem] px-4 py-8 md:px-6">
-    <PageHeader title="Calendar" subtitle="Your calendars and Relay plans in one view." action={<button type="button" onClick={() => setManageOpen(true)} className="inline-flex items-center gap-2 rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface"><Settings2 size={16} /> Calendars</button>} />
+    <PageHeader
+      title="Calendar"
+      subtitle="Create private Relay events while keeping connected calendars read-only."
+      action={<div className="flex items-center gap-2"><button type="button" onClick={() => setEditor({ date: selectedDate })} className="inline-flex items-center gap-2 rounded-lg bg-ink px-3.5 py-2 text-sm font-medium text-canvas"><Plus size={16} /> New event</button><button type="button" onClick={() => setManageOpen(true)} className="inline-flex items-center gap-2 rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface"><Settings2 size={16} /> Calendars</button></div>}
+    />
     {error && !manageOpen && <div className="mt-5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">{error}</div>}
     {state.accountErrors.length > 0 && !manageOpen && (
       <button type="button" onClick={() => setManageOpen(true)} className="mt-5 flex w-full items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-left text-sm text-amber-700 dark:text-amber-300">
         <RefreshCw size={16} className="shrink-0" />
-        <span className="flex-1"><strong>Reconnect Google Calendar once.</strong> Relay needs the new read-only calendar-list permission to see calendars beyond Primary.</span>
+        <span className="flex-1"><strong>Reconnect Google Calendar once.</strong> Relay needs the read-only calendar-list permission to show calendars beyond Primary.</span>
         <span className="text-xs font-semibold">Fix</span>
       </button>
     )}
@@ -208,19 +270,24 @@ export default function CalendarPage() {
         <aside className="border-t border-border p-4 xl:border-l xl:border-t-0">
           <div key={selectedDate} className="relay-motion-crossfade">
             <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Selected day</p>
-            <h3 className="mt-2 text-lg font-semibold text-ink">{formatSelectedDate(selectedDate)}</h3>
+            <div className="mt-2 flex items-start justify-between gap-3">
+              <h3 className="text-lg font-semibold text-ink">{formatSelectedDate(selectedDate)}</h3>
+              <button type="button" onClick={() => setEditor({ date: selectedDate })} aria-label="Add Relay event" title="Add Relay event" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-ink-muted hover:bg-surface"><Plus size={15} /></button>
+            </div>
             {selectedItems.length ? <ul className="mt-4 space-y-2">{selectedItems.map((item) => <li key={item.id} className="rounded-lg border border-border bg-surface/60 p-3" style={{ borderLeftColor: item.color, borderLeftWidth: 3 }}>
               <p className="text-sm font-medium text-ink">{item.title}</p>
               <p className="mt-1 text-xs text-ink-muted">{item.isAllDay ? 'All day' : formatEventRange(item.start, item.end)}</p>
               <p className="mt-2 truncate text-xs text-ink-faint">{item.sourceLabel}{item.detail ? ` · ${item.detail}` : ''}</p>
               {item.href && <a href={item.href} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-ink underline underline-offset-4">Open event <ExternalLink size={12} /></a>}
-            </li>)}</ul> : <div className="mt-4 rounded-lg border border-dashed border-border px-4 py-8 text-center"><CalendarDays size={20} className="mx-auto text-ink-faint" /><p className="mt-2 text-sm text-ink-faint">Nothing scheduled.</p></div>}
+              {item.relayEvent && <div className="mt-3 flex gap-2"><button type="button" onClick={() => setEditor({ date: item.dateKey, event: item.relayEvent })} className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:bg-canvas"><Pencil size={12} /> Edit</button><button type="button" disabled={busy === `event:${item.relayEvent.id}`} onClick={() => void deleteRelayEvent(item.relayEvent!)} className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 disabled:opacity-50"><Trash2 size={12} /> {busy === `event:${item.relayEvent.id}` ? 'Deleting…' : 'Delete'}</button></div>}
+            </li>)}</ul> : <div className="mt-4 rounded-lg border border-dashed border-border px-4 py-8 text-center"><CalendarDays size={20} className="mx-auto text-ink-faint" /><p className="mt-2 text-sm text-ink-faint">Nothing scheduled.</p><button type="button" onClick={() => setEditor({ date: selectedDate })} className="mt-3 text-xs font-medium text-ink underline underline-offset-4">Add a Relay event</button></div>}
           </div>
         </aside>
       </div>
     </section>
 
     {manageOpen && <ConnectedAccountsDialog accounts={state.accounts} busy={busy} error={error} title="Calendar accounts" accountErrors={state.accountErrors} onClose={() => setManageOpen(false)} onConnect={(provider) => void connect(provider)} onDisconnect={(account) => void disconnect(account)} />}
+    {editor && <RelayEventDialog date={editor.date} event={editor.event} onClose={() => setEditor(null)} onSaved={handleSaved} />}
   </div>;
 }
 

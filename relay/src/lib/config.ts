@@ -4,7 +4,7 @@ export const IS_BETA = isGitHubPages;
 export const PRODUCTION_VERSION = '1.0.6';
 export const PRODUCTION_RELEASE_NAME = 'Planning Update';
 export const DEVELOPMENT_VERSION = '1.0.7';
-export const DEVELOPMENT_RELEASE_NAME = 'Next Update';
+export const DEVELOPMENT_RELEASE_NAME = 'Focus Update';
 export const APP_VERSION = IS_BETA ? DEVELOPMENT_VERSION : PRODUCTION_VERSION;
 export const RELEASE_LABEL = IS_BETA
   ? `Beta ${APP_VERSION} · ${DEVELOPMENT_RELEASE_NAME}`
