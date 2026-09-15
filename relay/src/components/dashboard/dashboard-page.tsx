@@ -91,9 +91,12 @@ type WeatherSnapshot = {
   sunset: string;
   unit: string;
   fetchedAt: string;
+  zipCode: string;
+  locationLabel: string;
 };
 
-const WEATHER_CACHE_KEY = 'relay-dashboard-weather-v1';
+const WEATHER_CACHE_KEY = 'relay-dashboard-weather-v2';
+const WEATHER_ZIP_KEY = 'relay-dashboard-weather-zip-v1';
 const QUICK_NOTE_KEY = 'relay-dashboard-quick-note-v1';
 
 export const WIDGET_META: Record<DashboardWidgetId, { label: string; description: string }> = {
@@ -130,13 +133,18 @@ function readCachedWeather(): WeatherSnapshot | null {
     const raw = window.localStorage.getItem(WEATHER_CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as WeatherSnapshot;
-    if (typeof parsed.temperature !== 'number') return null;
+    if (typeof parsed.temperature !== 'number' || !/^\d{5}$/.test(parsed.zipCode ?? '')) return null;
     const fetchedAt = new Date(parsed.fetchedAt);
     if (Number.isNaN(fetchedAt.getTime()) || localDateKey(fetchedAt) !== localDateKey()) return null;
     return parsed;
   } catch {
     return null;
   }
+}
+
+function readWeatherZip() {
+  if (typeof window === 'undefined') return '';
+  try { return (window.localStorage.getItem(WEATHER_ZIP_KEY) ?? '').replace(/\D/g, '').slice(0, 5); } catch { return ''; }
 }
 
 function readQuickNote() {
@@ -269,6 +277,8 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
   const [weather, setWeather] = useState<WeatherSnapshot | null>(() => readCachedWeather());
   const [weatherBusy, setWeatherBusy] = useState(false);
   const [weatherMessage, setWeatherMessage] = useState<string | null>(null);
+  const [weatherZip, setWeatherZip] = useState(() => readWeatherZip());
+  const [weatherZipDraft, setWeatherZipDraft] = useState(() => readWeatherZip());
   const [quickNote, setQuickNote] = useState(() => readQuickNote());
   const [quickNoteStatus, setQuickNoteStatus] = useState<string | null>(null);
   const [focusSeconds, setFocusSeconds] = useState(25 * 60);
@@ -365,49 +375,81 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
     void markNotificationRead(notification.id);
   }
 
-  function loadWeather() {
-    if (!navigator.geolocation) return setWeatherMessage('Location is not available in this browser.');
-    setWeatherBusy(true);
-    setWeatherMessage(null);
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      try {
-        const useFahrenheit = navigator.language.toLowerCase().includes('us');
-        const params = new URLSearchParams({
-          latitude: String(position.coords.latitude),
-          longitude: String(position.coords.longitude),
-          current: 'temperature_2m,apparent_temperature,weather_code',
-          daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset',
-          timezone: 'auto',
-          forecast_days: '1',
-          temperature_unit: useFahrenheit ? 'fahrenheit' : 'celsius',
-        });
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
-        if (!response.ok) throw new Error('Weather request failed');
-        const data = await response.json();
-        const next: WeatherSnapshot = {
-          temperature: Number(data.current?.temperature_2m ?? 0),
-          apparent: Number(data.current?.apparent_temperature ?? 0),
-          weatherCode: Number(data.current?.weather_code ?? 0),
-          high: Number(data.daily?.temperature_2m_max?.[0] ?? 0),
-          low: Number(data.daily?.temperature_2m_min?.[0] ?? 0),
-          precip: Number(data.daily?.precipitation_probability_max?.[0] ?? 0),
-          sunrise: String(data.daily?.sunrise?.[0] ?? ''),
-          sunset: String(data.daily?.sunset?.[0] ?? ''),
-          unit: String(data.current_units?.temperature_2m ?? (useFahrenheit ? '°F' : '°C')),
-          fetchedAt: new Date().toISOString(),
-        };
-        setWeather(next);
-        try { window.localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(next)); } catch {}
-      } catch {
-        setWeatherMessage('Weather could not load right now.');
-      } finally {
-        setWeatherBusy(false);
-      }
-    }, () => {
-      setWeatherBusy(false);
-      setWeatherMessage('Allow location to show local weather.');
-    }, { enableHighAccuracy: false, timeout: 10_000, maximumAge: 15 * 60_000 });
+  const loadWeather = useCallback(async (zipOverride?: string) => {
+  const zip = String(zipOverride ?? weatherZip).replace(/\D/g, '').slice(0, 5);
+  if (!/^\d{5}$/.test(zip)) {
+    setWeatherMessage('Enter a 5-digit ZIP code.');
+    return;
   }
+
+  setWeatherBusy(true);
+  setWeatherMessage(null);
+  try {
+    const zipResponse = await fetch(`https://api.zippopotam.us/us/${encodeURIComponent(zip)}`);
+    if (zipResponse.status === 404) throw new Error('ZIP_NOT_FOUND');
+    if (!zipResponse.ok) throw new Error('ZIP_LOOKUP_FAILED');
+    const zipData = await zipResponse.json() as { places?: Array<{ latitude?: string; longitude?: string; 'place name'?: string; 'state abbreviation'?: string }> };
+    const place = zipData.places?.[0];
+    const latitude = Number(place?.latitude);
+    const longitude = Number(place?.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) throw new Error('ZIP_LOOKUP_FAILED');
+
+    const useFahrenheit = navigator.language.toLowerCase().includes('us');
+    const params = new URLSearchParams({
+      latitude: String(latitude),
+      longitude: String(longitude),
+      current: 'temperature_2m,apparent_temperature,weather_code',
+      daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset',
+      timezone: 'auto',
+      forecast_days: '1',
+      temperature_unit: useFahrenheit ? 'fahrenheit' : 'celsius',
+    });
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
+    if (!response.ok) throw new Error('WEATHER_REQUEST_FAILED');
+    const data = await response.json();
+    const placeName = place?.['place name']?.trim();
+    const stateName = place?.['state abbreviation']?.trim();
+    const next: WeatherSnapshot = {
+      temperature: Number(data.current?.temperature_2m ?? 0),
+      apparent: Number(data.current?.apparent_temperature ?? 0),
+      weatherCode: Number(data.current?.weather_code ?? 0),
+      high: Number(data.daily?.temperature_2m_max?.[0] ?? 0),
+      low: Number(data.daily?.temperature_2m_min?.[0] ?? 0),
+      precip: Number(data.daily?.precipitation_probability_max?.[0] ?? 0),
+      sunrise: String(data.daily?.sunrise?.[0] ?? ''),
+      sunset: String(data.daily?.sunset?.[0] ?? ''),
+      unit: String(data.current_units?.temperature_2m ?? (useFahrenheit ? '°F' : '°C')),
+      fetchedAt: new Date().toISOString(),
+      zipCode: zip,
+      locationLabel: placeName ? `${placeName}${stateName ? `, ${stateName}` : ''}` : `ZIP ${zip}`,
+    };
+    setWeather(next);
+    setWeatherZip(zip);
+    setWeatherZipDraft(zip);
+    try {
+      window.localStorage.setItem(WEATHER_ZIP_KEY, zip);
+      window.localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(next));
+    } catch {}
+  } catch (error) {
+    setWeatherMessage(error instanceof Error && error.message === 'ZIP_NOT_FOUND'
+      ? 'That ZIP code was not found.'
+      : 'Weather could not load right now.');
+  } finally {
+    setWeatherBusy(false);
+  }
+}, [weatherZip]);
+
+useEffect(() => {
+  if (!weather && /^\d{5}$/.test(weatherZip)) {
+    const timer = window.setTimeout(() => { void loadWeather(weatherZip); }, 0);
+    return () => window.clearTimeout(timer);
+  }
+}, [loadWeather, weather, weatherZip]);
+
+function submitWeatherZip(event: FormEvent) {
+  event.preventDefault();
+  void loadWeather(weatherZipDraft);
+}
 
   function updateQuickNote(value: string) {
     setQuickNote(value);
@@ -475,7 +517,7 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
       case 'overview':
         return <section className="grid h-full grid-cols-3 overflow-hidden rounded-lg border border-border bg-surface-raised"><OverviewStat value={tasksLeft} label="tasks left" /><OverviewStat value={upcomingEvents.length} label="upcoming" /><OverviewStat value={unreadChats} label="new chats" /></section>;
       case 'weather':
-        return <DashboardCard index={index} compact={compact} icon={<CloudSun size={18} />} title="Weather">{weather ? <><div className="flex items-end justify-between gap-3"><div><p className={`${compact ? 'text-2xl' : 'text-4xl'} font-display font-medium text-ink`}>{Math.round(weather.temperature)}{weather.unit}</p><p className="mt-1 text-sm text-ink-muted">{weatherLabel(weather.weatherCode)}</p></div>{!compact && <div className="text-right text-xs text-ink-faint"><p>Feels {Math.round(weather.apparent)}{weather.unit}</p><p className="mt-1">H {Math.round(weather.high)}° · L {Math.round(weather.low)}°</p></div>}</div>{!compact && widget.rows >= 2 && <div className="mt-4 grid grid-cols-2 gap-2"><MiniPanel label="Rain" value={`${Math.round(weather.precip)}%`} detail="chance today" /><MiniPanel label="Updated" value={formatRelative(weather.fetchedAt)} detail="local weather" /></div>}{widget.rows >= 2 && <button type="button" onClick={loadWeather} className="mt-3 text-xs font-medium text-ink-muted hover:text-ink">Refresh weather</button>}</> : <div className="rounded-xl bg-surface p-3"><p className="text-sm text-ink-muted">Use your location to show local weather.</p><button type="button" onClick={loadWeather} disabled={weatherBusy} className="mt-3 rounded-lg bg-ink px-3 py-2 text-xs font-semibold text-canvas disabled:opacity-50">{weatherBusy ? 'Loading…' : 'Use my location'}</button>{weatherMessage && !compact && <p className="mt-2 text-xs text-ink-faint">{weatherMessage}</p>}</div>}</DashboardCard>;
+      return <DashboardCard index={index} compact={compact} icon={<CloudSun size={18} />} title="Weather">{weather ? <><div className="flex items-end justify-between gap-3"><div className="min-w-0"><p className={`${compact ? 'text-2xl' : 'text-4xl'} font-display font-medium text-ink`}>{Math.round(weather.temperature)}{weather.unit}</p><p className="mt-1 truncate text-sm text-ink-muted">{weatherLabel(weather.weatherCode)}</p><p className="mt-1 truncate text-[11px] text-ink-faint">{weather.locationLabel} · {weather.zipCode}</p></div>{!compact && <div className="text-right text-xs text-ink-faint"><p>Feels {Math.round(weather.apparent)}{weather.unit}</p><p className="mt-1">H {Math.round(weather.high)}° · L {Math.round(weather.low)}°</p></div>}</div>{!compact && widget.rows >= 2 && <div className="mt-4 grid grid-cols-2 gap-2"><MiniPanel label="Rain" value={`${Math.round(weather.precip)}%`} detail="chance today" /><MiniPanel label="Updated" value={formatRelative(weather.fetchedAt)} detail={`ZIP ${weather.zipCode}`} /></div>}{widget.rows >= 2 && <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2 text-xs font-medium"><button type="button" onClick={() => void loadWeather(weather.zipCode)} disabled={weatherBusy} className="text-ink-muted hover:text-ink disabled:opacity-50">{weatherBusy ? 'Refreshing…' : 'Refresh weather'}</button><button type="button" onClick={() => { setWeather(null); setWeatherZip(''); setWeatherMessage(null); setWeatherZipDraft(weather.zipCode); }} className="text-ink-faint hover:text-ink">Change ZIP</button></div>}</> : <div className="rounded-xl bg-surface p-3"><p className="text-sm text-ink-muted">Enter a ZIP code for local weather. Relay will remember it on this device.</p><form onSubmit={submitWeatherZip} className="mt-3 flex gap-2"><input value={weatherZipDraft} onChange={(event) => { setWeatherZipDraft(event.target.value.replace(/\D/g, '').slice(0, 5)); setWeatherMessage(null); }} inputMode="numeric" autoComplete="postal-code" pattern="[0-9]{5}" maxLength={5} aria-label="Weather ZIP code" placeholder="ZIP code" className="min-w-0 flex-1 rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint" /><button type="submit" disabled={weatherBusy || weatherZipDraft.length !== 5} className="shrink-0 rounded-lg bg-ink px-3 py-2 text-xs font-semibold text-canvas disabled:opacity-50">{weatherBusy ? 'Loading…' : 'Load'}</button></form>{weatherMessage && <p className="mt-2 text-xs text-ink-faint">{weatherMessage}</p>}</div>}</DashboardCard>;
       case 'askravin':
         return <DashboardCard index={index} compact={compact} icon={<Sparkles size={18} />} title="Ask RAVIN" badge="Preview"><form onSubmit={submitRavin} className="rounded-2xl border border-border bg-canvas p-2"><div className="flex items-center gap-2"><input value={ravinPrompt} onChange={(event) => { setRavinPrompt(event.target.value); setRavinMessage(null); }} placeholder="Ask RAVIN…" className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-ink outline-none placeholder:text-ink-faint" /><button type="button" onClick={() => setRavinMessage('Voice is coming with the full RAVIN connection.')} aria-label="Preview RAVIN microphone orb" className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-surface text-ink"><span className="absolute inset-1 animate-pulse rounded-full border border-ink/10" /><Mic size={16} className="relative" /></button>{!compact && <button type="submit" disabled={!ravinPrompt.trim()} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-canvas disabled:opacity-35"><Send size={15} /></button>}</div></form>{!compact && <div className="mt-3 flex items-center justify-between gap-3"><p className="text-xs leading-5 text-ink-faint">Future RAVIN will use Relay context like To‑Do, Calendar, Notes, and files.</p><span className="rounded-full border border-border px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-ink-muted">1.1</span></div>}{ravinMessage && widget.rows >= 2 && <p className="mt-2 rounded-lg bg-surface px-3 py-2 text-xs text-ink-muted">{ravinMessage}</p>}</DashboardCard>;
       case 'tasks':
@@ -504,7 +546,7 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
         return <DashboardCard index={index} compact={compact} icon={<Zap size={18} />} title="Momentum"><p className={`${compact ? 'text-2xl' : 'text-4xl'} font-display font-medium text-ink`}>{percent}%</p>{!compact && <p className="mt-1 text-xs text-ink-faint">{completedToday} of {total} tasks complete today</p>}<div className="mt-3 h-2 overflow-hidden rounded-full bg-surface"><div className="h-full rounded-full bg-ink" style={{ width: `${percent}%` }} /></div></DashboardCard>;
       }
       case 'sun':
-        return <DashboardCard index={index} compact={compact} icon={<Sun size={18} />} title="Sunrise / Sunset">{weather ? <div className={`grid gap-3 ${compact ? 'grid-cols-1' : 'grid-cols-2'}`}><MiniPanel label="Sunrise" value={formatClock(weather.sunrise)} detail="Morning" />{!compact && <MiniPanel label="Sunset" value={formatClock(weather.sunset)} detail="Evening" />}</div> : <EmptyState>Enable Weather first.</EmptyState>}</DashboardCard>;
+        return <DashboardCard index={index} compact={compact} icon={<Sun size={18} />} title="Sunrise / Sunset">{weather ? <div className={`grid gap-3 ${compact ? 'grid-cols-1' : 'grid-cols-2'}`}><MiniPanel label="Sunrise" value={formatClock(weather.sunrise)} detail="Morning" />{!compact && <MiniPanel label="Sunset" value={formatClock(weather.sunset)} detail="Evening" />}</div> : <EmptyState>Set a Weather ZIP first.</EmptyState>}</DashboardCard>;
       case 'countdowns': {
         const event = nextCountdownEvent;
         const allDayLabel = event ? (localDateKey(new Date(event.startsAt)) === today ? 'Today' : formatShortDate(event.startsAt)) : '';
