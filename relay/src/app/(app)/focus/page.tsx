@@ -2,7 +2,7 @@
 
 import { PageHeader } from '@/components/ui/page-header';
 import { createClient } from '@/lib/supabase/client';
-import { Brain, CheckCircle2, Clock3, Coffee, MessageCircle, Pause, Play, RotateCcw, ShieldCheck, Sparkles, Square, TimerReset } from 'lucide-react';
+import { Brain, CheckCircle2, Clock3, Coffee, MessageCircle, Pause, Play, RotateCcw, ShieldCheck, Sparkles, Square } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 type FocusTodo = {
@@ -398,8 +398,7 @@ function formatDuration(seconds: number) {
 }
 
 function formatTaskDate(value: string) {
-  const [year, month, day] = value.split('-').map(Number);
-  return new Date(year, month - 1, day, 12).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 function localDateKey(date: Date) {
