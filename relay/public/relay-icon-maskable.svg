@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="relay-maskable-title">
+  <title id="relay-maskable-title">Relay maskable app icon</title>
+  <defs>
+    <linearGradient id="relay-maskable-silver" x1="118" y1="104" x2="394" y2="408" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.48" stop-color="#c9c9cc"/>
+      <stop offset="1" stop-color="#85858a"/>
+    </linearGradient>
+    <radialGradient id="relay-maskable-bg" cx="50%" cy="45%" r="72%">
+      <stop offset="0" stop-color="#202024"/>
+      <stop offset="1" stop-color="#080809"/>
+    </radialGradient>
+    <path id="relay-maskable-blade" d="M256 112c56.6 0 105.1 32.1 129.2 79.1-35.5-17-72.6-18-105.3-2.6-27.9 13.1-48.9 35.7-59.4 63.6-14.3-35-11.8-69.9 6.2-100 8.6-14.5 18.7-26.5 29.3-40.1Z"/>
+    <mask id="relay-maskable-cutout">
+      <rect width="512" height="512" fill="black"/>
+      <g fill="white">
+        <use href="#relay-maskable-blade"/>
+        <use href="#relay-maskable-blade" transform="rotate(60 256 256)"/>
+        <use href="#relay-maskable-blade" transform="rotate(120 256 256)"/>
+        <use href="#relay-maskable-blade" transform="rotate(180 256 256)"/>
+        <use href="#relay-maskable-blade" transform="rotate(240 256 256)"/>
+        <use href="#relay-maskable-blade" transform="rotate(300 256 256)"/>
+      </g>
+      <g fill="none" stroke="black" stroke-width="7" stroke-linejoin="round">
+        <use href="#relay-maskable-blade"/>
+        <use href="#relay-maskable-blade" transform="rotate(60 256 256)"/>
+        <use href="#relay-maskable-blade" transform="rotate(120 256 256)"/>
+        <use href="#relay-maskable-blade" transform="rotate(180 256 256)"/>
+        <use href="#relay-maskable-blade" transform="rotate(240 256 256)"/>
+        <use href="#relay-maskable-blade" transform="rotate(300 256 256)"/>
+      </g>
+      <circle cx="256" cy="256" r="59" fill="black"/>
+    </mask>
+  </defs>
+  <rect width="512" height="512" fill="url(#relay-maskable-bg)"/>
+  <rect width="512" height="512" fill="url(#relay-maskable-silver)" mask="url(#relay-maskable-cutout)"/>
+</svg>

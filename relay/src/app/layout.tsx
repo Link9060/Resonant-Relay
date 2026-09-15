@@ -21,7 +21,7 @@ import { UiSoundEffects } from '@/components/ui-sound-effects';
 import { PwaRegister } from '@/components/pwa-register';
 import { APP_TITLE, BASE_PATH, IS_BETA } from '@/lib/config';
 
-export const metadata: Metadata = { title: APP_TITLE, description: IS_BETA ? 'Relay Beta — the place you open to figure out your day.' : 'The place you open to figure out your day.', manifest: `${BASE_PATH}/manifest.webmanifest`, appleWebApp: { capable: true, title: IS_BETA ? 'Relay Beta' : 'Relay', statusBarStyle: 'black-translucent' }, icons: { icon: `${BASE_PATH}/relay-icon.svg`, apple: `${BASE_PATH}/relay-icon.svg` } };
+export const metadata: Metadata = { title: APP_TITLE, description: IS_BETA ? 'Relay Beta — the place you open to figure out your day.' : 'The place you open to figure out your day.', manifest: `${BASE_PATH}/manifest.webmanifest`, appleWebApp: { capable: true, title: IS_BETA ? 'Relay Beta' : 'Relay', statusBarStyle: 'black-translucent' }, icons: { icon: [{ url: `${BASE_PATH}/favicon-32.png`, sizes: '32x32', type: 'image/png' }, { url: `${BASE_PATH}/relay-icon.svg`, sizes: 'any', type: 'image/svg+xml' }], apple: [{ url: `${BASE_PATH}/apple-touch-icon.png`, sizes: '180x180', type: 'image/png' }] } };
 export const viewport: Viewport = { themeColor: '#0a0a0b', viewportFit: 'cover', width: 'device-width', initialScale: 1 };
 // Visual choices are account data. Before authentication finishes, never trust
 // browser-global layout/experience keys left by a different Relay account.
