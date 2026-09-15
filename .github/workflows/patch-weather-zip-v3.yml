@@ -1,0 +1,68 @@
+name: Patch Relay weather ZIP v3
+
+on:
+  push:
+    branches: [beta]
+    paths:
+      - '.github/workflows/patch-weather-zip-v3.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-weather:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_RELAY_DEPLOY_TARGET: github-pages
+      NEXT_PUBLIC_SITE_URL: https://link9060.github.io/Resonant-Relay
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: beta
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: relay/package-lock.json
+      - name: Patch weather widget
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import textwrap
+
+          workflow = Path('.github/workflows/patch-weather-zip-v2.yml').read_text()
+          match = re.search(r"          python - <<'PY'\n(.*?)\n          PY", workflow, re.S)
+          if not match:
+              raise SystemExit('Could not load weather patch source')
+          script = textwrap.dedent(match.group(1))
+          script = script.replace(
+              '    new_weather + "\\n\\n  function updateQuickNote",',
+              '    lambda _: new_weather + "\\n\\n  function updateQuickNote",',
+              1,
+          )
+          script = script.replace(
+              '    new_widget + "\\n      case \'askravin\':",',
+              '    lambda _: new_widget + "\\n      case \'askravin\':",',
+              1,
+          )
+          if 'lambda _: new_weather' not in script or 'lambda _: new_widget' not in script:
+              raise SystemExit('Could not make replacement callbacks literal-safe')
+          exec(compile(script, 'weather-zip-patch', 'exec'), {})
+          PY
+      - name: Install dependencies
+        working-directory: relay
+        run: npm ci
+      - name: Lint
+        working-directory: relay
+        run: npm run lint
+      - name: Build static beta site
+        working-directory: relay
+        run: npm run build
+      - name: Commit weather ZIP update
+        run: |
+          git config user.name "Link9060"
+          git config user.email "153758512+Link9060@users.noreply.github.com"
+          git add relay/src/components/dashboard/dashboard-page.tsx
+          git commit -m "Use ZIP codes for Relay weather"
+          git push origin HEAD:beta
