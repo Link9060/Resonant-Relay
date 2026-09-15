@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { CalendarDays, Loader2, X } from 'lucide-react';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 
 export type RelayCalendarEvent = {
   id: string;
@@ -28,24 +28,14 @@ export function RelayEventDialog({
   onClose: () => void;
   onSaved: (event: RelayCalendarEvent) => void;
 }) {
-  const [title, setTitle] = useState('');
-  const [eventDate, setEventDate] = useState(date);
-  const [allDay, setAllDay] = useState(true);
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('10:00');
-  const [details, setDetails] = useState('');
+  const [title, setTitle] = useState(event?.title ?? '');
+  const [eventDate, setEventDate] = useState(event?.event_date ?? date);
+  const [allDay, setAllDay] = useState(event?.is_all_day ?? true);
+  const [startTime, setStartTime] = useState(normalizeTime(event?.start_time) ?? '09:00');
+  const [endTime, setEndTime] = useState(normalizeTime(event?.end_time) ?? '10:00');
+  const [details, setDetails] = useState(event?.details ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setTitle(event?.title ?? '');
-    setEventDate(event?.event_date ?? date);
-    setAllDay(event?.is_all_day ?? true);
-    setStartTime(normalizeTime(event?.start_time) ?? '09:00');
-    setEndTime(normalizeTime(event?.end_time) ?? '10:00');
-    setDetails(event?.details ?? '');
-    setError(null);
-  }, [date, event]);
 
   async function submit(formEvent: FormEvent) {
     formEvent.preventDefault();
