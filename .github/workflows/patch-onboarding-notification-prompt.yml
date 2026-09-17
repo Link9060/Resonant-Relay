@@ -1,0 +1,70 @@
+name: Patch onboarding notification prompt
+
+on:
+  push:
+    branches: [beta]
+    paths:
+      - '.github/workflows/patch-onboarding-notification-prompt.yml'
+
+permissions:
+  contents: write
+
+env:
+  NEXT_PUBLIC_RELAY_DEPLOY_TARGET: github-pages
+  NEXT_PUBLIC_SITE_URL: https://link9060.github.io/Resonant-Relay
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out beta
+        uses: actions/checkout@v5
+        with:
+          ref: beta
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: relay/package-lock.json
+      - name: Add notification prompt after setup
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('relay/src/app/onboarding/page.tsx')
+          text = path.read_text()
+
+          import_anchor = "import { PageLoading } from '@/components/page-loading';\n"
+          push_import = "import { PushToggle } from '@/components/notifications/push-toggle';\n"
+          if push_import not in text:
+              if import_anchor not in text:
+                  raise SystemExit('Could not find onboarding import anchor')
+              text = text.replace(import_anchor, import_anchor + push_import, 1)
+
+          open_button = "                <PrimaryButton onClick={() => window.location.replace(appPageUrl(IS_BETA ? '/space' : '/'))}>Open Relay <ArrowRight size={16} /></PrimaryButton>"
+          prompt = """                <div className=\"mt-5 rounded-2xl border border-border bg-surface p-4\">\n                  <div className=\"mb-3\">\n                    <div className=\"text-sm font-medium text-ink\">Turn on notifications</div>\n                    <p className=\"mt-1 text-xs leading-5 text-ink-faint\">Get messages, requests, and important Relay alerts even when the app is closed. You can change this anytime in Settings.</p>\n                  </div>\n                  <PushToggle variant=\"compact\" />\n                </div>\n"""
+          if 'Turn on notifications' not in text:
+              if open_button not in text:
+                  raise SystemExit('Could not find Open Relay button')
+              text = text.replace(open_button, prompt + open_button, 1)
+
+          path.write_text(text)
+          PY
+      - name: Install dependencies
+        working-directory: relay
+        run: npm ci
+      - name: Lint
+        working-directory: relay
+        run: npm run lint
+      - name: Build static beta site
+        working-directory: relay
+        run: npm run build
+      - name: Commit onboarding notification prompt
+        run: |
+          git config user.name "Link9060"
+          git config user.email "153758512+Link9060@users.noreply.github.com"
+          git add relay/src/app/onboarding/page.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "Prompt new users to enable notifications after setup"
+          git push origin beta
