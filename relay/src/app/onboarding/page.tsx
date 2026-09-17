@@ -1,6 +1,7 @@
 'use client';
 
 import { PageLoading } from '@/components/page-loading';
+import { PushToggle } from '@/components/notifications/push-toggle';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { appPageUrl, BASE_PATH, IS_BETA } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
@@ -406,6 +407,13 @@ export default function OnboardingPage() {
                     <div className="mt-1 font-display text-2xl font-medium text-ink">{formatRelayNumber(finished.relay_number)}</div>
                     <div className="mt-1 text-xs text-ink-faint">Use this when you want an exact, direct add.</div>
                   </div>
+                </div>
+                <div className="mt-5 rounded-2xl border border-border bg-surface p-4">
+                  <div className="mb-3">
+                    <div className="text-sm font-medium text-ink">Turn on notifications</div>
+                    <p className="mt-1 text-xs leading-5 text-ink-faint">Get messages, requests, and important Relay alerts even when the app is closed. You can change this anytime in Settings.</p>
+                  </div>
+                  <PushToggle variant="compact" />
                 </div>
                 <PrimaryButton onClick={() => window.location.replace(appPageUrl(IS_BETA ? '/space' : '/'))}>Open Relay <ArrowRight size={16} /></PrimaryButton>
               </OnboardingPanel>
