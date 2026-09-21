@@ -17,7 +17,6 @@ type UserRow = {
   created_at: string;
   primary_email: string | null;
   last_sign_in_at: string | null;
-  gmail_connected: boolean;
   message_count: number;
   connection_count: number;
   banned_at: string | null;
@@ -240,7 +239,7 @@ function AdminUserInspector({ user }: { user: UserRow }) {
         <div className="flex items-center gap-2"><RoleBadge role={user.role} /><span className={`rounded-full border px-2 py-1 text-[10px] font-medium ${user.banned_at ? 'border-ink text-ink' : 'border-border text-ink-muted'}`}>{user.banned_at ? 'Banned' : 'Active'}</span></div>
       </div>
       <div className="grid grid-cols-2 gap-3 py-5 sm:grid-cols-4"><InspectorMetric label="Messages" value={user.message_count} /><InspectorMetric label="Contacts" value={user.connection_count} /><InspectorMetric label="Reports" value={user.report_count} /><InspectorMetric label="Open reports" value={user.open_report_count} /></div>
-      <div className="grid gap-4 border-t border-border pt-5 sm:grid-cols-2"><InfoLine label="Last active" value={user.last_sign_in_at ? timeAgo(user.last_sign_in_at) : 'Never'} /><InfoLine label="Joined" value={new Date(user.created_at).toLocaleDateString()} /><InfoLine label="Gmail" value={user.gmail_connected ? 'Connected' : 'Not connected'} /><InfoLine label="Account ID" value={user.id.slice(0, 8) + '…'} mono /></div>
+      <div className="grid gap-4 border-t border-border pt-5 sm:grid-cols-2"><InfoLine label="Last active" value={user.last_sign_in_at ? timeAgo(user.last_sign_in_at) : 'Never'} /><InfoLine label="Joined" value={new Date(user.created_at).toLocaleDateString()} /><InfoLine label="Status" value={user.banned_at ? 'Banned' : 'Active'} /><InfoLine label="Account ID" value={user.id.slice(0, 8) + '…'} mono /></div>
       {user.banned_at && <div className="mt-5 rounded-xl border border-border bg-canvas p-4 text-sm text-ink-muted"><div className="font-medium text-ink">Account disabled</div><div className="mt-1 text-xs">{user.ban_reason || 'No ban reason recorded.'}</div></div>}
       <div className="mt-6 rounded-xl border border-border bg-canvas p-4 text-xs leading-5 text-ink-muted">Admin has operational account visibility and moderation context. Contacts, groups, conversation metadata, storage attribution, sessions, Owner notes, and destructive account controls are reserved for Owner.</div>
     </>

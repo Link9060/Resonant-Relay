@@ -239,7 +239,7 @@ export default function CalendarPage() {
 
       <div className="border-b border-border p-3 xl:hidden"><div className="flex gap-2 overflow-x-auto">{sources.map((source) => <button key={source.id} type="button" onClick={() => toggleSource(source.id)} className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-opacity ${visibleSources.has(source.id) ? 'border-border text-ink' : 'border-transparent bg-surface text-ink-faint opacity-60'}`}><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: source.color }} />{source.label}</button>)}</div></div>
 
-      <div className="grid xl:grid-cols-[14rem_minmax(0,1fr)_19rem]">
+      <div className="grid xl:grid-cols-[12rem_minmax(0,1fr)_16rem] 2xl:grid-cols-[14rem_minmax(0,1fr)_19rem]">
         <aside className="hidden border-r border-border bg-surface/50 p-4 xl:block">
           <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">My calendars</p>
           <div className="mt-3 space-y-1">{sources.map((source) => <label key={source.id} className="flex cursor-pointer items-start gap-3 rounded-md px-2 py-2.5 hover:bg-surface">
@@ -251,7 +251,7 @@ export default function CalendarPage() {
         </aside>
 
         <div className="min-w-0 overflow-x-auto">
-          <div key={`${viewDate.getFullYear()}-${viewDate.getMonth()}`} className={`min-w-[44rem] ${monthDirection === 1 ? 'relay-motion-calendar-forward' : monthDirection === -1 ? 'relay-motion-calendar-back' : ''}`}>
+          <div key={`${viewDate.getFullYear()}-${viewDate.getMonth()}`} className={`min-w-[44rem] xl:min-w-0 ${monthDirection === 1 ? 'relay-motion-calendar-forward' : monthDirection === -1 ? 'relay-motion-calendar-back' : ''}`}>
             <div className="grid grid-cols-7 border-b border-border bg-surface/40">{WEEKDAYS.map((day) => <div key={day} className="px-2 py-2 text-center text-xs font-medium text-ink-faint">{day}</div>)}</div>
             <div className="grid grid-cols-7">{monthDays.map((date) => {
               const key = dateKeyFromDate(date);

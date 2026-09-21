@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation';
 const DESKTOP_DOCK_ITEMS = [
   { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
   { href: '/chats', label: 'Chats', icon: MessageCircle },
+  { href: '/contacts', label: 'Contacts', icon: Users },
   { href: '/todo', label: 'To Do', icon: ListTodo },
   { href: '/focus', label: 'Focus', icon: TimerReset },
   { href: '/notes', label: 'Notes', icon: NotebookPen },
@@ -97,12 +98,6 @@ export function Dock({
               collapsed={collapsed}
             />
           )}
-          <DockLink
-            item={{ href: '/contacts', label: 'Contacts', icon: Users }}
-            active={isDockPathActive(currentPath, '/contacts')}
-            variant="rail"
-            collapsed={collapsed}
-          />
         </ul>
 
         <div className="mt-3 border-t border-border pt-3">

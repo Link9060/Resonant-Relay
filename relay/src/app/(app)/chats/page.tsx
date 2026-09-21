@@ -274,7 +274,7 @@ export default function ChatsPage() {
 
   if (!state && loadError) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
+      <div className="mx-auto max-w-4xl px-4 py-6 md:px-6 md:py-7">
         <PageHeader title="Chats" subtitle="Messages, files, replies, and everything you pinned." />
         <div className="mt-6 rounded-xl border border-border bg-surface p-5">
           <p className="text-sm font-medium text-ink">Chats could not load.</p>
@@ -286,7 +286,7 @@ export default function ChatsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
+    <div className="mx-auto max-w-4xl px-4 py-6 md:px-6 md:py-7">
       <PageHeader title="Chats" subtitle="Messages, files, replies, and everything you pinned." action={<NewChatDialog contacts={state.contacts} />} />
 
       {loadError && (
@@ -295,7 +295,7 @@ export default function ChatsPage() {
         </div>
       )}
 
-      <form onSubmit={search} className="mt-5 flex gap-2">
+      <form onSubmit={search} className="mt-4 flex gap-2">
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input value={query} onChange={(event) => { setQuery(event.target.value); if (!event.target.value) { setResults(null); setSearchError(null); } }} minLength={2} placeholder="Search messages and attachment names" className="profile-input pl-9 pr-9" />
@@ -332,7 +332,7 @@ export default function ChatsPage() {
           )}
         </section>
       ) : (
-        <div className="mt-6">
+        <div className="mt-4">
           <ConversationList
             conversations={state.conversations}
             currentUserId={state.userId}

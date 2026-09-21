@@ -535,7 +535,7 @@ function submitWeatherZip(event: FormEvent) {
       case 'schoolschedule':
         return <DashboardCard index={index} compact={compact} icon={<School size={18} />} title="School Schedule" href="/calendar" linkLabel="Calendar">{upcomingEvents.length ? <EventList events={upcomingEvents.slice(0, listLimit)} compact={compact} /> : <EmptyState>Add your class schedule to Calendar.</EmptyState>}</DashboardCard>;
       case 'ravinbrief':
-        return <DashboardCard index={index} compact={compact} icon={<WandSparkles size={18} />} title="RAVIN Brief" badge="Preview"><div className={`grid gap-3 ${wide ? 'sm:grid-cols-3' : ''}`}><MiniPanel label="Priority" value={tasksLeft ? `${tasksLeft} tasks` : 'Clear'} detail={todayTodos.find((todo) => !todo.completed)?.title ?? 'Nothing urgent'} />{!compact && <MiniPanel label="Schedule" value={state.events[0] ? formatDashboardEventTime(state.events[0]) : 'Open'} detail={state.events[0]?.title ?? 'No next event'} />}{wide && <MiniPanel label="Inbox" value={unreadChats ? `${unreadChats} chats` : 'Quiet'} detail="Full AI brief arrives with RAVIN" />}</div></DashboardCard>;
+        return <DashboardCard index={index} compact={compact} icon={<WandSparkles size={18} />} title="RAVIN Brief" badge="Preview"><div className={`grid gap-3 ${wide ? 'sm:grid-cols-3' : ''}`}><MiniPanel label="Priority" value={tasksLeft ? `${tasksLeft} tasks` : 'Clear'} detail={todayTodos.find((todo) => !todo.completed)?.title ?? 'Nothing urgent'} />{!compact && <MiniPanel label="Schedule" value={state.events[0] ? formatDashboardEventTime(state.events[0]) : 'Open'} detail={state.events[0]?.title ?? 'No next event'} />}{wide && <MiniPanel label="Chats" value={unreadChats ? `${unreadChats} chats` : 'Quiet'} detail="Full AI brief arrives with RAVIN" />}</div></DashboardCard>;
       case 'nowplaying':
         return <PlaceholderCard index={index} compact={compact} icon={<Music2 size={18} />} title="Now Playing" text="Music controls will appear here when Relay’s music connector is enabled." />;
       case 'pinnedpeople':
@@ -551,7 +551,7 @@ function submitWeatherZip(event: FormEvent) {
   const visibleWidgets = activeWidgets.filter((widget) => widget.visible);
 
   const dashboardGrid = (
-    <div className="relay-dashboard-grid mt-7 grid grid-cols-1 gap-5 md:grid-cols-12" style={isDesktop ? { gridAutoRows: '100px' } : undefined}>
+    <div className="relay-dashboard-grid mt-5 grid grid-cols-1 gap-4 md:grid-cols-12" style={isDesktop ? { gridAutoRows: '92px' } : undefined}>
       {visibleWidgets.map((widget, index) => (
         <div
           key={widget.id}
@@ -565,8 +565,8 @@ function submitWeatherZip(event: FormEvent) {
   );
 
   return (
-    <div className="relay-dashboard mx-auto max-w-6xl px-4 py-7 md:px-6 md:py-9">
-      <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+    <div className="relay-dashboard mx-auto max-w-6xl px-4 py-5 md:px-6 md:py-6">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div><p className="text-sm text-ink-muted">{now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p><h1 className="mt-1 font-display text-3xl font-medium tracking-tight text-ink">{state.firstName ? `Hey, ${state.firstName}.` : 'Hey.'}</h1></div>
         <div className="flex items-end gap-4 sm:text-right"><div><p className="font-display text-3xl font-medium tabular-nums text-ink">{now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</p><p className="mt-1 text-xs uppercase tracking-[0.16em] text-ink-faint">Your day at a glance</p></div><button type="button" onClick={beginCustomize} className="hidden min-h-10 items-center gap-2 rounded-lg border border-border bg-surface-raised px-3 text-sm font-medium text-ink transition hover:bg-surface md:inline-flex"><LayoutDashboard size={15} />Customize dashboard</button></div>
       </header>
@@ -593,7 +593,7 @@ function submitWeatherZip(event: FormEvent) {
 
 function DashboardCard({ icon, title, href, linkLabel, badge, children, index, compact = false }: { icon: ReactNode; title: string; href?: string; linkLabel?: string; badge?: string; children: ReactNode; index: number; compact?: boolean }) {
   return (
-    <section className={`relay-motion-dashboard-card flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-surface-raised ${compact ? 'p-3' : 'p-4 sm:p-5'}`} style={{ animationDelay: `${150 + index * 70}ms` }}>
+    <section className={`relay-motion-dashboard-card flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-surface-raised ${compact ? 'p-3' : 'p-4'}`} style={{ animationDelay: `${150 + index * 70}ms` }}>
       <header className={`${compact ? 'mb-2' : 'mb-3'} flex shrink-0 items-center justify-between gap-3`}>
         <div className="flex min-w-0 items-center gap-2 text-ink"><span className="shrink-0 text-ink-muted">{icon}</span><h2 className={`truncate font-medium ${compact ? 'text-sm' : ''}`}>{title}</h2>{badge && !compact && <span className="rounded-full border border-border px-2 py-0.5 text-[9px] font-semibold uppercase text-ink-faint">{badge}</span>}</div>
         {href && linkLabel && !compact && <a href={appPageUrl(href)} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-ink-muted">{linkLabel}<ArrowRight size={13} /></a>}
