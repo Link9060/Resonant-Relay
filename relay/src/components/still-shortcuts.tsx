@@ -12,7 +12,6 @@ const SHORTCUTS = [
   { key: 'N', label: 'Notes', href: '/notes' },
   { key: 'P', label: 'Planner', href: '/planner' },
   { key: 'K', label: 'Calendar', href: '/calendar' },
-  { key: 'E', label: 'Email', href: '/email' },
   { key: 'L', label: 'Quick Links', href: '/quicklinks' },
   { key: 'F', label: 'Contacts', href: '/contacts' },
   { key: ',', label: 'Settings', href: '/profile' },
