@@ -10,8 +10,8 @@ const LOCAL_ORIGIN = 'http://localhost:3000';
 const ALLOWED_ORIGINS = new Set([BETA_ORIGIN, PRODUCTION_ORIGIN, WWW_PRODUCTION_ORIGIN, LOCAL_ORIGIN]);
 const GOOGLE_EVENT_SCOPE = 'https://www.googleapis.com/auth/calendar.events.readonly';
 const GOOGLE_CALENDAR_LIST_SCOPE = 'https://www.googleapis.com/auth/calendar.calendarlist.readonly';
-const GOOGLE_SCOPE = `openid email profile https://www.googleapis.com/auth/gmail.readonly ${GOOGLE_EVENT_SCOPE} ${GOOGLE_CALENDAR_LIST_SCOPE}`;
-const MICROSOFT_SCOPE = 'openid profile email offline_access User.Read Mail.Read Calendars.Read';
+const GOOGLE_SCOPE = `openid email profile ${GOOGLE_EVENT_SCOPE} ${GOOGLE_CALENDAR_LIST_SCOPE}`;
+const MICROSOFT_SCOPE = 'openid profile email offline_access User.Read Calendars.Read';
 
 function cors(req: Request) {
   const origin = req.headers.get('Origin');
@@ -42,10 +42,10 @@ function redirect(
   provider: Provider,
   result: 'connected' | 'error',
   reason?: string,
-  returnPath = '/email',
+  returnPath = '/calendar',
   returnOrigin: string = BETA_ORIGIN,
 ) {
-  const safePath = returnPath === '/calendar' ? '/calendar/' : '/email/';
+  const safePath = '/calendar/';
   const url = new URL(`${appBase(safeReturnOrigin(returnOrigin))}${safePath}`);
   url.searchParams.set(provider, result);
   if (reason) url.searchParams.set('reason', reason);
@@ -120,14 +120,14 @@ Deno.serve(async (req: Request) => {
         .from('email_integrations')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id);
-      if ((count ?? 0) >= 3) return json(req, { error: 'Relay supports up to three email accounts.' }, 409);
+      if ((count ?? 0) >= 3) return json(req, { error: 'Relay supports up to three calendar accounts.' }, 409);
       if (!configured(provider)) return json(req, { error: `${provider === 'google' ? 'Google' : 'Microsoft'} OAuth is not configured yet.` }, 503);
 
       const state = randomValue();
       const verifier = randomValue(64);
       const requestOrigin = safeReturnOrigin(req.headers.get('Origin'));
       await admin.from('email_oauth_states').delete().lt('expires_at', new Date().toISOString());
-      const returnPath = body.next === '/calendar' ? '/calendar' : '/email';
+      const returnPath = '/calendar';
       const { error: stateError } = await admin.from('email_oauth_states').insert({
         state_hash: await hashHex(state),
         user_id: user.id,
@@ -166,41 +166,13 @@ Deno.serve(async (req: Request) => {
         .eq('id', body.accountId)
         .eq('user_id', user.id)
         .maybeSingle();
-      if (!account) return json(req, { error: 'Email account not found.' }, 404);
+      if (!account) return json(req, { error: 'Calendar account not found.' }, 404);
 
       await admin.from('email_integrations').delete().eq('id', account.id).eq('user_id', user.id);
       if (account.provider === 'google') {
         await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(account.refresh_token)}`, { method: 'POST' }).catch(() => undefined);
       }
       return json(req, { ok: true });
-    }
-
-    if (body.action === 'messages') {
-      const { data: accounts } = await admin.from('email_integrations').select('*').eq('user_id', user.id).order('connected_at');
-      const groups = await Promise.all((accounts ?? []).map(async (account: any) => {
-        try {
-          const token = await accessToken(admin, account);
-          if (!token) return [];
-          if (account.provider_account_id.startsWith('legacy:')) {
-            const identity = await identityFor('google', token);
-            await admin.from('email_integrations').update({
-              provider_account_id: identity.id,
-              email_address: identity.email,
-              display_name: identity.name,
-            }).eq('id', account.id);
-            account.provider_account_id = identity.id;
-            account.email_address = identity.email;
-            account.display_name = identity.name;
-          }
-          return await messagesFor(account, token);
-        } catch (error) {
-          console.error(error);
-          return [];
-        }
-      }));
-      return json(req, {
-        messages: groups.flat().sort((a, b) => new Date(b.receivedAt ?? 0).getTime() - new Date(a.receivedAt ?? 0).getTime()).slice(0, 30),
-      });
     }
 
     if (body.action === 'calendar_events') {
@@ -229,7 +201,7 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: 'Unknown action.' }, 400);
   } catch (error) {
     console.error(error);
-    return json(req, { error: 'Relay could not complete that email request.' }, 500);
+    return json(req, { error: 'Relay could not complete that calendar request.' }, 500);
   }
 });
 
@@ -254,7 +226,7 @@ async function callback(url: URL, admin: any, supabaseUrl: string) {
 
   const provider = providerOf(state.provider) ?? 'google';
   const returnOrigin = safeReturnOrigin(state.return_origin);
-  const returnPath = state.return_path === '/calendar' ? '/calendar' : '/email';
+  const returnPath = '/calendar';
   await admin.from('email_oauth_states').delete().eq('state_hash', state.state_hash);
 
   const providerError = url.searchParams.get('error');
@@ -307,7 +279,7 @@ async function identityFor(provider: Provider, token: string) {
       : 'https://graph.microsoft.com/v1.0/me?$select=id,displayName,mail,userPrincipalName',
     { headers: { Authorization: `Bearer ${token}` } },
   );
-  if (!response.ok) throw new Error('Could not load email identity.');
+  if (!response.ok) throw new Error('Could not load account identity.');
   const value = await response.json();
   return provider === 'google'
     ? { id: value.sub, email: value.email, name: value.name ?? value.email }
@@ -346,56 +318,6 @@ async function accessToken(admin: any, account: any) {
     ...(value.refresh_token ? { refresh_token: value.refresh_token } : {}),
   }).eq('id', account.id);
   return value.access_token as string;
-}
-
-async function messagesFor(account: any, token: string) {
-  if (account.provider === 'microsoft') {
-    const query = new URLSearchParams({
-      '$top': '15',
-      '$select': 'id,subject,from,receivedDateTime,isRead,bodyPreview,webLink',
-      '$orderby': 'receivedDateTime desc',
-    });
-    const response = await fetch(`https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?${query}`, { headers: { Authorization: `Bearer ${token}` } });
-    if (!response.ok) throw new Error(`Microsoft mail error (${response.status}).`);
-    const data = await response.json();
-    return (data.value ?? []).map((message: any) => ({
-      id: `${account.id}:${message.id}`,
-      subject: message.subject || '(No subject)',
-      from: message.from?.emailAddress?.name || message.from?.emailAddress?.address || '',
-      snippet: message.bodyPreview ?? '',
-      receivedAt: message.receivedDateTime,
-      isUnread: !message.isRead,
-      href: message.webLink ?? null,
-      accountId: account.id,
-      accountEmail: account.email_address,
-      provider: account.provider,
-    }));
-  }
-
-  const listResponse = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=15&labelIds=INBOX', { headers: { Authorization: `Bearer ${token}` } });
-  if (!listResponse.ok) throw new Error(`Gmail error (${listResponse.status}).`);
-  const list = await listResponse.json();
-
-  return (await Promise.all((list.messages ?? []).map(async (message: any) => {
-    const query = new URLSearchParams({ format: 'metadata' });
-    ['Subject', 'From', 'Date'].forEach((name) => query.append('metadataHeaders', name));
-    const response = await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${message.id}?${query}`, { headers: { Authorization: `Bearer ${token}` } });
-    if (!response.ok) return null;
-    const data = await response.json();
-    const header = (name: string) => data.payload.headers.find((item: any) => item.name === name)?.value ?? '';
-    return {
-      id: `${account.id}:${data.id}`,
-      subject: header('Subject') || '(No subject)',
-      from: header('From'),
-      snippet: data.snippet ?? '',
-      receivedAt: header('Date') || null,
-      isUnread: data.labelIds?.includes('UNREAD') ?? false,
-      href: `https://mail.google.com/mail/u/${encodeURIComponent(account.email_address)}/#inbox/${data.id}`,
-      accountId: account.id,
-      accountEmail: account.email_address,
-      provider: account.provider,
-    };
-  }))).filter(Boolean);
 }
 
 async function eventsFor(account: any, token: string) {
