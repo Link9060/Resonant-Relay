@@ -332,7 +332,7 @@ export default function ChatsPage() {
           )}
         </section>
       ) : (
-        <div className="mt-4 overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="mt-4">
           <ConversationList
             conversations={state.conversations}
             currentUserId={state.userId}
