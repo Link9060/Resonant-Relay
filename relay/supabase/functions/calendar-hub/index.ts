@@ -112,7 +112,7 @@ Deno.serve(async (req: Request) => {
 
     if (body.action === 'accounts') {
       const { data } = await admin
-        .from('email_integrations')
+        .from('calendar_integrations')
         .select('id,provider,email_address,display_name,connected_at,granted_scope')
         .eq('user_id', user.id)
         .order('connected_at');
@@ -124,7 +124,7 @@ Deno.serve(async (req: Request) => {
       if (!provider) return json(req, { error: 'Choose Google or Microsoft.' }, 400);
 
       const { count } = await admin
-        .from('email_integrations')
+        .from('calendar_integrations')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id);
       if ((count ?? 0) >= 3) return json(req, { error: 'Relay supports up to three calendar accounts.' }, 409);
@@ -133,9 +133,9 @@ Deno.serve(async (req: Request) => {
       const state = randomValue();
       const verifier = randomValue(64);
       const requestOrigin = safeReturnOrigin(req.headers.get('Origin'));
-      await admin.from('email_oauth_states').delete().lt('expires_at', new Date().toISOString());
+      await admin.from('calendar_oauth_states').delete().lt('expires_at', new Date().toISOString());
       const returnPath = '/calendar';
-      const { error: stateError } = await admin.from('email_oauth_states').insert({
+      const { error: stateError } = await admin.from('calendar_oauth_states').insert({
         state_hash: await hashHex(state),
         user_id: user.id,
         provider,
@@ -168,14 +168,14 @@ Deno.serve(async (req: Request) => {
 
     if (body.action === 'disconnect') {
       const { data: account } = await admin
-        .from('email_integrations')
+        .from('calendar_integrations')
         .select('*')
         .eq('id', body.accountId)
         .eq('user_id', user.id)
         .maybeSingle();
       if (!account) return json(req, { error: 'Calendar account not found.' }, 404);
 
-      await admin.from('email_integrations').delete().eq('id', account.id).eq('user_id', user.id);
+      await admin.from('calendar_integrations').delete().eq('id', account.id).eq('user_id', user.id);
       if (account.provider === 'google') {
         await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(account.refresh_token)}`, { method: 'POST' }).catch(() => undefined);
       }
@@ -183,7 +183,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (body.action === 'calendar_events') {
-      const { data: accounts } = await admin.from('email_integrations').select('*').eq('user_id', user.id).order('connected_at');
+      const { data: accounts } = await admin.from('calendar_integrations').select('*').eq('user_id', user.id).order('connected_at');
       const results = await Promise.all((accounts ?? []).map(async (account: any) => {
         try {
           // Older Relay connections were granted inbox permissions too.
@@ -232,13 +232,13 @@ async function callback(url: URL, admin: any, supabaseUrl: string) {
   const rawState = url.searchParams.get('state');
   if (!rawState) return redirect('google', 'error', 'missing_response');
 
-  const { data: state } = await admin.from('email_oauth_states').select('*').eq('state_hash', await hashHex(rawState)).maybeSingle();
+  const { data: state } = await admin.from('calendar_oauth_states').select('*').eq('state_hash', await hashHex(rawState)).maybeSingle();
   if (!state) return redirect('google', 'error', 'invalid_state');
 
   const provider = providerOf(state.provider) ?? 'google';
   const returnOrigin = safeReturnOrigin(state.return_origin);
   const returnPath = '/calendar';
-  await admin.from('email_oauth_states').delete().eq('state_hash', state.state_hash);
+  await admin.from('calendar_oauth_states').delete().eq('state_hash', state.state_hash);
 
   const providerError = url.searchParams.get('error');
   const code = url.searchParams.get('code');
@@ -267,7 +267,7 @@ async function callback(url: URL, admin: any, supabaseUrl: string) {
   if (!tokens.refresh_token) return redirect(provider, 'error', 'missing_refresh_token', returnPath, returnOrigin);
 
   const identity = await identityFor(provider, tokens.access_token);
-  const { error } = await admin.from('email_integrations').upsert({
+  const { error } = await admin.from('calendar_integrations').upsert({
     user_id: state.user_id,
     provider,
     provider_account_id: identity.id,
@@ -318,12 +318,12 @@ async function accessToken(admin: any, account: any) {
     },
   );
   if (!response.ok) {
-    if (response.status === 400) await admin.from('email_integrations').delete().eq('id', account.id);
+    if (response.status === 400) await admin.from('calendar_integrations').delete().eq('id', account.id);
     return null;
   }
 
   const value = await response.json();
-  await admin.from('email_integrations').update({
+  await admin.from('calendar_integrations').update({
     access_token: value.access_token,
     access_token_expires_at: new Date(Date.now() + Number(value.expires_in ?? 3600) * 1000).toISOString(),
     ...(value.refresh_token ? { refresh_token: value.refresh_token } : {}),
