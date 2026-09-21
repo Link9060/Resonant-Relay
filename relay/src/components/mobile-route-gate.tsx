@@ -14,7 +14,6 @@ const DESKTOP_FIRST: Array<{
   body: string;
   dashboard?: boolean;
 }> = [
-  { path: '/email', title: 'Full Mail is on Relay for Mac', body: 'Recent and important mail stays available from your Dashboard while you are on the move.', dashboard: true },
   { path: '/calendar', title: 'Full Calendar is on Relay for Mac', body: 'Your next events stay visible from Dashboard. Use Relay on a larger screen for full calendar management.', dashboard: true },
   { path: '/planner', title: 'Advanced Planner is on Relay for Mac', body: 'Upcoming plans stay visible from Dashboard. Creating and managing complex plans is intentionally desktop-first.', dashboard: true },
   { path: '/todo', title: 'Weekly task management is on Relay for Mac', body: 'You can still see, add, and complete today’s tasks directly from Dashboard.', dashboard: true },
