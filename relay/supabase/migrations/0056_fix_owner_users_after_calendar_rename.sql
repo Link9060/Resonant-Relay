@@ -1,8 +1,9 @@
 -- Repair Owner Users after the calendar-only OAuth rename.
 -- 0055 renamed email_integrations to calendar_integrations; keep this inspector
--- aligned with the Calendar-only data model.
+-- aligned with the Calendar-only data model. Patch the underlying read
+-- function only; owner_user_inspector() remains the audited public wrapper.
 
-create or replace function public.owner_user_inspector(p_user_id uuid)
+create or replace function public.owner_user_inspector_read(p_user_id uuid)
 returns jsonb
 language plpgsql
 stable
