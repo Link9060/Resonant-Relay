@@ -158,8 +158,8 @@ export default function DashboardPage() {
         supabase.from('todos').select('*').eq('user_id', user.id).gte('due_on', today).order('due_on').order('completed').order('position').limit(40),
         supabase.from('notifications').select('*').eq('user_id', user.id).eq('type', 'new_message').order('created_at', { ascending: false }).limit(4),
         supabase.from('group_members').select('group_id').eq('user_id', user.id),
-        supabase.functions.invoke('mail-hub', { body: { action: 'accounts' } }),
-        supabase.functions.invoke('mail-hub', { body: { action: 'calendar_events' } }),
+        supabase.functions.invoke('calendar-hub', { body: { action: 'accounts' } }),
+        supabase.functions.invoke('calendar-hub', { body: { action: 'calendar_events' } }),
       ]);
 
       const groupIds = (membershipResult.data ?? []).map((membership) => membership.group_id);
