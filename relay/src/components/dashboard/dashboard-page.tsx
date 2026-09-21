@@ -28,7 +28,6 @@ import {
   CloudSun,
   FileClock,
   Gauge,
-  Inbox,
   LayoutDashboard,
   ListTodo,
   MessageCircle,
@@ -60,22 +59,12 @@ type DashboardEvent = {
   isAllDay?: boolean;
 };
 
-type InboxMessage = {
-  id: string;
-  subject: string;
-  from: string;
-  receivedAt: string | null;
-  isUnread: boolean;
-};
-
 type DashboardState = {
   userId: string;
   firstName: string | null;
   todos: Todo[];
   events: DashboardEvent[];
-  emails: InboxMessage[];
   chatNotifications: Notification[];
-  emailConnected: boolean;
   calendarConnected: boolean;
   taskError: boolean;
 };
@@ -105,7 +94,6 @@ export const WIDGET_META: Record<DashboardWidgetId, { label: string; description
   tasks: { label: 'To-Do', description: 'Today’s checklist with quick add.' },
   calendar: { label: 'Next Up', description: 'Your next plans and calendar events.' },
   today: { label: 'Today', description: 'A compact timeline of what matters today.' },
-  email: { label: 'Inbox', description: 'Recent mail from connected accounts.' },
   chats: { label: 'Chats', description: 'Newest Relay conversations and unread messages.' },
   quicknote: { label: 'Quick Note', description: 'Capture a thought and send it into Relay Notes.' },
   focus: { label: 'Focus', description: 'A simple focus timer with quick presets.' },
@@ -165,7 +153,7 @@ export default function DashboardPage() {
       if (!user || !active) return;
       const today = localDateKey();
 
-      const [profileResult, todoResult, notificationResult, membershipResult, emailAccounts, calendarStatus] = await Promise.all([
+      const [profileResult, todoResult, notificationResult, membershipResult, calendarAccounts, calendarStatus] = await Promise.all([
         supabase.from('profiles').select('display_name').eq('id', user.id).single(),
         supabase.from('todos').select('*').eq('user_id', user.id).gte('due_on', today).order('due_on').order('completed').order('position').limit(40),
         supabase.from('notifications').select('*').eq('user_id', user.id).eq('type', 'new_message').order('created_at', { ascending: false }).limit(4),
@@ -175,18 +163,14 @@ export default function DashboardPage() {
       ]);
 
       const groupIds = (membershipResult.data ?? []).map((membership) => membership.group_id);
-      const accountCount = emailAccounts.data?.accounts?.length ?? 0;
-      const emailConnected = !emailAccounts.error && accountCount > 0;
+      const accountCount = calendarAccounts.data?.accounts?.length ?? 0;
       const calendarAccountErrors = calendarStatus.data?.accountErrors?.length ?? 0;
-      const calendarConnected = emailConnected && !calendarStatus.error && calendarAccountErrors < accountCount;
+      const calendarConnected = !calendarAccounts.error && accountCount > 0 && !calendarStatus.error && calendarAccountErrors < accountCount;
 
-      const [planResult, emailResult, calendarResult] = await Promise.all([
+      const [planResult, calendarResult] = await Promise.all([
         groupIds.length
           ? supabase.from('plans').select('id,name,start_time,end_time,group:groups(name),instances:plan_instances(id,occurs_on)').in('group_id', groupIds)
           : Promise.resolve({ data: [], error: null }),
-        emailConnected
-          ? supabase.functions.invoke('mail-hub', { body: { action: 'messages' } })
-          : Promise.resolve({ data: { messages: [] }, error: null }),
         calendarConnected
           ? Promise.resolve(calendarStatus)
           : Promise.resolve({ data: { events: [] }, error: null }),
@@ -223,9 +207,7 @@ export default function DashboardPage() {
         events: [...relayEvents, ...calendarEvents]
           .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
           .slice(0, 12),
-        emails: (emailResult.data?.messages ?? []).slice(0, 5),
         chatNotifications: notificationResult.data ?? [],
-        emailConnected,
         calendarConnected,
         taskError: Boolean(todoResult.error),
       });
@@ -526,8 +508,6 @@ function submitWeatherZip(event: FormEvent) {
         return <DashboardCard index={index} compact={compact} icon={<CalendarDays size={18} />} title="Next Up" href="/calendar" linkLabel="Calendar">{upcomingEvents.length ? <EventList events={upcomingEvents.slice(0, listLimit)} compact={compact} /> : <EmptyState>{state.calendarConnected ? 'Nothing else is scheduled.' : 'Connect Calendar for your full schedule.'}</EmptyState>}</DashboardCard>;
       case 'today':
         return <DashboardCard index={index} compact={compact} icon={<Gauge size={18} />} title="Today"><div className={`grid gap-3 ${wide ? 'sm:grid-cols-3' : ''}`}><MiniPanel label="Tasks" value={tasksLeft ? `${tasksLeft} left` : 'All clear'} detail={todayTodos.find((todo) => !todo.completed)?.title ?? 'No tasks due'} />{!compact && <MiniPanel label="Next" value={upcomingEvents[0] ? formatDashboardEventTime(upcomingEvents[0]) : 'Open'} detail={upcomingEvents[0]?.title ?? 'No upcoming event'} />}{wide && <MiniPanel label="Messages" value={unreadChats ? `${unreadChats} unread` : 'Caught up'} detail={state.chatNotifications[0]?.title ?? 'No new chats'} />}</div></DashboardCard>;
-      case 'email':
-        return <DashboardCard index={index} compact={compact} icon={<Inbox size={18} />} title="Inbox" href="/email" linkLabel="Inbox">{!state.emailConnected ? <EmptyState>Connect Google or Microsoft email first.</EmptyState> : state.emails.length ? <ul className="divide-y divide-border">{state.emails.slice(0, listLimit).map((email) => <li key={email.id} className="flex items-start gap-3 py-2.5"><span className={`mt-1.5 h-2 w-2 rounded-full ${email.isUnread ? 'bg-blue-500' : 'bg-border'}`} /><div className="min-w-0 flex-1"><p className={`truncate text-sm text-ink ${email.isUnread ? 'font-semibold' : ''}`}>{email.subject}</p>{!compact && <p className="mt-1 truncate text-xs text-ink-faint">{cleanSender(email.from)}</p>}</div></li>)}</ul> : <EmptyState>Your inbox is clear.</EmptyState>}</DashboardCard>;
       case 'chats':
         return <DashboardCard index={index} compact={compact} icon={<MessageCircle size={18} />} title="Chats" href="/chats" linkLabel="Chats">{state.chatNotifications.length ? <ul className="divide-y divide-border">{state.chatNotifications.slice(0, listLimit).map((notification) => <li key={notification.id}><a href={appPageUrl(normalizeAppLink(notification.link ?? '/chats'))} onClick={() => openNotification(notification)} className="flex items-start gap-3 py-2.5"><span className={`mt-1.5 h-2 w-2 rounded-full ${notification.read_at ? 'bg-border' : 'bg-blue-500'}`} /><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-ink">{notification.title}</p>{!compact && <p className="mt-1 truncate text-xs text-ink-faint">{notification.body}</p>}</div></a></li>)}</ul> : <EmptyState>No new chat notifications.</EmptyState>}</DashboardCard>;
       case 'quicknote':
@@ -652,7 +632,6 @@ function QuickLink({ href, icon, label }: { href: string; icon: ReactNode; label
   return <a href={appPageUrl(href)} className="flex h-full min-h-14 items-center justify-between rounded-lg border border-border bg-surface-raised px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface"><span className="flex items-center gap-2"><span className="text-ink-muted">{icon}</span>{label}</span><ArrowRight size={15} className="text-ink-faint" /></a>;
 }
 
-function cleanSender(sender: string) { return sender.replace(/<.*>/, '').trim() || sender; }
 function formatShortDate(raw: string) { const date = new Date(raw); return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
 function formatEventTime(raw: string) { const date = new Date(raw); return localDateKey(date) === localDateKey() ? date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); }
 function formatDashboardEventTime(event: DashboardEvent) { return event.isAllDay ? (localDateKey(new Date(event.startsAt)) === localDateKey() ? 'All day' : formatShortDate(event.startsAt)) : formatEventTime(event.startsAt); }
