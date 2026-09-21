@@ -544,7 +544,7 @@ function submitWeatherZip(event: FormEvent) {
       }
 
       case 'sun':
-        return <DashboardCard widget={widget} index={index} icon={<Sun size={18} />} title="Sunrise / Sunset">{weather ? micro ? <div className="grid h-full grid-cols-2 items-center gap-2 text-center"><TinyMetric value={formatClock(weather.sunrise)} label="rise" /><TinyMetric value={formatClock(weather.sunset)} label="set" /></div> : <div className={`grid gap-2 ${narrow ? 'grid-cols-1' : 'grid-cols-2'}`}><MiniPanel dense={short || narrow} label="Sunrise" value={formatClock(weather.sunrise)} detail="Morning" />{(!narrow || roomy) && <MiniPanel dense={short || narrow} label="Sunset" value={formatClock(weather.sunset)} detail="Evening" />}</div> : <EmptyState compact={short}>Set a Weather ZIP first.</EmptyState>}</DashboardCard>;
+        return <DashboardCard widget={widget} index={index} icon={<Sun size={18} />} title="Sunrise / Sunset">{weather ? micro ? <div className="grid h-full grid-cols-2 items-center gap-2 text-center"><TinyMetric value={formatClock(weather.sunrise)} label="rise" /><TinyMetric value={formatClock(weather.sunset)} label="set" /></div> : <div className={`grid gap-2 ${narrow ? 'grid-cols-1' : 'grid-cols-2'}`}><MiniPanel dense={short || narrow} label="Sunrise" value={formatClock(weather.sunrise)} detail="Morning" /><MiniPanel dense={short || narrow} label="Sunset" value={formatClock(weather.sunset)} detail="Evening" /></div> : <EmptyState compact={short}>Set a Weather ZIP first.</EmptyState>}</DashboardCard>;
 
       case 'countdowns': {
         const event = nextCountdownEvent;
