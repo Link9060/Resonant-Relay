@@ -1,14 +1,13 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-type GoogleService = 'calendar' | 'gmail';
+type GoogleService = 'calendar';
 
 const APP_ORIGIN = 'https://link9060.github.io';
 const APP_BASE_URL = `${APP_ORIGIN}/Resonant-Relay`;
 const ALLOWED_ORIGINS = new Set([APP_ORIGIN, 'http://localhost:3000']);
 const GOOGLE_SCOPES: Record<GoogleService, string> = {
   calendar: 'https://www.googleapis.com/auth/calendar.events.readonly',
-  gmail: 'https://www.googleapis.com/auth/gmail.readonly',
 };
 
 function corsHeaders(req: Request) {
@@ -36,11 +35,11 @@ function redirect(path: string, result: 'connected' | 'error', detail?: string) 
 }
 
 function parseService(value: unknown): GoogleService | null {
-  return value === 'calendar' || value === 'gmail' ? value : null;
+  return value === 'calendar' ? value : null;
 }
 
-function expectedReturnTo(service: GoogleService) {
-  return service === 'gmail' ? '/email' : '/calendar';
+function expectedReturnTo(_service: GoogleService) {
+  return '/calendar';
 }
 
 function randomState() {
@@ -111,7 +110,6 @@ Deno.serve(async (req: Request) => {
         scope: `openid email profile ${GOOGLE_SCOPES[service]}`,
         access_type: 'offline',
         prompt: 'consent',
-        include_granted_scopes: 'true',
         state,
       }).toString();
       return json(req, { url: authorizationUrl.toString() });
@@ -135,7 +133,6 @@ Deno.serve(async (req: Request) => {
     const accessToken = await getAccessToken(admin, user.id, service);
     if (!accessToken) return json(req, { error: 'Not connected.' }, 409);
     if (body.action === 'calendar_events') return json(req, { events: await calendarEvents(accessToken) });
-    if (body.action === 'gmail_messages') return json(req, { messages: await gmailMessages(accessToken) });
     return json(req, { error: 'Unknown action.' }, 400);
   } catch (error) {
     console.error(error);
@@ -219,18 +216,3 @@ async function calendarEvents(token: string) {
   return (data.items ?? []).map((event: any) => ({ id: event.id, summary: event.summary ?? '(No title)', start: event.start.dateTime ?? event.start.date ?? '', end: event.end.dateTime ?? event.end.date ?? '', isAllDay: !event.start.dateTime, htmlLink: event.htmlLink }));
 }
 
-async function gmailMessages(token: string) {
-  const listResponse = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=15&labelIds=INBOX', { headers: { Authorization: `Bearer ${token}` } });
-  if (!listResponse.ok) throw new Error(`Gmail error (${listResponse.status}).`);
-  const list = await listResponse.json();
-  const messages = await Promise.all((list.messages ?? []).map(async (message: any) => {
-    const query = new URLSearchParams({ format: 'metadata' });
-    ['Subject', 'From', 'Date'].forEach((header) => query.append('metadataHeaders', header));
-    const response = await fetch(`https://www.googleapis.com/gmail/v1/users/me/messages/${message.id}?${query}`, { headers: { Authorization: `Bearer ${token}` } });
-    if (!response.ok) return null;
-    const data = await response.json();
-    const header = (name: string) => data.payload.headers.find((item: any) => item.name === name)?.value ?? '';
-    return { id: data.id, subject: header('Subject') || '(No subject)', from: header('From'), snippet: data.snippet, receivedAt: header('Date') || null, isUnread: data.labelIds?.includes('UNREAD') ?? false };
-  }));
-  return messages.filter(Boolean);
-}
