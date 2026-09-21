@@ -146,7 +146,7 @@ Deno.serve(async (req: Request) => {
       });
       if (stateError) throw stateError;
 
-      const callbackUrl = `${supabaseUrl}/functions/v1/mail-hub/callback`;
+      const callbackUrl = `${supabaseUrl}/functions/v1/calendar-hub/callback`;
       const challenge = base64url(await sha256(verifier));
       const authUrl = provider === 'google'
         ? new URL('https://accounts.google.com/o/oauth2/v2/auth')
@@ -246,7 +246,7 @@ async function callback(url: URL, admin: any, supabaseUrl: string) {
   if (new Date(state.expires_at).getTime() <= Date.now()) return redirect(provider, 'error', 'expired', returnPath, returnOrigin);
   if (!configured(provider)) return redirect(provider, 'error', 'not_configured', returnPath, returnOrigin);
 
-  const callbackUrl = `${supabaseUrl}/functions/v1/mail-hub/callback`;
+  const callbackUrl = `${supabaseUrl}/functions/v1/calendar-hub/callback`;
   const tokenUrl = provider === 'google' ? 'https://oauth2.googleapis.com/token' : 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
   const tokenResponse = await fetch(tokenUrl, {
     method: 'POST',
