@@ -76,7 +76,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     async function getAuthenticatedUser() {
       let lastError: unknown = null;
-      for (let attempt = 0; attempt < 2; attempt += 1) {
+
+      // A magic-link/OAuth callback can finish immediately before the next page
+      // mounts. Prefer a server-validated user, but keep the freshly persisted
+      // browser session available as a safe client-side bridge while it settles.
+      for (let attempt = 0; attempt < 3; attempt += 1) {
         try {
           const result = await withTimeout<AuthUserResult>(supabase.auth.getUser(), 'Authentication');
           if (result.error) lastError = result.error;
@@ -84,14 +88,62 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         } catch (error) {
           lastError = error;
         }
-        if (attempt === 0) await wait(450);
+
+        try {
+          const sessionResult = await withTimeout<any>(supabase.auth.getSession(), 'Session lookup', 5_000);
+          const sessionUser = sessionResult?.data?.session?.user ?? null;
+          if (sessionUser) {
+            if (attempt > 0) {
+              // Refresh once after the initial handoff so the following RLS
+              // requests use the newest access token.
+              await withTimeout<any>(supabase.auth.refreshSession(), 'Session refresh', 6_000).catch(() => null);
+            }
+            return sessionUser;
+          }
+          if (sessionResult?.error) lastError = sessionResult.error;
+        } catch (error) {
+          lastError = error;
+        }
+
+        if (attempt < 2) await wait(350 + attempt * 350);
       }
+
       if (lastError) throw lastError;
       return null;
     }
 
+    async function loadAccountData(userId: string) {
+      let lastProfileError: unknown = null;
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const [profileResult, notificationResult] = await withTimeout<[SupabaseResult<any>, SupabaseResult<any[]>]>(
+          Promise.all([
+            supabase.from('profiles').select('*').eq('id', userId).single(),
+            supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(20),
+          ]),
+          'Relay account data',
+        );
+
+        if (profileResult.data && !profileResult.error) {
+          return { profileResult, notificationResult };
+        }
+
+        lastProfileError = profileResult.error ?? new Error('Your Relay profile could not be loaded.');
+
+        if (attempt < 2) {
+          if (attempt === 0) {
+            await withTimeout<any>(supabase.auth.refreshSession(), 'Session refresh', 6_000).catch(() => null);
+          }
+          await wait(400 + attempt * 450);
+        }
+      }
+
+      throw lastProfileError ?? new Error('Your Relay profile could not be loaded.');
+    }
+
     void (async () => {
       setLoadError(null);
+      let loadStage = 'authentication';
       try {
         const user = await getAuthenticatedUser();
         if (!active) return;
@@ -101,6 +153,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
 
         if (IS_BETA) {
+          loadStage = 'beta access';
           const { data: betaAccess, error: betaError } = await withTimeout<SupabaseResult<any>>(
             supabase.rpc('beta_access_status'),
             'Beta access check',
@@ -113,17 +166,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           }
         }
 
-        const [profileResult, notificationResult] = await withTimeout<[SupabaseResult<any>, SupabaseResult<any[]>]>(
-          Promise.all([
-            supabase.from('profiles').select('*').eq('id', user.id).single(),
-            supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
-          ]),
-          'Relay account data',
-        );
+        loadStage = 'account profile';
+        const { profileResult, notificationResult } = await loadAccountData(user.id);
         if (!active) return;
-        if (profileResult.error || !profileResult.data) {
-          throw profileResult.error ?? new Error('Your Relay profile could not be loaded.');
-        }
 
         const profile = profileResult.data;
         if (!profile.onboarding_completed_at) {
@@ -134,6 +179,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         // Layout, experience and palette are account preferences. Resolve them
         // before exposing the app shell so another account's browser cache can
         // never become this user's starting appearance.
+        loadStage = 'visual preferences';
         try {
           await syncVisualPreferencesWithAccount(user.id);
         } catch (error) {
@@ -150,8 +196,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         setPreviewRoleState(getRolePreview(actualRole));
       } catch (error) {
         if (!active) return;
-        console.error('Relay app-shell load failed', error);
-        setLoadError('Relay could not finish loading your account. Your data was not changed.');
+        console.error('Relay app-shell load failed', { stage: loadStage, error });
+        setLoadError(
+          loadStage === 'authentication'
+            ? 'Relay signed you in, but the session did not finish loading. Retry once; if it still fails, sign in again.'
+            : 'Relay could not finish loading your account. Retry once; your data was not changed.',
+        );
       }
     })();
 
