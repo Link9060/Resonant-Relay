@@ -39,8 +39,8 @@ export default function CalendarPage() {
     if (!user) return;
 
     const [accountResult, eventResult, membershipResult, relayEventResult] = await Promise.all([
-      supabase.functions.invoke('mail-hub', { body: { action: 'accounts' } }),
-      supabase.functions.invoke('mail-hub', { body: { action: 'calendar_events' } }),
+      supabase.functions.invoke('calendar-hub', { body: { action: 'accounts' } }),
+      supabase.functions.invoke('calendar-hub', { body: { action: 'calendar_events' } }),
       supabase.from('group_members').select('group_id').eq('user_id', user.id),
       supabase.from('relay_calendar_events').select('*').eq('user_id', user.id).order('event_date').order('start_time'),
     ]);
@@ -77,7 +77,7 @@ export default function CalendarPage() {
   async function connect(provider: IntegrationProvider) {
     setBusy(provider);
     setError(null);
-    const { data, error: invokeError } = await createClient().functions.invoke('mail-hub', { body: { action: 'connect_start', provider, next: '/calendar' } });
+    const { data, error: invokeError } = await createClient().functions.invoke('calendar-hub', { body: { action: 'connect_start', provider, next: '/calendar' } });
     if (invokeError || !data?.url) {
       setError(data?.error ?? `${provider === 'google' ? 'Google' : 'Microsoft'} OAuth is not configured yet.`);
       setBusy(null);
@@ -90,7 +90,7 @@ export default function CalendarPage() {
     if (!window.confirm(`Disconnect ${account.email_address} from Relay Calendar?`)) return;
     setBusy(account.id);
     setError(null);
-    const { error: invokeError } = await createClient().functions.invoke('mail-hub', { body: { action: 'disconnect', accountId: account.id } });
+    const { error: invokeError } = await createClient().functions.invoke('calendar-hub', { body: { action: 'disconnect', accountId: account.id } });
     if (invokeError) {
       setError('Could not disconnect that account.');
       setBusy(null);
