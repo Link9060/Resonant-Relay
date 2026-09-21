@@ -87,7 +87,7 @@ export default function CalendarPage() {
   }
 
   async function disconnect(account: ConnectedAccount) {
-    if (!window.confirm(`Disconnect ${account.email_address} from Relay email and calendar?`)) return;
+    if (!window.confirm(`Disconnect ${account.email_address} from Relay Calendar?`)) return;
     setBusy(account.id);
     setError(null);
     const { error: invokeError } = await createClient().functions.invoke('mail-hub', { body: { action: 'disconnect', accountId: account.id } });
