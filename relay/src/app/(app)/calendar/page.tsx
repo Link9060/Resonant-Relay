@@ -221,7 +221,7 @@ export default function CalendarPage() {
     {state.accountErrors.length > 0 && !manageOpen && (
       <button type="button" onClick={() => setManageOpen(true)} className="mt-5 flex w-full items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-left text-sm text-amber-700 dark:text-amber-300">
         <RefreshCw size={16} className="shrink-0" />
-        <span className="flex-1"><strong>Reconnect Google Calendar once.</strong> Relay needs the read-only calendar-list permission to show calendars beyond Primary.</span>
+        <span className="flex-1"><strong>Reconnect Calendar once.</strong> Relay’s permissions are now calendar-only, so older connections need a quick refresh before Relay can use them again.</span>
         <span className="text-xs font-semibold">Fix</span>
       </button>
     )}
