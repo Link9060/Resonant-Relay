@@ -79,7 +79,7 @@ export default function ChatsPage() {
                 .order('created_at', { ascending: false }),
               supabase
                 .from('conversation_preferences')
-                .select('conversation_id,muted,pinned_at')
+                .select('conversation_id,muted,pinned_at,deleted_at')
                 .eq('user_id', id)
                 .in('conversation_id', ids),
             ]),
@@ -108,7 +108,13 @@ export default function ChatsPage() {
         const preferenceByConversation = Object.fromEntries(
           conversationPreferenceRows.map((item: any) => [item.conversation_id, item]),
         );
-        conversations.sort((a: any, b: any) => {
+        const visibleConversations = conversations.filter((conversation: any) => {
+          const deletedAt = preferenceByConversation[conversation.id]?.deleted_at;
+          if (!deletedAt) return true;
+          if (!conversation.last_message_at) return false;
+          return new Date(conversation.last_message_at).getTime() > new Date(deletedAt).getTime();
+        });
+        visibleConversations.sort((a: any, b: any) => {
           const aPin = preferenceByConversation[a.id]?.pinned_at;
           const bPin = preferenceByConversation[b.id]?.pinned_at;
           if (aPin && !bPin) return -1;
@@ -158,7 +164,7 @@ export default function ChatsPage() {
         const preferencesById = Object.fromEntries(
           preferenceRows.map((preference: any) => [preference.contact_id, preference]),
         );
-        const titles = Object.fromEntries(conversations.map((conversation: any) => {
+        const titles = Object.fromEntries(visibleConversations.map((conversation: any) => {
           const other = conversation.participants.find((participant: any) => participant.user_id !== id && participant.profile);
           return [
             conversation.id,
@@ -173,7 +179,7 @@ export default function ChatsPage() {
         if (!active) return;
         setState({
           userId: id,
-          conversations,
+          conversations: visibleConversations,
           previews,
           contacts: contacts.map((contact: any) => ({ ...contact, preference: preferencesById[contact.id] ?? null })),
           preferencesById,
@@ -257,16 +263,18 @@ export default function ChatsPage() {
     }
   }
 
-  const shownResults = useMemo(
-    () => results?.map((item) => ({ ...item, title: state?.titles[item.conversation_id] ?? 'Conversation' })) ?? [],
-    [results, state],
-  );
+  const shownResults = useMemo(() => {
+    const visibleIds = new Set<string>((state?.conversations ?? []).map((conversation: any) => conversation.id));
+    return results
+      ?.filter((item) => visibleIds.has(item.conversation_id))
+      .map((item) => ({ ...item, title: state?.titles[item.conversation_id] ?? 'Conversation' })) ?? [];
+  }, [results, state]);
 
   if (!state && !loadError) return <PageLoading />;
 
   if (!state && loadError) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
+      <div className="mx-auto max-w-4xl px-4 py-6 md:px-6 md:py-7">
         <PageHeader title="Chats" subtitle="Messages, files, replies, and everything you pinned." />
         <div className="mt-6 rounded-xl border border-border bg-surface p-5">
           <p className="text-sm font-medium text-ink">Chats could not load.</p>
@@ -278,7 +286,7 @@ export default function ChatsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
+    <div className="mx-auto max-w-4xl px-4 py-6 md:px-6 md:py-7">
       <PageHeader title="Chats" subtitle="Messages, files, replies, and everything you pinned." action={<NewChatDialog contacts={state.contacts} />} />
 
       {loadError && (
@@ -287,7 +295,7 @@ export default function ChatsPage() {
         </div>
       )}
 
-      <form onSubmit={search} className="mt-5 flex gap-2">
+      <form onSubmit={search} className="mt-4 flex gap-2">
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input value={query} onChange={(event) => { setQuery(event.target.value); if (!event.target.value) { setResults(null); setSearchError(null); } }} minLength={2} placeholder="Search messages and attachment names" className="profile-input pl-9 pr-9" />
@@ -324,8 +332,15 @@ export default function ChatsPage() {
           )}
         </section>
       ) : (
-        <div className="mt-6">
-          <ConversationList conversations={state.conversations} currentUserId={state.userId} previewByConversation={state.previews} preferencesById={state.preferencesById} conversationPreferences={state.preferenceByConversation} />
+        <div className="mt-4">
+          <ConversationList
+            conversations={state.conversations}
+            currentUserId={state.userId}
+            previewByConversation={state.previews}
+            preferencesById={state.preferencesById}
+            conversationPreferences={state.preferenceByConversation}
+            onDeleted={(conversationId) => setState((current: any) => ({ ...current, conversations: current.conversations.filter((conversation: any) => conversation.id !== conversationId) }))}
+          />
         </div>
       )}
     </div>

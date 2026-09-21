@@ -6,7 +6,6 @@ import { useState } from 'react';
 
 const LABEL: Record<GoogleService, string> = {
   calendar: 'Connect Google Calendar',
-  gmail: 'Connect Gmail',
 };
 
 export function ConnectGoogleButton({ service, next }: { service: GoogleService; next: string }) {

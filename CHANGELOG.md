@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.7 Beta — Focus Update
+
+- Weather now uses a user-entered 5-digit ZIP code instead of browser geolocation.
+- Relay remembers the ZIP on the current device, shows the resolved city/state and ZIP in the widget, and provides Refresh Weather and Change ZIP controls.
+- Invalid ZIP codes now show an inline error instead of requesting location permission.
+
 ## 1.0.3 Beta
 
 - Added visible Relay role titles for Owners, Admins, and Moderators.

@@ -76,9 +76,8 @@ export async function getValidAccessToken(userId: string, service: GoogleService
   });
 
   if (!response.ok) {
-    // Refresh token is likely revoked or expired (Google: unused for 6
-    // months, password changed with Gmail scopes, etc.) — drop the
-    // integration so the UI offers to reconnect instead of failing silently.
+    // Refresh token is likely revoked or expired — drop the integration so
+    // the UI offers to reconnect instead of failing silently.
     await supabase.from('google_integrations').delete().eq('user_id', userId).eq('service', service);
     return null;
   }

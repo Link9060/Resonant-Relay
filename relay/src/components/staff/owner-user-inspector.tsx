@@ -17,7 +17,6 @@ type UserSummary = {
   created_at: string;
   primary_email: string | null;
   last_sign_in_at: string | null;
-  gmail_connected: boolean;
   message_count: number;
   connection_count: number;
   banned_at: string | null;
@@ -84,8 +83,10 @@ export function OwnerUserInspector({ user, currentUserId, busy, onSelectUser, on
     if (silent) setRefreshing(true); else setLoading(true);
     setError(null);
     const { data: result, error: rpcError } = await (createClient() as any).rpc('owner_user_inspector', { p_user_id: user.id });
-    if (rpcError) setError(rpcError.message ?? 'Owner account details could not load.');
-    else setData(result);
+    if (rpcError) {
+      console.error('Owner account inspector failed', rpcError);
+      setError('Owner account details could not load. Refresh once; if it keeps happening, verify the latest database migration is applied.');
+    } else setData(result);
     setLoading(false);
     setRefreshing(false);
   }
@@ -196,7 +197,7 @@ function OverviewTab({ data, health }: { data: any; health: ReturnType<typeof ac
       <section className="grid gap-3 sm:grid-cols-2">
         <InfoCard label="Last active" value={overview.last_sign_in_at ? timeAgo(overview.last_sign_in_at) : 'Never'} />
         <InfoCard label="Joined" value={formatDate(overview.created_at)} />
-        <InfoCard label="Connected services" value={`${overview.gmail_connected ? 'Gmail' : 'No Gmail'} · ${overview.calendar_connected ? 'Calendar' : 'No Calendar'} · ${Number(overview.email_accounts ?? 0)} email account${Number(overview.email_accounts ?? 0) === 1 ? '' : 's'}`} />
+        <InfoCard label="Connected calendars" value={overview.calendar_connected ? `${Number(overview.calendar_accounts ?? 0)} account${Number(overview.calendar_accounts ?? 0) === 1 ? '' : 's'}` : 'None'} />
         <InfoCard label="Total footprint" value={formatBytes(storage.total_bytes)} helper={`${formatBytes(storage.database_bytes_estimated)} estimated database · ${formatBytes(storage.file_bytes)} files`} />
       </section>
       <section className="rounded-xl border border-border bg-surface p-4">
@@ -323,7 +324,6 @@ function accountHealth(data: any, fallback: UserSummary) {
   if (openReports > 0) signals.push(`${openReports} open report${openReports === 1 ? '' : 's'}`);
   if (average > 0 && total > average * 2 && total > 5 * 1024 * 1024) signals.push('Storage above normal');
   if (!overview.last_sign_in_at && !fallback.last_sign_in_at) signals.push('Never signed in');
-  if (overview.gmail_connected) signals.push('Gmail connected');
   if (overview.calendar_connected) signals.push('Calendar connected');
   if (!signals.length) signals.push('No current flags');
   if (overview.banned_at || fallback.banned_at || openReports >= 3) return { status: 'attention' as const, label: 'Needs attention', signals };

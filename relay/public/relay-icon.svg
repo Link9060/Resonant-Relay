@@ -1,10 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="relay-icon-title">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="relay-icon-title" shape-rendering="geometricPrecision">
   <title id="relay-icon-title">Relay</title>
-  <style>
-    .relay-mark { fill: #09090a; }
-    @media (prefers-color-scheme: dark) { .relay-mark { fill: #f5f5f5; } }
-  </style>
   <defs>
+    <linearGradient id="relay-silver" x1="90" y1="70" x2="422" y2="442" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.42" stop-color="#d6d6d8"/>
+      <stop offset="0.72" stop-color="#8f8f94"/>
+      <stop offset="1" stop-color="#f4f4f5"/>
+    </linearGradient>
     <path id="relay-blade" d="M256 54c77.8 0 144.6 44.1 177.7 108.7-48.8-23.4-99.8-24.7-144.8-3.6-38.4 18-67.2 49.1-81.8 87.4-19.7-48.1-16.2-96.1 8.5-137.5 11.8-19.9 25.8-36.4 40.4-55Z"/>
     <mask id="relay-cutout">
       <rect width="512" height="512" fill="black"/>
@@ -27,5 +29,5 @@
       <circle cx="256" cy="256" r="82" fill="black"/>
     </mask>
   </defs>
-  <rect class="relay-mark" width="512" height="512" mask="url(#relay-cutout)"/>
+  <rect width="512" height="512" fill="url(#relay-silver)" mask="url(#relay-cutout)"/>
 </svg>

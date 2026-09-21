@@ -1,5 +1,6 @@
 'use client';
 
+import { ConversationDeleteControl } from '@/components/chats/conversation-delete-control';
 import { MessageThread } from '@/components/chats/message-thread';
 import { PageLoading } from '@/components/page-loading';
 import { contactDisplayName } from '@/lib/contact-colors';
@@ -45,7 +46,7 @@ function ConversationView() {
   if (!id) return <p className="p-8 text-sm text-red-500">Missing conversation.</p>;
   if (!state) return <PageLoading />;
   if (state.error) return <p className="p-8 text-sm text-red-500">{state.error}</p>;
-  return <MessageThread conversationId={state.conversation.id} title={state.title} isGroup={state.conversation.type === 'group'} groupId={state.conversation.group_id} currentUserId={state.userId} participantsById={state.profiles} preferencesById={state.preferencesById} rolesById={state.rolesById} initialMessages={state.messages} initialReactions={state.reactions} initialPinnedIds={state.pinnedIds} initialMuted={state.muted} />;
+  return <div className="relative"><MessageThread conversationId={state.conversation.id} title={state.title} isGroup={state.conversation.type === 'group'} groupId={state.conversation.group_id} currentUserId={state.userId} participantsById={state.profiles} preferencesById={state.preferencesById} rolesById={state.rolesById} initialMessages={state.messages} initialReactions={state.reactions} initialPinnedIds={state.pinnedIds} initialMuted={state.muted} /><div className="absolute bottom-20 right-4 z-20 md:right-6"><ConversationDeleteControl conversationId={state.conversation.id} title={state.title} /></div></div>;
 }
 
 export default function ConversationPage() { return <Suspense fallback={<PageLoading />}><ConversationView /></Suspense>; }

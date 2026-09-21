@@ -6,7 +6,6 @@ export type DashboardWidgetId =
   | 'tasks'
   | 'calendar'
   | 'today'
-  | 'email'
   | 'chats'
   | 'quicknote'
   | 'focus'
@@ -87,7 +86,6 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardWidgetPreference[] = [
   widget('askravin', 'medium', true),
   widget('tasks', 'medium', true),
   widget('calendar', 'medium', true),
-  widget('email', 'medium', true),
   widget('chats', 'medium', true),
   widget('quicklinks', 'extra-wide', true),
   widget('today', 'extra-wide', false),
@@ -103,10 +101,10 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardWidgetPreference[] = [
 ];
 
 export const DASHBOARD_PRESETS: Array<{ id: DashboardPresetId; name: string; description: string }> = [
-  { id: 'balanced', name: 'Balanced', description: 'Weather, RAVIN, tasks, calendar, inbox, and chats.' },
+  { id: 'balanced', name: 'Balanced', description: 'Weather, RAVIN, tasks, calendar, and chats.' },
   { id: 'school', name: 'School', description: 'Schedule, assignments, tasks, countdowns, and weather.' },
   { id: 'focus', name: 'Focus', description: 'Tasks, focus timer, next up, quick note, and day progress.' },
-  { id: 'communication', name: 'Communication', description: 'Chats, inbox, and RAVIN together.' },
+  { id: 'communication', name: 'Communication', description: 'Chats and RAVIN together.' },
   { id: 'blank', name: 'Blank Canvas', description: 'Hide everything and build the dashboard yourself.' },
 ];
 
@@ -313,11 +311,11 @@ export function applyDashboardPreset(layout: DashboardWidgetPreference[], preset
     ['tasks', 'focus', 'calendar', 'quicknote', 'dayprogress', 'weather'],
     { tasks: 'medium', focus: 'small', calendar: 'medium', quicknote: 'medium', dayprogress: 'extra-small', weather: 'small' });
   if (preset === 'communication') return setVisible(layout,
-    ['chats', 'email', 'askravin', 'ravinbrief'],
-    ['askravin', 'chats', 'email', 'ravinbrief'],
-    { askravin: 'wide', chats: 'medium', email: 'medium', ravinbrief: 'extra-wide' });
+    ['chats', 'askravin', 'ravinbrief'],
+    ['askravin', 'chats', 'ravinbrief'],
+    { askravin: 'wide', chats: 'medium', ravinbrief: 'extra-wide' });
   return setVisible(layout,
-    ['overview', 'weather', 'askravin', 'tasks', 'calendar', 'email', 'chats', 'quicklinks'],
-    ['overview', 'weather', 'askravin', 'tasks', 'calendar', 'email', 'chats', 'quicklinks'],
-    { overview: 'extra-wide', weather: 'medium', askravin: 'medium', tasks: 'medium', calendar: 'medium', email: 'medium', chats: 'medium', quicklinks: 'extra-wide' });
+    ['overview', 'weather', 'askravin', 'tasks', 'calendar', 'chats', 'quicklinks'],
+    ['overview', 'weather', 'askravin', 'tasks', 'calendar', 'chats', 'quicklinks'],
+    { overview: 'extra-wide', weather: 'medium', askravin: 'medium', tasks: 'medium', calendar: 'medium', chats: 'medium', quicklinks: 'extra-wide' });
 }

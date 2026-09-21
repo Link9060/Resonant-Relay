@@ -3,18 +3,19 @@
 import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
 import { APP_TITLE, appPageUrl, appPathname, BASE_PATH } from '@/lib/config';
 import { cn } from '@/lib/utils';
-import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, Mail, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, Users, type LucideIcon } from 'lucide-react';
+import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, TimerReset, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 const DESKTOP_DOCK_ITEMS = [
   { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
   { href: '/chats', label: 'Chats', icon: MessageCircle },
+  { href: '/contacts', label: 'Contacts', icon: Users },
   { href: '/todo', label: 'To Do', icon: ListTodo },
+  { href: '/focus', label: 'Focus', icon: TimerReset },
   { href: '/notes', label: 'Notes', icon: NotebookPen },
   { href: '/planner', label: 'Planner', mobileLabel: 'Plans', icon: SquareCheck },
   { href: '/schedule', label: 'Schedule', icon: CalendarClock },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { href: '/email', label: 'Email', icon: Mail },
   { href: '/quicklinks', label: 'Quick Links', icon: Link2 },
 ] as const;
 
@@ -72,7 +73,7 @@ export function Dock({
           title={collapsed ? APP_TITLE : undefined}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 shrink-0 self-center object-contain dark:invert" />
+          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 shrink-0 self-center object-contain" />
           <span className={cn('inline-flex min-h-7 min-w-0 items-center whitespace-nowrap leading-[1.25] transition-[opacity,max-width,transform] duration-200', collapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-32 translate-x-0 opacity-100')} aria-hidden={collapsed}>Relay</span>
         </a>
 
@@ -97,12 +98,6 @@ export function Dock({
               collapsed={collapsed}
             />
           )}
-          <DockLink
-            item={{ href: '/contacts', label: 'Contacts', icon: Users }}
-            active={isDockPathActive(currentPath, '/contacts')}
-            variant="rail"
-            collapsed={collapsed}
-          />
         </ul>
 
         <div className="mt-3 border-t border-border pt-3">

@@ -1,8 +1,8 @@
 # Relay — Foundation + Social Core Scaffold
 
 Authentication, profiles, Relay Numbers, contacts, direct messages, and
-groups are real and working. Planner, Calendar, Email, and Obsidian are
-stubbed as honest placeholders — no fake buttons pretending they work.
+groups are real and working. Planner, Calendar, and Obsidian are
+part of the broader Relay workspace.
 
 ## What's actually built
 
@@ -56,13 +56,9 @@ stubbed as honest placeholders — no fake buttons pretending they work.
   `calendar` or `calendar.readonly`), shown alongside upcoming Relay Plan
   occurrences — Calendar answers "what's happening," Planner answers "what
   are we doing about it," per the product spec's own distinction
-- **Email**: read-only Gmail inbox (subject/from/snippet), requested with
-  `gmail.readonly`. Compose/reply are explicitly out of scope for now —
-  adding them later means asking for `gmail.send` incrementally, at the
-  moment a student actually taps compose, not bundled into this connection
 - **Incremental Google OAuth**, done for real: sign-in only ever requests
-  `openid email profile`. Calendar/Gmail scopes are requested only when the
-  student taps "Connect," using a second `signInWithOAuth` call with
+  `openid email profile`. Calendar scopes are requested only when the
+  student taps "Connect," using a separate OAuth flow with
   `access_type: offline, prompt: consent` so Google returns a refresh token
   (confirmed against Google's and Supabase's current docs — Supabase does
   not persist provider tokens itself, so Relay captures and stores them in
@@ -108,7 +104,7 @@ stubbed as honest placeholders — no fake buttons pretending they work.
   dependency from the start but never wired up — real fade/zoom transitions
   instead of an instant pop
 - A shared `PageHeader` component standardizes the title/subtitle/action row
-  across Contacts, Chats, Planner, Calendar, and Email
+  across Contacts, Chats, Planner, and Calendar
 - `loading.tsx` skeletons for every main route and the two detail views
   (conversation thread, plan detail), so navigation has something better
   than a blank flash while Server Components fetch
@@ -118,7 +114,7 @@ stubbed as honest placeholders — no fake buttons pretending they work.
 
 Relay is intentionally shipping in stages. The foundation is authentication,
 the persistent app shell, navigation, contacts, conversations, pagination,
-RLS, and responsive messaging. Planner, Calendar, Email, and notifications
+RLS, and responsive messaging. Planner, Calendar, and notifications
 follow as integrations around that core; storage management and monetization
 come only after messaging is stable.
 
@@ -172,12 +168,10 @@ longest-standing member) before this goes to a wider audience.
 2. Authorized redirect URI: the callback URL Supabase shows you on the
    Google provider settings page (looks like
    `https://<project-ref>.supabase.co/auth/v1/callback`).
-3. Only request `openid email profile` at this stage — Calendar/Gmail
-   scopes come later, requested only when a student connects those features,
-   per the product spec's incremental-consent requirement.
-4. In the same Cloud project, enable the **Google Calendar API** and the
-   **Gmail API** (APIs & Services → Library) — Calendar/Email won't work
-   without these turned on, separately from the OAuth client itself.
+3. Sign-in requests only `openid email profile`. Calendar permissions are
+   requested separately when a student connects Calendar.
+4. In the same Cloud project, enable the **Google Calendar API**
+   (APIs & Services → Library). Relay no longer requests Gmail API access.
 5. Copy the **Client ID** and **Client secret** into both Supabase's Google
    provider settings *and* your own `.env.local` as `GOOGLE_OAUTH_CLIENT_ID`
    / `GOOGLE_OAUTH_CLIENT_SECRET` — they have to be the same client, because
@@ -225,13 +219,10 @@ without a migration that breaks existing numbers.
 - Planner's recurrence generation is a one-time batch at creation, not a
   background job — an open-ended weekly plan won't grow past its initial 8
   occurrences until a "generate more" action or scheduled job is added.
-- Gmail inbox loading does one API call per message to get subject/from
-  (`messages.list` then `messages.get` per result) rather than a batched
-  request — fine for a page of 15 messages, worth revisiting if that grows.
 - The initial Google access token's expiry is estimated (55 minutes) rather
   than read from the OAuth response, since Supabase's session object doesn't
   surface it. Harmless — worst case is one avoidable refresh call — but
-  worth tightening if Relay starts making many Calendar/Gmail calls per load.
+  worth tightening if Relay starts making many Calendar calls per load.
 - Web Push requires a secure context — `localhost` is exempted for local
   dev, but a real deployment needs HTTPS (which Vercel gives you by
   default). There's no `public/icon.png` included in this scaffold; add one

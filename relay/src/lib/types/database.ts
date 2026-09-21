@@ -463,7 +463,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          service: 'calendar' | 'gmail';
+          service: 'calendar';
           refresh_token: string;
           access_token: string | null;
           access_token_expires_at: string | null;
@@ -472,7 +472,7 @@ export interface Database {
         };
         Insert: {
           user_id: string;
-          service: 'calendar' | 'gmail';
+          service: 'calendar';
           refresh_token: string;
           access_token?: string | null;
           access_token_expires_at?: string | null;
