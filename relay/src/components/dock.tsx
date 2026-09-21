@@ -73,7 +73,7 @@ export function Dock({
           title={collapsed ? APP_TITLE : undefined}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 shrink-0 self-center object-contain dark:invert" />
+          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-7 w-7 shrink-0 self-center object-contain" />
           <span className={cn('inline-flex min-h-7 min-w-0 items-center whitespace-nowrap leading-[1.25] transition-[opacity,max-width,transform] duration-200', collapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-32 translate-x-0 opacity-100')} aria-hidden={collapsed}>Relay</span>
         </a>
 
