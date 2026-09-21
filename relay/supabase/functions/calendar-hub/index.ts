@@ -76,6 +76,13 @@ function grantedScopes(account: any) {
   return new Set(String(account.granted_scope ?? '').split(/\s+/).filter(Boolean));
 }
 
+function hasLegacyMailScope(account: any) {
+  return [...grantedScopes(account)].some((scope) => {
+    const value = String(scope).toLowerCase();
+    return value.includes('gmail') || value === 'mail.read';
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(req) });
 
@@ -179,6 +186,10 @@ Deno.serve(async (req: Request) => {
       const { data: accounts } = await admin.from('email_integrations').select('*').eq('user_id', user.id).order('connected_at');
       const results = await Promise.all((accounts ?? []).map(async (account: any) => {
         try {
+          // Older Relay connections were granted inbox permissions too.
+          // Never use those broad grants. The UI will ask the user to reconnect,
+          // which replaces them with the new calendar-only grant.
+          if (hasLegacyMailScope(account)) return { events: [], error: account.email_address };
           const token = await accessToken(admin, account);
           if (!token) return { events: [], error: account.email_address };
           const events = await eventsFor(account, token);
