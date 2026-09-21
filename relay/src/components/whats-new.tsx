@@ -9,16 +9,16 @@ export const OPEN_WHATS_NEW_EVENT = 'relay-open-whats-new';
 const SEEN_VERSION_KEY = 'relay-whats-new-seen-version';
 
 const DEVELOPMENT_RELEASE = {
-  version: '1.0.7',
+  version: '1.0.8',
   status: 'Beta · Development',
-  publishedAt: '2026-09-14T01:35:00Z',
+  publishedAt: '2026-09-21T03:00:00Z',
   title: 'The next Relay beta',
-  summary: 'Beta 1.0.7 starts from the complete 1.0.6 Planning Update. New development work will appear here as it lands.',
+  summary: 'Beta 1.0.8 starts from the complete 1.0.7 Focus Update. New development work will appear here as it lands.',
   groups: [
     {
       label: 'Starting point',
       items: [
-        'Schedule, creator-editable Planner items, custom-date calendars, account-synced dashboard presets, and the stabilized dashboard all carry forward from 1.0.6.',
+        'The Focus workspace, cleaned-up Calendar and Chats layouts, responsive no-scroll dashboard widgets, calendar-only connected accounts, and launch polish all carry forward from 1.0.7.',
         'Beta-only labels stay visible on the development channel so it is always clear when you are testing the next Relay build.',
       ],
     },
@@ -26,6 +26,39 @@ const DEVELOPMENT_RELEASE = {
 } as const;
 
 const PUBLIC_RELEASES = [
+  {
+    version: '1.0.7',
+    status: 'Public release · Focus Update',
+    publishedAt: '2026-09-21T03:00:00Z',
+    title: 'Focus Update',
+    summary: 'Relay 1.0.7 sharpens the daily workflow with Focus, cleaner communication and calendar layouts, safer connected-account handling, and a more adaptive dashboard.',
+    groups: [
+      {
+        label: 'Focus and dashboard',
+        items: [
+          'Focus adds a dedicated workspace for timed work sessions and quick access to the parts of Relay that matter while you are working.',
+          'Dashboard widgets now change their internal layout for each selected size instead of relying on internal scrollbars.',
+          'Compact, skinny, tall, wide, and large widget sizes preserve the useful controls and information that fit each shape.',
+        ],
+      },
+      {
+        label: 'Calendar, chats, and navigation',
+        items: [
+          'Calendar desktop spacing was tightened so all seven days remain visible without squeezing the main grid.',
+          'Chats use the available desktop width more effectively, Contacts sits beside Chats in navigation, and the dashboard is denser and easier to scan.',
+          'Mailbox access was removed from Relay while Calendar connections remain available through calendar-only permissions.',
+        ],
+      },
+      {
+        label: 'Launch polish',
+        items: [
+          'Owner account inspection now uses the renamed Calendar integration data without exposing raw database errors in the interface.',
+          'The Relay mark now uses the same high-quality silver vector shading as the app icon.',
+          'Emergency Mode is no longer exposed on the public release and remains available only on the Beta channel.',
+        ],
+      },
+    ],
+  },
   {
     version: '1.0.6',
     status: 'Public release · Planning Update',

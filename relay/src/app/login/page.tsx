@@ -157,7 +157,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm text-center">
         <div className="relay-brand-lockup justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-12 w-12 dark:invert" />
+          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-12 w-12" />
           <h1 className="font-display text-4xl font-medium tracking-tight text-ink">Relay{IS_BETA ? ' Beta' : ''}</h1>
         </div>
         {IS_BETA && <div className="mt-3 inline-flex rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Private Beta</div>}
