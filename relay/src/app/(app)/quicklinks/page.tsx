@@ -61,7 +61,7 @@ export default function QuickLinksPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 md:px-6">
-      <PageHeader title="Quick Links" subtitle="A clean launchpad for the sites you use on this Mac." />
+      <PageHeader title="Quick Links" subtitle="A clean launchpad for the sites you use on this device." />
 
       <form onSubmit={addLink} className="mt-7 grid gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm md:grid-cols-[minmax(0,.7fr)_minmax(0,1.3fr)_auto] md:items-end">
         <label className="grid gap-1.5 text-xs font-medium text-ink-muted">
@@ -80,7 +80,7 @@ export default function QuickLinksPage() {
         <section className="mt-6 rounded-2xl border border-dashed border-border px-6 py-16 text-center">
           <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-surface text-ink-muted"><Link2 size={19} /></span>
           <h2 className="mt-4 text-sm font-medium text-ink">Your launchpad is empty</h2>
-          <p className="mt-1 text-xs leading-5 text-ink-faint">Add a site above. Quick Links stay private to this Mac.</p>
+          <p className="mt-1 text-xs leading-5 text-ink-faint">Add a site above. Quick Links stay private to this device.</p>
         </section>
       ) : (
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -138,7 +138,7 @@ export default function OwnerSystemPage() {
           <div className="mt-4 divide-y divide-border">
             <UnknownService label="Resend email delivery" />
             <UnknownService label="Google OAuth" />
-            <UnknownService label="Google Calendar/Gmail APIs" />
+            <UnknownService label="Google Calendar API" />
             <UnknownService label="Push delivery service" />
           </div>
         </div>

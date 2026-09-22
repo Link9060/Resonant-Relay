@@ -14,15 +14,15 @@ const DESKTOP_FIRST: Array<{
   body: string;
   dashboard?: boolean;
 }> = [
-  { path: '/calendar', title: 'Full Calendar is on Relay for Mac', body: 'Your next events stay visible from Dashboard. Use Relay on a larger screen for full calendar management.', dashboard: true },
-  { path: '/planner', title: 'Advanced Planner is on Relay for Mac', body: 'Upcoming plans stay visible from Dashboard. Creating and managing complex plans is intentionally desktop-first.', dashboard: true },
-  { path: '/todo', title: 'Weekly task management is on Relay for Mac', body: 'You can still see, add, and complete today’s tasks directly from Dashboard.', dashboard: true },
-  { path: '/notes', title: 'Notes are on Relay for Mac', body: 'Open Relay on a larger screen to write, organize, and search your private notes.' },
-  { path: '/quicklinks', title: 'Quick Links are on Relay for Mac', body: 'Your saved desktop shortcuts stay on the Mac where you created them.', dashboard: true },
-  { path: '/admin/users', title: 'Full account inspection is on Relay for Mac', body: 'On iPhone, use Reports for urgent moderation. Deep user graphs, storage, sessions, and Owner controls are designed for a larger screen.' },
-  { path: '/admin/analytics', title: 'Owner Analytics is on Relay for Mac', body: 'Detailed Relay analytics are intentionally desktop-first so the data stays readable and useful.' },
-  { path: '/admin/system', title: 'System controls are on Relay for Mac', body: 'System health, storage analysis, and operational diagnostics are intentionally desktop-first.' },
-  { path: '/admin/activity', title: 'Full audit history is on Relay for Mac', body: 'Sensitive staff actions are still recorded. Use Relay on a larger screen to inspect the complete audit timeline.' },
+  { path: '/calendar', title: 'Full Calendar works best on desktop', body: 'Your next events stay visible from Dashboard. Use Relay on a larger screen for full calendar management.', dashboard: true },
+  { path: '/planner', title: 'Advanced Planner works best on desktop', body: 'Upcoming plans stay visible from Dashboard. Creating and managing complex plans is intentionally desktop-first.', dashboard: true },
+  { path: '/todo', title: 'Weekly tasks work best on desktop', body: 'You can still see, add, and complete today’s tasks directly from Dashboard.', dashboard: true },
+  { path: '/notes', title: 'Notes work best on desktop', body: 'Open Relay on a larger screen to write, organize, and search your private notes.' },
+  { path: '/quicklinks', title: 'Quick Links work best on desktop', body: 'Your shortcuts stay on the device where you created them.', dashboard: true },
+  { path: '/admin/users', title: 'Full account inspection works best on desktop', body: 'On a phone, use Reports for urgent moderation. Deep user graphs, storage, sessions, and Owner controls are designed for a larger screen.' },
+  { path: '/admin/analytics', title: 'Owner Analytics works best on desktop', body: 'Detailed Relay analytics are intentionally desktop-first so the data stays readable and useful.' },
+  { path: '/admin/system', title: 'System controls work best on desktop', body: 'System health, storage analysis, and operational diagnostics are intentionally desktop-first.' },
+  { path: '/admin/activity', title: 'Full audit history works best on desktop', body: 'Sensitive staff actions are still recorded. Use Relay on a larger screen to inspect the complete audit timeline.' },
 ];
 
 function subscribeMobile(callback: () => void) {
@@ -57,7 +57,7 @@ export function MobileRouteGate({ children, role }: { children: React.ReactNode;
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-canvas text-ink-muted">
           <Laptop size={21} />
         </div>
-        <div className="mt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">Relay Mobile · Full on Mac</div>
+        <div className="mt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">Relay Mobile · Full on desktop</div>
         <h1 className="mt-2 font-display text-2xl font-medium tracking-tight text-ink">{blocked.title}</h1>
         <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-ink-muted">{blocked.body}</p>
 

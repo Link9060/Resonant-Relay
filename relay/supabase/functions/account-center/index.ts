@@ -71,7 +71,7 @@ Deno.serve(async (req: Request) => {
         admin.from('contact_preferences').select('contact_id,nickname,color_key,updated_at').eq('owner_id', user.id),
         admin.from('user_blocks').select('blocked_id,created_at').eq('blocker_id', user.id),
         admin.from('notifications').select('*').eq('user_id', user.id).order('created_at'),
-        admin.from('email_integrations').select('id,provider,email_address,display_name,granted_scope,connected_at').eq('user_id', user.id),
+        admin.from('calendar_integrations').select('id,provider,email_address,display_name,granted_scope,connected_at').eq('user_id', user.id),
         admin.from('reports').select('id,reported_user_id,message_id,reason,details,status,created_at').eq('reporter_id', user.id),
       ]);
       return json(req, {
@@ -96,7 +96,7 @@ Deno.serve(async (req: Request) => {
       if (body.confirmation !== 'DELETE') return json(req, { error: 'Type DELETE to confirm.' }, 400);
       const [{ data: sentMessages }, { data: accounts }] = await Promise.all([
         admin.from('messages').select('attachments').eq('sender_id', user.id),
-        admin.from('email_integrations').select('provider,refresh_token').eq('user_id', user.id),
+        admin.from('calendar_integrations').select('provider,refresh_token').eq('user_id', user.id),
       ]);
       const paths = (sentMessages ?? []).flatMap((message: any) => attachmentPaths(message.attachments));
       for (let index = 0; index < paths.length; index += 100) {
