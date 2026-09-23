@@ -12,8 +12,10 @@ import { appPageUrl } from '@/lib/config';
 import {
   Brain,
   CalendarDays,
+  ChevronRight,
   File,
   FolderKanban,
+  ListFilter,
   ListTodo,
   Loader2,
   Network,
@@ -21,32 +23,33 @@ import {
   Search,
   StickyNote,
   Upload,
+  X,
 } from 'lucide-react';
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 const TYPE_META: Record<string, { label: string; color: string; icon: typeof File }> = {
-  project: { label: 'Projects', color: '#f3f3f5', icon: FolderKanban },
-  collection: { label: 'Collections', color: '#d7d7de', icon: Network },
-  note: { label: 'Notes', color: '#9f8cff', icon: StickyNote },
-  file: { label: 'Files', color: '#70b7ff', icon: File },
-  todo: { label: 'Todos', color: '#ffb86b', icon: ListTodo },
-  calendar_event: { label: 'Calendar', color: '#70e1b5', icon: CalendarDays },
-  ravin_conversation: { label: 'RAVIN', color: '#d08cff', icon: Brain },
-  memory: { label: 'Memory', color: '#f28fb5', icon: Brain },
-  chat: { label: 'Chats', color: '#8f98a8', icon: Network },
-  other: { label: 'Other', color: '#92929c', icon: File },
+  collection: { label: 'Collections', color: '#f1f1f3', icon: Network },
+  project: { label: 'Projects', color: '#d8d8dc', icon: FolderKanban },
+  note: { label: 'Notes', color: '#bdbdc4', icon: StickyNote },
+  file: { label: 'Files', color: '#aeb2bb', icon: File },
+  todo: { label: 'To Do', color: '#c8c4bb', icon: ListTodo },
+  calendar_event: { label: 'Calendar', color: '#b7c1bc', icon: CalendarDays },
+  ravin_conversation: { label: 'RAVIN', color: '#c7becd', icon: Brain },
+  memory: { label: 'Memory', color: '#bfb8c0', icon: Brain },
+  chat: { label: 'Chats', color: '#aeb1b7', icon: Network },
+  other: { label: 'Other', color: '#9a9aa1', icon: File },
 };
 
 const GROUP_CENTERS: Record<string, { x: number; y: number }> = {
   collection: { x: 500, y: 350 },
-  project: { x: 500, y: 430 },
-  note: { x: 245, y: 205 },
-  file: { x: 230, y: 505 },
-  todo: { x: 780, y: 200 },
-  calendar_event: { x: 805, y: 500 },
-  ravin_conversation: { x: 500, y: 125 },
-  memory: { x: 520, y: 575 },
-  chat: { x: 650, y: 340 },
+  project: { x: 500, y: 440 },
+  note: { x: 255, y: 205 },
+  file: { x: 245, y: 520 },
+  todo: { x: 770, y: 205 },
+  calendar_event: { x: 790, y: 510 },
+  ravin_conversation: { x: 515, y: 130 },
+  memory: { x: 520, y: 585 },
+  chat: { x: 655, y: 350 },
   other: { x: 500, y: 350 },
 };
 
@@ -63,6 +66,7 @@ export function FieldWorkspace() {
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const selectedIdRef = useRef<string | null>(null);
 
   async function refresh(preferredId?: string | null) {
@@ -87,10 +91,24 @@ export function FieldWorkspace() {
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => { void refresh(); });
     const onSemanticUpdate = () => { void refresh(selectedIdRef.current); };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+      if (event.key === 'Escape' && selectedIdRef.current) {
+        selectedIdRef.current = null;
+        setSelected(null);
+        setBundle(null);
+      }
+    };
+
     window.addEventListener('relay-field-semantic-updated', onSemanticUpdate);
+    window.addEventListener('keydown', onKeyDown);
     return () => {
       window.cancelAnimationFrame(frame);
       window.removeEventListener('relay-field-semantic-updated', onSemanticUpdate);
+      window.removeEventListener('keydown', onKeyDown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -108,6 +126,12 @@ export function FieldWorkspace() {
     } finally {
       setBundleLoading(false);
     }
+  }
+
+  function closeInspector() {
+    selectedIdRef.current = null;
+    setSelected(null);
+    setBundle(null);
   }
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
@@ -155,55 +179,82 @@ export function FieldWorkspace() {
   );
 
   return (
-    <section className="mx-auto max-w-[1500px] px-4 py-6 md:px-6">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <Network size={20} className="text-ink-muted" />
-            <h1 className="font-display text-2xl font-medium tracking-tight text-ink">Field</h1>
+    <section className="relative flex h-[calc(100vh-65px)] min-h-[640px] w-full flex-col overflow-hidden bg-canvas">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-5 md:px-7">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-ink">
+            <Network size={15} strokeWidth={1.7} />
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-[15px] font-medium tracking-[-0.02em] text-ink">Field</h1>
+              <span className="hidden text-[9px] font-semibold uppercase tracking-[0.16em] text-ink-faint sm:inline">Knowledge</span>
+            </div>
+            <p className="mt-0.5 truncate text-[11px] text-ink-faint">
+              {loading ? 'Syncing knowledge…' : `${visibleNodes.length} nodes · ${visibleEdges.length} links`}
+            </p>
           </div>
-          <p className="mt-1 text-sm text-ink-faint">Your Relay notes, tasks, events, files, and future RAVIN context in one connected knowledge layer.</p>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-1.5">
+          <span className="mr-2 hidden items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-ink-faint md:flex">
+            <i className="h-1.5 w-1.5 rounded-full bg-ink-muted" />
+            Live
+          </span>
           <input ref={fileInputRef} type="file" className="hidden" onChange={upload} />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="inline-flex min-h-10 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm font-medium text-ink hover:bg-surface-raised disabled:opacity-50"
+            className="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-[11px] font-medium text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-50"
           >
-            {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
-            {uploading ? 'Adding…' : 'Add file'}
+            {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            <span className="hidden sm:inline">{uploading ? 'Adding…' : 'Add file'}</span>
           </button>
           <button
             type="button"
             onClick={() => void refresh(selected?.id)}
             disabled={loading}
             aria-label="Refresh Field"
-            className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-surface text-ink-muted hover:bg-surface-raised hover:text-ink disabled:opacity-50"
+            title="Refresh Field"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-ink-faint transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-50"
           >
-            <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
-      </div>
+      </header>
 
-      {error && <p className="mb-3 rounded-lg border border-red-500/15 bg-red-500/10 px-3 py-2 text-sm text-red-600">{error}</p>}
+      {error && (
+        <div className="absolute left-1/2 top-[76px] z-40 -translate-x-1/2 rounded-lg border border-red-500/15 bg-canvas/95 px-3 py-2 text-xs text-red-500 shadow-lg backdrop-blur">
+          {error}
+        </div>
+      )}
 
-      <div className="grid min-h-[680px] overflow-hidden rounded-2xl border border-border bg-surface xl:grid-cols-[220px_minmax(0,1fr)_340px]">
-        <aside className="border-b border-border bg-surface-raised p-3 xl:border-b-0 xl:border-r">
-          <label className="relative block">
-            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search Field"
-              className="w-full rounded-lg border border-border bg-canvas py-2.5 pl-8 pr-3 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-ink-muted"
+      <div className="grid min-h-0 flex-1 grid-cols-[196px_minmax(0,1fr)]">
+        <aside className="hidden min-h-0 border-r border-border bg-surface/35 md:flex md:flex-col">
+          <div className="p-3">
+            <label className="relative block">
+              <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+              <input
+                ref={searchRef}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search Field"
+                className="w-full rounded-lg border border-border bg-canvas/70 py-2.5 pl-8 pr-10 text-xs text-ink outline-none placeholder:text-ink-faint focus:border-ink-faint"
+              />
+              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 py-0.5 text-[8px] text-ink-faint">⌘K</span>
+            </label>
+          </div>
+
+          <div className="px-2 pb-3">
+            <div className="px-2 pb-2 pt-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-ink-faint">View</div>
+            <FilterButton
+              active={typeFilter === 'all'}
+              label="Everything"
+              count={nodes.length}
+              icon={ListFilter}
+              onClick={() => setTypeFilter('all')}
             />
-          </label>
-
-          <div className="mt-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Show</div>
-          <div className="mt-2 grid gap-1">
-            <FilterButton active={typeFilter === 'all'} label="Everything" count={nodes.length} onClick={() => setTypeFilter('all')} />
             {Object.entries(TYPE_META).map(([type, meta]) => {
               const count = typeCounts.get(type) ?? 0;
               if (!count) return null;
@@ -213,65 +264,99 @@ export function FieldWorkspace() {
                   active={typeFilter === type}
                   label={meta.label}
                   count={count}
-                  color={meta.color}
+                  icon={meta.icon}
                   onClick={() => setTypeFilter(type)}
                 />
               );
             })}
           </div>
 
-          <div className="mt-6 grid grid-cols-3 gap-2 border-t border-border pt-4 text-center">
-            <Stat value={visibleNodes.length} label="Nodes" />
-            <Stat value={visibleEdges.length} label="Links" />
-            <Stat value={typeCounts.size} label="Types" />
-          </div>
-
-          <div className="mt-5 rounded-xl border border-border bg-canvas p-3 text-xs leading-5 text-ink-faint">
-            <strong className="block text-ink">Live Field data</strong>
-            Notes and todos sync automatically through Supabase triggers. Uploaded images/files become private Field nodes.
-            <span className="mt-2 block text-[10px] text-ink-faint">{semanticEdgeCount} semantic relationship{semanticEdgeCount === 1 ? '' : 's'} currently visible.</span>
+          <div className="mt-auto border-t border-border px-4 py-4">
+            <div className="flex items-center justify-between text-[10px] text-ink-faint">
+              <span>Semantic links</span>
+              <span className="font-medium text-ink-muted">{semanticEdgeCount}</span>
+            </div>
+            <div className="mt-3 flex items-center gap-2 text-[9px] text-ink-faint">
+              <span className="block h-px w-6 bg-ink-faint/50" />
+              Structure
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-[9px] text-ink-faint">
+              <svg width="24" height="4" aria-hidden="true"><line x1="0" y1="2" x2="24" y2="2" stroke="currentColor" strokeDasharray="3 4" opacity=".65" /></svg>
+              Meaning
+            </div>
           </div>
         </aside>
 
-        <div className="relative min-h-[520px] overflow-hidden bg-canvas">
-          <div className="absolute left-4 top-4 z-10 flex items-center gap-1 rounded-lg border border-border bg-surface/90 p-1 backdrop-blur">
-            <button type="button" onClick={() => setZoom((value) => Math.max(.65, value - .12))} className="h-8 w-8 rounded-md text-sm text-ink-muted hover:bg-surface-raised">−</button>
-            <span className="min-w-12 text-center text-[10px] text-ink-faint">{Math.round(zoom * 100)}%</span>
-            <button type="button" onClick={() => setZoom((value) => Math.min(1.8, value + .12))} className="h-8 w-8 rounded-md text-sm text-ink-muted hover:bg-surface-raised">+</button>
+        <main className="relative min-h-0 overflow-hidden bg-canvas">
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3 md:px-5">
+            <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-canvas/80 p-1 backdrop-blur-xl">
+              <button
+                type="button"
+                onClick={() => setZoom((value) => Math.max(.62, value - .12))}
+                className="h-7 w-7 rounded-md text-[13px] text-ink-faint hover:bg-surface hover:text-ink"
+                aria-label="Zoom out"
+              >
+                −
+              </button>
+              <span className="min-w-10 text-center text-[9px] tabular-nums text-ink-faint">{Math.round(zoom * 100)}%</span>
+              <button
+                type="button"
+                onClick={() => setZoom((value) => Math.min(1.8, value + .12))}
+                className="h-7 w-7 rounded-md text-[13px] text-ink-faint hover:bg-surface hover:text-ink"
+                aria-label="Zoom in"
+              >
+                +
+              </button>
+            </div>
+
+            <div className="pointer-events-auto md:hidden">
+              <button
+                type="button"
+                onClick={() => searchRef.current?.focus()}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-canvas/80 text-ink-faint backdrop-blur-xl"
+                aria-label="Search Field"
+              >
+                <Search size={14} />
+              </button>
+            </div>
           </div>
 
           {loading ? (
-            <div className="flex min-h-[520px] items-center justify-center gap-2 text-sm text-ink-faint"><Loader2 size={16} className="animate-spin" />Loading your Field…</div>
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center">
+                <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-border text-ink-muted">
+                  <Loader2 size={17} className="animate-spin" />
+                </span>
+                <p className="mt-3 text-[11px] text-ink-faint">Building your Field</p>
+              </div>
+            </div>
           ) : visibleNodes.length === 0 ? (
-            <div className="flex min-h-[520px] items-center justify-center px-6 text-center">
-              <div>
-                <Network size={26} className="mx-auto text-ink-faint" />
-                <p className="mt-3 text-sm font-medium text-ink">No matching nodes</p>
-                <p className="mt-1 text-xs text-ink-faint">Try another search/filter or add a file.</p>
+            <div className="flex h-full items-center justify-center px-6 text-center">
+              <div className="max-w-64">
+                <Network size={24} className="mx-auto text-ink-faint" strokeWidth={1.4} />
+                <p className="mt-3 text-sm font-medium text-ink">Nothing here yet</p>
+                <p className="mt-1 text-xs leading-5 text-ink-faint">Try another filter or add a file to your Field.</p>
               </div>
             </div>
           ) : (
-            <svg viewBox="0 0 1000 700" className="h-full min-h-[680px] w-full select-none" role="img" aria-label="Field knowledge graph">
+            <svg viewBox="0 0 1000 700" className="h-full w-full select-none" role="img" aria-label="Field knowledge graph">
               <defs>
-                <radialGradient id="field-glow">
-                  <stop offset="0%" stopColor="currentColor" stopOpacity=".28" />
+                <radialGradient id="field-node-halo">
+                  <stop offset="0%" stopColor="currentColor" stopOpacity=".18" />
                   <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
                 </radialGradient>
+                <pattern id="field-dot-grid" width="34" height="34" patternUnits="userSpaceOnUse">
+                  <circle cx="1" cy="1" r=".65" fill="currentColor" opacity=".055" />
+                </pattern>
               </defs>
-              <g transform={`translate(${500 - 500 * zoom} ${350 - 350 * zoom}) scale(${zoom})`}>
-                {Object.entries(GROUP_CENTERS).map(([type, center]) => {
-                  if (!(typeCounts.get(type) ?? 0) || (typeFilter !== 'all' && typeFilter !== type)) return null;
-                  return (
-                    <text key={type} x={center.x} y={center.y - 82} textAnchor="middle" fontSize="10" fill="currentColor" opacity=".28">
-                      {TYPE_META[type]?.label.toUpperCase() ?? type.toUpperCase()}
-                    </text>
-                  );
-                })}
+              <rect width="1000" height="700" fill="url(#field-dot-grid)" />
 
+              <g transform={`translate(${500 - 500 * zoom} ${350 - 350 * zoom}) scale(${zoom})`}>
                 {visibleEdges.map((edge) => {
                   const a = positions.get(edge.source_node_id);
                   const b = positions.get(edge.target_node_id);
                   if (!a || !b) return null;
+                  const semantic = edge.relation_type === 'semantic_related';
                   const highlighted = selected && (edge.source_node_id === selected.id || edge.target_node_id === selected.id);
                   return (
                     <line
@@ -281,9 +366,9 @@ export function FieldWorkspace() {
                       x2={b.x}
                       y2={b.y}
                       stroke="currentColor"
-                      strokeOpacity={highlighted ? .4 : edge.relation_type === 'semantic_related' ? Math.max(.08, edge.strength * .18) : Math.max(.06, edge.strength * .14)}
-                      strokeWidth={highlighted ? 1.5 : edge.relation_type === 'semantic_related' ? .9 : .75}
-                      strokeDasharray={edge.relation_type === 'semantic_related' ? '4 5' : undefined}
+                      strokeOpacity={highlighted ? .42 : semantic ? Math.max(.07, edge.strength * .15) : Math.max(.055, edge.strength * .12)}
+                      strokeWidth={highlighted ? 1.4 : semantic ? .82 : .7}
+                      strokeDasharray={semantic ? '3.5 5' : undefined}
                     />
                   );
                 })}
@@ -292,6 +377,9 @@ export function FieldWorkspace() {
                   const position = positions.get(node.id)!;
                   const meta = TYPE_META[node.type] ?? TYPE_META.other!;
                   const isSelected = selected?.id === node.id;
+                  const isHub = node.type === 'collection' || node.type === 'project';
+                  const radius = isSelected ? 8 : node.type === 'collection' ? 7.2 : node.type === 'project' ? 6.2 : 4.6;
+
                   return (
                     <g
                       key={node.id}
@@ -308,11 +396,23 @@ export function FieldWorkspace() {
                         }
                       }}
                     >
-                      {(isSelected || node.type === 'project' || node.type === 'collection') && <circle r={isSelected ? 30 : node.type === 'collection' ? 26 : 23} fill={meta.color} opacity={isSelected ? .11 : .055} />}
-                      <circle r={isSelected ? 8 : node.type === 'collection' ? 8 : node.type === 'project' ? 7 : 5.25} fill={isSelected ? '#ffffff' : meta.color} />
-                      <circle r={isSelected ? 12 : node.type === 'collection' ? 12 : node.type === 'project' ? 10 : 8} fill="none" stroke={meta.color} strokeOpacity={isSelected ? .5 : .16} />
-                      {(isSelected || node.type === 'project' || node.type === 'collection') && (
-                        <text y={node.type === 'collection' ? 21 : 18} textAnchor="middle" fontSize={isSelected ? 10 : node.type === 'collection' ? 9.5 : 8.5} fill="currentColor" opacity={isSelected ? .9 : .62}>
+                      {(isSelected || isHub) && (
+                        <circle
+                          r={isSelected ? 31 : node.type === 'collection' ? 25 : 20}
+                          fill={meta.color}
+                          opacity={isSelected ? .09 : .035}
+                        />
+                      )}
+                      <circle r={radius + 4} fill="none" stroke={meta.color} strokeOpacity={isSelected ? .42 : isHub ? .16 : .08} />
+                      <circle r={radius} fill={isSelected ? '#f6f6f7' : meta.color} opacity={isSelected ? 1 : isHub ? .9 : .72} />
+                      {(isSelected || isHub) && (
+                        <text
+                          y={node.type === 'collection' ? 20 : 18}
+                          textAnchor="middle"
+                          fontSize={isSelected ? 10 : node.type === 'collection' ? 9.2 : 8.5}
+                          fill="currentColor"
+                          opacity={isSelected ? .95 : .56}
+                        >
                           {truncate(node.title, 28)}
                         </text>
                       )}
@@ -322,89 +422,117 @@ export function FieldWorkspace() {
               </g>
             </svg>
           )}
-        </div>
 
-        <aside className="border-t border-border bg-surface-raised p-4 xl:border-l xl:border-t-0">
-          {!selected ? (
-            <div className="flex min-h-72 h-full items-center justify-center text-center">
-              <div className="max-w-56">
-                <Network size={25} className="mx-auto text-ink-faint" />
-                <p className="mt-3 text-sm font-medium text-ink">Pick a node</p>
-                <p className="mt-1 text-xs leading-5 text-ink-faint">Open a node to see the actual note, task details, or private image/file preview.</p>
-              </div>
-            </div>
-          ) : (
-            <NodeInspector node={selected} bundle={bundle} loading={bundleLoading} />
+          <div className="pointer-events-none absolute bottom-3 left-4 right-4 flex items-end justify-between text-[9px] text-ink-faint md:left-5">
+            <span>Click a node to inspect · Esc to close</span>
+            <span className="hidden sm:inline">Field · Resonant Assist</span>
+          </div>
+
+          {selected && (
+            <aside className="absolute inset-y-0 right-0 z-30 w-[360px] max-w-[88vw] border-l border-border bg-canvas/95 shadow-[-24px_0_60px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+              <NodeInspector node={selected} bundle={bundle} loading={bundleLoading} onClose={closeInspector} />
+            </aside>
           )}
-        </aside>
+        </main>
       </div>
     </section>
   );
 }
 
-function NodeInspector({ node, bundle, loading }: { node: RelayFieldNode; bundle: RelayFieldBundle | null; loading: boolean }) {
+function NodeInspector({
+  node,
+  bundle,
+  loading,
+  onClose,
+}: {
+  node: RelayFieldNode;
+  bundle: RelayFieldBundle | null;
+  loading: boolean;
+  onClose: () => void;
+}) {
   const meta = TYPE_META[node.type] ?? TYPE_META.other!;
-  const Icon = meta.icon;
   const sourceHref = sourcePage(node.source_type);
 
   return (
-    <div>
-      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
-        <span className="h-2 w-2 rounded-full" style={{ background: meta.color }} />
-        {meta.label}
+    <div className="flex h-full flex-col">
+      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: meta.color }} />
+          <span className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">{meta.label}</span>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-faint hover:bg-surface hover:text-ink"
+          aria-label="Close inspector"
+        >
+          <X size={15} />
+        </button>
       </div>
-      <h2 className="mt-3 font-display text-2xl font-medium tracking-tight text-ink">{node.title}</h2>
-      <p className="mt-2 text-xs leading-5 text-ink-faint">{node.source_product} · {node.source_type}</p>
 
-      <div className="mt-5 border-t border-border pt-4">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">Content preview</div>
-        {loading ? (
-          <div className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-canvas p-4 text-xs text-ink-faint"><Loader2 size={14} className="animate-spin" />Loading node content…</div>
-        ) : (
-          <ContentPreview node={node} bundle={bundle} Icon={Icon} />
-        )}
-      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+        <h2 className="font-display text-[24px] font-medium leading-[1.08] tracking-[-0.035em] text-ink">{node.title}</h2>
+        <p className="mt-2 text-[11px] text-ink-faint">{node.source_product} · {node.source_type}</p>
 
-      <div className="mt-5 border-t border-border pt-4">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">Metadata</div>
-        <dl className="mt-3 grid grid-cols-2 gap-2">
-          <Meta label="Source" value={node.source_product} />
-          <Meta label="Type" value={node.source_type} />
-          <Meta label="Updated" value={formatDate(node.updated_at)} />
-          <Meta label="Node" value={node.id.slice(0, 8)} />
-        </dl>
+        <div className="mt-6">
+          <InspectorLabel>Preview</InspectorLabel>
+          {loading ? (
+            <div className="mt-3 flex items-center gap-2 py-5 text-xs text-ink-faint">
+              <Loader2 size={14} className="animate-spin" />
+              Loading content…
+            </div>
+          ) : (
+            <ContentPreview node={node} bundle={bundle} />
+          )}
+        </div>
+
+        <div className="mt-7 border-t border-border pt-5">
+          <InspectorLabel>Details</InspectorLabel>
+          <dl className="mt-3 divide-y divide-border">
+            <Meta label="Source" value={node.source_product} />
+            <Meta label="Type" value={node.source_type} />
+            <Meta label="Updated" value={formatDate(node.updated_at)} />
+            <Meta label="Node" value={node.id.slice(0, 8)} />
+          </dl>
+        </div>
       </div>
 
       {sourceHref && (
-        <a href={appPageUrl(sourceHref)} className="mt-5 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-border text-xs font-medium text-ink hover:bg-surface">
-          Open source in Relay
-        </a>
+        <div className="shrink-0 border-t border-border p-3">
+          <a
+            href={appPageUrl(sourceHref)}
+            className="flex min-h-10 w-full items-center justify-between rounded-lg px-3 text-xs font-medium text-ink-muted hover:bg-surface hover:text-ink"
+          >
+            <span>Open in Relay</span>
+            <ChevronRight size={14} />
+          </a>
+        </div>
       )}
     </div>
   );
 }
 
-function ContentPreview({ node, bundle, Icon }: { node: RelayFieldNode; bundle: RelayFieldBundle | null; Icon: typeof File }) {
+function ContentPreview({ node, bundle }: { node: RelayFieldNode; bundle: RelayFieldBundle | null }) {
   const content = bundle?.content ?? null;
   const file = bundle?.file ?? null;
 
   if (bundle?.previewUrl && String(content?.content_kind ?? '').toLowerCase() === 'image') {
     return (
-      <figure className="mt-3 overflow-hidden rounded-xl border border-border bg-canvas">
+      <figure className="mt-3 overflow-hidden rounded-lg border border-border bg-surface/40">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={bundle.previewUrl} alt={content?.preview_alt ?? node.title} className="max-h-80 w-full object-contain" />
-        <figcaption className="border-t border-border px-3 py-2 text-[10px] text-ink-faint">{file?.file_name ?? node.title}</figcaption>
+        <figcaption className="border-t border-border px-3 py-2 text-[9px] text-ink-faint">{file?.file_name ?? node.title}</figcaption>
       </figure>
     );
   }
 
   if (bundle?.previewUrl && String(file?.mime_type ?? '').toLowerCase() === 'application/pdf') {
     return (
-      <div className="mt-3 overflow-hidden rounded-xl border border-border bg-canvas">
+      <div className="mt-3 overflow-hidden rounded-lg border border-border bg-surface/40">
         <iframe src={bundle.previewUrl} title={file?.file_name ?? node.title} className="h-80 w-full border-0 bg-white" />
-        <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2 text-[10px] text-ink-faint">
+        <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2 text-[9px] text-ink-faint">
           <span className="truncate">{file?.file_name ?? node.title}</span>
-          <a href={bundle.previewUrl} target="_blank" rel="noreferrer" className="shrink-0 font-medium text-ink hover:underline">Open PDF</a>
+          <a href={bundle.previewUrl} target="_blank" rel="noreferrer" className="shrink-0 font-medium text-ink-muted hover:text-ink">Open PDF</a>
         </div>
       </div>
     );
@@ -412,15 +540,15 @@ function ContentPreview({ node, bundle, Icon }: { node: RelayFieldNode; bundle: 
 
   if (content?.content_kind === 'note_blocks' && Array.isArray(content.structured_content)) {
     return (
-      <div className="mt-3 max-h-[420px] overflow-y-auto rounded-xl border border-border bg-canvas p-4">
-        <div className="space-y-2">
+      <div className="mt-3 max-h-[440px] overflow-y-auto border-l border-border pl-4 pr-1">
+        <div className="space-y-2.5">
           {content.structured_content.map((block: any, index: number) => {
             const text = String(block?.text ?? '');
-            if (block?.type === 'heading') return <h3 key={block.id ?? index} className="font-display text-lg font-semibold text-ink">{text}</h3>;
-            if (block?.type === 'bullet') return <p key={block.id ?? index} className="flex gap-2 text-sm leading-6 text-ink-muted"><span>•</span><span>{text}</span></p>;
-            if (block?.type === 'quote') return <blockquote key={block.id ?? index} className="border-l-2 border-ink-faint pl-3 text-sm italic leading-6 text-ink-muted">{text}</blockquote>;
-            if (block?.type === 'todo') return <p key={block.id ?? index} className={`flex gap-2 text-sm leading-6 ${block?.checked ? 'text-ink-faint line-through' : 'text-ink'}`}><span>{block?.checked ? '☑' : '☐'}</span><span>{text}</span></p>;
-            return <p key={block.id ?? index} className="whitespace-pre-wrap text-sm leading-6 text-ink">{text}</p>;
+            if (block?.type === 'heading') return <h3 key={block.id ?? index} className="font-display text-[17px] font-medium tracking-[-0.02em] text-ink">{text}</h3>;
+            if (block?.type === 'bullet') return <p key={block.id ?? index} className="flex gap-2 text-[12px] leading-6 text-ink-muted"><span className="text-ink-faint">•</span><span>{text}</span></p>;
+            if (block?.type === 'quote') return <blockquote key={block.id ?? index} className="border-l border-ink-faint/50 pl-3 text-[12px] italic leading-6 text-ink-muted">{text}</blockquote>;
+            if (block?.type === 'todo') return <p key={block.id ?? index} className={`flex gap-2 text-[12px] leading-6 ${block?.checked ? 'text-ink-faint line-through' : 'text-ink-muted'}`}><span>{block?.checked ? '✓' : '○'}</span><span>{text}</span></p>;
+            return <p key={block.id ?? index} className="whitespace-pre-wrap text-[12px] leading-6 text-ink-muted">{text}</p>;
           })}
         </div>
       </div>
@@ -430,11 +558,11 @@ function ContentPreview({ node, bundle, Icon }: { node: RelayFieldNode; bundle: 
   if (content?.content_kind === 'todo') {
     const value = content.structured_content ?? {};
     return (
-      <div className="mt-3 flex gap-3 rounded-xl border border-border bg-canvas p-4">
-        <span className="text-lg">{value.completed ? '☑' : '☐'}</span>
+      <div className="mt-3 flex gap-3 border-l border-border py-1 pl-4">
+        <span className="pt-0.5 text-sm text-ink-faint">{value.completed ? '✓' : '○'}</span>
         <div>
-          <div className={`text-sm font-medium ${value.completed ? 'text-ink-faint line-through' : 'text-ink'}`}>{value.title ?? node.title}</div>
-          <div className="mt-1 text-xs text-ink-faint">Due {value.due_on ?? 'unscheduled'}</div>
+          <div className={`text-[13px] font-medium ${value.completed ? 'text-ink-faint line-through' : 'text-ink'}`}>{value.title ?? node.title}</div>
+          <div className="mt-1 text-[10px] text-ink-faint">Due {value.due_on ?? 'unscheduled'}</div>
         </div>
       </div>
     );
@@ -443,53 +571,79 @@ function ContentPreview({ node, bundle, Icon }: { node: RelayFieldNode; bundle: 
   if (content?.content_kind === 'calendar_event') {
     const value = content.structured_content ?? {};
     return (
-      <div className="mt-3 rounded-xl border border-border bg-canvas p-4">
-        <div className="text-sm font-medium text-ink">{value.event_date ?? 'Calendar event'}</div>
-        {!value.is_all_day && <div className="mt-1 text-xs text-ink-faint">{String(value.start_time ?? '').slice(0, 5)}{value.end_time ? `–${String(value.end_time).slice(0, 5)}` : ''}</div>}
-        {value.details && <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-ink-muted">{value.details}</p>}
+      <div className="mt-3 border-l border-border pl-4">
+        <div className="text-[12px] font-medium text-ink">{value.event_date ?? 'Calendar event'}</div>
+        {!value.is_all_day && <div className="mt-1 text-[10px] text-ink-faint">{String(value.start_time ?? '').slice(0, 5)}{value.end_time ? `–${String(value.end_time).slice(0, 5)}` : ''}</div>}
+        {value.details && <p className="mt-3 whitespace-pre-wrap text-[12px] leading-6 text-ink-muted">{value.details}</p>}
       </div>
     );
   }
 
   if (content?.text_content) {
-    return <div className="mt-3 max-h-[420px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-border bg-canvas p-4 text-sm leading-6 text-ink-muted">{content.text_content}</div>;
+    return <div className="mt-3 max-h-[440px] overflow-y-auto whitespace-pre-wrap border-l border-border pl-4 pr-1 text-[12px] leading-6 text-ink-muted">{content.text_content}</div>;
   }
 
   if (file) {
     return (
-      <div className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-canvas p-4">
-        <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-surface"><Icon size={18} className="text-ink-muted" /></span>
+      <div className="mt-3 flex items-center gap-3 border-l border-border py-1 pl-4">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-ink-faint">
+          <File size={15} />
+        </span>
         <div className="min-w-0">
-          <div className="truncate text-sm font-medium text-ink">{file.file_name}</div>
-          <div className="mt-1 text-xs text-ink-faint">{file.mime_type || 'File'} · {formatBytes(file.size_bytes)}</div>
-          {file.extraction_status === 'pending' && <div className="mt-1 text-[10px] text-ink-faint">Text preview extraction is pending.</div>}
+          <div className="truncate text-[12px] font-medium text-ink">{file.file_name}</div>
+          <div className="mt-1 text-[9px] text-ink-faint">{file.mime_type || 'File'} · {formatBytes(file.size_bytes)}</div>
+          {file.extraction_status === 'pending' && <div className="mt-1 text-[9px] text-ink-faint">Preview extraction pending</div>}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mt-3 rounded-xl border border-border bg-canvas p-4 text-sm leading-6 text-ink-muted">
+    <div className="mt-3 border-l border-border pl-4 text-[12px] leading-6 text-ink-muted">
       {node.searchable_text || 'This node does not have a richer preview yet.'}
     </div>
   );
 }
 
-function FilterButton({ active, label, count, color, onClick }: { active: boolean; label: string; count: number; color?: string; onClick: () => void }) {
+function InspectorLabel({ children }: { children: React.ReactNode }) {
+  return <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-ink-faint">{children}</div>;
+}
+
+function FilterButton({
+  active,
+  label,
+  count,
+  icon: Icon,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  count: number;
+  icon: typeof File;
+  onClick: () => void;
+}) {
   return (
-    <button type="button" onClick={onClick} className={`flex items-center justify-between rounded-lg px-2.5 py-2 text-left text-xs transition-colors ${active ? 'bg-canvas text-ink' : 'text-ink-muted hover:bg-surface'}`}>
-      <span className="flex items-center gap-2">{color && <i className="h-2 w-2 rounded-full" style={{ background: color }} />}{label}</span>
-      <span className="text-[10px] text-ink-faint">{count}</span>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-[11px] transition-colors ${active ? 'bg-surface text-ink' : 'text-ink-faint hover:bg-surface/70 hover:text-ink-muted'}`}
+    >
+      <span className="flex min-w-0 items-center gap-2.5">
+        <Icon size={13} strokeWidth={1.7} className={active ? 'text-ink-muted' : 'text-ink-faint'} />
+        <span className="truncate">{label}</span>
+      </span>
+      <span className="ml-2 text-[9px] tabular-nums text-ink-faint">{count}</span>
     </button>
   );
 }
 
-function Stat({ value, label }: { value: number; label: string }) {
-  return <div><div className="text-lg font-medium text-ink">{value}</div><div className="text-[9px] uppercase tracking-[0.12em] text-ink-faint">{label}</div></div>;
-}
-
 function Meta({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-lg border border-border bg-canvas p-2.5"><dt className="text-[9px] uppercase tracking-[0.1em] text-ink-faint">{label}</dt><dd className="mt-1 truncate text-xs font-medium text-ink-muted">{value}</dd></div>;
+  return (
+    <div className="flex items-center justify-between gap-4 py-2.5">
+      <dt className="text-[10px] text-ink-faint">{label}</dt>
+      <dd className="min-w-0 truncate text-right text-[10px] font-medium text-ink-muted">{value}</dd>
+    </div>
+  );
 }
 
 function layoutNodes(nodes: RelayFieldNode[]) {
