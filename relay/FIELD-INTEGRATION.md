@@ -36,3 +36,15 @@ Content changes mark the node embedding as pending. Active Relay sessions proces
 Nearest neighbors are stored directionally in `field_semantic_neighbors`, then materialized into one `semantic_related` Field edge per pair. Semantic edges use `origin = 'ravin'` and `metadata.layer = 'semantic'`, so they can be regenerated without touching system or user-created relationships.
 
 Relay renders semantic relationships as dashed links and refreshes the graph automatically when new semantic edges are created.
+
+
+## UI language
+
+The Field workspace intentionally follows Relay and RAVIN rather than using a separate dashboard visual system.
+
+- Relay provides the outer application shell.
+- Field uses a flat full-height workspace with thin separators instead of nested cards.
+- The graph is the primary surface; filters are a narrow rail and the inspector only appears when a node is selected.
+- The palette is mostly monochrome, with node-type differences kept subtle.
+- Semantic relationships render as light dashed links while structural relationships remain solid.
+- Node previews are content-first and avoid stacked metadata cards.
