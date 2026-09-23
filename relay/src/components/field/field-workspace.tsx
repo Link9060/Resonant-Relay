@@ -63,6 +63,7 @@ export function FieldWorkspace() {
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectedIdRef = useRef<string | null>(null);
 
   async function refresh(preferredId?: string | null) {
     setLoading(true);
@@ -85,11 +86,17 @@ export function FieldWorkspace() {
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => { void refresh(); });
-    return () => window.cancelAnimationFrame(frame);
+    const onSemanticUpdate = () => { void refresh(selectedIdRef.current); };
+    window.addEventListener('relay-field-semantic-updated', onSemanticUpdate);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('relay-field-semantic-updated', onSemanticUpdate);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function chooseNode(node: RelayFieldNode) {
+    selectedIdRef.current = node.id;
     setSelected(node);
     setBundle(null);
     setBundleLoading(true);
