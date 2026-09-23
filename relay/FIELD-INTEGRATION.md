@@ -60,3 +60,17 @@ Field follows Relay's existing visual/interaction system rather than introducing
 - Field keeps one primary work surface (the graph), a narrow navigator, and contextual node detail—matching Relay's shell/list/detail interaction rhythm.
 - Buttons and actions inherit Relay's interaction timing and shell transitions through the normal app layout.
 - The standalone Field Explorer mirrors the same token hierarchy and persists its own Resonant light/dark choice.
+
+
+## Theme and viewport behavior
+
+Field follows Relay's existing theme state rather than maintaining a separate app theme.
+
+- Relay's existing `relay-theme` choice controls the embedded Field workspace.
+- Dark mode uses a true-black Field canvas while preserving Relay's neutral surface hierarchy around it.
+- Light mode uses Relay's canvas/surface/ink/border tokens, and graph node contrast is theme-aware rather than hard-coded for dark mode.
+- The standalone Field Explorer uses the same dark/light persistence key and falls back to the operating-system preference when no choice has been made.
+- The graph automatically fits visible nodes to the available viewport.
+- Opening the inspector reserves graph space so selected content does not cover the knowledge map.
+- Search/filter changes refit the standalone Explorer; Relay recalculates its fit from the current visible node set and actual workspace size.
+- The Fit control restores the computed viewport while zoom remains a user-controlled multiplier.
