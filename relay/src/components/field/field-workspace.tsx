@@ -385,6 +385,18 @@ function ContentPreview({ node, bundle, Icon }: { node: RelayFieldNode; bundle: 
     );
   }
 
+  if (bundle?.previewUrl && String(file?.mime_type ?? '').toLowerCase() === 'application/pdf') {
+    return (
+      <div className="mt-3 overflow-hidden rounded-xl border border-border bg-canvas">
+        <iframe src={bundle.previewUrl} title={file?.file_name ?? node.title} className="h-80 w-full border-0 bg-white" />
+        <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2 text-[10px] text-ink-faint">
+          <span className="truncate">{file?.file_name ?? node.title}</span>
+          <a href={bundle.previewUrl} target="_blank" rel="noreferrer" className="shrink-0 font-medium text-ink hover:underline">Open PDF</a>
+        </div>
+      </div>
+    );
+  }
+
   if (content?.content_kind === 'note_blocks' && Array.isArray(content.structured_content)) {
     return (
       <div className="mt-3 max-h-[420px] overflow-y-auto rounded-xl border border-border bg-canvas p-4">
