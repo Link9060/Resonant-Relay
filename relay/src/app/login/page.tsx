@@ -6,6 +6,18 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import { FormEvent, useEffect, useState } from 'react';
 
 const REQUEST_COOLDOWN_MS = 60 * 1000;
+const POST_AUTH_NEXT_KEY = 'relay-post-auth-next';
+
+function safeInternalNext(value: string | null) {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
+  try {
+    const parsed = new URL(value, window.location.origin);
+    if (parsed.origin !== window.location.origin) return null;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return null;
+  }
+}
 
 function currentAuthCallbackUrl() {
   const origin = window.location.origin.replace(/\/+$/, '');
@@ -35,6 +47,11 @@ export default function LoginPage() {
   const [googleEnabled, setGoogleEnabled] = useState(false);
 
   useEffect(() => {
+    const next = safeInternalNext(new URLSearchParams(window.location.search).get('next'));
+    if (next) {
+      try { window.localStorage.setItem(POST_AUTH_NEXT_KEY, next); } catch {}
+    }
+
     let active = true;
 
     void fetch(`${SUPABASE_URL}/auth/v1/settings`, {
