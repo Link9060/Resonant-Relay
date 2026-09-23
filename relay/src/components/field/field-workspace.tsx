@@ -277,7 +277,7 @@ export function FieldWorkspace() {
 
                 {visibleNodes.map((node) => {
                   const position = positions.get(node.id)!;
-                  const meta = TYPE_META[node.type] ?? TYPE_META.other;
+                  const meta = TYPE_META[node.type] ?? TYPE_META.other!;
                   const isSelected = selected?.id === node.id;
                   return (
                     <g
@@ -330,7 +330,7 @@ export function FieldWorkspace() {
 }
 
 function NodeInspector({ node, bundle, loading }: { node: RelayFieldNode; bundle: RelayFieldBundle | null; loading: boolean }) {
-  const meta = TYPE_META[node.type] ?? TYPE_META.other;
+  const meta = TYPE_META[node.type] ?? TYPE_META.other!;
   const Icon = meta.icon;
   const sourceHref = sourcePage(node.source_type);
 
@@ -488,7 +488,7 @@ function layoutNodes(nodes: RelayFieldNode[]) {
 
   const positions = new Map<string, { x: number; y: number }>();
   for (const [type, group] of groups) {
-    const center = GROUP_CENTERS[type] ?? GROUP_CENTERS.other;
+    const center = GROUP_CENTERS[type] ?? GROUP_CENTERS.other!;
     group.forEach((node, index) => {
       if (group.length === 1) {
         positions.set(node.id, center);
