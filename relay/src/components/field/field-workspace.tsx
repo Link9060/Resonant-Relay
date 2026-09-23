@@ -142,6 +142,10 @@ export function FieldWorkspace() {
     () => edges.filter((edge) => visibleIds.has(edge.source_node_id) && visibleIds.has(edge.target_node_id)),
     [edges, visibleIds],
   );
+  const semanticEdgeCount = useMemo(
+    () => visibleEdges.filter((edge) => edge.relation_type === 'semantic_related').length,
+    [visibleEdges],
+  );
 
   return (
     <section className="mx-auto max-w-[1500px] px-4 py-6 md:px-6">
@@ -218,6 +222,7 @@ export function FieldWorkspace() {
           <div className="mt-5 rounded-xl border border-border bg-canvas p-3 text-xs leading-5 text-ink-faint">
             <strong className="block text-ink">Live Field data</strong>
             Notes and todos sync automatically through Supabase triggers. Uploaded images/files become private Field nodes.
+            <span className="mt-2 block text-[10px] text-ink-faint">{semanticEdgeCount} semantic relationship{semanticEdgeCount === 1 ? '' : 's'} currently visible.</span>
           </div>
         </aside>
 
@@ -269,8 +274,9 @@ export function FieldWorkspace() {
                       x2={b.x}
                       y2={b.y}
                       stroke="currentColor"
-                      strokeOpacity={highlighted ? .35 : Math.max(.06, edge.strength * .14)}
-                      strokeWidth={highlighted ? 1.5 : .75}
+                      strokeOpacity={highlighted ? .4 : edge.relation_type === 'semantic_related' ? Math.max(.08, edge.strength * .18) : Math.max(.06, edge.strength * .14)}
+                      strokeWidth={highlighted ? 1.5 : edge.relation_type === 'semantic_related' ? .9 : .75}
+                      strokeDasharray={edge.relation_type === 'semantic_related' ? '4 5' : undefined}
                     />
                   );
                 })}
