@@ -29,16 +29,16 @@ import {
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 const TYPE_META: Record<string, { label: string; color: string; icon: typeof File }> = {
-  collection: { label: 'Collections', color: '#f1f1f3', icon: Network },
-  project: { label: 'Projects', color: '#d8d8dc', icon: FolderKanban },
-  note: { label: 'Notes', color: '#bdbdc4', icon: StickyNote },
-  file: { label: 'Files', color: '#aeb2bb', icon: File },
-  todo: { label: 'To Do', color: '#c8c4bb', icon: ListTodo },
-  calendar_event: { label: 'Calendar', color: '#b7c1bc', icon: CalendarDays },
-  ravin_conversation: { label: 'RAVIN', color: '#c7becd', icon: Brain },
-  memory: { label: 'Memory', color: '#bfb8c0', icon: Brain },
-  chat: { label: 'Chats', color: '#aeb1b7', icon: Network },
-  other: { label: 'Other', color: '#9a9aa1', icon: File },
+  collection: { label: 'Collections', color: 'rgb(var(--ink))', icon: Network },
+  project: { label: 'Projects', color: 'rgb(var(--ink))', icon: FolderKanban },
+  note: { label: 'Notes', color: 'rgb(var(--ink-muted))', icon: StickyNote },
+  file: { label: 'Files', color: 'rgb(var(--ink-muted))', icon: File },
+  todo: { label: 'To Do', color: 'rgb(var(--ink-faint))', icon: ListTodo },
+  calendar_event: { label: 'Calendar', color: 'rgb(var(--ink-muted))', icon: CalendarDays },
+  ravin_conversation: { label: 'RAVIN', color: 'rgb(var(--accent))', icon: Brain },
+  memory: { label: 'Memory', color: 'rgb(var(--ink-muted))', icon: Brain },
+  chat: { label: 'Chats', color: 'rgb(var(--ink-faint))', icon: Network },
+  other: { label: 'Other', color: 'rgb(var(--ink-muted))', icon: File },
 };
 
 const GROUP_CENTERS: Record<string, { x: number; y: number }> = {
@@ -453,7 +453,7 @@ export function FieldWorkspace() {
                         />
                       )}
                       <circle r={radius + 4} fill="none" stroke={meta.color} strokeOpacity={isSelected ? .42 : isHub ? .16 : .08} />
-                      <circle r={radius} fill={isSelected ? '#f6f6f7' : meta.color} opacity={isSelected ? 1 : isHub ? .9 : .72} />
+                      <circle r={radius} fill={isSelected ? 'rgb(var(--ink))' : meta.color} opacity={isSelected ? 1 : isHub ? .9 : .72} />
                       {(isSelected || isHub) && (
                         <text
                           y={node.type === 'collection' ? 20 : 18}
