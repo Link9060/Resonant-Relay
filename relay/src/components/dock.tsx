@@ -3,7 +3,7 @@
 import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
 import { APP_TITLE, appPageUrl, appPathname, BASE_PATH } from '@/lib/config';
 import { cn } from '@/lib/utils';
-import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, TimerReset, Users, type LucideIcon } from 'lucide-react';
+import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, MessageCircle, Network, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, TimerReset, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 const DESKTOP_DOCK_ITEMS = [
@@ -13,6 +13,7 @@ const DESKTOP_DOCK_ITEMS = [
   { href: '/todo', label: 'To Do', icon: ListTodo },
   { href: '/focus', label: 'Focus', icon: TimerReset },
   { href: '/notes', label: 'Notes', icon: NotebookPen },
+  { href: '/field', label: 'Field', icon: Network },
   { href: '/planner', label: 'Planner', mobileLabel: 'Plans', icon: SquareCheck },
   { href: '/schedule', label: 'Schedule', icon: CalendarClock },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
