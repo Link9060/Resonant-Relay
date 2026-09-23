@@ -1050,7 +1050,6 @@ function buildDisplayGraph(
   };
 
   const rootEdges: FieldDisplayEdge[] = workspaces.map((workspace) => ({
-    ...displayEdges[0]!,
     id: `virtual-edge:field-root:${workspace.id}`,
     user_id: workspace.user_id,
     source_node_id: fieldRoot.id,
@@ -1059,8 +1058,6 @@ function buildDisplayGraph(
     strength: 1,
     origin: 'field-ui',
     metadata: { virtual: true },
-    created_at: workspace.created_at,
-    updated_at: workspace.updated_at,
     virtual: true,
   }));
 
