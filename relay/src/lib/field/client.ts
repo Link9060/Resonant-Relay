@@ -90,6 +90,23 @@ export async function loadFieldNodeBundle(node: RelayFieldNode): Promise<RelayFi
   return { node, content, file, previewUrl };
 }
 
+export async function syncFieldSemanticGraph() {
+  const supabase = createClient() as any;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in.');
+
+  const { data, error } = await supabase.functions.invoke('field-semantic-refresh', {
+    body: {
+      limit: 20,
+      threshold: 0.72,
+      neighbors: 8,
+    },
+  });
+
+  if (error) throw error;
+  return data ?? null;
+}
+
 export async function uploadFieldFile(file: File) {
   if (file.size > 52_428_800) throw new Error('Field files must be 50 MB or smaller.');
 
