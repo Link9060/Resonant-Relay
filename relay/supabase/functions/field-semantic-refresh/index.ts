@@ -1,11 +1,33 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const ALLOWED_ORIGINS = new Set([
+  "https://resonantrelay.org",
+  "https://www.resonantrelay.org",
+  "https://link9060.github.io",
+  "http://localhost:3000",
+]);
+
+function cors(req: Request) {
+  const origin = req.headers.get("Origin");
+  return {
+    ...(origin && ALLOWED_ORIGINS.has(origin) ? { "Access-Control-Allow-Origin": origin } : {}),
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
+
+function namedKey(variable: string, fallback: string) {
+  const encoded = Deno.env.get(variable);
+  if (encoded) {
+    try {
+      const values = JSON.parse(encoded) as Record<string, string>;
+      if (values.default) return values.default;
+    } catch {}
+  }
+  return Deno.env.get(fallback) ?? "";
+}
 
 const model = new Supabase.ai.Session("gte-small");
 
@@ -17,24 +39,24 @@ type RefreshBody = {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors(req) });
   }
 
   if (req.method !== "POST") {
-    return json({ error: "Method not allowed." }, 405);
+    return json({ error: "Method not allowed." }, 405, req);
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
-    return json({ error: "Missing authorization." }, 401);
+    return json({ error: "Missing authorization." }, 401, req);
   }
 
   const url = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const anonKey = namedKey("SUPABASE_PUBLISHABLE_KEYS", "SUPABASE_ANON_KEY");
+  const serviceRoleKey = namedKey("SUPABASE_SECRET_KEYS", "SUPABASE_SERVICE_ROLE_KEY");
 
   if (!url || !anonKey || !serviceRoleKey) {
-    return json({ error: "Supabase function environment is incomplete." }, 500);
+    return json({ error: "Supabase function environment is incomplete." }, 500, req);
   }
 
   const userClient = createClient(url, anonKey, {
@@ -45,7 +67,7 @@ Deno.serve(async (req: Request) => {
   const { data: userData, error: userError } = await userClient.auth.getUser();
   const user = userData.user;
   if (userError || !user) {
-    return json({ error: "Invalid Relay session." }, 401);
+    return json({ error: "Invalid Relay session." }, 401, req);
   }
 
   const service = createClient(url, serviceRoleKey, {
@@ -73,7 +95,7 @@ Deno.serve(async (req: Request) => {
 
   if (pendingError) {
     console.error("Field semantic queue load failed", pendingError);
-    return json({ error: "Could not load the semantic queue." }, 500);
+    return json({ error: "Could not load the semantic queue." }, 500, req);
   }
 
   let processed = 0;
@@ -183,7 +205,7 @@ Deno.serve(async (req: Request) => {
         error: "Embeddings were generated, but semantic graph materialization failed.",
         processed,
         failed,
-      }, 500);
+      }, 500, req);
     }
 
     semanticEdges = Number(data ?? 0);
@@ -206,7 +228,7 @@ Deno.serve(async (req: Request) => {
     semanticEdges,
     remaining: remaining ?? 0,
     errors: errors.slice(0, 5),
-  });
+  }, 200, req);
 });
 
 function buildEmbeddingInput(node: any, content: any): string {
@@ -269,12 +291,13 @@ function toMessage(error: unknown): string {
   return "Unknown semantic processing error.";
 }
 
-function json(value: unknown, status = 200): Response {
+function json(value: unknown, status = 200, req?: Request): Response {
   return new Response(JSON.stringify(value), {
     status,
     headers: {
-      ...corsHeaders,
+      ...(req ? cors(req) : {}),
       "Content-Type": "application/json",
+      "Cache-Control": "no-store",
     },
   });
 }
