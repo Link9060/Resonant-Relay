@@ -105,3 +105,16 @@ The standalone Field Explorer can connect to the same Supabase identity used by 
 - No service-role key or user ID is exposed to Field.
 - Once verified, the standalone site has a normal authenticated Supabase session and all reads/writes are constrained by the existing Field RLS policies.
 - Signed-out users remain in demo mode; signing out of Field only clears the Field-origin session.
+
+
+## Living map interactions
+
+Field now uses progressive disclosure instead of rendering every record at equal visual weight.
+
+- The central graph root is My Field, with Relay and future Resonant sources branching beneath it.
+- Large todo collections become client-side map clusters: Overdue, Today, Soon, Later, No date, and Completed.
+- Individual todo particles stay hidden at map level and appear when zooming deeper or focusing a cluster.
+- Todo particles use status rings, files use a faceted core, recent content gets a faint importance halo, and semantic relationships remain dashed.
+- Hovering a node produces resonance: directly related nodes and edges stay prominent while unrelated context fades.
+- Standalone Field persists field_user_state for Build my Field and Sync.
+- First build animates outward from the central Field root. Later Sync operations compare old/new graph state and animate newly discovered nodes and relationships from their strongest semantic or structural parent.
