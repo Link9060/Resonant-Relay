@@ -14,7 +14,6 @@ import {
   CalendarDays,
   File,
   FolderKanban,
-  Image as ImageIcon,
   ListTodo,
   Loader2,
   Network,
@@ -83,7 +82,8 @@ export function FieldWorkspace() {
   }
 
   useEffect(() => {
-    void refresh();
+    const frame = window.requestAnimationFrame(() => { void refresh(); });
+    return () => window.cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
