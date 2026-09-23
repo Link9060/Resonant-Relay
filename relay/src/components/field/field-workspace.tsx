@@ -265,27 +265,15 @@ export function FieldWorkspace() {
 
   return (
     <section className="relative flex h-[calc(100vh-65px)] min-h-[640px] w-full flex-col overflow-hidden bg-canvas dark:bg-black">
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-canvas px-5 dark:bg-black md:px-7">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-ink">
-            <Network size={15} strokeWidth={1.7} />
-          </span>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="font-display text-[15px] font-medium tracking-[-0.02em] text-ink">Field</h1>
-              <span className="hidden text-[9px] font-semibold uppercase tracking-[0.16em] text-ink-faint sm:inline">Knowledge</span>
-            </div>
-            <p className="mt-0.5 truncate text-[11px] text-ink-faint">
-              {loading ? 'Syncing knowledge…' : `${visibleNodes.length} nodes · ${visibleEdges.length} links`}
-            </p>
-          </div>
+      <header className="flex min-h-16 shrink-0 items-center justify-between border-b border-border bg-canvas px-5 py-3 dark:bg-black md:px-7">
+        <div className="min-w-0">
+          <h1 className="font-display text-xl font-medium tracking-tight text-ink">Field</h1>
+          <p className="mt-1 truncate text-xs text-ink-muted">
+            {loading ? 'Syncing your knowledge…' : `${visibleNodes.length} nodes · ${visibleEdges.length} relationships`}
+          </p>
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="mr-2 hidden items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-ink-faint md:flex">
-            <i className="h-1.5 w-1.5 rounded-full bg-ink-muted" />
-            Live
-          </span>
           <input ref={fileInputRef} type="file" className="hidden" onChange={upload} />
           <button
             type="button"
