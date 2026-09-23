@@ -179,8 +179,8 @@ export function FieldWorkspace() {
   );
 
   return (
-    <section className="relative flex h-[calc(100vh-65px)] min-h-[640px] w-full flex-col overflow-hidden bg-canvas">
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-5 md:px-7">
+    <section className="relative flex h-[calc(100vh-65px)] min-h-[640px] w-full flex-col overflow-hidden bg-canvas dark:bg-black">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-canvas px-5 dark:bg-black md:px-7">
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-ink">
             <Network size={15} strokeWidth={1.7} />
@@ -231,7 +231,7 @@ export function FieldWorkspace() {
       )}
 
       <div className="grid min-h-0 flex-1 grid-cols-[196px_minmax(0,1fr)]">
-        <aside className="hidden min-h-0 border-r border-border bg-surface/35 md:flex md:flex-col">
+        <aside className="hidden min-h-0 border-r border-border bg-surface/35 dark:bg-[#080809] md:flex md:flex-col">
           <div className="p-3">
             <label className="relative block">
               <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
@@ -287,7 +287,7 @@ export function FieldWorkspace() {
           </div>
         </aside>
 
-        <main className="relative min-h-0 overflow-hidden bg-canvas">
+        <main className="relative min-h-0 overflow-hidden bg-canvas dark:bg-black">
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3 md:px-5">
             <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-canvas/80 p-1 backdrop-blur-xl">
               <button
@@ -429,7 +429,7 @@ export function FieldWorkspace() {
           </div>
 
           {selected && (
-            <aside className="absolute inset-y-0 right-0 z-30 w-[360px] max-w-[88vw] border-l border-border bg-canvas/95 shadow-[-24px_0_60px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+            <aside className="absolute inset-y-0 right-0 z-30 w-[360px] max-w-[88vw] border-l border-border bg-canvas/95 shadow-[-24px_0_60px_rgba(0,0,0,0.18)] backdrop-blur-2xl dark:bg-black/95">
               <NodeInspector node={selected} bundle={bundle} loading={bundleLoading} onClose={closeInspector} />
             </aside>
           )}
