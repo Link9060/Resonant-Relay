@@ -22,3 +22,5 @@ Private uploads use the `field-files` Supabase Storage bucket. Objects are names
 ## RAVIN
 
 Field source permissions keep RAVIN access separate from normal user access. Relay notes, todos, calendar items, and Field uploads are configured for RAVIN retrieval; external AI access remains off by default.
+
+Validation note: the Field workspace is covered by Relay PR lint, typecheck, and static build checks.
