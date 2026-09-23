@@ -78,8 +78,7 @@ export async function loadFieldNodeBundle(node: RelayFieldNode): Promise<RelayFi
   const content = contentResult.data ?? null;
   const file = fileResult.data ?? null;
   const bucket = content?.preview_bucket_id ?? file?.bucket_id ?? null;
-  const objectPath = content?.preview_object_path
-    ?? (String(file?.mime_type ?? '').startsWith('image/') ? file?.object_path : null);
+  const objectPath = content?.preview_object_path ?? file?.object_path ?? null;
 
   let previewUrl: string | null = null;
   if (bucket && objectPath) {
