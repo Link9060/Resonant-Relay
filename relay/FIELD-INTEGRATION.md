@@ -48,3 +48,15 @@ The Field workspace intentionally follows Relay and RAVIN rather than using a se
 - The palette is mostly monochrome, with node-type differences kept subtle.
 - Semantic relationships render as light dashed links while structural relationships remain solid.
 - Node previews are content-first and avoid stacked metadata cards.
+
+
+## Theme and interaction flow
+
+Field follows Relay's existing visual/interaction system rather than introducing a separate product theme.
+
+- Relay's global theme toggle controls Field inside Relay.
+- Dark mode uses a true-black Field graph canvas while retaining Relay's neutral surface/border hierarchy.
+- Light mode inherits Relay's white canvas, gray surfaces, black text, and neutral borders.
+- Field keeps one primary work surface (the graph), a narrow navigator, and contextual node detail—matching Relay's shell/list/detail interaction rhythm.
+- Buttons and actions inherit Relay's interaction timing and shell transitions through the normal app layout.
+- The standalone Field Explorer mirrors the same token hierarchy and persists its own Resonant light/dark choice.
