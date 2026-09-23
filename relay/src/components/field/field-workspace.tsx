@@ -26,6 +26,7 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 const TYPE_META: Record<string, { label: string; color: string; icon: typeof File }> = {
   project: { label: 'Projects', color: '#f3f3f5', icon: FolderKanban },
+  collection: { label: 'Collections', color: '#d7d7de', icon: Network },
   note: { label: 'Notes', color: '#9f8cff', icon: StickyNote },
   file: { label: 'Files', color: '#70b7ff', icon: File },
   todo: { label: 'Todos', color: '#ffb86b', icon: ListTodo },
@@ -37,7 +38,8 @@ const TYPE_META: Record<string, { label: string; color: string; icon: typeof Fil
 };
 
 const GROUP_CENTERS: Record<string, { x: number; y: number }> = {
-  project: { x: 500, y: 350 },
+  collection: { x: 500, y: 350 },
+  project: { x: 500, y: 430 },
   note: { x: 245, y: 205 },
   file: { x: 230, y: 505 },
   todo: { x: 780, y: 200 },
@@ -293,11 +295,11 @@ export function FieldWorkspace() {
                         }
                       }}
                     >
-                      {(isSelected || node.type === 'project') && <circle r={isSelected ? 30 : 23} fill={meta.color} opacity={isSelected ? .11 : .055} />}
-                      <circle r={isSelected ? 8 : node.type === 'project' ? 7 : 5.25} fill={isSelected ? '#ffffff' : meta.color} />
-                      <circle r={isSelected ? 12 : node.type === 'project' ? 10 : 8} fill="none" stroke={meta.color} strokeOpacity={isSelected ? .5 : .16} />
-                      {(isSelected || node.type === 'project') && (
-                        <text y={18} textAnchor="middle" fontSize={isSelected ? 10 : 8.5} fill="currentColor" opacity={isSelected ? .9 : .62}>
+                      {(isSelected || node.type === 'project' || node.type === 'collection') && <circle r={isSelected ? 30 : node.type === 'collection' ? 26 : 23} fill={meta.color} opacity={isSelected ? .11 : .055} />}
+                      <circle r={isSelected ? 8 : node.type === 'collection' ? 8 : node.type === 'project' ? 7 : 5.25} fill={isSelected ? '#ffffff' : meta.color} />
+                      <circle r={isSelected ? 12 : node.type === 'collection' ? 12 : node.type === 'project' ? 10 : 8} fill="none" stroke={meta.color} strokeOpacity={isSelected ? .5 : .16} />
+                      {(isSelected || node.type === 'project' || node.type === 'collection') && (
+                        <text y={node.type === 'collection' ? 21 : 18} textAnchor="middle" fontSize={isSelected ? 10 : node.type === 'collection' ? 9.5 : 8.5} fill="currentColor" opacity={isSelected ? .9 : .62}>
                           {truncate(node.title, 28)}
                         </text>
                       )}
