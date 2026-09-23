@@ -1025,9 +1025,48 @@ function buildDisplayGraph(
       ),
   );
 
+  const allNodes = [...displayNodes, ...virtualNodes];
+  const allEdges = [...displayEdges, ...virtualEdges];
+  const workspaces = allNodes.filter(
+    (node) => node.type === 'collection' && node.source_type === 'workspace',
+  );
+
+  if (workspaces.length === 0) {
+    return { nodes: allNodes, edges: allEdges };
+  }
+
+  const newest = [...workspaces].sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0]!;
+  const fieldRoot: FieldDisplayNode = {
+    ...newest,
+    id: 'virtual:field:root',
+    title: 'My Field',
+    searchable_text: 'Your connected Resonant knowledge',
+    source_product: 'field-ui',
+    source_id: 'virtual:field:root',
+    source_type: 'field_root',
+    metadata: { virtual: true, field_root: true },
+    virtual: true,
+    virtualCount: workspaces.length,
+  };
+
+  const rootEdges: FieldDisplayEdge[] = workspaces.map((workspace) => ({
+    ...displayEdges[0]!,
+    id: `virtual-edge:field-root:${workspace.id}`,
+    user_id: workspace.user_id,
+    source_node_id: fieldRoot.id,
+    target_node_id: workspace.id,
+    relation_type: 'contains',
+    strength: 1,
+    origin: 'field-ui',
+    metadata: { virtual: true },
+    created_at: workspace.created_at,
+    updated_at: workspace.updated_at,
+    virtual: true,
+  }));
+
   return {
-    nodes: [...displayNodes, ...virtualNodes],
-    edges: [...displayEdges, ...virtualEdges],
+    nodes: [...allNodes, fieldRoot],
+    edges: [...allEdges, ...rootEdges],
   };
 }
 
@@ -1083,7 +1122,8 @@ function layoutNodes(
     ]);
   }
 
-  const root = nodes.find((node) => node.type === 'collection' && node.source_type === 'workspace')
+  const root = nodes.find((node) => node.type === 'collection' && node.source_type === 'field_root')
+    ?? nodes.find((node) => node.type === 'collection' && node.source_type === 'workspace')
     ?? nodes.find((node) => node.type === 'collection' && /^relay$/i.test(node.title))
     ?? nodes.find((node) => node.type === 'collection');
 
