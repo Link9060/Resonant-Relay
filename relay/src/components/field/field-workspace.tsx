@@ -3,6 +3,7 @@
 import {
   loadFieldGraph,
   loadFieldNodeBundle,
+  syncFieldSemanticGraph,
   uploadFieldFile,
   type RelayFieldBundle,
   type RelayFieldEdge,
@@ -41,6 +42,17 @@ const TYPE_META: Record<string, { label: string; color: string; icon: typeof Fil
   other: { label: 'Other', color: 'rgb(var(--ink-muted))', icon: File },
 };
 
+type FieldDisplayNode = RelayFieldNode & {
+  virtual?: boolean;
+  virtualCount?: number;
+  parentId?: string;
+  lodMinZoom?: number;
+};
+
+type FieldDisplayEdge = RelayFieldEdge & {
+  virtual?: boolean;
+};
+
 const GROUP_CENTERS: Record<string, { x: number; y: number }> = {
   collection: { x: 500, y: 350 },
   project: { x: 500, y: 440 },
@@ -62,6 +74,7 @@ export function FieldWorkspace() {
   const [loading, setLoading] = useState(true);
   const [bundleLoading, setBundleLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [error, setError] = useState<string | null>(null);
@@ -206,26 +219,58 @@ export function FieldWorkspace() {
     }
   }
 
+  async function syncGraph() {
+    if (syncing) return;
+    setSyncing(true);
+    setError(null);
+    try {
+      await syncFieldSemanticGraph();
+      await refresh(selected?.id ?? null);
+    } catch (syncError) {
+      console.error('Field sync failed', syncError);
+      setError('Field could not finish syncing right now.');
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   const typeCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const node of nodes) counts.set(node.type, (counts.get(node.type) ?? 0) + 1);
     return counts;
   }, [nodes]);
 
+  const displayGraph = useMemo(
+    () => buildDisplayGraph(nodes, edges),
+    [nodes, edges],
+  );
+
   const visibleNodes = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return nodes.filter((node) => {
+    return displayGraph.nodes.filter((node) => {
       if (typeFilter !== 'all' && node.type !== typeFilter) return false;
+
+      if (
+        node.lodMinZoom &&
+        zoom < node.lodMinZoom &&
+        !needle &&
+        selected?.id !== node.id &&
+        selected?.id !== node.parentId
+      ) return false;
+
       if (!needle) return true;
       return `${node.title} ${node.searchable_text ?? ''} ${node.source_type}`.toLowerCase().includes(needle);
     });
-  }, [nodes, query, typeFilter]);
+  }, [displayGraph.nodes, query, typeFilter, zoom, selected]);
 
-  const positions = useMemo(() => layoutNodes(visibleNodes), [visibleNodes]);
+  const positions = useMemo(
+    () => layoutNodes(displayGraph.nodes, displayGraph.edges),
+    [displayGraph.nodes, displayGraph.edges],
+  );
   const visibleIds = useMemo(() => new Set(visibleNodes.map((node) => node.id)), [visibleNodes]);
   const visibleEdges = useMemo(
-    () => edges.filter((edge) => visibleIds.has(edge.source_node_id) && visibleIds.has(edge.target_node_id)),
-    [edges, visibleIds],
+    () => displayGraph.edges.filter((edge) => visibleIds.has(edge.source_node_id) && visibleIds.has(edge.target_node_id)),
+    [displayGraph.edges, visibleIds],
   );
   const semanticEdgeCount = useMemo(
     () => visibleEdges.filter((edge) => edge.relation_type === 'semantic_related').length,
