@@ -519,6 +519,8 @@ export function FieldWorkspace() {
                   const inFocus = !selected || connectedIds.has(node.id);
                   const showLabel = isSelected || isHovered || isHub || (Boolean(selected) && inFocus);
                   const radius = isSelected ? 8 : isHovered ? 6.6 : node.type === 'collection' ? 7.2 : node.type === 'project' ? 6.2 : 4.6;
+                  const completed = node.type === 'todo' && Boolean((node.metadata as Record<string, unknown>)?.completed);
+                  const recentlyUpdated = isRecentlyUpdated(node.updated_at);
 
                   return (
                     <g
@@ -548,25 +550,61 @@ export function FieldWorkspace() {
                         }
                       }}
                     >
-                      {(isSelected || isHub) && (
+                      {(isSelected || isHub || recentlyUpdated) && (
                         <circle
-                          r={isSelected ? 31 : node.type === 'collection' ? 25 : 20}
+                          r={isSelected ? 31 : node.type === 'collection' ? 25 : recentlyUpdated ? 17 : 20}
                           fill={meta.color}
-                          opacity={isSelected ? .09 : .035}
+                          opacity={isSelected ? .09 : recentlyUpdated ? .025 : .035}
                         />
                       )}
                       <circle r={radius + 4} fill="none" stroke={meta.color} strokeOpacity={isSelected ? .42 : isHub ? .16 : .08} />
-                      <circle r={radius} fill={isSelected ? 'rgb(var(--ink))' : meta.color} opacity={isSelected ? 1 : isHovered ? .96 : isHub ? .9 : .72} />
+
+                      {node.type === 'file' ? (
+                        <polygon
+                          points={hexagonPoints(radius)}
+                          fill={isSelected ? 'rgb(var(--ink))' : meta.color}
+                          opacity={isSelected ? 1 : isHovered ? .96 : .76}
+                        />
+                      ) : (
+                        <circle r={radius} fill={isSelected ? 'rgb(var(--ink))' : meta.color} opacity={isSelected ? 1 : isHovered ? .96 : isHub ? .9 : .72} />
+                      )}
+
+                      {node.type === 'todo' && (
+                        <circle
+                          r={radius + 7}
+                          fill="none"
+                          stroke={meta.color}
+                          strokeOpacity={completed ? .28 : .55}
+                          strokeWidth={1.05}
+                          pathLength={100}
+                          strokeDasharray={completed ? '100 0' : '68 32'}
+                          transform="rotate(-90)"
+                        />
+                      )}
+
                       {showLabel && (
-                        <text
-                          y={node.type === 'collection' ? 20 : 18}
-                          textAnchor="middle"
-                          fontSize={isSelected ? 10 : node.type === 'collection' ? 9.2 : 8.5}
-                          fill="currentColor"
-                          opacity={isSelected || isHovered ? .96 : isHub ? .64 : .5}
-                        >
-                          {truncate(node.title, 28)}
-                        </text>
+                        <>
+                          <text
+                            y={node.type === 'collection' ? 20 : 18}
+                            textAnchor="middle"
+                            fontSize={isSelected ? 10 : node.type === 'collection' ? 9.2 : 8.5}
+                            fill="currentColor"
+                            opacity={isSelected || isHovered ? .96 : isHub ? .64 : .5}
+                          >
+                            {truncate(node.title, 28)}
+                          </text>
+                          {(node as FieldDisplayNode).virtual && (
+                            <text
+                              y={31}
+                              textAnchor="middle"
+                              fontSize={7}
+                              fill="currentColor"
+                              opacity={.38}
+                            >
+                              {(node as FieldDisplayNode).virtualCount ?? 0} items
+                            </text>
+                          )}
+                        </>
                       )}
                     </g>
                   );
