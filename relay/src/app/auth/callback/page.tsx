@@ -9,6 +9,20 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 
 const LOGIN_PATH = appUrl('/login/');
 const EMAIL_OTP_TYPES = new Set<EmailOtpType>(['email', 'magiclink', 'invite', 'recovery', 'email_change']);
+const POST_AUTH_NEXT_KEY = 'relay-post-auth-next';
+
+function consumePostAuthNext() {
+  try {
+    const value = window.localStorage.getItem(POST_AUTH_NEXT_KEY);
+    window.localStorage.removeItem(POST_AUTH_NEXT_KEY);
+    if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
+    const parsed = new URL(value, window.location.origin);
+    if (parsed.origin !== window.location.origin) return null;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return null;
+  }
+}
 
 async function goAfterSignIn() {
   const supabase = createClient() as any;
@@ -32,7 +46,10 @@ async function goAfterSignIn() {
     .eq('id', user.id)
     .single();
 
-  const destination = profile?.onboarding_completed_at ? appUrl(IS_BETA ? '/space/' : '/') : appUrl('/onboarding/');
+  const next = profile?.onboarding_completed_at ? consumePostAuthNext() : null;
+  const destination = profile?.onboarding_completed_at
+    ? (next ? appUrl(next) : appUrl(IS_BETA ? '/space/' : '/'))
+    : appUrl('/onboarding/');
   window.location.replace(`${window.location.origin}${destination}`);
 }
 
