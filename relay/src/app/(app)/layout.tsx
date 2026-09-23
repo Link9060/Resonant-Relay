@@ -2,6 +2,7 @@
 
 import { BetaExperience } from '@/components/beta-experience';
 import { DashboardPresetAccountSync } from '@/components/dashboard/dashboard-preset-account-sync';
+import { FieldSemanticSync } from '@/components/field/field-semantic-sync';
 import { Dock } from '@/components/dock';
 import { AppHeader } from '@/components/app-header';
 import { MobileRouteGate } from '@/components/mobile-route-gate';
@@ -280,6 +281,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <BetaExperience>
       <DashboardPresetAccountSync />
+      <FieldSemanticSync />
       <VisualPreferencesAccountSync userId={state.userId} />
       <div data-dock-collapsed={dockCollapsed} className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
         <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={handleDockCollapsedChange} onboardingCompletedAt={state.profile?.onboarding_completed_at ?? null} />
