@@ -166,6 +166,12 @@ export function FieldWorkspace() {
     selectedIdRef.current = node.id;
     setSelected(node);
     setBundle(null);
+
+    if ((node as FieldDisplayNode).virtual) {
+      setBundleLoading(false);
+      return;
+    }
+
     setBundleLoading(true);
     try {
       setBundle(await loadFieldNodeBundle(node));
@@ -331,13 +337,14 @@ export function FieldWorkspace() {
           </button>
           <button
             type="button"
-            onClick={() => void refresh(selected?.id)}
-            disabled={loading}
-            aria-label="Refresh Field"
-            title="Refresh Field"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-ink-faint transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-50"
+            onClick={() => void syncGraph()}
+            disabled={loading || syncing}
+            aria-label="Sync Field"
+            title="Sync Field"
+            className="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-[11px] font-medium text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-50"
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">{syncing ? 'Syncing…' : 'Sync'}</span>
           </button>
         </div>
       </header>
