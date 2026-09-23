@@ -74,3 +74,16 @@ Field follows Relay's existing theme state rather than maintaining a separate ap
 - Opening the inspector reserves graph space so selected content does not cover the knowledge map.
 - Search/filter changes refit the standalone Explorer; Relay recalculates its fit from the current visible node set and actual workspace size.
 - The Fit control restores the computed viewport while zoom remains a user-controlled multiplier.
+
+
+## Final interaction polish
+
+Field's graph interaction now follows the same restrained, task-first behavior as Relay and RAVIN.
+
+- Selecting a node dims unrelated nodes and relationships so the active neighborhood is immediately legible.
+- Hovering a node reveals a lightweight source/type preview without opening the inspector.
+- Labels prioritize selected nodes, hubs, hovered nodes, and directly related context instead of displaying every label at once.
+- Semantic relationships remain dashed and structural relationships remain solid.
+- Double-click opens Relay-native source items when a source route exists.
+- `F` restores Fit Graph, `Escape` closes the inspector, and `Cmd/Ctrl+K` focuses search.
+- Field filters use the same active/inactive surface treatment as Relay's navigation rail.
