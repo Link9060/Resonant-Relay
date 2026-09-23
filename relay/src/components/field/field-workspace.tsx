@@ -68,6 +68,8 @@ export function FieldWorkspace() {
   const [zoom, setZoom] = useState(1);
   const [graphSize, setGraphSize] = useState({ width: 1000, height: 700 });
   const [fitNonce, setFitNonce] = useState(0);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<{ x: number; y: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const graphRef = useRef<HTMLDivElement>(null);
@@ -104,6 +106,19 @@ export function FieldWorkspace() {
         selectedIdRef.current = null;
         setSelected(null);
         setBundle(null);
+        setHoveredNodeId(null);
+        setHoverPoint(null);
+      }
+      if (
+        event.key.toLowerCase() === 'f' &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !['INPUT', 'TEXTAREA', 'SELECT'].includes((document.activeElement?.tagName ?? '').toUpperCase())
+      ) {
+        event.preventDefault();
+        setZoom(1);
+        setFitNonce((value) => value + 1);
       }
     };
 
@@ -153,6 +168,24 @@ export function FieldWorkspace() {
     selectedIdRef.current = null;
     setSelected(null);
     setBundle(null);
+    setHoveredNodeId(null);
+    setHoverPoint(null);
+  }
+
+  function updateHover(event: React.MouseEvent<SVGGElement>, node: RelayFieldNode) {
+    const rect = graphRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setHoveredNodeId(node.id);
+    setHoverPoint({
+      x: Math.max(12, Math.min(rect.width - 210, event.clientX - rect.left + 14)),
+      y: Math.max(12, Math.min(rect.height - 88, event.clientY - rect.top + 14)),
+    });
+  }
+
+  function openNodeSource(node: RelayFieldNode) {
+    const href = sourcePage(node.source_type);
+    if (!href) return;
+    window.location.assign(appPageUrl(href));
   }
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
@@ -197,6 +230,20 @@ export function FieldWorkspace() {
   const semanticEdgeCount = useMemo(
     () => visibleEdges.filter((edge) => edge.relation_type === 'semantic_related').length,
     [visibleEdges],
+  );
+  const connectedIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (!selected) return ids;
+    ids.add(selected.id);
+    for (const edge of visibleEdges) {
+      if (edge.source_node_id === selected.id) ids.add(edge.target_node_id);
+      if (edge.target_node_id === selected.id) ids.add(edge.source_node_id);
+    }
+    return ids;
+  }, [selected, visibleEdges]);
+  const hoveredNode = useMemo(
+    () => visibleNodes.find((node) => node.id === hoveredNodeId) ?? null,
+    [visibleNodes, hoveredNodeId],
   );
 
   const fit = useMemo(
@@ -407,6 +454,7 @@ export function FieldWorkspace() {
                   if (!a || !b) return null;
                   const semantic = edge.relation_type === 'semantic_related';
                   const highlighted = selected && (edge.source_node_id === selected.id || edge.target_node_id === selected.id);
+                  const dimmed = Boolean(selected) && !highlighted;
                   return (
                     <line
                       key={edge.id}
@@ -415,7 +463,7 @@ export function FieldWorkspace() {
                       x2={b.x}
                       y2={b.y}
                       stroke="currentColor"
-                      strokeOpacity={highlighted ? .42 : semantic ? Math.max(.07, edge.strength * .15) : Math.max(.055, edge.strength * .12)}
+                      strokeOpacity={highlighted ? .46 : dimmed ? .025 : semantic ? Math.max(.07, edge.strength * .15) : Math.max(.055, edge.strength * .12)}
                       strokeWidth={highlighted ? 1.4 : semantic ? .82 : .7}
                       strokeDasharray={semantic ? '3.5 5' : undefined}
                     />
@@ -426,8 +474,11 @@ export function FieldWorkspace() {
                   const position = positions.get(node.id)!;
                   const meta = TYPE_META[node.type] ?? TYPE_META.other!;
                   const isSelected = selected?.id === node.id;
+                  const isHovered = hoveredNodeId === node.id;
                   const isHub = node.type === 'collection' || node.type === 'project';
-                  const radius = isSelected ? 8 : node.type === 'collection' ? 7.2 : node.type === 'project' ? 6.2 : 4.6;
+                  const inFocus = !selected || connectedIds.has(node.id);
+                  const showLabel = isSelected || isHovered || isHub || (Boolean(selected) && inFocus);
+                  const radius = isSelected ? 8 : isHovered ? 6.6 : node.type === 'collection' ? 7.2 : node.type === 'project' ? 6.2 : 4.6;
 
                   return (
                     <g
@@ -436,12 +487,24 @@ export function FieldWorkspace() {
                       role="button"
                       tabIndex={0}
                       aria-label={node.title}
-                      className="cursor-pointer outline-none"
+                      className="cursor-pointer outline-none transition-opacity duration-150"
+                      opacity={inFocus ? 1 : .16}
                       onClick={() => void chooseNode(node)}
+                      onDoubleClick={() => openNodeSource(node)}
+                      onMouseEnter={(event) => updateHover(event, node)}
+                      onMouseMove={(event) => updateHover(event, node)}
+                      onMouseLeave={() => {
+                        setHoveredNodeId(null);
+                        setHoverPoint(null);
+                      }}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') {
                           event.preventDefault();
                           void chooseNode(node);
+                        }
+                        if (event.key === 'Enter' && event.shiftKey) {
+                          event.preventDefault();
+                          openNodeSource(node);
                         }
                       }}
                     >
@@ -453,14 +516,14 @@ export function FieldWorkspace() {
                         />
                       )}
                       <circle r={radius + 4} fill="none" stroke={meta.color} strokeOpacity={isSelected ? .42 : isHub ? .16 : .08} />
-                      <circle r={radius} fill={isSelected ? 'rgb(var(--ink))' : meta.color} opacity={isSelected ? 1 : isHub ? .9 : .72} />
-                      {(isSelected || isHub) && (
+                      <circle r={radius} fill={isSelected ? 'rgb(var(--ink))' : meta.color} opacity={isSelected ? 1 : isHovered ? .96 : isHub ? .9 : .72} />
+                      {showLabel && (
                         <text
                           y={node.type === 'collection' ? 20 : 18}
                           textAnchor="middle"
                           fontSize={isSelected ? 10 : node.type === 'collection' ? 9.2 : 8.5}
                           fill="currentColor"
-                          opacity={isSelected ? .95 : .56}
+                          opacity={isSelected || isHovered ? .96 : isHub ? .64 : .5}
                         >
                           {truncate(node.title, 28)}
                         </text>
@@ -473,9 +536,22 @@ export function FieldWorkspace() {
           )}
 
           <div className="pointer-events-none absolute bottom-3 left-4 right-4 flex items-end justify-between text-[9px] text-ink-faint md:left-5">
-            <span>Click a node to inspect · Esc to close</span>
+            <span>Click inspect · Double-click open · F fit · Esc close</span>
             <span className="hidden sm:inline">Field · Resonant Assist</span>
           </div>
+
+          {hoveredNode && hoverPoint && hoveredNode.id !== selected?.id && (
+            <div
+              className="pointer-events-none absolute z-20 w-[190px] rounded-lg border border-border bg-canvas/90 px-3 py-2.5 shadow-xl backdrop-blur-xl dark:bg-black/90"
+              style={{ left: hoverPoint.x, top: hoverPoint.y }}
+            >
+              <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                {TYPE_META[hoveredNode.type]?.label ?? hoveredNode.type}
+              </div>
+              <div className="mt-1 truncate text-[11px] font-medium text-ink">{hoveredNode.title}</div>
+              <div className="mt-1 text-[9px] text-ink-faint">{hoveredNode.source_product} · {hoveredNode.source_type}</div>
+            </div>
+          )}
 
           {selected && (
             <aside className="absolute inset-y-0 right-0 z-30 w-[360px] max-w-[88vw] border-l border-border bg-canvas/95 shadow-[-24px_0_60px_rgba(0,0,0,0.18)] backdrop-blur-2xl dark:bg-black/95">
@@ -675,7 +751,7 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-[11px] transition-colors ${active ? 'bg-surface text-ink' : 'text-ink-faint hover:bg-surface/70 hover:text-ink-muted'}`}
+      className={`group flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-[11px] transition-colors ${active ? 'bg-surface-raised text-ink' : 'text-ink-muted hover:bg-surface hover:text-ink'}`}
     >
       <span className="flex min-w-0 items-center gap-2.5">
         <Icon size={13} strokeWidth={1.7} className={active ? 'text-ink-muted' : 'text-ink-faint'} />
