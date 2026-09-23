@@ -92,3 +92,16 @@ Field's graph interaction now follows the same restrained, task-first behavior a
 ### Relay page hierarchy
 
 The embedded Field workspace uses Relay's standard page-title hierarchy rather than a second branded app header. Field's local header is now title + status summary + task actions, leaving product branding to Relay's global shell.
+
+
+## Standalone account connection
+
+The standalone Field Explorer can connect to the same Supabase identity used by Relay.
+
+- Field sends users to Relay's `/connect-field/` route.
+- Relay requires a normal authenticated/onboarded, non-disabled account.
+- The `field-account-handoff` Edge Function generates a one-time Supabase magic-link token hash for that exact authenticated user.
+- The token is returned to Field in the URL fragment, verified once by Field with the public Supabase client, then immediately removed from browser history.
+- No service-role key or user ID is exposed to Field.
+- Once verified, the standalone site has a normal authenticated Supabase session and all reads/writes are constrained by the existing Field RLS policies.
+- Signed-out users remain in demo mode; signing out of Field only clears the Field-origin session.
