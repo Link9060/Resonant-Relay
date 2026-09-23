@@ -18,6 +18,7 @@ import {
   ListFilter,
   ListTodo,
   Loader2,
+  Maximize2,
   Network,
   RefreshCw,
   Search,
@@ -65,8 +66,11 @@ export function FieldWorkspace() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [graphSize, setGraphSize] = useState({ width: 1000, height: 700 });
+  const [fitNonce, setFitNonce] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const graphRef = useRef<HTMLDivElement>(null);
   const selectedIdRef = useRef<string | null>(null);
 
   async function refresh(preferredId?: string | null) {
@@ -111,6 +115,23 @@ export function FieldWorkspace() {
       window.removeEventListener('keydown', onKeyDown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const element = graphRef.current;
+    if (!element) return;
+
+    const updateSize = () => {
+      const rect = element.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setGraphSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(element);
+    return () => observer.disconnect();
   }, []);
 
   async function chooseNode(node: RelayFieldNode) {
@@ -177,6 +198,23 @@ export function FieldWorkspace() {
     () => visibleEdges.filter((edge) => edge.relation_type === 'semantic_related').length,
     [visibleEdges],
   );
+
+  const fit = useMemo(
+    () => calculateGraphFit({
+      nodes: visibleNodes,
+      positions,
+      viewportWidth: graphSize.width,
+      viewportHeight: graphSize.height,
+      inspectorOpen: Boolean(selected),
+      zoom,
+    }),
+    [visibleNodes, positions, graphSize, selected, zoom, fitNonce],
+  );
+
+  function fitGraph() {
+    setZoom(1);
+    setFitNonce((value) => value + 1);
+  }
 
   return (
     <section className="relative flex h-[calc(100vh-65px)] min-h-[640px] w-full flex-col overflow-hidden bg-canvas dark:bg-black">
@@ -287,9 +325,20 @@ export function FieldWorkspace() {
           </div>
         </aside>
 
-        <main className="relative min-h-0 overflow-hidden bg-canvas dark:bg-black">
+        <main ref={graphRef} className="relative min-h-0 overflow-hidden bg-canvas dark:bg-black">
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3 md:px-5">
-            <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-canvas/80 p-1 backdrop-blur-xl">
+            <div className="pointer-events-auto flex items-center gap-0.5 rounded-lg border border-border bg-canvas/80 p-1 backdrop-blur-xl dark:bg-black/80">
+              <button
+                type="button"
+                onClick={fitGraph}
+                className="flex h-7 items-center gap-1.5 rounded-md px-2 text-[9px] text-ink-faint hover:bg-surface hover:text-ink"
+                aria-label="Fit graph"
+                title="Fit graph"
+              >
+                <Maximize2 size={11} />
+                <span className="hidden sm:inline">Fit</span>
+              </button>
+              <span className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
               <button
                 type="button"
                 onClick={() => setZoom((value) => Math.max(.62, value - .12))}
@@ -298,7 +347,7 @@ export function FieldWorkspace() {
               >
                 −
               </button>
-              <span className="min-w-10 text-center text-[9px] tabular-nums text-ink-faint">{Math.round(zoom * 100)}%</span>
+              <span className="min-w-10 text-center text-[9px] tabular-nums text-ink-faint">{Math.round(fit.effectiveScale * 100)}%</span>
               <button
                 type="button"
                 onClick={() => setZoom((value) => Math.min(1.8, value + .12))}
@@ -339,7 +388,7 @@ export function FieldWorkspace() {
               </div>
             </div>
           ) : (
-            <svg viewBox="0 0 1000 700" className="h-full w-full select-none" role="img" aria-label="Field knowledge graph">
+            <svg viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" className="h-full w-full select-none" role="img" aria-label="Field knowledge graph">
               <defs>
                 <radialGradient id="field-node-halo">
                   <stop offset="0%" stopColor="currentColor" stopOpacity=".18" />
@@ -351,7 +400,7 @@ export function FieldWorkspace() {
               </defs>
               <rect width="1000" height="700" fill="url(#field-dot-grid)" />
 
-              <g transform={`translate(${500 - 500 * zoom} ${350 - 350 * zoom}) scale(${zoom})`}>
+              <g transform={`translate(${fit.translateX} ${fit.translateY}) scale(${fit.effectiveScale})`}>
                 {visibleEdges.map((edge) => {
                   const a = positions.get(edge.source_node_id);
                   const b = positions.get(edge.target_node_id);
@@ -644,6 +693,69 @@ function Meta({ label, value }: { label: string; value: string }) {
       <dd className="min-w-0 truncate text-right text-[10px] font-medium text-ink-muted">{value}</dd>
     </div>
   );
+}
+
+type GraphFitInput = {
+  nodes: RelayFieldNode[];
+  positions: Map<string, { x: number; y: number }>;
+  viewportWidth: number;
+  viewportHeight: number;
+  inspectorOpen: boolean;
+  zoom: number;
+};
+
+function calculateGraphFit({
+  nodes,
+  positions,
+  viewportWidth,
+  inspectorOpen,
+  zoom,
+}: GraphFitInput) {
+  const points = nodes.map((node) => positions.get(node.id)).filter((point): point is { x: number; y: number } => Boolean(point));
+
+  if (points.length === 0) {
+    return {
+      effectiveScale: zoom,
+      translateX: 500 - 500 * zoom,
+      translateY: 350 - 350 * zoom,
+    };
+  }
+
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+
+  // Label/ring breathing room in graph coordinates.
+  const graphPaddingX = 72;
+  const graphPaddingY = 64;
+  const boundsWidth = Math.max(120, maxX - minX + graphPaddingX * 2);
+  const boundsHeight = Math.max(120, maxY - minY + graphPaddingY * 2);
+
+  // Convert the inspector's real pixel width into the fixed 1000-unit SVG viewBox.
+  const inspectorPixels = inspectorOpen ? Math.min(360, viewportWidth * .42) : 0;
+  const inspectorUnits = viewportWidth > 0 ? (inspectorPixels / viewportWidth) * 1000 : 0;
+  const availableWidth = Math.max(360, 1000 - inspectorUnits - 72);
+  const availableHeight = 700 - 92;
+
+  const baseScale = Math.max(.56, Math.min(1.48, Math.min(
+    availableWidth / boundsWidth,
+    availableHeight / boundsHeight,
+  )));
+  const effectiveScale = Math.max(.42, Math.min(2.15, baseScale * zoom));
+
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const targetCenterX = (1000 - inspectorUnits) / 2;
+  const targetCenterY = 352;
+
+  return {
+    effectiveScale,
+    translateX: targetCenterX - centerX * effectiveScale,
+    translateY: targetCenterY - centerY * effectiveScale,
+  };
 }
 
 function layoutNodes(nodes: RelayFieldNode[]) {
