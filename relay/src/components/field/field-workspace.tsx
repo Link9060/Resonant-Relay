@@ -282,16 +282,17 @@ export function FieldWorkspace() {
     () => visibleEdges.filter((edge) => edge.relation_type === 'semantic_related').length,
     [visibleEdges],
   );
+  const focusNodeId = selected?.id ?? hoveredNodeId;
   const connectedIds = useMemo(() => {
     const ids = new Set<string>();
-    if (!selected) return ids;
-    ids.add(selected.id);
+    if (!focusNodeId) return ids;
+    ids.add(focusNodeId);
     for (const edge of visibleEdges) {
-      if (edge.source_node_id === selected.id) ids.add(edge.target_node_id);
-      if (edge.target_node_id === selected.id) ids.add(edge.source_node_id);
+      if (edge.source_node_id === focusNodeId) ids.add(edge.target_node_id);
+      if (edge.target_node_id === focusNodeId) ids.add(edge.source_node_id);
     }
     return ids;
-  }, [selected, visibleEdges]);
+  }, [focusNodeId, visibleEdges]);
   const hoveredNode = useMemo(
     () => visibleNodes.find((node) => node.id === hoveredNodeId) ?? null,
     [visibleNodes, hoveredNodeId],
@@ -493,8 +494,8 @@ export function FieldWorkspace() {
                   const b = positions.get(edge.target_node_id);
                   if (!a || !b) return null;
                   const semantic = edge.relation_type === 'semantic_related';
-                  const highlighted = selected && (edge.source_node_id === selected.id || edge.target_node_id === selected.id);
-                  const dimmed = Boolean(selected) && !highlighted;
+                  const highlighted = focusNodeId && (edge.source_node_id === focusNodeId || edge.target_node_id === focusNodeId);
+                  const dimmed = Boolean(focusNodeId) && !highlighted;
                   return (
                     <line
                       key={edge.id}
@@ -516,7 +517,7 @@ export function FieldWorkspace() {
                   const isSelected = selected?.id === node.id;
                   const isHovered = hoveredNodeId === node.id;
                   const isHub = node.type === 'collection' || node.type === 'project';
-                  const inFocus = !selected || connectedIds.has(node.id);
+                  const inFocus = !focusNodeId || connectedIds.has(node.id);
                   const showLabel = isSelected || isHovered || isHub || (Boolean(selected) && inFocus);
                   const radius = isSelected ? 8 : isHovered ? 6.6 : node.type === 'collection' ? 7.2 : node.type === 'project' ? 6.2 : 4.6;
                   const completed = node.type === 'todo' && Boolean((node.metadata as Record<string, unknown>)?.completed);
