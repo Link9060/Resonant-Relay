@@ -912,30 +912,262 @@ function calculateGraphFit({
   };
 }
 
-function layoutNodes(nodes: RelayFieldNode[]) {
-  const groups = new Map<string, RelayFieldNode[]>();
-  for (const node of nodes) {
-    const type = GROUP_CENTERS[node.type] ? node.type : 'other';
-    groups.set(type, [...(groups.get(type) ?? []), node]);
+function buildDisplayGraph(
+  nodes: RelayFieldNode[],
+  edges: RelayFieldEdge[],
+): { nodes: FieldDisplayNode[]; edges: FieldDisplayEdge[] } {
+  const displayNodes = nodes.map((node) => ({ ...node })) as FieldDisplayNode[];
+  let displayEdges = edges.map((edge) => ({ ...edge })) as FieldDisplayEdge[];
+
+  const byId = new Map(displayNodes.map((node) => [node.id, node]));
+  const todoHub = displayNodes.find((node) =>
+    node.type === 'collection'
+    && (
+      /todo/i.test(node.title)
+      || /todo/i.test(node.source_type)
+      || /todo/i.test(String((node.metadata as Record<string, unknown>)?.collection ?? ''))
+    )
+  );
+
+  if (!todoHub) return { nodes: displayNodes, edges: displayEdges };
+
+  const directTodoEdges = displayEdges.filter(
+    (edge) =>
+      edge.relation_type === 'contains'
+      && edge.source_node_id === todoHub.id
+      && byId.get(edge.target_node_id)?.type === 'todo',
+  );
+
+  if (directTodoEdges.length < 16) return { nodes: displayNodes, edges: displayEdges };
+
+  const todoIds = new Set(directTodoEdges.map((edge) => edge.target_node_id));
+  const groups = new Map<string, FieldDisplayNode[]>();
+
+  for (const id of todoIds) {
+    const node = byId.get(id);
+    if (!node) continue;
+    const key = todoGroup(node);
+    groups.set(key, [...(groups.get(key) ?? []), node]);
   }
 
-  const positions = new Map<string, { x: number; y: number }>();
-  for (const [type, group] of groups) {
-    const center = GROUP_CENTERS[type] ?? GROUP_CENTERS.other!;
-    group.forEach((node, index) => {
-      if (group.length === 1) {
-        positions.set(node.id, center);
-        return;
-      }
-      const turn = index * 2.399963229728653;
-      const radius = 18 + Math.sqrt(index + 1) * 15;
-      positions.set(node.id, {
-        x: center.x + Math.cos(turn) * radius,
-        y: center.y + Math.sin(turn) * radius,
+  const virtualEdges: FieldDisplayEdge[] = [];
+  const virtualNodes: FieldDisplayNode[] = [];
+  const groupOrder = ['overdue', 'today', 'soon', 'later', 'unscheduled', 'completed'];
+
+  for (const key of groupOrder) {
+    const children = groups.get(key) ?? [];
+    if (children.length === 0) continue;
+
+    const virtualId = `virtual:todos:${key}`;
+    const newest = [...children]
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0] ?? todoHub;
+
+    const virtualNode: FieldDisplayNode = {
+      ...todoHub,
+      id: virtualId,
+      type: 'collection',
+      title: todoGroupTitle(key),
+      searchable_text: `${children.length} ${children.length === 1 ? 'task' : 'tasks'}`,
+      source_product: 'field-ui',
+      source_id: virtualId,
+      source_type: 'virtual_cluster',
+      metadata: { virtual: true, count: children.length },
+      created_at: newest.created_at,
+      updated_at: newest.updated_at,
+      virtual: true,
+      virtualCount: children.length,
+      parentId: todoHub.id,
+    };
+
+    virtualNodes.push(virtualNode);
+
+    virtualEdges.push({
+      ...directTodoEdges[0]!,
+      id: `virtual-edge:${todoHub.id}:${virtualId}`,
+      source_node_id: todoHub.id,
+      target_node_id: virtualId,
+      relation_type: 'contains',
+      strength: .9,
+      origin: 'field-ui',
+      metadata: { virtual: true },
+      virtual: true,
+    });
+
+    children.forEach((child, index) => {
+      child.parentId = virtualId;
+      child.lodMinZoom = 1.65;
+      child.metadata = {
+        ...(child.metadata as Record<string, unknown>),
+        field_group_index: index,
+      };
+
+      virtualEdges.push({
+        ...directTodoEdges[0]!,
+        id: `virtual-edge:${virtualId}:${child.id}`,
+        source_node_id: virtualId,
+        target_node_id: child.id,
+        relation_type: 'contains',
+        strength: .82,
+        origin: 'field-ui',
+        metadata: { virtual: true },
+        virtual: true,
       });
     });
   }
+
+  displayEdges = displayEdges.filter(
+    (edge) =>
+      !(
+        edge.relation_type === 'contains'
+        && edge.source_node_id === todoHub.id
+        && todoIds.has(edge.target_node_id)
+      ),
+  );
+
+  return {
+    nodes: [...displayNodes, ...virtualNodes],
+    edges: [...displayEdges, ...virtualEdges],
+  };
+}
+
+function todoGroup(node: FieldDisplayNode) {
+  const metadata = node.metadata as Record<string, unknown>;
+  if (Boolean(metadata?.completed)) return 'completed';
+
+  const due = parseDateOnly(metadata?.due_on);
+  if (!due) return 'unscheduled';
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const difference = Math.round((due.getTime() - today.getTime()) / 86_400_000);
+
+  if (difference < 0) return 'overdue';
+  if (difference === 0) return 'today';
+  if (difference <= 7) return 'soon';
+  return 'later';
+}
+
+function todoGroupTitle(key: string) {
+  return ({
+    overdue: 'Overdue',
+    today: 'Today',
+    soon: 'Soon',
+    later: 'Later',
+    unscheduled: 'No date',
+    completed: 'Completed',
+  } as Record<string, string>)[key] ?? 'Tasks';
+}
+
+function parseDateOnly(value: unknown) {
+  if (!value) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value));
+  if (!match) return null;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function layoutNodes(
+  nodes: FieldDisplayNode[],
+  edges: FieldDisplayEdge[],
+) {
+  const positions = new Map<string, { x: number; y: number }>();
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const children = new Map<string, string[]>();
+
+  for (const edge of edges) {
+    if (edge.relation_type !== 'contains') continue;
+    children.set(edge.source_node_id, [
+      ...(children.get(edge.source_node_id) ?? []),
+      edge.target_node_id,
+    ]);
+  }
+
+  const root = nodes.find((node) => node.type === 'collection' && node.source_type === 'workspace')
+    ?? nodes.find((node) => node.type === 'collection' && /^relay$/i.test(node.title))
+    ?? nodes.find((node) => node.type === 'collection');
+
+  if (root) positions.set(root.id, { x: 500, y: 350 });
+
+  const rootChildren = (children.get(root?.id ?? '') ?? [])
+    .map((id) => byId.get(id))
+    .filter((node): node is FieldDisplayNode => Boolean(node))
+    .filter((node) => node.type === 'collection')
+    .sort((a, b) => a.title.localeCompare(b.title));
+
+  const rootRadius = rootChildren.length <= 4 ? 215 : 250;
+  rootChildren.forEach((node, index) => {
+    const angle = -Math.PI / 2 + index * (Math.PI * 2 / Math.max(rootChildren.length, 1));
+    const point = {
+      x: 500 + Math.cos(angle) * rootRadius,
+      y: 350 + Math.sin(angle) * rootRadius * .68,
+    };
+    positions.set(node.id, point);
+    layoutChildren(node.id, point, children, byId, positions, 0);
+  });
+
+  const remaining = nodes.filter((node) => !positions.has(node.id));
+  remaining.forEach((node, index) => {
+    const center = GROUP_CENTERS[node.type] ?? GROUP_CENTERS.other!;
+    const angle = index * 2.399963229728653;
+    const radius = 44 + Math.sqrt(index + 1) * 11;
+    positions.set(node.id, {
+      x: center.x + Math.cos(angle) * radius,
+      y: center.y + Math.sin(angle) * radius,
+    });
+  });
+
   return positions;
+}
+
+function layoutChildren(
+  parentId: string,
+  parent: { x: number; y: number },
+  children: Map<string, string[]>,
+  byId: Map<string, FieldDisplayNode>,
+  positions: Map<string, { x: number; y: number }>,
+  depth: number,
+) {
+  const childNodes = (children.get(parentId) ?? [])
+    .map((id) => byId.get(id))
+    .filter((node): node is FieldDisplayNode => Boolean(node));
+
+  if (childNodes.length === 0) return;
+
+  const virtual = childNodes.filter((node) => node.virtual);
+  const normal = childNodes.filter((node) => !node.virtual);
+
+  virtual.forEach((node, index) => {
+    const angle = -Math.PI / 2 + index * (Math.PI * 2 / Math.max(virtual.length, 1));
+    const point = {
+      x: parent.x + Math.cos(angle) * 78,
+      y: parent.y + Math.sin(angle) * 78,
+    };
+    positions.set(node.id, point);
+    layoutChildren(node.id, point, children, byId, positions, depth + 1);
+  });
+
+  normal.forEach((node, index) => {
+    const angle = index * 2.399963229728653;
+    const distance = (depth > 0 ? 50 : 68) + Math.sqrt(index + 1) * (depth > 0 ? 8.5 : 11);
+    const point = {
+      x: parent.x + Math.cos(angle) * distance,
+      y: parent.y + Math.sin(angle) * distance,
+    };
+    positions.set(node.id, point);
+    layoutChildren(node.id, point, children, byId, positions, depth + 1);
+  });
+}
+
+function hexagonPoints(radius: number) {
+  return Array.from({ length: 6 }, (_, index) => {
+    const angle = -Math.PI / 2 + index * (Math.PI * 2 / 6);
+    return `${Math.cos(angle) * radius},${Math.sin(angle) * radius}`;
+  }).join(' ');
+}
+
+function isRecentlyUpdated(value: string) {
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) && Date.now() - timestamp < 86_400_000;
 }
 
 function sourcePage(sourceType: string) {
