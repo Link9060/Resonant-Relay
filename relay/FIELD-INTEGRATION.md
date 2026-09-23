@@ -87,3 +87,8 @@ Field's graph interaction now follows the same restrained, task-first behavior a
 - Double-click opens Relay-native source items when a source route exists.
 - `F` restores Fit Graph, `Escape` closes the inspector, and `Cmd/Ctrl+K` focuses search.
 - Field filters use the same active/inactive surface treatment as Relay's navigation rail.
+
+
+### Relay page hierarchy
+
+The embedded Field workspace uses Relay's standard page-title hierarchy rather than a second branded app header. Field's local header is now title + status summary + task actions, leaving product branding to Relay's global shell.
