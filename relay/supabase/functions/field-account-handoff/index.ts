@@ -78,7 +78,6 @@ Deno.serve(async (req: Request) => {
   const { data: linkData, error: linkError } = await service.auth.admin.generateLink({
     type: "magiclink",
     email: user.email,
-    options: { redirectTo: FIELD_URL },
   });
 
   if (linkError) {
