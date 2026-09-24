@@ -306,3 +306,234 @@ body {
 }
 @keyframes startup-orbit { 0% { transform: scale(0.2); opacity: 0; } 22% { opacity: 1; } 100% { transform: scale(12); opacity: 0; } }
 @keyframes startup-welcome { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 0.72; transform: translateY(0); } }
+
+
+/* --- ARROW / Back to Orbit (beta) -------------------------------------- */
+
+.arrow-orbit-return {
+  position: relative;
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.65rem 0 0.5rem;
+  border: 1px solid rgb(var(--border));
+  border-radius: 9999px;
+  background: rgb(var(--surface) / 0.72);
+  color: rgb(var(--ink-muted));
+  backdrop-filter: blur(12px);
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.arrow-orbit-return:hover {
+  border-color: rgb(var(--ink) / 0.22);
+  background: rgb(var(--surface-raised));
+  color: rgb(var(--ink));
+}
+
+.arrow-orbit-return:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.arrow-orbit-return-mark {
+  display: grid;
+  width: 1.15rem;
+  height: 1.15rem;
+  place-items: center;
+}
+
+.arrow-orbit-return-mark span {
+  display: block;
+  width: 0.85rem;
+  height: 0.5rem;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 50%, 0 100%, 30% 50%);
+}
+
+.arrow-orbit-launch {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483500;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  pointer-events: all;
+  isolation: isolate;
+  animation: arrow-orbit-launch-fade 920ms ease both;
+}
+
+.arrow-orbit-launch-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at center, #000 5%, transparent 76%);
+}
+
+.arrow-orbit-launch-craft {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2rem;
+  height: 2rem;
+  margin: -1rem;
+  filter:
+    drop-shadow(0 0 8px rgb(255 255 255 / 0.92))
+    drop-shadow(0 0 30px rgb(255 255 255 / 0.4));
+  animation: arrow-orbit-launch-craft 860ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.arrow-orbit-launch-craft span {
+  position: absolute;
+  inset: 0.5rem 0.08rem;
+  background: #fff;
+  clip-path: polygon(0 0, 100% 50%, 0 100%, 30% 50%);
+}
+
+.arrow-orbit-launch-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4rem;
+  height: 4rem;
+  margin: -2rem;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 9999px;
+  opacity: 0;
+}
+
+.arrow-orbit-launch .ring-a {
+  animation: arrow-orbit-launch-ring 800ms 120ms ease-out both;
+}
+
+.arrow-orbit-launch .ring-b {
+  animation: arrow-orbit-launch-ring 800ms 220ms ease-out both;
+}
+
+.arrow-orbit-launch-particle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.18rem;
+  height: 0.18rem;
+  margin: -0.09rem;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 8px rgb(255 255 255 / 0.8);
+}
+
+.arrow-orbit-launch .particle-a {
+  animation: arrow-orbit-launch-particle-a 840ms ease-out both;
+}
+
+.arrow-orbit-launch .particle-b {
+  animation: arrow-orbit-launch-particle-b 840ms 55ms ease-out both;
+}
+
+.arrow-orbit-launch .particle-c {
+  animation: arrow-orbit-launch-particle-c 840ms 110ms ease-out both;
+}
+
+.arrow-orbit-launch p {
+  position: absolute;
+  left: 50%;
+  bottom: 2rem;
+  margin: 0;
+  transform: translateX(-50%);
+  color: rgb(255 255 255 / 0.5);
+  font-size: 0.62rem;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  animation: arrow-orbit-launch-copy 760ms ease both;
+}
+
+@keyframes arrow-orbit-launch-fade {
+  0% { opacity: 0; }
+  14%, 100% { opacity: 1; }
+}
+
+@keyframes arrow-orbit-launch-craft {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(0.65);
+    opacity: 0;
+  }
+  14% {
+    opacity: 1;
+  }
+  42% {
+    transform: translate(6vw, -7vh) rotate(-16deg) scale(1.05);
+  }
+  100% {
+    transform: translate(44vw, -38vh) rotate(-28deg) scale(0.16);
+    opacity: 0;
+  }
+}
+
+@keyframes arrow-orbit-launch-ring {
+  0% { transform: scale(0.15); opacity: 0; }
+  24% { opacity: 0.65; }
+  100% { transform: scale(7.2); opacity: 0; }
+}
+
+@keyframes arrow-orbit-launch-particle-a {
+  0% { transform: translate(0, 0); opacity: 0; }
+  20% { opacity: 0.7; }
+  100% { transform: translate(37vw, -31vh); opacity: 0; }
+}
+
+@keyframes arrow-orbit-launch-particle-b {
+  0% { transform: translate(0, 0); opacity: 0; }
+  22% { opacity: 0.5; }
+  100% { transform: translate(30vw, -24vh); opacity: 0; }
+}
+
+@keyframes arrow-orbit-launch-particle-c {
+  0% { transform: translate(0, 0); opacity: 0; }
+  24% { opacity: 0.35; }
+  100% { transform: translate(23vw, -19vh); opacity: 0; }
+}
+
+@keyframes arrow-orbit-launch-copy {
+  0%, 12% { opacity: 0; transform: translateX(-50%) translateY(0.4rem); }
+  32%, 68% { opacity: 0.65; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-0.2rem); }
+}
+
+@media (max-width: 640px) {
+  .arrow-orbit-return {
+    width: 2.25rem;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .arrow-orbit-return-label {
+    display: none;
+  }
+
+  .arrow-orbit-launch-craft {
+    animation-name: arrow-orbit-launch-craft-mobile;
+  }
+
+  @keyframes arrow-orbit-launch-craft-mobile {
+    0% {
+      transform: translate(0, 0) rotate(0deg) scale(0.65);
+      opacity: 0;
+    }
+    14% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate(46vw, -30vh) rotate(-28deg) scale(0.16);
+      opacity: 0;
+    }
+  }
+}
