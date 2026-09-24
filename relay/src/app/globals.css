@@ -743,7 +743,7 @@ html.arrow-orbit-is-launching body {
 }
 
 .arrow-system-island[data-open='true'] {
-  width: min(34rem, calc(100vw - 1.5rem));
+  width: min(42rem, calc(100vw - 1.5rem));
   border-color: rgb(var(--arrow-island-fg) / 0.14);
   box-shadow:
     0 18px 52px rgb(0 0 0 / 0.28),
@@ -816,6 +816,23 @@ html.arrow-orbit-is-launching body {
   transform: translateX(0);
   pointer-events: auto;
   transition-delay: 70ms, 40ms, 0s;
+}
+
+@media (min-width: 1101px) {
+  .arrow-system-island[data-open='true'] .arrow-system-island-content {
+    left: .5rem;
+    right: 2.62rem;
+    justify-content: flex-end;
+  }
+
+  .arrow-system-island[data-open='true'] .arrow-system-control,
+  .arrow-system-island[data-open='true'] .arrow-orbit-return-island,
+  .arrow-system-island[data-open='true'] .arrow-system-native-control,
+  .arrow-system-island[data-open='true'] .arrow-system-profile,
+  .arrow-system-island[data-open='true'] .arrow-system-name,
+  .arrow-system-island[data-open='true'] .arrow-system-divider {
+    flex-shrink: 0;
+  }
 }
 
 .arrow-system-control,
