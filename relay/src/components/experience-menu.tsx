@@ -21,17 +21,29 @@ export function ExperienceMenu({ onOpenChange }: { onOpenChange?: (open: boolean
     };
   }, []);
 
-  useEffect(() => {
-    onOpenChange?.(open);
-  }, [onOpenChange, open]);
+  function updateOpen(next: boolean) {
+    setOpen(next);
+    onOpenChange?.(next);
+  }
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        updateOpen(false);
+      }
     };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') updateOpen(false);
+    };
+
     document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, []);
+    window.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', close);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  });
 
   const isStill = experience === 'still';
   const label = isStill ? 'Still — change Relay experience' : 'Relay Experience';
@@ -40,7 +52,7 @@ export function ExperienceMenu({ onOpenChange }: { onOpenChange?: (open: boolean
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => updateOpen(!open)}
         aria-label={label}
         aria-expanded={open}
         aria-haspopup="dialog"
