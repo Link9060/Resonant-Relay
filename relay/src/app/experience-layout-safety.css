@@ -246,9 +246,15 @@ html[data-relay-experience='vivid'] .relay-popover {
   border-color: rgb(var(--border)) !important;
 }
 
-.arrow-system-island .relay-experience-popover :is(.bg-canvas, .bg-surface) {
-  background-color: transparent !important;
-  background-image: none !important;
+.arrow-system-island .relay-experience-popover button.bg-canvas:not(.relay-experience-option):not(.relay-accent-option):not(.relay-lock-in-toggle) {
+  background: rgb(var(--surface-raised)) !important;
+  border-color: rgb(var(--border)) !important;
+  color: rgb(var(--ink)) !important;
+}
+
+.arrow-system-island .relay-experience-popover button.bg-canvas:not(:disabled):hover {
+  border-color: rgb(var(--ink) / .24) !important;
+  background: rgb(var(--surface-raised)) !important;
 }
 
 .arrow-system-island .relay-experience-popover .relay-mode-preview,
