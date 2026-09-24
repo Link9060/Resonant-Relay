@@ -357,13 +357,15 @@ body {
 .arrow-orbit-launch {
   position: fixed;
   inset: 0;
-  z-index: 2147483500;
+  width: 100vw;
+  height: 100dvh;
+  z-index: 2147483646;
   overflow: hidden;
   background: #000;
   color: #fff;
   pointer-events: all;
   isolation: isolate;
-  animation: arrow-orbit-launch-fade 920ms ease both;
+  animation: arrow-orbit-launch-fade 1080ms ease both;
 }
 
 .arrow-orbit-launch-grid {
@@ -444,7 +446,7 @@ body {
 .arrow-orbit-launch p {
   position: absolute;
   left: 50%;
-  bottom: 2rem;
+  bottom: max(2rem, calc(env(safe-area-inset-bottom) + 1rem));
   margin: 0;
   transform: translateX(-50%);
   color: rgb(255 255 255 / 0.5);
@@ -535,5 +537,34 @@ body {
       transform: translate(46vw, -30vh) rotate(-28deg) scale(0.16);
       opacity: 0;
     }
+  }
+}
+
+
+html.arrow-orbit-is-launching,
+html.arrow-orbit-is-launching body {
+  overscroll-behavior: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrow-orbit-launch {
+    animation: none !important;
+  }
+
+  .arrow-orbit-launch-craft,
+  .arrow-orbit-launch-ring,
+  .arrow-orbit-launch-particle,
+  .arrow-orbit-launch p {
+    animation: none !important;
+  }
+
+  .arrow-orbit-launch-craft {
+    left: 50%;
+    top: 50%;
+    opacity: 0.9;
+  }
+
+  .arrow-orbit-launch p {
+    opacity: 0.7;
   }
 }
