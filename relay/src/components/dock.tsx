@@ -1,12 +1,12 @@
 'use client';
 
 import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
-import { APP_TITLE, appPageUrl, appPathname, BASE_PATH } from '@/lib/config';
+import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, IS_BETA } from '@/lib/config';
 import { cn } from '@/lib/utils';
 import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, TimerReset, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
-const DESKTOP_DOCK_ITEMS = [
+const FULL_DESKTOP_DOCK_ITEMS = [
   { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
   { href: '/chats', label: 'Chats', icon: MessageCircle },
   { href: '/contacts', label: 'Contacts', icon: Users },
@@ -18,6 +18,16 @@ const DESKTOP_DOCK_ITEMS = [
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
   { href: '/quicklinks', label: 'Quick Links', icon: Link2 },
 ] as const;
+
+const RELAY_DESKTOP_DOCK_ITEMS = [
+  { href: '/', label: 'Home', mobileLabel: 'Home', icon: House },
+  { href: '/chats', label: 'Chats', icon: MessageCircle },
+  { href: '/contacts', label: 'Contacts', icon: Users },
+  { href: '/planner', label: 'Plans', mobileLabel: 'Plans', icon: SquareCheck },
+  { href: '/schedule', label: 'Schedule', icon: CalendarClock },
+] as const;
+
+const DESKTOP_DOCK_ITEMS = IS_BETA ? RELAY_DESKTOP_DOCK_ITEMS : FULL_DESKTOP_DOCK_ITEMS;
 
 type AppRole = 'user' | 'moderator' | 'admin' | 'owner';
 
@@ -35,22 +45,39 @@ export function Dock({
   const pathname = usePathname();
   const currentPath = appPathname(pathname);
   const canOpenStaff = role !== 'user';
-  const mobileItems: Array<{ href: string; label: string; mobileLabel?: string; icon: LucideIcon }> = canOpenStaff
-    ? [
-        { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
-        { href: '/chats', label: 'Chats', icon: MessageCircle },
-        { href: '/schedule', label: 'Schedule', icon: CalendarClock },
-        { href: '/admin/moderation', label: 'Reports', icon: ShieldCheck },
-        { href: '/contacts', label: 'Contacts', icon: Users },
-        { href: '/profile', label: 'Settings', icon: Settings },
-      ]
-    : [
-        { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
-        { href: '/chats', label: 'Chats', icon: MessageCircle },
-        { href: '/schedule', label: 'Schedule', icon: CalendarClock },
-        { href: '/contacts', label: 'Contacts', icon: Users },
-        { href: '/profile', label: 'Settings', icon: Settings },
-      ];
+  const mobileItems: Array<{ href: string; label: string; mobileLabel?: string; icon: LucideIcon }> = IS_BETA
+    ? canOpenStaff
+      ? [
+          { href: '/', label: 'Home', mobileLabel: 'Home', icon: House },
+          { href: '/chats', label: 'Chats', icon: MessageCircle },
+          { href: '/planner', label: 'Plans', icon: SquareCheck },
+          { href: '/schedule', label: 'Schedule', icon: CalendarClock },
+          { href: '/admin/moderation', label: 'Reports', icon: ShieldCheck },
+          { href: '/contacts', label: 'Contacts', icon: Users },
+        ]
+      : [
+          { href: '/', label: 'Home', mobileLabel: 'Home', icon: House },
+          { href: '/chats', label: 'Chats', icon: MessageCircle },
+          { href: '/planner', label: 'Plans', icon: SquareCheck },
+          { href: '/schedule', label: 'Schedule', icon: CalendarClock },
+          { href: '/contacts', label: 'Contacts', icon: Users },
+        ]
+    : canOpenStaff
+      ? [
+          { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
+          { href: '/chats', label: 'Chats', icon: MessageCircle },
+          { href: '/schedule', label: 'Schedule', icon: CalendarClock },
+          { href: '/admin/moderation', label: 'Reports', icon: ShieldCheck },
+          { href: '/contacts', label: 'Contacts', icon: Users },
+          { href: '/profile', label: 'Settings', icon: Settings },
+        ]
+      : [
+          { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
+          { href: '/chats', label: 'Chats', icon: MessageCircle },
+          { href: '/schedule', label: 'Schedule', icon: CalendarClock },
+          { href: '/contacts', label: 'Contacts', icon: Users },
+          { href: '/profile', label: 'Settings', icon: Settings },
+        ];
 
   return (
     <>
