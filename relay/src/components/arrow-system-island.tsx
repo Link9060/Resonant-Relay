@@ -5,7 +5,7 @@ import { OrbitReturnButton } from '@/components/orbit-return-button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { appPageUrl, appPathname } from '@/lib/config';
 import type { Profile } from '@/lib/types/database';
-import { CalendarDays, ListTodo, NotebookPen, TimerReset } from 'lucide-react';
+import { CalendarDays, Link2, ListTodo, NotebookPen, TimerReset } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -14,6 +14,7 @@ const SYSTEM_ROUTES = [
   { href: '/todo', label: 'Tasks', icon: ListTodo },
   { href: '/focus', label: 'Focus', icon: TimerReset },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },
+  { href: '/quicklinks', label: 'Links', icon: Link2 },
 ] as const;
 
 export function ArrowSystemIsland({ profile }: { profile: Profile | null }) {
