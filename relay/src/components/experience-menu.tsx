@@ -3,7 +3,7 @@
 import { ExperienceControls } from '@/components/profile/experience-controls';
 import { EXPERIENCE_EVENT, readExperience, type RelayExperience } from '@/lib/experience-mode';
 import { Palette } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function ExperienceMenu({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
   const [open, setOpen] = useState(false);
@@ -21,10 +21,10 @@ export function ExperienceMenu({ onOpenChange }: { onOpenChange?: (open: boolean
     };
   }, []);
 
-  function updateOpen(next: boolean) {
+  const updateOpen = useCallback((next: boolean) => {
     setOpen(next);
     onOpenChange?.(next);
-  }
+  }, [onOpenChange]);
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
@@ -43,7 +43,7 @@ export function ExperienceMenu({ onOpenChange }: { onOpenChange?: (open: boolean
       document.removeEventListener('mousedown', close);
       window.removeEventListener('keydown', closeOnEscape);
     };
-  });
+  }, [updateOpen]);
 
   const isStill = experience === 'still';
   const label = isStill ? 'Still — change Relay experience' : 'Relay Experience';
