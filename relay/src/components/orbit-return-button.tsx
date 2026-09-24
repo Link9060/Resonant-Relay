@@ -7,7 +7,7 @@ const ORBIT_URL =
   process.env.NEXT_PUBLIC_ORBIT_SITE_URL ??
   'https://link9060.github.io/Resonant-Orbit/';
 
-export function OrbitReturnButton() {
+export function OrbitReturnButton({ variant = 'default' }: { variant?: 'default' | 'island' }) {
   const [launching, setLaunching] = useState(false);
   const timerRef = useRef<number | null>(null);
 
@@ -73,7 +73,7 @@ export function OrbitReturnButton() {
     <>
       <button
         type="button"
-        className="arrow-orbit-return"
+        className={`arrow-orbit-return ${variant === 'island' ? 'arrow-orbit-return-island' : ''}`}
         aria-label="Back to Orbit"
         title="Back to Orbit"
         onClick={launch}
