@@ -89,3 +89,69 @@ export function OrbitReturnButton() {
     </>
   );
 }
+
+
+export function OrbitArrivalReceiver() {
+  const [mounted, setMounted] = useState(false);
+  const [arriving, setArriving] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('from') !== 'orbit') return;
+
+    const clearSource = () => {
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.delete('from');
+      window.history.replaceState(
+        {},
+        '',
+        `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`,
+      );
+    };
+
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+
+    if (reduceMotion) {
+      clearSource();
+      return;
+    }
+
+    setArriving(true);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    timerRef.current = window.setTimeout(() => {
+      setArriving(false);
+      document.body.style.overflow = previousOverflow;
+      clearSource();
+    }, 1080);
+
+    return () => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  if (!mounted || !arriving) return null;
+
+  return createPortal(
+    <div
+      className="arrow-orbit-arrival"
+      role="status"
+      aria-live="polite"
+      aria-label="Arriving from Orbit"
+    >
+      <div className="arrow-orbit-launch-grid" aria-hidden="true" />
+      <span className="arrow-orbit-arrival-ring ring-a" aria-hidden="true" />
+      <span className="arrow-orbit-arrival-ring ring-b" aria-hidden="true" />
+      <span className="arrow-orbit-arrival-craft" aria-hidden="true"><span /></span>
+      <p>Arriving in Relay</p>
+    </div>,
+    document.body,
+  );
+}
