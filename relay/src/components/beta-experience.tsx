@@ -207,7 +207,7 @@ export function ParticleField() {
       const elapsed = last ? Math.min((now - last) / 1000, 0.05) : 0;
       clock += elapsed;
       last = now; dirty = false;
-      if (!media.matches) {
+      if (!reducedMotion()) {
         const direction = loading ? 1 : -1;
         const duration = loading ? 0.8 : 0.82;
         loadingMix = clamp01(loadingMix + direction * elapsed / duration);
@@ -217,11 +217,11 @@ export function ParticleField() {
       bg.clearRect(0, 0, w, h); fx.clearRect(0, 0, w, h);
       const impactProgress = impact ? Math.min(1, (now - impact.started) / 820) : 1;
       const impulse = impact && impactProgress < 1 ? Math.sin(impactProgress * Math.PI) : 0;
-      if (showCloud) renderCloud(bg, cx, cy, areaWidth, media.matches ? 0 : clock, dark, media.matches ? {} : {
+      if (showCloud) renderCloud(bg, cx, cy, areaWidth, reducedMotion() ? 0 : clock, dark, reducedMotion() ? {} : {
         mx: mouseX, my: mouseY, hover, impulse, loading, loadingMix,
         pointerX: pointerClientX - cx, pointerY: pointerClientY - cy,
       });
-      if (impact && impactProgress < 1 && !media.matches) {
+      if (impact && impactProgress < 1 && !reducedMotion()) {
         const radius = 18 + Math.pow(impactProgress, 0.72) * Math.min(areaWidth * 0.38, 330);
         fx.fillStyle = accentPaint;
         for (let i = 0; i < Math.min(260, sparks.length); i++) {
@@ -233,7 +233,7 @@ export function ParticleField() {
         }
         fx.globalAlpha = 1;
       } else impact = null;
-      if (cue && !media.matches) {
+      if (cue && !reducedMotion()) {
         const duration = cue.kind === 'theme' ? 1000 : cue.kind === 'open' ? PANEL_OPEN_MS : PANEL_CLOSE_MS;
         const p = Math.min(1, (now - cue.started) / duration);
         if (cue.kind === 'theme') {
@@ -251,7 +251,7 @@ export function ParticleField() {
         if (p === 1) { cue = null; fx.clearRect(0, 0, w, h); }
       } else cue = null;
       if (process.env.NODE_ENV === 'development') background.dataset.drawMs = (performance.now() - costStart).toFixed(2);
-      if (!media.matches && (showCloud || cue || impact || hover !== targetHover)) frame = requestAnimationFrame(draw);
+      if (!reducedMotion() && (showCloud || cue || impact || hover !== targetHover)) frame = requestAnimationFrame(draw);
     };
     const observer = new MutationObserver(() => { measure(); wake(); });
     observer.observe(root, { attributes: true, subtree: true, childList: true, attributeFilter: ['data-space', 'data-ready', 'data-loading', 'data-dock-collapsed'] });
@@ -313,14 +313,14 @@ export function ParticleField() {
     window.addEventListener('pointerleave', onPointerLeave); window.addEventListener('pointerdown', onPointerDown, { passive: true });
     window.addEventListener(PARTICLE_PREFERENCES_EVENT, onPreferences);
     window.addEventListener(EXPERIENCE_EVENT, onExperience);
-    window.addEventListener(PARTICLE_EVENT, onCue); document.addEventListener('visibilitychange', visibility); media.addEventListener('change', wake);
+    window.addEventListener(PARTICLE_EVENT, onCue); document.addEventListener('visibilitychange', visibility); media.addEventListener('change', wake); window.addEventListener('arrow:motionchange', wake);
     return () => {
       cancelAnimationFrame(frame); observer.disconnect(); layoutObserver.disconnect(); themeObserver.disconnect();
       window.clearTimeout(preferenceTimer);
       window.removeEventListener('resize', resize); window.removeEventListener('pointermove', onPointer); window.removeEventListener('pointerleave', onPointerLeave); window.removeEventListener('pointerdown', onPointerDown); window.removeEventListener(PARTICLE_EVENT, onCue);
       window.removeEventListener(PARTICLE_PREFERENCES_EVENT, onPreferences);
       window.removeEventListener(EXPERIENCE_EVENT, onExperience);
-      document.removeEventListener('visibilitychange', visibility); media.removeEventListener('change', wake);
+      document.removeEventListener('visibilitychange', visibility); media.removeEventListener('change', wake); window.removeEventListener('arrow:motionchange', wake);
     };
   }, []);
   return <><canvas ref={backgroundRef} className="beta-cloud" aria-hidden="true" /><canvas ref={effectRef} className="beta-particle-effects" aria-hidden="true" /></>;
