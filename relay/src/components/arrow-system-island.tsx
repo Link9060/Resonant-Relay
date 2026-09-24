@@ -23,6 +23,7 @@ export function ArrowSystemIsland({ profile }: { profile: Profile | null }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
+  const [childPanelOpen, setChildPanelOpen] = useState(false);
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
@@ -49,12 +50,17 @@ export function ArrowSystemIsland({ profile }: { profile: Profile | null }) {
   }, []);
 
   function closeIfIdle() {
-    if (!pinned) setOpen(false);
+    if (!pinned && !childPanelOpen) setOpen(false);
   }
 
   function handleBlur() {
     window.requestAnimationFrame(() => {
-      if (!pinned && rootRef.current && !rootRef.current.contains(document.activeElement)) {
+      if (
+        !pinned &&
+        !childPanelOpen &&
+        rootRef.current &&
+        !rootRef.current.contains(document.activeElement)
+      ) {
         setOpen(false);
       }
     });
@@ -64,6 +70,23 @@ export function ArrowSystemIsland({ profile }: { profile: Profile | null }) {
     const next = !pinned;
     setPinned(next);
     setOpen(next || !open);
+  }
+
+  function handleChildPanelOpenChange(next: boolean) {
+    setChildPanelOpen(next);
+
+    if (next) {
+      setOpen(true);
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      const root = rootRef.current;
+      const hovering = root?.matches(':hover') ?? false;
+      const focused = root?.contains(document.activeElement) ?? false;
+
+      if (!pinned && !hovering && !focused) setOpen(false);
+    });
   }
 
   return (
@@ -103,7 +126,7 @@ export function ArrowSystemIsland({ profile }: { profile: Profile | null }) {
           <span className="arrow-system-divider" aria-hidden="true" />
 
           <div className="arrow-system-native-control" title="Experience and color">
-            <ExperienceMenu />
+            <ExperienceMenu onOpenChange={handleChildPanelOpenChange} />
           </div>
           <div className="arrow-system-native-control">
             <ThemeToggle />
