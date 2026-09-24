@@ -568,3 +568,121 @@ html.arrow-orbit-is-launching body {
     opacity: 0.7;
   }
 }
+
+
+/* --- ARROW / Arrival from Orbit ---------------------------------------- */
+
+.arrow-orbit-arrival {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  z-index: 2147483646;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  pointer-events: all;
+  isolation: isolate;
+  animation: arrow-orbit-arrival-fade 1080ms ease both;
+}
+
+.arrow-orbit-arrival-craft {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2rem;
+  height: 2rem;
+  margin: -1rem;
+  filter:
+    drop-shadow(0 0 8px rgb(255 255 255 / 0.92))
+    drop-shadow(0 0 30px rgb(255 255 255 / 0.4));
+  animation: arrow-orbit-arrival-craft 920ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.arrow-orbit-arrival-craft span {
+  position: absolute;
+  inset: 0.5rem 0.08rem;
+  background: #fff;
+  clip-path: polygon(0 0, 100% 50%, 0 100%, 30% 50%);
+}
+
+.arrow-orbit-arrival-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4rem;
+  height: 4rem;
+  margin: -2rem;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 9999px;
+  opacity: 0;
+}
+
+.arrow-orbit-arrival .ring-a {
+  animation: arrow-orbit-arrival-ring 760ms 360ms ease-out both;
+}
+
+.arrow-orbit-arrival .ring-b {
+  animation: arrow-orbit-arrival-ring 900ms 470ms ease-out both;
+}
+
+.arrow-orbit-arrival p {
+  position: absolute;
+  left: 50%;
+  bottom: max(2rem, calc(env(safe-area-inset-bottom) + 1rem));
+  margin: 0;
+  transform: translateX(-50%);
+  color: rgb(255 255 255 / 0.5);
+  font-size: 0.62rem;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  animation: arrow-orbit-arrival-copy 960ms ease both;
+}
+
+@keyframes arrow-orbit-arrival-fade {
+  0% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes arrow-orbit-arrival-craft {
+  0% {
+    transform: translate(-44vw, 30vh) rotate(24deg) scale(0.16);
+    opacity: 0;
+  }
+  14% { opacity: 1; }
+  58% {
+    transform: translate(-5vw, 4vh) rotate(6deg) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg) scale(0.72);
+    opacity: 0;
+  }
+}
+
+@keyframes arrow-orbit-arrival-ring {
+  0% { transform: scale(0.1); opacity: 0; }
+  24% { opacity: 0.62; }
+  100% { transform: scale(7.2); opacity: 0; }
+}
+
+@keyframes arrow-orbit-arrival-copy {
+  0%, 12% { opacity: 0; transform: translateX(-50%) translateY(0.4rem); }
+  34%, 72% { opacity: 0.65; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-0.2rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrow-orbit-arrival {
+    animation: none !important;
+  }
+
+  .arrow-orbit-arrival-craft,
+  .arrow-orbit-arrival-ring,
+  .arrow-orbit-arrival p {
+    animation: none !important;
+  }
+}
