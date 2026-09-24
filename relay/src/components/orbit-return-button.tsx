@@ -9,12 +9,9 @@ const ORBIT_URL =
 
 export function OrbitReturnButton() {
   const [launching, setLaunching] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setMounted(true);
-
     return () => {
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     };
@@ -51,7 +48,7 @@ export function OrbitReturnButton() {
   };
 
   const launchOverlay =
-    mounted && launching
+    launching && typeof document !== 'undefined'
       ? createPortal(
           <div
             className="arrow-orbit-launch"
@@ -92,13 +89,11 @@ export function OrbitReturnButton() {
 
 
 export function OrbitArrivalReceiver() {
-  const [mounted, setMounted] = useState(false);
   const [arriving, setArriving] = useState(false);
   const timerRef = useRef<number | null>(null);
+  const frameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setMounted(true);
-
     const url = new URL(window.location.href);
     if (url.searchParams.get('from') !== 'orbit') return;
 
@@ -121,9 +116,12 @@ export function OrbitArrivalReceiver() {
       return;
     }
 
-    setArriving(true);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+
+    frameRef.current = window.requestAnimationFrame(() => {
+      setArriving(true);
+    });
 
     timerRef.current = window.setTimeout(() => {
       setArriving(false);
@@ -132,12 +130,15 @@ export function OrbitArrivalReceiver() {
     }, 1080);
 
     return () => {
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+      }
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
       document.body.style.overflow = previousOverflow;
     };
   }, []);
 
-  if (!mounted || !arriving) return null;
+  if (!arriving || typeof document === 'undefined') return null;
 
   return createPortal(
     <div
@@ -155,3 +156,4 @@ export function OrbitArrivalReceiver() {
     document.body,
   );
 }
+
