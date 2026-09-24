@@ -73,27 +73,66 @@ html[data-relay-experience='vivid'] .relay-popover {
 }
 
 
-/* ARROW island owns global appearance controls, so its popover should read
-   as an extension of the system bar rather than a second modal card. */
+/* ARROW island owns global appearance controls, so its popover is a true
+   extension of the island: black in Relay light mode, white in Relay dark mode. */
 .arrow-system-island .relay-experience-popover {
-  width: min(40rem, calc(100vw - 2rem));
-  max-height: calc(100dvh - 6rem);
-  padding: .7rem;
+  --canvas: 8 8 10;
+  --surface: 8 8 10;
+  --surface-raised: 21 21 24;
+  --ink: 248 248 249;
+  --ink-muted: 202 202 208;
+  --ink-faint: 148 148 158;
+  --border: 48 48 54;
+
+  color-scheme: dark;
+  width: min(42rem, calc(100vw - 2rem));
+  max-height: min(78dvh, 46rem);
+  top: calc(100% + .35rem) !important;
+  right: -.15rem !important;
+  padding: .62rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
   border-color: rgb(var(--border)) !important;
-  background: rgb(var(--surface) / .99) !important;
+  background: rgb(var(--surface)) !important;
   background-image: none !important;
+  color: rgb(var(--ink)) !important;
+  white-space: normal !important;
   box-shadow:
-    0 22px 64px rgb(0 0 0 / .20),
-    inset 0 1px rgb(255 255 255 / .45) !important;
-  backdrop-filter: blur(20px) saturate(1.06) !important;
+    0 24px 68px rgb(0 0 0 / .32),
+    inset 0 1px rgb(255 255 255 / .06) !important;
+  backdrop-filter: blur(22px) saturate(1.04) !important;
   scrollbar-width: thin;
-  scrollbar-color: rgb(var(--ink) / .16) transparent;
+  scrollbar-color: rgb(var(--ink) / .18) transparent;
 }
 
 .dark .arrow-system-island .relay-experience-popover {
+  --canvas: 247 247 248;
+  --surface: 247 247 248;
+  --surface-raised: 255 255 255;
+  --ink: 14 14 16;
+  --ink-muted: 82 82 89;
+  --ink-faint: 126 126 136;
+  --border: 218 218 223;
+
+  color-scheme: light;
   box-shadow:
-    0 24px 68px rgb(0 0 0 / .44),
-    inset 0 1px rgb(255 255 255 / .06) !important;
+    0 24px 70px rgb(0 0 0 / .42),
+    inset 0 1px rgb(255 255 255 / .86) !important;
+}
+
+.arrow-system-island .relay-experience-popover::before {
+  content: '';
+  position: absolute;
+  right: 2.65rem;
+  top: -.36rem;
+  width: 1.6rem;
+  height: .42rem;
+  border: 1px solid rgb(var(--border));
+  border-bottom: 0;
+  border-radius: .6rem .6rem 0 0;
+  background: rgb(var(--surface));
+  pointer-events: none;
 }
 
 .arrow-system-island .relay-experience-popover::-webkit-scrollbar {
@@ -102,15 +141,31 @@ html[data-relay-experience='vivid'] .relay-popover {
 
 .arrow-system-island .relay-experience-popover::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgb(var(--ink) / .16);
+  background: rgb(var(--ink) / .18);
 }
 
 .arrow-system-island .relay-experience-controls {
+  min-width: 0;
   border: 0 !important;
-  border-radius: .9rem;
+  border-radius: .85rem;
   background: transparent !important;
-  padding: .55rem !important;
+  color: rgb(var(--ink)) !important;
+  padding: .5rem .5rem .9rem !important;
   box-shadow: none !important;
+  white-space: normal !important;
+}
+
+.arrow-system-island .relay-experience-controls > div:first-child {
+  position: sticky;
+  top: -.62rem;
+  z-index: 4;
+  margin: -.5rem -.5rem .15rem;
+  padding: .62rem .5rem .55rem;
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--surface)) 76%,
+    rgb(var(--surface) / 0)
+  );
 }
 
 .arrow-system-island .relay-experience-popover :is(
@@ -118,34 +173,132 @@ html[data-relay-experience='vivid'] .relay-popover {
   .relay-accent-option,
   .relay-lock-in-toggle
 ) {
+  min-width: 0;
   background: rgb(var(--surface-raised)) !important;
   background-image: none !important;
+  color: rgb(var(--ink)) !important;
+  border-color: rgb(var(--border)) !important;
+  white-space: normal !important;
+}
+
+.arrow-system-island .relay-experience-popover :is(
+  .relay-experience-option,
+  .relay-accent-option,
+  .relay-lock-in-toggle
+):hover {
+  border-color: rgb(var(--ink) / .24) !important;
+  background: rgb(var(--surface-raised)) !important;
+}
+
+.arrow-system-island .relay-experience-popover :is(
+  .relay-experience-option,
+  .relay-accent-option,
+  .relay-lock-in-toggle
+)[aria-pressed='true'] {
+  border-color: rgb(var(--ink) / .72) !important;
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--ink) / .1),
+    0 0 0 1px rgb(var(--ink) / .035) !important;
+}
+
+.arrow-system-island .relay-experience-popover :is(
+  .relay-experience-option,
+  .relay-accent-option
+)[aria-pressed='true']::after {
+  background: rgb(var(--ink)) !important;
+}
+
+.arrow-system-island .relay-experience-popover .relay-experience-option {
+  min-height: 5.55rem;
+  padding: .72rem !important;
+}
+
+.arrow-system-island .relay-experience-popover .relay-experience-option > span:last-child {
+  display: -webkit-box !important;
+  margin-top: .42rem !important;
+  overflow: hidden !important;
+  overflow-wrap: anywhere;
+  white-space: normal !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .arrow-system-island .relay-experience-popover .relay-accent-option {
   min-height: 2.35rem;
+  padding-top: .5rem !important;
+  padding-bottom: .5rem !important;
 }
 
-.arrow-system-island .relay-experience-popover .relay-experience-option {
-  min-height: 6.15rem;
+.arrow-system-island .relay-experience-popover .text-ink {
+  color: rgb(var(--ink)) !important;
 }
 
-.arrow-system-island .relay-experience-popover .relay-experience-option > span:last-child {
-  overflow-wrap: anywhere;
+.arrow-system-island .relay-experience-popover .text-ink-muted {
+  color: rgb(var(--ink-muted)) !important;
+}
+
+.arrow-system-island .relay-experience-popover .text-ink-faint {
+  color: rgb(var(--ink-faint)) !important;
+}
+
+.arrow-system-island .relay-experience-popover .border-border {
+  border-color: rgb(var(--border)) !important;
+}
+
+.arrow-system-island .relay-experience-popover :is(.bg-canvas, .bg-surface) {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+.arrow-system-island .relay-experience-popover .relay-mode-preview,
+.arrow-system-island .relay-experience-popover .relay-lock-in-icon {
+  background: rgb(var(--surface-raised)) !important;
+  border-color: rgb(var(--border)) !important;
+}
+
+.arrow-system-island .relay-experience-popover .relay-experience-intensity::-webkit-slider-thumb {
+  border-color: rgb(var(--surface)) !important;
+}
+
+.arrow-system-island .relay-experience-popover .relay-experience-intensity::-moz-range-thumb {
+  border-color: rgb(var(--surface)) !important;
+}
+
+@media (max-width: 1100px) and (min-width: 640px) {
+  .arrow-system-island .relay-experience-popover {
+    width: min(38rem, calc(100vw - 1.5rem));
+    right: -.25rem !important;
+  }
 }
 
 @media (max-width: 639px) {
   .arrow-system-island .relay-experience-popover {
     left: auto !important;
     right: 0 !important;
-    top: calc(100% + .55rem) !important;
+    top: calc(100% + .4rem) !important;
     width: min(22rem, calc(100vw - 1rem));
-    max-height: calc(100dvh - 6.5rem);
+    max-height: calc(100dvh - 6.25rem);
     margin: 0 !important;
-    padding: .45rem;
+    padding: .42rem;
+  }
+
+  .arrow-system-island .relay-experience-popover::before {
+    right: .8rem;
   }
 
   .arrow-system-island .relay-experience-controls {
-    padding: .45rem !important;
+    padding: .4rem .4rem .8rem !important;
+  }
+
+  .arrow-system-island .relay-experience-controls > div:first-child {
+    top: -.42rem;
+    margin: -.4rem -.4rem .1rem;
+    padding: .5rem .4rem;
+  }
+
+  .arrow-system-island .relay-experience-popover .relay-experience-option {
+    min-height: 5.2rem;
   }
 }
+
