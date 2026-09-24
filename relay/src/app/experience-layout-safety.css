@@ -2,7 +2,7 @@
 
 /* Keep the experience picker structurally neutral in every mode. */
 .relay-experience-popover {
-  width: min(34rem, calc(100vw - 1.5rem));
+  width: min(38rem, calc(100vw - 1.5rem));
   max-height: min(82dvh, 48rem);
   overflow-y: auto;
   overflow-x: hidden;
@@ -69,5 +69,83 @@ html[data-relay-experience='vivid'] .relay-popover {
     right: .75rem !important;
     width: auto;
     max-height: calc(100dvh - 5rem);
+  }
+}
+
+
+/* ARROW island owns global appearance controls, so its popover should read
+   as an extension of the system bar rather than a second modal card. */
+.arrow-system-island .relay-experience-popover {
+  width: min(40rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 6rem);
+  padding: .7rem;
+  border-color: rgb(var(--border)) !important;
+  background: rgb(var(--surface) / .99) !important;
+  background-image: none !important;
+  box-shadow:
+    0 22px 64px rgb(0 0 0 / .20),
+    inset 0 1px rgb(255 255 255 / .45) !important;
+  backdrop-filter: blur(20px) saturate(1.06) !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--ink) / .16) transparent;
+}
+
+.dark .arrow-system-island .relay-experience-popover {
+  box-shadow:
+    0 24px 68px rgb(0 0 0 / .44),
+    inset 0 1px rgb(255 255 255 / .06) !important;
+}
+
+.arrow-system-island .relay-experience-popover::-webkit-scrollbar {
+  width: 6px;
+}
+
+.arrow-system-island .relay-experience-popover::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(var(--ink) / .16);
+}
+
+.arrow-system-island .relay-experience-controls {
+  border: 0 !important;
+  border-radius: .9rem;
+  background: transparent !important;
+  padding: .55rem !important;
+  box-shadow: none !important;
+}
+
+.arrow-system-island .relay-experience-popover :is(
+  .relay-experience-option,
+  .relay-accent-option,
+  .relay-lock-in-toggle
+) {
+  background: rgb(var(--surface-raised)) !important;
+  background-image: none !important;
+}
+
+.arrow-system-island .relay-experience-popover .relay-accent-option {
+  min-height: 2.35rem;
+}
+
+.arrow-system-island .relay-experience-popover .relay-experience-option {
+  min-height: 6.15rem;
+}
+
+.arrow-system-island .relay-experience-popover .relay-experience-option > span:last-child {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 639px) {
+  .arrow-system-island .relay-experience-popover {
+    left: auto !important;
+    right: 0 !important;
+    top: calc(100% + .55rem) !important;
+    width: min(22rem, calc(100vw - 1rem));
+    max-height: calc(100dvh - 6.5rem);
+    margin: 0 !important;
+    padding: .45rem;
+  }
+
+  .arrow-system-island .relay-experience-controls {
+    padding: .45rem !important;
   }
 }
