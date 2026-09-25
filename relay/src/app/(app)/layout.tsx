@@ -98,6 +98,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             }
             return sessionUser;
           }
+          // A successful empty session is a normal signed-out visitor, not a load failure.
+          if (!sessionResult?.error && !sessionUser) return null;
           if (sessionResult?.error) lastError = sessionResult.error;
         } catch (error) {
           lastError = error;
@@ -197,7 +199,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         console.error('Relay app-shell load failed', { stage: loadStage, error });
         setLoadError(
           loadStage === 'authentication'
-            ? 'Relay signed you in, but the session did not finish loading. Retry once; if it still fails, sign in again.'
+            ? 'Relay could not verify your session. Retry once; if it still fails, sign in again.'
             : 'Relay could not finish loading your account. Retry once; your data was not changed.',
         );
       }
