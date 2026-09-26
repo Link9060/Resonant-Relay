@@ -16,8 +16,8 @@ export function ConnectGoogleButton({ service, next }: { service: GoogleService;
     setLoading(true);
     setError(null);
     const supabase = createClient();
-    const { data, error: invokeError } = await supabase.functions.invoke('google-hub', {
-      body: { action: 'connect_start', service, returnTo: next },
+    const { data, error: invokeError } = await supabase.functions.invoke('calendar-hub', {
+      body: { action: 'connect_start', provider: 'google', next },
     });
 
     if (invokeError || !data?.url) {
