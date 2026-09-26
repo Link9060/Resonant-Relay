@@ -39,12 +39,31 @@ function retryTime(timestamp: number) {
   }).format(timestamp);
 }
 
+function normalizePhone(value: string) {
+  const trimmed = value.trim();
+  const digits = trimmed.replace(/\D/g, '');
+
+  // Make ordinary 10-digit US numbers convenient while still accepting
+  // explicit international E.164-style numbers such as +44...
+  if (digits.length === 10 && !trimmed.startsWith('+')) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1') && !trimmed.startsWith('+')) return `+${digits}`;
+  if (trimmed.startsWith('+') && digits.length >= 8 && digits.length <= 15) return `+${digits}`;
+
+  return null;
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [phoneEnabled, setPhoneEnabled] = useState(false);
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
+  const [phone, setPhone] = useState('');
+  const [phoneCode, setPhoneCode] = useState('');
+  const [phoneStage, setPhoneStage] = useState<'number' | 'code'>('number');
+  const [phoneRetryAfter, setPhoneRetryAfter] = useState<number | null>(null);
 
   useEffect(() => {
     const next = safeInternalNext(new URLSearchParams(window.location.search).get('next'));
@@ -59,7 +78,10 @@ export default function LoginPage() {
     })
       .then((response) => (response.ok ? response.json() : null))
       .then((settings) => {
-        if (active) setGoogleEnabled(settings?.external?.google === true);
+        if (active) {
+          setGoogleEnabled(settings?.external?.google === true);
+          setPhoneEnabled(settings?.external?.phone === true);
+        }
       })
       .catch(() => {
         // Email sign-in remains available if provider discovery is unavailable.
@@ -80,6 +102,16 @@ export default function LoginPage() {
 
     return () => window.clearTimeout(timer);
   }, [retryAfter]);
+
+  useEffect(() => {
+    if (!phoneRetryAfter) return;
+
+    const timer = window.setTimeout(() => {
+      setPhoneRetryAfter(null);
+    }, Math.max(0, phoneRetryAfter - Date.now()) + 250);
+
+    return () => window.clearTimeout(timer);
+  }, [phoneRetryAfter]);
 
   async function handleGoogleSignIn() {
     setBusy(true);
@@ -169,6 +201,85 @@ export default function LoginPage() {
     setBusy(false);
   }
 
+  async function requestPhoneCode() {
+    if (phoneRetryAfter) {
+      setMessage(`That number was requested too recently. Try again after ${retryTime(phoneRetryAfter)}.`);
+      return;
+    }
+
+    const normalizedPhone = normalizePhone(phone);
+    if (!normalizedPhone) {
+      setMessage('Enter a valid mobile number. US numbers can be entered with or without +1.');
+      return;
+    }
+
+    setBusy(true);
+    setMessage(null);
+
+    const supabase = createClient();
+    await supabase.auth.signOut({ scope: 'local' });
+
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: normalizedPhone,
+      options: { shouldCreateUser: true },
+    });
+
+    if (error) {
+      const isRateLimit = error.status === 429 || error.message.toLowerCase().includes('rate limit');
+      if (isRateLimit) {
+        const nextAttempt = Date.now() + REQUEST_COOLDOWN_MS;
+        setPhoneRetryAfter(nextAttempt);
+        setMessage(`Too many sign-in codes were requested. Try again after ${retryTime(nextAttempt)}.`);
+      } else {
+        setMessage('Relay could not send a sign-in code to that number. Check the number and try again.');
+      }
+      setBusy(false);
+      return;
+    }
+
+    setPhone(normalizedPhone);
+    setPhoneCode('');
+    setPhoneStage('code');
+    setPhoneRetryAfter(Date.now() + REQUEST_COOLDOWN_MS);
+    setMessage('Code sent. Enter the 6-digit code from the text message.');
+    setBusy(false);
+  }
+
+  async function handlePhoneSignIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await requestPhoneCode();
+  }
+
+  async function handlePhoneVerify(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const normalizedPhone = normalizePhone(phone);
+    const token = phoneCode.replace(/\D/g, '').slice(0, 6);
+
+    if (!normalizedPhone || token.length !== 6) {
+      setMessage('Enter the 6-digit code from the text message.');
+      return;
+    }
+
+    setBusy(true);
+    setMessage(null);
+
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: normalizedPhone,
+      token,
+      type: 'sms',
+    });
+
+    if (error || !data.session) {
+      setMessage('That code was not accepted. Check the newest text message and try again.');
+      setBusy(false);
+      return;
+    }
+
+    window.location.replace(currentAuthCallbackUrl());
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-canvas px-6 py-10">
       <div className="w-full max-w-sm text-center">
@@ -183,9 +294,9 @@ export default function LoginPage() {
         </p>
 
         <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left">
-          <p className="text-sm font-semibold text-ink">Use a personal email account</p>
+          <p className="text-sm font-semibold text-ink">Use an account you control</p>
           <p className="mt-1 text-xs leading-5 text-ink-muted">
-            <strong>Do not use a school-administered, work-managed, or other administrator-controlled email.</strong> Managed accounts can block Relay sign-in or connected-service permissions and may be disabled by the organization later.
+            Use a personal email address or your own mobile number. <strong>Do not use a school-administered, work-managed, or other administrator-controlled email.</strong> Managed accounts can block Relay sign-in or connected-service permissions and may be disabled by the organization later.
           </p>
         </div>
 
@@ -199,13 +310,102 @@ export default function LoginPage() {
           </>
         )}
 
-        <form onSubmit={handleEmailSignIn} className={`${googleEnabled ? '' : 'mt-6 '}space-y-3 text-left`}>
-          <label htmlFor="email" className="block text-xs font-medium text-ink-muted">Personal email address</label>
-          <input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="w-full rounded-md border border-border bg-surface-raised px-3 py-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-ink-muted" />
-          <button type="submit" disabled={busy || Boolean(retryAfter)} className="w-full rounded-md bg-ink px-4 py-3 text-sm font-medium text-canvas transition-opacity disabled:opacity-50">
-            {retryAfter ? `Try again after ${retryTime(retryAfter)}` : 'Email me a sign-in link'}
-          </button>
-        </form>
+        {phoneEnabled && (
+          <div className={`${googleEnabled ? '' : 'mt-6 '}mb-4 grid grid-cols-2 gap-1 rounded-lg border border-border bg-surface p-1`}>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMethod('email');
+                setMessage(null);
+              }}
+              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${authMethod === 'email' ? 'bg-surface-raised text-ink shadow-sm' : 'text-ink-muted hover:text-ink'}`}
+            >
+              Email
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMethod('phone');
+                setMessage(null);
+              }}
+              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${authMethod === 'phone' ? 'bg-surface-raised text-ink shadow-sm' : 'text-ink-muted hover:text-ink'}`}
+            >
+              Phone
+            </button>
+          </div>
+        )}
+
+        {authMethod === 'email' || !phoneEnabled ? (
+          <form onSubmit={handleEmailSignIn} className={`${googleEnabled || phoneEnabled ? '' : 'mt-6 '}space-y-3 text-left`}>
+            <label htmlFor="email" className="block text-xs font-medium text-ink-muted">Personal email address</label>
+            <input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="w-full rounded-md border border-border bg-surface-raised px-3 py-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-ink-muted" />
+            <button type="submit" disabled={busy || Boolean(retryAfter)} className="w-full rounded-md bg-ink px-4 py-3 text-sm font-medium text-canvas transition-opacity disabled:opacity-50">
+              {retryAfter ? `Try again after ${retryTime(retryAfter)}` : 'Email me a sign-in link'}
+            </button>
+          </form>
+        ) : phoneStage === 'number' ? (
+          <form onSubmit={handlePhoneSignIn} className="space-y-3 text-left">
+            <label htmlFor="phone" className="block text-xs font-medium text-ink-muted">Mobile number</label>
+            <input
+              id="phone"
+              type="tel"
+              autoComplete="tel"
+              required
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              placeholder="(913) 555-0123"
+              className="w-full rounded-md border border-border bg-surface-raised px-3 py-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-ink-muted"
+            />
+            <p className="text-[11px] leading-4 text-ink-faint">Relay will text this number a one-time sign-in code. Standard messaging rates may apply.</p>
+            <button type="submit" disabled={busy || Boolean(phoneRetryAfter)} className="w-full rounded-md bg-ink px-4 py-3 text-sm font-medium text-canvas transition-opacity disabled:opacity-50">
+              {phoneRetryAfter ? `Try again after ${retryTime(phoneRetryAfter)}` : 'Text me a sign-in code'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handlePhoneVerify} className="space-y-3 text-left">
+            <div>
+              <label htmlFor="phone-code" className="block text-xs font-medium text-ink-muted">6-digit code</label>
+              <p className="mt-1 text-[11px] text-ink-faint">Sent to {phone}</p>
+            </div>
+            <input
+              id="phone-code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              maxLength={6}
+              required
+              value={phoneCode}
+              onChange={(event) => setPhoneCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="123456"
+              className="w-full rounded-md border border-border bg-surface-raised px-3 py-3 text-center font-mono text-lg tracking-[0.35em] text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-ink-muted"
+            />
+            <button type="submit" disabled={busy || phoneCode.length !== 6} className="w-full rounded-md bg-ink px-4 py-3 text-sm font-medium text-canvas transition-opacity disabled:opacity-50">
+              Verify and continue
+            </button>
+            <div className="flex items-center justify-between gap-3 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setPhoneStage('number');
+                  setPhoneCode('');
+                  setMessage(null);
+                }}
+                className="text-ink-muted underline underline-offset-4"
+              >
+                Change number
+              </button>
+              <button
+                type="button"
+                onClick={() => void requestPhoneCode()}
+                disabled={busy || Boolean(phoneRetryAfter)}
+                className="text-ink-muted underline underline-offset-4 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {phoneRetryAfter ? `Resend after ${retryTime(phoneRetryAfter)}` : 'Resend code'}
+              </button>
+            </div>
+          </form>
+        )}
 
         {message && <p role="status" className="mt-4 text-sm text-ink-muted">{message}</p>}
 
