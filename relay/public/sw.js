@@ -45,7 +45,21 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (['script', 'style', 'image', 'font', 'audio'].includes(request.destination)) {
+  if (['script', 'style'].includes(request.destination)) {
+    // Code must prefer the network so a Relay deploy cannot be held back by
+    // an older service-worker cache. Fall back to cache only when offline.
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) void caches.open(CACHE).then((cache) => cache.put(request, response.clone()));
+          return response;
+        })
+        .catch(() => caches.match(request)),
+    );
+    return;
+  }
+
+  if (['image', 'font', 'audio'].includes(request.destination)) {
     event.respondWith(
       caches.match(request).then((cached) => cached || fetch(request).then((response) => {
         if (response.ok) void caches.open(CACHE).then((cache) => cache.put(request, response.clone()));
