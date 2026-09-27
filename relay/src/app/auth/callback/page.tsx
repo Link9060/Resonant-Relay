@@ -10,6 +10,21 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 const LOGIN_PATH = appUrl('/login/');
 const EMAIL_OTP_TYPES = new Set<EmailOtpType>(['email', 'magiclink', 'invite', 'recovery', 'email_change']);
 const POST_AUTH_NEXT_KEY = 'relay-post-auth-next';
+const ARROW_POST_AUTH_URL_KEY = 'arrow-post-auth-url-v1';
+
+function consumeArrowPostAuthUrl() {
+  try {
+    const value = window.localStorage.getItem(ARROW_POST_AUTH_URL_KEY);
+    window.localStorage.removeItem(ARROW_POST_AUTH_URL_KEY);
+    if (!value) return null;
+    const parsed = new URL(value, window.location.origin);
+    if (parsed.origin !== window.location.origin) return null;
+    if (!parsed.pathname.startsWith('/Resonant-Orbit/')) return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
 
 function consumePostAuthNext() {
   try {
@@ -29,6 +44,12 @@ async function goAfterSignIn() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     window.location.replace(`${window.location.origin}${LOGIN_PATH}`);
+    return;
+  }
+
+  const arrowDestination = consumeArrowPostAuthUrl();
+  if (arrowDestination) {
+    window.location.replace(arrowDestination);
     return;
   }
 
