@@ -137,3 +137,26 @@
 @media (prefers-reduced-motion: reduce) {
   .beta-experience *, .beta-experience *::before, .beta-experience *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; transition-delay: 0ms !important; }
 }
+
+/* ARROW owns cross-app cinematic motion now.
+   Keep Relay's local micro-interactions, but never run the retired startup,
+   particle-field, page wipe, dock/header entrance, or route transition layers. */
+.startup-shell,
+.beta-intro,
+.beta-cloud,
+.beta-particle-effects {
+  display: none !important;
+}
+
+.beta-experience[data-ready="true"] .relay-desktop-dock,
+.beta-experience[data-ready="true"] .relay-app-header,
+.beta-experience[data-ready="true"] .relay-mobile-nav,
+.beta-experience .relay-mobile-main[data-phase="opening"],
+.beta-experience .relay-mobile-main[data-phase="closing"] {
+  animation: none !important;
+  filter: none !important;
+  clip-path: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
