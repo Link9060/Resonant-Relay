@@ -6,6 +6,7 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import { FormEvent, useEffect, useState } from 'react';
 
 const REQUEST_COOLDOWN_MS = 60 * 1000;
+const ARROW_ORBIT_URL = 'https://link9060.github.io/Resonant-Orbit/';
 
 function currentAuthCallbackUrl() {
   const origin = window.location.origin.replace(/\/+$/, '');
@@ -35,6 +36,11 @@ export default function LoginPage() {
   const [googleEnabled, setGoogleEnabled] = useState(false);
 
   useEffect(() => {
+    if (IS_BETA) {
+      window.location.replace(ARROW_ORBIT_URL);
+      return;
+    }
+
     let active = true;
 
     void fetch(`${SUPABASE_URL}/auth/v1/settings`, {
@@ -150,6 +156,14 @@ export default function LoginPage() {
     }
 
     setBusy(false);
+  }
+
+  if (IS_BETA) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-canvas px-6 text-center">
+        <p className="text-sm text-ink-muted">Opening ARROW…</p>
+      </main>
+    );
   }
 
   return (
