@@ -6,7 +6,18 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import { FormEvent, useEffect, useState } from 'react';
 
 const REQUEST_COOLDOWN_MS = 60 * 1000;
-const ARROW_ORBIT_URL = 'https://link9060.github.io/Resonant-Orbit/';
+const POST_AUTH_NEXT_KEY = 'relay-post-auth-next';
+
+function safeInternalNext(value: string | null) {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
+  try {
+    const parsed = new URL(value, window.location.origin);
+    if (parsed.origin !== window.location.origin) return null;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return null;
+  }
+}
 
 function currentAuthCallbackUrl() {
   const origin = window.location.origin.replace(/\/+$/, '');
@@ -36,9 +47,9 @@ export default function LoginPage() {
   const [googleEnabled, setGoogleEnabled] = useState(false);
 
   useEffect(() => {
-    if (IS_BETA) {
-      window.location.replace(ARROW_ORBIT_URL);
-      return;
+    const next = safeInternalNext(new URLSearchParams(window.location.search).get('next'));
+    if (next) {
+      try { window.localStorage.setItem(POST_AUTH_NEXT_KEY, next); } catch {}
     }
 
     let active = true;
@@ -156,14 +167,6 @@ export default function LoginPage() {
     }
 
     setBusy(false);
-  }
-
-  if (IS_BETA) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-canvas px-6 text-center">
-        <p className="text-sm text-ink-muted">Opening ARROW…</p>
-      </main>
-    );
   }
 
   return (
