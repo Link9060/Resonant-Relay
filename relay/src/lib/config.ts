@@ -1,8 +1,8 @@
 const isGitHubPages = process.env.NEXT_PUBLIC_RELAY_DEPLOY_TARGET === 'github-pages';
 
 export const IS_BETA = isGitHubPages;
-export const PRODUCTION_VERSION = '1.0.7';
-export const PRODUCTION_RELEASE_NAME = 'Focus Update';
+export const PRODUCTION_VERSION = '1.0.8';
+export const PRODUCTION_RELEASE_NAME = 'Next Update';
 export const DEVELOPMENT_VERSION = '1.0.8';
 export const DEVELOPMENT_RELEASE_NAME = 'Next Update';
 export const APP_VERSION = IS_BETA ? DEVELOPMENT_VERSION : PRODUCTION_VERSION;
