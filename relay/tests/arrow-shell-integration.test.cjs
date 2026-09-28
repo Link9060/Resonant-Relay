@@ -14,8 +14,8 @@ test('Relay has exactly one ARROW shell mount', () => {
   assert.equal(headerMounts, 1, 'app header must own the single ARROW control');
 });
 
-test('Relay uses full Orbit in beta and Relay-only Orbit in public', () => {
-  assert.match(header, /data-orbit-access=\{IS_BETA \? 'enabled' : 'relay-only'\}/);
+test('enterarrow.com Relay enables full Orbit access', () => {
+  assert.match(header, /data-orbit-access="enabled"/);
 });
 
 test('Relay loads the shared ARROW shell assets in public and beta', () => {
