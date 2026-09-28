@@ -13,8 +13,8 @@ export const COMPACT_RELEASE_LABEL = IS_BETA ? `Beta ${APP_VERSION}` : APP_VERSI
 export const APP_TITLE = IS_BETA
   ? `Relay · Beta ${APP_VERSION} · ${DEVELOPMENT_RELEASE_NAME}`
   : `Relay · ${APP_VERSION} · ${PRODUCTION_RELEASE_NAME}`;
-export const BASE_PATH = isGitHubPages ? '/Resonant-Relay' : '';
-export const PUBLIC_SITE_URL = 'https://resonantrelay.org';
+export const BASE_PATH = isGitHubPages ? '/Resonant-Relay' : '/relay';
+export const PUBLIC_SITE_URL = 'https://enterarrow.com/relay';
 export const BETA_SITE_URL = 'https://link9060.github.io/Resonant-Relay';
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL
   ?? (isGitHubPages ? BETA_SITE_URL : PUBLIC_SITE_URL);
