@@ -148,7 +148,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const user = await getAuthenticatedUser();
         if (!active) return;
         if (!user) {
-          window.location.replace(appPageUrl('/login'));
+          const target = new URL('https://enterarrow.com/');
+          const requested = window.location.pathname.startsWith('/relay/')
+            ? window.location.pathname + window.location.search + window.location.hash
+            : '/relay/';
+          target.searchParams.set('next', requested);
+          window.location.replace(target.toString());
           return;
         }
 
@@ -227,11 +232,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   async function leaveDisabledAccount() {
-    try {
-      await createClient().auth.signOut();
-    } finally {
-      window.location.replace(appPageUrl('/login'));
-    }
+    window.location.replace('https://enterarrow.com/signout/');
   }
 
   if (loadError) {
