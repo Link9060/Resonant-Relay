@@ -1,8 +1,8 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/types/database';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
 
-let client: ReturnType<typeof createSupabaseClient<Database>> | undefined;
+let client: SupabaseClient<Database> | undefined;
 
 // enterarrow.com is the authentication authority for every ARROW center.
 // The gateway uses the standard Supabase browser storage key, so Relay must
