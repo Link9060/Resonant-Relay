@@ -11,7 +11,7 @@ import { StaffCommandPaletteGlobal } from '@/components/staff-command-palette';
 import { StillShortcuts } from '@/components/still-shortcuts';
 import { VisualPreferencesAccountSync } from '@/components/visual-preferences-account-sync';
 import { appPageUrl, IS_BETA } from '@/lib/config';
-import { createClient } from '@/lib/supabase/client';
+import { createClient, ensureArrowBrowserSession } from '@/lib/supabase/client';
 import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT, setRolePreview } from '@/lib/role-preview';
 import { syncVisualPreferencesWithAccount } from '@/lib/visual-preferences-account';
 import { useEffect, useState, useSyncExternalStore } from 'react';
@@ -76,6 +76,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     async function getAuthenticatedUser() {
       let lastError: unknown = null;
+
+      // The ARROW gateway already validated the browser session before Relay
+      // was shown. Adopt that canonical session before considering a redirect.
+      try {
+        const bridgedSession = await withTimeout<any>(
+          ensureArrowBrowserSession(),
+          'ARROW session bridge',
+          6_000,
+        );
+        if (bridgedSession?.user) return bridgedSession.user;
+      } catch (error) {
+        lastError = error;
+      }
 
       // A magic-link/OAuth callback can finish immediately before the next page
       // mounts. Prefer a server-validated user, but keep the freshly persisted
