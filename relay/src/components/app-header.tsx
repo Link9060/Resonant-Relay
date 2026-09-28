@@ -1,6 +1,6 @@
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { StaffInboxButton } from '@/components/staff/staff-inbox-button';
-import { appPageUrl, BASE_PATH, COMPACT_RELEASE_LABEL, IS_BETA, RELEASE_LABEL } from '@/lib/config';
+import { appPageUrl, BASE_PATH, COMPACT_RELEASE_LABEL, RELEASE_LABEL } from '@/lib/config';
 import type { AppRole } from '@/lib/role-preview';
 import type { Notification, Profile } from '@/lib/types/database';
 import { cn, formatRelayNumber } from '@/lib/utils';
