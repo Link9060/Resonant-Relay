@@ -1,6 +1,11 @@
 name: Relay CI
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'relay/**'
+      - '.github/workflows/relay-ci.yml'
   pull_request:
     paths:
       - 'relay/**'
