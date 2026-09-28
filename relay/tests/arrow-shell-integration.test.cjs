@@ -23,3 +23,10 @@ test('Relay beta still loads the shared ARROW shell assets', () => {
   assert.match(layout, /arrow-shell\.js/);
   assert.match(layout, /strategy="afterInteractive"/);
 });
+
+
+test('Relay profile does not expose retired startup or particle-transition controls', () => {
+  const profile = fs.readFileSync('src/app/(app)/profile/page.tsx', 'utf8');
+  assert.doesNotMatch(profile, /Replay startup animation/);
+  assert.doesNotMatch(profile, /<ParticleControls/);
+});
