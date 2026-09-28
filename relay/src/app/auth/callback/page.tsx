@@ -8,9 +8,8 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
 const LOGIN_PATH = appUrl('/login/');
-const EMAIL_OTP_TYPES = new Set<EmailOtpType>(['email', 'magiclink', 'invite', 'recovery', 'email_change']);
-const POST_AUTH_NEXT_KEY = 'relay-post-auth-next';
 const ARROW_POST_AUTH_URL_KEY = 'arrow-post-auth-url-v1';
+const EMAIL_OTP_TYPES = new Set<string>(['email', 'magiclink', 'invite', 'recovery', 'email_change', 'signup']);
 
 function consumeArrowPostAuthUrl() {
   try {
@@ -21,19 +20,6 @@ function consumeArrowPostAuthUrl() {
     if (parsed.origin !== window.location.origin) return null;
     if (!parsed.pathname.startsWith('/Resonant-Orbit/')) return null;
     return parsed.toString();
-  } catch {
-    return null;
-  }
-}
-
-function consumePostAuthNext() {
-  try {
-    const value = window.localStorage.getItem(POST_AUTH_NEXT_KEY);
-    window.localStorage.removeItem(POST_AUTH_NEXT_KEY);
-    if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
-    const parsed = new URL(value, window.location.origin);
-    if (parsed.origin !== window.location.origin) return null;
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
     return null;
   }
@@ -67,10 +53,7 @@ async function goAfterSignIn() {
     .eq('id', user.id)
     .single();
 
-  const next = profile?.onboarding_completed_at ? consumePostAuthNext() : null;
-  const destination = profile?.onboarding_completed_at
-    ? (next ? appUrl(next) : appUrl(IS_BETA ? '/space/' : '/'))
-    : appUrl('/onboarding/');
+  const destination = profile?.onboarding_completed_at ? appUrl(IS_BETA ? '/space/' : '/') : appUrl('/onboarding/');
   window.location.replace(`${window.location.origin}${destination}`);
 }
 

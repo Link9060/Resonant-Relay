@@ -228,7 +228,7 @@ const PUBLIC_RELEASES = [
       {
         label: 'Included',
         items: [
-          'Messaging, contacts, planner, to-do, calendar, and email views.',
+          'Messaging, contacts, planner, to-do, calendar, and account views.',
           'Profiles, account controls, staff tools, and the Relay dashboard.',
         ],
       },
@@ -246,6 +246,7 @@ export function WhatsNew({ onboardingCompletedAt }: WhatsNewProps) {
   const [open, setOpen] = useState(false);
   const currentVersion = IS_BETA ? DEVELOPMENT_VERSION : APP_VERSION;
   const currentRelease = RELEASES.find((release) => release.version === currentVersion) ?? PUBLIC_RELEASES[0];
+  const previousReleases = RELEASES.filter((release) => release.version !== currentRelease.version);
 
   useEffect(() => {
     const openFromDock = () => setOpen(true);
@@ -300,7 +301,7 @@ export function WhatsNew({ onboardingCompletedAt }: WhatsNewProps) {
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="relay-whats-new-title">
-      <button type="button" aria-label="Close What’s New" onClick={close} className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
+      <div aria-hidden="true" onClick={close} className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
 
       <section className="relative z-10 flex max-h-[min(42rem,calc(100vh-3rem))] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-2xl">
         <div className="border-b border-border px-5 py-5 sm:px-6">
@@ -315,7 +316,7 @@ export function WhatsNew({ onboardingCompletedAt }: WhatsNewProps) {
               <h2 id="relay-whats-new-title" className="mt-4 font-display text-2xl font-medium tracking-tight text-ink">{currentRelease.title}</h2>
               <p className="mt-2 max-w-lg text-sm leading-6 text-ink-muted">{currentRelease.summary}</p>
             </div>
-            <button type="button" onClick={close} aria-label="Close" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-surface hover:text-ink">
+            <button type="button" onClick={close} aria-label="Close What’s New" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-surface hover:text-ink">
               <X size={18} />
             </button>
           </div>
@@ -341,8 +342,8 @@ export function WhatsNew({ onboardingCompletedAt }: WhatsNewProps) {
           <div className="mt-7 border-t border-border pt-5">
             <p className="text-xs font-medium text-ink">Update history</p>
             <div className="mt-3 space-y-2">
-              {RELEASES.map((release) => (
-                <details key={release.version} open={release.version === currentVersion} className="group rounded-xl border border-border bg-canvas">
+              {previousReleases.map((release) => (
+                <details key={release.version} className="group rounded-xl border border-border bg-canvas">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-left [&::-webkit-details-marker]:hidden">
                     <div>
                       <div className="text-sm font-medium text-ink">Relay {release.version}</div>

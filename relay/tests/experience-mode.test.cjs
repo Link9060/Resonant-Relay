@@ -33,10 +33,13 @@ test('duo accents blend two colors without tinting Relay surfaces', () => {
   assert.match(css, /linear-gradient\(120deg, rgb\(var\(--accent\)\), rgb\(var\(--accent-secondary\)\)\)/);
 });
 
-test('legacy beta preferences migrate without losing users choices', () => {
-  for (const migration of ["relay:'flow'", "minimal:'still'", "scifi:'nexus'", "lavender:'violet'", "ocean:'cyan'"]) {
-    assert.match(layout, new RegExp(migration));
+test('legacy palettes migrate while pre-auth visuals use account-safe defaults', () => {
+  for (const migration of ["lavender: 'violet'", "ocean: 'cyan'"]) {
+    assert.match(modeSource, new RegExp(migration));
   }
+  assert.match(layout, /relayExperience='flow'/);
+  assert.match(layout, /relayPalette='monochrome'/);
+  assert.match(layout, /relayVisualPrefsReady='false'/);
 });
 
 test('Lock-In persists separately and suppresses attention effects', () => {

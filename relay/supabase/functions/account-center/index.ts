@@ -3,7 +3,6 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const ALLOWED_ORIGINS = new Set([
   'https://resonantrelay.org',
-  'https://www.resonantrelay.org',
   'https://link9060.github.io',
   'http://localhost:3000',
 ]);
@@ -25,53 +24,13 @@ function json(req: Request, value: unknown, status = 200) {
   });
 }
 
-function namedKey(variable: string, fallback: string) {
-  const encoded = Deno.env.get(variable);
-  if (encoded) {
-    try {
-      const values = JSON.parse(encoded) as Record<string, string>;
-      if (values.default) return values.default;
-    } catch (_) {}
-  }
-  return Deno.env.get(fallback) ?? '';
-}
-
-async function consumeRateLimit(admin: ReturnType<typeof createClient>, userId: string, bucket: string, seconds: number, limit: number) {
-  const { data, error } = await admin.rpc('consume_edge_rate_limit', {
-    p_user_id: userId,
-    p_bucket: bucket,
-    p_window_seconds: seconds,
-    p_limit: limit,
-  });
-  if (error) throw error;
-  return data === true;
-}
-
-function signedInRecently(user: { last_sign_in_at?: string | null }, minutes = 10) {
-  const signedInAt = new Date(user.last_sign_in_at ?? 0).getTime();
-  return Number.isFinite(signedInAt) && Date.now() - signedInAt <= minutes * 60_000;
-}
-
-async function revokeGoogleGrant(refreshToken: string) {
-  try {
-    const response = await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(refreshToken)}`, {
-      method: 'POST',
-    });
-    // Google returns 400 for an already-invalid token; either way there is no
-    // usable Relay grant left to preserve.
-    return response.ok || response.status === 400;
-  } catch {
-    return false;
-  }
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(req) });
   if (req.method !== 'POST') return json(req, { error: 'Method not allowed.' }, 405);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-  const anonKey = namedKey('SUPABASE_PUBLISHABLE_KEYS', 'SUPABASE_ANON_KEY');
-  const serviceRole = namedKey('SUPABASE_SECRET_KEYS', 'SUPABASE_SERVICE_ROLE_KEY');
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+  const serviceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
   if (!token) return json(req, { error: 'Not signed in.' }, 401);
 
@@ -87,9 +46,6 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
 
     if (body.action === 'unsend_message') {
-      if (!(await consumeRateLimit(admin, user.id, 'account-unsend', 60, 30))) {
-        return json(req, { error: 'Too many account actions. Wait a minute and try again.' }, 429);
-      }
       const { data: message } = await admin.from('messages').select('id,sender_id,created_at,attachments').eq('id', body.messageId).maybeSingle();
       if (!message || message.sender_id !== user.id) return json(req, { error: 'Message not found.' }, 404);
       if (Date.now() - new Date(message.created_at).getTime() > 2 * 60_000) return json(req, { error: 'The 2-minute unsend window has ended.' }, 409);
@@ -104,10 +60,6 @@ Deno.serve(async (req: Request) => {
     }
 
     if (body.action === 'export') {
-      if (!signedInRecently(user)) return json(req, { error: 'Sign out and sign back in before downloading account data.', code: 'reauth_required' }, 401);
-      if (!(await consumeRateLimit(admin, user.id, 'account-export', 3600, 3))) {
-        return json(req, { error: 'Data export limit reached. Try again later.' }, 429);
-      }
       const [profile, messages, todos, notes, memberships, plans, responses, contacts, blocks, notifications, accounts, reports] = await Promise.all([
         admin.from('profiles').select('*').eq('id', user.id).maybeSingle(),
         admin.from('messages').select('id,conversation_id,body,attachments,reply_to_id,created_at,edited_at').eq('sender_id', user.id).order('created_at'),
@@ -142,10 +94,6 @@ Deno.serve(async (req: Request) => {
 
     if (body.action === 'delete_account') {
       if (body.confirmation !== 'DELETE') return json(req, { error: 'Type DELETE to confirm.' }, 400);
-      if (!signedInRecently(user)) return json(req, { error: 'Sign out and sign back in before deleting your account.', code: 'reauth_required' }, 401);
-      if (!(await consumeRateLimit(admin, user.id, 'account-delete', 3600, 3))) {
-        return json(req, { error: 'Account deletion is temporarily rate limited. Try again later.' }, 429);
-      }
       const [{ data: sentMessages }, { data: accounts }] = await Promise.all([
         admin.from('messages').select('attachments').eq('sender_id', user.id),
         admin.from('calendar_integrations').select('provider,refresh_token').eq('user_id', user.id),
@@ -155,14 +103,9 @@ Deno.serve(async (req: Request) => {
         const { error } = await admin.storage.from('chat-attachments').remove(paths.slice(index, index + 100));
         if (error) throw new Error('Could not remove account files.');
       }
-      for (const account of (accounts ?? []).filter((account: any) => account.provider === 'google' && account.refresh_token)) {
-        if (!(await revokeGoogleGrant(account.refresh_token))) {
-          return json(req, {
-            error: 'Relay could not revoke your Google Calendar access. Nothing was deleted; try again in a moment.',
-            code: 'oauth_revoke_failed',
-          }, 503);
-        }
-      }
+      await Promise.all((accounts ?? []).filter((account: any) => account.provider === 'google').map((account: any) =>
+        fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(account.refresh_token)}`, { method: 'POST' }).catch(() => undefined)
+      ));
       const { error } = await admin.auth.admin.deleteUser(user.id);
       if (error) throw error;
       return json(req, { ok: true });
@@ -171,7 +114,7 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: 'Unknown action.' }, 400);
   } catch (error) {
     console.error(error);
-    return json(req, { error: 'Relay could not complete that request.', requestId: crypto.randomUUID() }, 500);
+    return json(req, { error: error instanceof Error ? error.message : 'Relay could not complete that request.' }, 500);
   }
 });
 

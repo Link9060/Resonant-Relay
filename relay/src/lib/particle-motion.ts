@@ -10,7 +10,8 @@ export function introSeen() {
   try { return sessionStorage.getItem(BETA_INTRO_KEY) === '1'; } catch { return false; }
 }
 export function reducedMotion() {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const choice = document.documentElement.dataset.arrowMotion;
+  return choice ? choice === 'reduce' : window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 export type Dust = { angle: number; radius: number; depth: number; size: number; phase: number };

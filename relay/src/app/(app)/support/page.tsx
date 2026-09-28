@@ -113,6 +113,15 @@ export default function SupportPage() {
         Send something straight into Relay's staff system. Your request is automatically routed based on its type.
       </p>
 
+      <div className="mt-4 grid gap-3 text-xs leading-5 text-ink-muted sm:grid-cols-2">
+        <div className="rounded-xl border border-border bg-surface px-4 py-3">
+          <span className="font-semibold text-ink">Privacy:</span> Relay staff assigned to your request can see its subject, details, and your account identity. Bug reports also include basic browser and screen information. Never include a password or sign-in code.
+        </div>
+        <div className="rounded-xl border border-border bg-surface px-4 py-3">
+          <span className="font-semibold text-ink">Timing:</span> Support is not live chat, and response times vary. You can track the request status here. For an urgent safety concern, contact a trusted adult, appropriate school staff, or local emergency services instead of waiting for a Relay reply.
+        </div>
+      </div>
+
       <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {TYPES.map((type) => {
           const Icon = type.icon;

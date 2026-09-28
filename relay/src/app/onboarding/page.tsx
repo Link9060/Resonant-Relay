@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Loader2,
   MessageCircle,
+  ShieldCheck,
   Smartphone,
   UserRound,
   UsersRound,
@@ -133,7 +134,7 @@ export default function OnboardingPage() {
       icon: <LayoutDashboard size={24} />,
       eyebrow: 'Dashboard',
       title: 'Your day, without the digging.',
-      body: 'Tasks, upcoming events, recent mail, and new chats all land on Dashboard. On iPhone, this is your main quick-view hub.',
+      body: 'Tasks, upcoming events, and new chats all land on Dashboard. On a phone, this is your main quick-view hub.',
     },
     {
       icon: <MessageCircle size={24} />,
@@ -150,8 +151,14 @@ export default function OnboardingPage() {
     {
       icon: <Smartphone size={24} />,
       eyebrow: 'Relay Mobile',
-      title: 'Phone for quick actions. Mac for deep work.',
-      body: 'On iPhone, Relay focuses on Dashboard, Chats, Contacts, Settings, and urgent staff work. Full Mail, Calendar, Planner, analytics, and advanced controls stay Mac-first.',
+      title: 'Phone for quick actions. Desktop for deep work.',
+      body: 'On a phone, Relay focuses on Dashboard, Chats, Contacts, Settings, and urgent staff work. Calendar, Planner, analytics, and advanced controls are designed for larger screens, including Mac, Windows, and Chromebooks.',
+    },
+    {
+      icon: <ShieldCheck size={24} />,
+      eyebrow: 'Safety & support',
+      title: 'You stay in control.',
+      body: 'Use message tools to hide or report something, block an account from Contacts, or send a broader concern through Support & Feedback. Reports go to Relay staff, not the person you report.',
     },
   ];
 
@@ -381,8 +388,13 @@ export default function OnboardingPage() {
                 <div className="mt-6 flex gap-1.5">
                   {tourSlides.map((_, index) => <span key={index} className={`h-1.5 flex-1 rounded-full ${index <= tourIndex ? 'bg-ink' : 'bg-border'}`} />)}
                 </div>
-                <div className="mt-7 flex items-center justify-between gap-3">
-                  <button type="button" disabled={busy} onClick={() => void finishTour()} className="min-h-11 px-2 text-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">{tourOnly ? 'Back to Settings' : 'Skip tour'}</button>
+                <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-1">
+                    {tourIndex > 0 && (
+                      <button type="button" disabled={busy} onClick={() => setTourIndex((current) => Math.max(0, current - 1))} className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50"><ArrowLeft size={15} />Previous</button>
+                    )}
+                    <button type="button" disabled={busy} onClick={() => void finishTour()} className="min-h-11 px-2 text-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">{tourOnly ? 'Back to Settings' : 'Skip tour'}</button>
+                  </div>
                   <button
                     type="button"
                     disabled={busy}

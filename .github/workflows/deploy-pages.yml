@@ -45,6 +45,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Motion regression tests
+        run: npm run test:motion
+
       - name: Build static beta site
         run: npm run build
 

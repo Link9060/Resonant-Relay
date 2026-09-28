@@ -2,7 +2,6 @@
 
 import { BetaExperience } from '@/components/beta-experience';
 import { DashboardPresetAccountSync } from '@/components/dashboard/dashboard-preset-account-sync';
-import { FieldSemanticSync } from '@/components/field/field-semantic-sync';
 import { Dock } from '@/components/dock';
 import { AppHeader } from '@/components/app-header';
 import { MobileRouteGate } from '@/components/mobile-route-gate';
@@ -95,12 +94,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           const sessionUser = sessionResult?.data?.session?.user ?? null;
           if (sessionUser) {
             if (attempt > 0) {
-              // Refresh once after the initial handoff so the following RLS
-              // requests use the newest access token.
               await withTimeout<any>(supabase.auth.refreshSession(), 'Session refresh', 6_000).catch(() => null);
             }
             return sessionUser;
           }
+          // A successful empty session is a normal signed-out visitor, not a load failure.
+          if (!sessionResult?.error && !sessionUser) return null;
           if (sessionResult?.error) lastError = sessionResult.error;
         } catch (error) {
           lastError = error;
@@ -200,7 +199,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         console.error('Relay app-shell load failed', { stage: loadStage, error });
         setLoadError(
           loadStage === 'authentication'
-            ? 'Relay signed you in, but the session did not finish loading. Retry once; if it still fails, sign in again.'
+            ? 'Relay could not verify your session. Retry once; if it still fails, sign in again.'
             : 'Relay could not finish loading your account. Retry once; your data was not changed.',
         );
       }
@@ -281,7 +280,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <BetaExperience>
       <DashboardPresetAccountSync />
-      <FieldSemanticSync />
       <VisualPreferencesAccountSync userId={state.userId} />
       <div data-dock-collapsed={dockCollapsed} className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
         <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={handleDockCollapsedChange} onboardingCompletedAt={state.profile?.onboarding_completed_at ?? null} />

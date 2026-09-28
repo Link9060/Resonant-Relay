@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name,
     short_name: shortName,
-    description: 'Chats, tasks, plans, email, and calendars in one place.',
+    description: 'Chats, tasks, plans, notes, and calendars in one place.',
     start_url: root,
     scope: root,
     display: 'standalone',

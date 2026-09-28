@@ -1,4 +1,4 @@
-const CACHE = 'relay-shell-v8';
+const CACHE = 'relay-shell-v6';
 const SCOPE_URL = new URL(self.registration.scope);
 const BASE = SCOPE_URL.pathname.replace(/\/$/, '');
 
@@ -6,17 +6,6 @@ function appPath(path = '/') {
   const normalized = path.startsWith('/') ? path : `/${path}`;
   if (BASE && (normalized === BASE || normalized.startsWith(`${BASE}/`))) return normalized;
   return `${BASE}${normalized}` || '/';
-}
-
-function isSensitiveNavigation(url) {
-  const localPath = BASE && url.pathname.startsWith(`${BASE}/`)
-    ? url.pathname.slice(BASE.length)
-    : url.pathname;
-
-  if (localPath === '/auth' || localPath.startsWith('/auth/')) return true;
-
-  return ['code', 'token_hash', 'access_token', 'refresh_token', 'sb_flow_id']
-    .some((key) => url.searchParams.has(key));
 }
 
 const SHELL = [appPath('/'), appPath('/offline/'), appPath('/manifest.webmanifest'), appPath('/relay-icon.svg'), appPath('/favicon-32.png'), appPath('/relay-icon-192.png'), appPath('/relay-icon-512.png'), appPath('/relay-icon-maskable-512.png'), appPath('/apple-touch-icon.png')];
@@ -45,11 +34,6 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin || !insideScope) return;
 
   if (request.mode === 'navigate') {
-    if (isSensitiveNavigation(url)) {
-      event.respondWith(fetch(request));
-      return;
-    }
-
     event.respondWith(
       fetch(request)
         .then((response) => {

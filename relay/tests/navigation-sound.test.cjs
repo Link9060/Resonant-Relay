@@ -17,11 +17,24 @@ function setup() {
     hasAttribute() { return false; }
   }
   class Audio { play() { return Promise.resolve(); } pause() {} }
-  const window = { location: {href:'https://relay.test/',origin:'https://relay.test'}, setTimeout:callback=>scheduled.push(callback) };
-  const document = {addEventListener:(name,callback,capture)=>listeners.set(name,{callback,capture})};
+  const window = {
+    location: {href:'https://relay.test/',origin:'https://relay.test',assign(){}},
+    setTimeout:callback=>scheduled.push(callback),
+    addEventListener(){},
+    removeEventListener(){},
+    matchMedia:()=>({matches:false}),
+  };
+  const document = {
+    addEventListener:(name,callback,capture)=>listeners.set(name,{callback,capture}),
+    removeEventListener(){},
+  };
   const output = ts.transpileModule(fs.readFileSync('src/components/ui-sound-effects.tsx','utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
   const exported = {};
-  const requireStub = name => name === 'react' ? {useEffect:effect=>effect()} : {BASE_PATH:''};
+  const requireStub = name => {
+    if (name === 'react') return {useEffect:effect=>effect()};
+    if (name.includes('sound-preferences')) return {readSoundPreference:()=>true,SOUND_PREFERENCE_EVENT:'relay:sound-preference'};
+    return {BASE_PATH:''};
+  };
   new Function('require','exports','document','window','Audio','Element',output)(requireStub,exported,document,window,Audio,Element);
   exported.UiSoundEffects();
   const event = {target:new Element(),button:0,defaultPrevented:false,preventDefault(){this.defaultPrevented=true}};
