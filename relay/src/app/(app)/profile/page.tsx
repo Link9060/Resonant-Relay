@@ -5,10 +5,8 @@ import { UserRoleBadge } from '@/components/user-role-badge';
 import { PageLoading } from '@/components/page-loading';
 import { SignOutButton } from '@/components/profile/sign-out-button';
 import { AccountDataControls } from '@/components/profile/account-data-controls';
-import { ParticleControls } from '@/components/profile/particle-controls';
 import { SoundControls } from '@/components/profile/sound-controls';
 import { appPageUrl } from '@/lib/config';
-import { BETA_INTRO_KEY } from '@/lib/particle-motion';
 import { AppRole, getRolePreview, setRolePreview } from '@/lib/role-preview';
 import { createClient } from '@/lib/supabase/client';
 import { cn, formatRelayNumber } from '@/lib/utils';
@@ -141,10 +139,6 @@ export default function ProfilePage() {
     setSaved(true);
   }
 
-  function replayStartup() {
-    sessionStorage.removeItem(BETA_INTRO_KEY);
-    window.location.reload();
-  }
 
   function changePreviewRole(role: AppRole) {
     setRolePreview(role);
@@ -208,13 +202,9 @@ export default function ProfilePage() {
       <section id="notifications" className="mt-8 scroll-mt-24 border-t border-border pt-6">
         <h2 className="text-sm font-medium text-ink">Preferences</h2>
         <div className="mt-3 flex w-full flex-col items-start gap-3">
-          <ParticleControls />
           <SoundControls />
           <PushToggle />
           <a href={appPageUrl('/onboarding?tour=1')} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface"><Play size={15} />Replay Relay tour</a>
-          <button type="button" onClick={replayStartup} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface">
-            <Play size={15} />Replay startup animation
-          </button>
         </div>
       </section>
 
