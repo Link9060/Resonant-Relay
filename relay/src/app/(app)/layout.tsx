@@ -10,7 +10,7 @@ import { PageLoading } from '@/components/page-loading';
 import { StaffCommandPaletteGlobal } from '@/components/staff-command-palette';
 import { StillShortcuts } from '@/components/still-shortcuts';
 import { VisualPreferencesAccountSync } from '@/components/visual-preferences-account-sync';
-import { appPageUrl, IS_BETA } from '@/lib/config';
+import { IS_BETA } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT, setRolePreview } from '@/lib/role-preview';
 import { syncVisualPreferencesWithAccount } from '@/lib/visual-preferences-account';
