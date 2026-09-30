@@ -164,7 +164,7 @@ export function NotesWorkspace() {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 id="notes-heading" className="font-display text-2xl font-medium tracking-tight text-ink">Notes</h1>
-          <p className="mt-1 text-sm text-ink-faint">A private space for ideas, class notes, and project details.</p>
+          <p className="mt-1 text-sm text-ink-faint">Shared ARROW notes. Relay is the full editor; permitted context is available to Field and RAVIN.</p>
         </div>
         <button type="button" onClick={() => void addNote()} disabled={creating} className="inline-flex min-h-10 items-center gap-2 rounded-md bg-ink px-3.5 text-sm font-medium text-canvas disabled:opacity-45">
           {creating ? <Loader2 size={15} className="animate-spin" /> : <FilePlus2 size={15} />}New note
