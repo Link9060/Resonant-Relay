@@ -10,7 +10,7 @@ import { PageLoading } from '@/components/page-loading';
 import { StaffCommandPaletteGlobal } from '@/components/staff-command-palette';
 import { StillShortcuts } from '@/components/still-shortcuts';
 import { VisualPreferencesAccountSync } from '@/components/visual-preferences-account-sync';
-import { appPageUrl, IS_BETA } from '@/lib/config';
+import { appPageUrl, authEntryUrl, IS_BETA } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT, setRolePreview } from '@/lib/role-preview';
 import { syncVisualPreferencesWithAccount } from '@/lib/visual-preferences-account';
@@ -148,7 +148,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const user = await getAuthenticatedUser();
         if (!active) return;
         if (!user) {
-          window.location.replace(appPageUrl('/login'));
+          window.location.replace(authEntryUrl(appPageUrl('/')));
           return;
         }
 
@@ -230,7 +230,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     try {
       await createClient().auth.signOut();
     } finally {
-      window.location.replace(appPageUrl('/login'));
+      window.location.replace(authEntryUrl(appPageUrl('/')));
     }
   }
 

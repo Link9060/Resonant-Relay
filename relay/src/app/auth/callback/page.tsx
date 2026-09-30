@@ -1,7 +1,7 @@
 'use client';
 
 import { PageLoading } from '@/components/page-loading';
-import { appUrl, IS_BETA } from '@/lib/config';
+import { appUrl, IS_BETA, isAllowedArrowReturnPath } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { useSearchParams } from 'next/navigation';
@@ -18,7 +18,7 @@ function consumeArrowPostAuthUrl() {
     if (!value) return null;
     const parsed = new URL(value, window.location.origin);
     if (parsed.origin !== window.location.origin) return null;
-    if (!parsed.pathname.startsWith('/Resonant-Orbit/')) return null;
+    if (!isAllowedArrowReturnPath(parsed.pathname)) return null;
     return parsed.toString();
   } catch {
     return null;

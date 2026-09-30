@@ -1,7 +1,7 @@
 'use client';
 
 import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
-import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, IS_BETA } from '@/lib/config';
+import { APP_TITLE, appPageUrl, appPathname, ARROW_INTEGRATION_ENABLED, BASE_PATH } from '@/lib/config';
 import { cn } from '@/lib/utils';
 import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, TimerReset, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -27,7 +27,7 @@ const RELAY_DESKTOP_DOCK_ITEMS = [
   { href: '/schedule', label: 'Schedule', icon: CalendarClock },
 ] as const;
 
-const DESKTOP_DOCK_ITEMS = IS_BETA ? RELAY_DESKTOP_DOCK_ITEMS : FULL_DESKTOP_DOCK_ITEMS;
+const DESKTOP_DOCK_ITEMS = ARROW_INTEGRATION_ENABLED ? RELAY_DESKTOP_DOCK_ITEMS : FULL_DESKTOP_DOCK_ITEMS;
 
 type AppRole = 'user' | 'moderator' | 'admin' | 'owner';
 
@@ -45,7 +45,7 @@ export function Dock({
   const pathname = usePathname();
   const currentPath = appPathname(pathname);
   const canOpenStaff = role !== 'user';
-  const mobileItems: Array<{ href: string; label: string; mobileLabel?: string; icon: LucideIcon }> = IS_BETA
+  const mobileItems: Array<{ href: string; label: string; mobileLabel?: string; icon: LucideIcon }> = ARROW_INTEGRATION_ENABLED
     ? canOpenStaff
       ? [
           { href: '/', label: 'Home', mobileLabel: 'Home', icon: House },

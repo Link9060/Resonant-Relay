@@ -1,13 +1,13 @@
 'use client';
 
-import { appPageUrl } from '@/lib/config';
+import { authEntryUrl } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 
 export function SignOutButton() {
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    window.location.assign(appPageUrl('/login'));
+    window.location.assign(authEntryUrl());
   }
 
   return (
