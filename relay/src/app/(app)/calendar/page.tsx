@@ -156,7 +156,7 @@ export default function CalendarPage() {
         end: event.end_time ? `${event.event_date}T${event.end_time}` : null,
         isAllDay: event.is_all_day,
         sourceId: 'relay-events',
-        sourceLabel: 'Relay Calendar',
+        sourceLabel: 'ARROW Calendar',
         color: RELAY_EVENT_COLOR,
         detail: event.details,
         relayEvent: event,
@@ -207,14 +207,14 @@ export default function CalendarPage() {
 
   const sources = [
     ...state.accounts.map((account, index) => ({ id: account.id, label: account.email_address, sublabel: account.provider === 'google' ? 'Google Calendar · read only' : 'Microsoft Calendar · read only', color: ACCOUNT_COLORS[index % ACCOUNT_COLORS.length] ?? '#4f7ee8' })),
-    { id: 'relay-events', label: 'Relay Calendar', sublabel: 'Private · editable', color: RELAY_EVENT_COLOR },
+    { id: 'relay-events', label: 'ARROW Calendar', sublabel: 'Shared planning · editable', color: RELAY_EVENT_COLOR },
     { id: 'relay-plans', label: 'Relay Plans', sublabel: 'Group schedules', color: RELAY_PLAN_COLOR },
   ];
 
   return <div className="mx-auto max-w-[100rem] px-4 py-8 md:px-6">
     <PageHeader
       title="Calendar"
-      subtitle="Create private Relay events while keeping connected calendars read-only."
+      subtitle="Shared ARROW events live here alongside connected calendars."
       action={<div className="flex items-center gap-2"><button type="button" onClick={() => setEditor({ date: selectedDate })} className="inline-flex items-center gap-2 rounded-lg bg-ink px-3.5 py-2 text-sm font-medium text-canvas"><Plus size={16} /> New event</button><button type="button" onClick={() => setManageOpen(true)} className="inline-flex items-center gap-2 rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface"><Settings2 size={16} /> Calendars</button></div>}
     />
     {error && !manageOpen && <div className="mt-5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">{error}</div>}
@@ -272,7 +272,7 @@ export default function CalendarPage() {
             <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Selected day</p>
             <div className="mt-2 flex items-start justify-between gap-3">
               <h3 className="text-lg font-semibold text-ink">{formatSelectedDate(selectedDate)}</h3>
-              <button type="button" onClick={() => setEditor({ date: selectedDate })} aria-label="Add Relay event" title="Add Relay event" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-ink-muted hover:bg-surface"><Plus size={15} /></button>
+              <button type="button" onClick={() => setEditor({ date: selectedDate })} aria-label="Add ARROW event" title="Add ARROW event" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-ink-muted hover:bg-surface"><Plus size={15} /></button>
             </div>
             {selectedItems.length ? <ul className="mt-4 space-y-2">{selectedItems.map((item) => <li key={item.id} className="rounded-lg border border-border bg-surface/60 p-3" style={{ borderLeftColor: item.color, borderLeftWidth: 3 }}>
               <p className="text-sm font-medium text-ink">{item.title}</p>
@@ -280,7 +280,7 @@ export default function CalendarPage() {
               <p className="mt-2 truncate text-xs text-ink-faint">{item.sourceLabel}{item.detail ? ` · ${item.detail}` : ''}</p>
               {item.href && <a href={item.href} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-ink underline underline-offset-4">Open event <ExternalLink size={12} /></a>}
               {item.relayEvent && <div className="mt-3 flex gap-2"><button type="button" onClick={() => setEditor({ date: item.dateKey, event: item.relayEvent })} className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:bg-canvas"><Pencil size={12} /> Edit</button><button type="button" disabled={busy === `event:${item.relayEvent.id}`} onClick={() => void deleteRelayEvent(item.relayEvent!)} className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 disabled:opacity-50"><Trash2 size={12} /> {busy === `event:${item.relayEvent.id}` ? 'Deleting…' : 'Delete'}</button></div>}
-            </li>)}</ul> : <div className="mt-4 rounded-lg border border-dashed border-border px-4 py-8 text-center"><CalendarDays size={20} className="mx-auto text-ink-faint" /><p className="mt-2 text-sm text-ink-faint">Nothing scheduled.</p><button type="button" onClick={() => setEditor({ date: selectedDate })} className="mt-3 text-xs font-medium text-ink underline underline-offset-4">Add a Relay event</button></div>}
+            </li>)}</ul> : <div className="mt-4 rounded-lg border border-dashed border-border px-4 py-8 text-center"><CalendarDays size={20} className="mx-auto text-ink-faint" /><p className="mt-2 text-sm text-ink-faint">Nothing scheduled.</p><button type="button" onClick={() => setEditor({ date: selectedDate })} className="mt-3 text-xs font-medium text-ink underline underline-offset-4">Add an ARROW event</button></div>}
           </div>
         </aside>
       </div>
