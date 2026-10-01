@@ -82,14 +82,14 @@ const widget = (id: DashboardWidgetId, size: Exclude<DashboardWidgetSize, 'custo
 // but normalizeDashboardLayout drops them until their integrations exist.
 export const DEFAULT_DASHBOARD_LAYOUT: DashboardWidgetPreference[] = [
   widget('overview', 'extra-wide', true),
-  widget('weather', 'medium', true),
+  widget('weather', 'medium', false),
   widget('askravin', 'medium', true),
   widget('tasks', 'medium', true),
   widget('calendar', 'medium', true),
-  widget('chats', 'medium', true),
-  widget('quicklinks', 'extra-wide', true),
+  widget('chats', 'wide', true),
+  widget('quicklinks', 'extra-wide', false),
   widget('today', 'extra-wide', false),
-  widget('quicknote', 'medium', false),
+  widget('quicknote', 'medium', true),
   widget('focus', 'small', false),
   widget('dayprogress', 'extra-small', false),
   widget('schoolschedule', 'medium', false),

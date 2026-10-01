@@ -27,6 +27,29 @@ const DEVELOPMENT_RELEASE = {
 
 const PUBLIC_RELEASES = [
   {
+    version: '1.0.8',
+    status: 'Public release',
+    publishedAt: '2026-09-28T01:00:00Z',
+    title: 'Relay 1.0.8',
+    summary: 'Relay 1.0.8 brings the current beta experience to public, opens Orbit from Relay, and rolls in the latest stability and interface fixes.',
+    groups: [
+      {
+        label: 'ARROW and navigation',
+        items: [
+          'Relay now opens Orbit from the ARROW control while public access stays scoped to Relay; Atlas, RAVIN, and Waypoint remain visible but unavailable for now.',
+          'Orbit navigation supports number shortcuts followed by Enter, and the shared ARROW control has been cleaned up to avoid duplicate mounts and clipped controls.',
+        ],
+      },
+      {
+        label: 'Reliability and polish',
+        items: [
+          'The old Relay startup and duplicate full-page transition systems were removed so the app opens more reliably and avoids stacked animations.',
+          'Public and beta now use the same hardened Relay shell, with improved cache behavior, account loading, support tools, and layout fixes carried forward from beta.',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.0.7',
     status: 'Public release · Focus Update',
     publishedAt: '2026-09-21T03:00:00Z',

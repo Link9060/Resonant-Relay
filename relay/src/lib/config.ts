@@ -25,7 +25,7 @@ export const PUBLIC_SITE_URL = 'https://resonantrelay.org';
 export const BETA_SITE_URL = 'https://link9060.github.io/Resonant-Relay';
 export const ARROW_SITE_URL = 'https://enterarrow.com';
 export const ARROW_ORBIT_URL = process.env.NEXT_PUBLIC_ARROW_ORBIT_URL
-  ?? (isArrowHosted ? '/orbit/' : 'https://link9060.github.io/Resonant-Orbit/');
+  ?? (isArrowHosted ? '/orbit/' : '/Resonant-Relay/arrow/orbit/');
 export const ARROW_SHELL_BASE_URL = (
   process.env.NEXT_PUBLIC_ARROW_SHELL_BASE_URL
   ?? (isArrowHosted ? '/orbit' : 'https://link9060.github.io/Resonant-Orbit')
@@ -39,7 +39,7 @@ export const VAPID_PUBLIC_KEY = 'BB9uLQEkhGFPyhDZMCNWFy-TwbYqyv1mz4Q8irl50o9pBaE
 
 export function isAllowedArrowReturnPath(pathname: string) {
   if (isGitHubPages) {
-    return pathname === '/Resonant-Orbit' || pathname.startsWith('/Resonant-Orbit/');
+    return pathname === '/Resonant-Orbit' || pathname.startsWith('/Resonant-Orbit/') || pathname.startsWith('/Resonant-Relay/arrow/');
   }
 
   if (isArrowHosted) {

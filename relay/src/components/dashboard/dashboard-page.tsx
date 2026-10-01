@@ -4,7 +4,7 @@ import { DashboardStudio } from '@/components/dashboard/dashboard-studio';
 import { PageLoading } from '@/components/page-loading';
 import { createTodo, setTodoCompleted } from '@/lib/actions/todos';
 import { markNotificationRead } from '@/lib/actions/notifications';
-import { appPageUrl, normalizeAppLink } from '@/lib/config';
+import { appPageUrl, normalizeAppLink, IS_BETA } from '@/lib/config';
 import { localDateKey } from '@/lib/date';
 import {
   DASHBOARD_LAYOUT_EVENT,
@@ -147,15 +147,22 @@ export default function DashboardPage() {
     let active = true;
     const supabase = createClient();
     let notificationChannel: RealtimeChannel | null = null;
+    let planningChannel: RealtimeChannel | null = null;
+    let userId=''; let refreshing=false;
+    const refreshPlanning=async()=>{if(!active||!userId||refreshing)return;refreshing=true;try{const [tasks,calendar]=await Promise.all([supabase.from('todos').select('*').eq('user_id',userId).order('completed').order('due_on',{nullsFirst:false}).order('position').limit(100),supabase.from('relay_calendar_events').select('id,title,event_date,start_time,is_all_day').eq('user_id',userId).gte('event_date',localDateKey()).order('event_date').order('start_time').limit(100)]);if(!active)return;setState(current=>current?{...current,todos:tasks.error?current.todos:tasks.data??[],taskError:!!tasks.error,events:calendar.error?current.events:[...current.events.filter(e=>!e.id.startsWith('shared-')),...(calendar.data??[]).map(event=>({id:'shared-'+event.id,title:event.title,startsAt:event.event_date+'T'+(event.start_time||'12:00:00'),source:'ARROW calendar',href:(IS_BETA?'/Resonant-Relay/arrow/waypoint/':'/waypoint/')+'?tab=calendar&item='+encodeURIComponent(event.id),isAllDay:event.is_all_day}))].sort((a,b)=>new Date(a.startsAt).getTime()-new Date(b.startsAt).getTime()).slice(0,24)}:current);}finally{refreshing=false;}};
+    const refresh=()=>void refreshPlanning();const storage=(event:StorageEvent)=>{if(event.key==='arrow_shared_data_ping_v1')refresh();};
+    window.addEventListener('arrow:planning-changed',refresh);window.addEventListener('focus',refresh);window.addEventListener('storage',storage);
+    const poll=window.setInterval(()=>{if(!document.hidden)refresh();},30000);
 
     void (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !active) return;
+      userId=user.id;
       const today = localDateKey();
 
       const [profileResult, todoResult, notificationResult, membershipResult, calendarAccounts, calendarStatus] = await Promise.all([
         supabase.from('profiles').select('display_name').eq('id', user.id).single(),
-        supabase.from('todos').select('*').eq('user_id', user.id).gte('due_on', today).order('due_on').order('completed').order('position').limit(40),
+        supabase.from('todos').select('*').eq('user_id', user.id).order('completed').order('due_on',{nullsFirst:false}).order('position').limit(100),
         supabase.from('notifications').select('*').eq('user_id', user.id).eq('type', 'new_message').order('created_at', { ascending: false }).limit(4),
         supabase.from('group_members').select('group_id').eq('user_id', user.id),
         supabase.functions.invoke('calendar-hub', { body: { action: 'accounts' } }),
@@ -212,6 +219,8 @@ export default function DashboardPage() {
         taskError: Boolean(todoResult.error),
       });
 
+      await refreshPlanning();
+      planningChannel=supabase.channel('dashboard-planning:'+user.id).on('postgres_changes',{event:'*',schema:'public',table:'todos',filter:'user_id=eq.'+user.id},refresh).on('postgres_changes',{event:'*',schema:'public',table:'relay_calendar_events',filter:'user_id=eq.'+user.id},refresh).subscribe();
       notificationChannel = supabase
         .channel(`dashboard-notifications:${user.id}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (payload) => {
@@ -236,6 +245,8 @@ export default function DashboardPage() {
     return () => {
       active = false;
       if (notificationChannel) void supabase.removeChannel(notificationChannel);
+      if (planningChannel) void supabase.removeChannel(planningChannel);
+      window.clearInterval(poll);window.removeEventListener('arrow:planning-changed',refresh);window.removeEventListener('focus',refresh);window.removeEventListener('storage',storage);
     };
   }, []);
 
@@ -507,7 +518,7 @@ function submitWeatherZip(event: FormEvent) {
         )}</DashboardCard>;
 
       case 'askravin':
-        return <DashboardCard widget={widget} index={index} icon={<Sparkles size={18} />} title="Ask RAVIN" badge="Preview"><form onSubmit={submitRavin} className={`rounded-xl border border-border bg-canvas ${micro ? 'p-1' : 'p-2'}`}><div className="flex items-center gap-2"><input value={ravinPrompt} onChange={(event) => { setRavinPrompt(event.target.value); setRavinMessage(null); }} placeholder="Ask RAVIN…" className={`min-w-0 flex-1 bg-transparent outline-none placeholder:text-ink-faint ${micro ? 'px-1 text-xs' : 'px-2 py-2 text-sm'}`} /><button type="button" onClick={() => setRavinMessage('Voice is coming with the full RAVIN connection.')} aria-label="Preview RAVIN microphone orb" className={`relative grid shrink-0 place-items-center rounded-full border border-border bg-surface text-ink ${micro ? 'h-7 w-7' : 'h-10 w-10'}`}><Mic size={micro ? 13 : 16} className="relative" /></button>{!compact && <button type="submit" disabled={!ravinPrompt.trim()} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-canvas disabled:opacity-35"><Send size={15} /></button>}</div></form>{!short && <div className="mt-3 flex items-center justify-between gap-3"><p className="line-clamp-2 text-xs leading-5 text-ink-faint">Future RAVIN will use Relay context like To‑Do, Calendar, Notes, and files.</p><span className="shrink-0 rounded-full border border-border px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-ink-muted">1.1</span></div>}{ravinMessage && !micro && <p className="mt-2 truncate rounded-lg bg-surface px-3 py-2 text-xs text-ink-muted">{ravinMessage}</p>}</DashboardCard>;
+        return <DashboardCard widget={widget} index={index} icon={<Sparkles size={18} />} title="Ask RAVIN"><form onSubmit={submitRavin} className={`rounded-xl border border-border bg-canvas ${micro ? 'p-1' : 'p-2'}`}><div className="flex items-center gap-2"><input value={ravinPrompt} onChange={(event) => { setRavinPrompt(event.target.value); setRavinMessage(null); }} placeholder="Ask RAVIN…" className={`min-w-0 flex-1 bg-transparent outline-none placeholder:text-ink-faint ${micro ? 'px-1 text-xs' : 'px-2 py-2 text-sm'}`} /><button type="button" onClick={() => setRavinMessage('Voice is coming with the full RAVIN connection.')} aria-label="Preview RAVIN microphone orb" className={`relative grid shrink-0 place-items-center rounded-full border border-border bg-surface text-ink ${micro ? 'h-7 w-7' : 'h-10 w-10'}`}><Mic size={micro ? 13 : 16} className="relative" /></button>{!compact && <button type="submit" disabled={!ravinPrompt.trim()} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-canvas disabled:opacity-35"><Send size={15} /></button>}</div></form>{!short && <div className="mt-3 flex items-center justify-between gap-3"><p className="line-clamp-2 text-xs leading-5 text-ink-faint">RAVIN connects your shared tasks, calendar, notes, and knowledge.</p><span className="shrink-0 rounded-full border border-border px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-ink-muted">1.1</span></div>}{ravinMessage && !micro && <p className="mt-2 truncate rounded-lg bg-surface px-3 py-2 text-xs text-ink-muted">{ravinMessage}</p>}</DashboardCard>;
 
       case 'tasks': {
         const shownTasks = todayTodos.slice(0, micro ? 1 : short ? Math.min(2, listLimit) : listLimit);
@@ -675,7 +686,7 @@ function PlaceholderCard({ widget, icon, title, text, href, index }: { widget: D
 function EventList({ events, compact, micro = false }: { events: DashboardEvent[]; compact: boolean; micro?: boolean }) {
   return <ul className="divide-y divide-border">{events.map((event) => {
     const content = <><div className="min-w-0"><p className={`truncate font-medium text-ink ${micro ? 'text-xs' : 'text-sm'}`}>{event.title}</p>{!compact && <p className="mt-1 truncate text-xs text-ink-faint">{event.source}</p>}</div><time className={`shrink-0 text-ink-muted ${micro ? 'text-[10px]' : 'text-xs'}`}>{formatDashboardEventTime(event)}</time></>;
-    return <li key={event.id}>{event.href ? <a href={event.external ? event.href : appPageUrl(event.href)} target={event.external ? '_blank' : undefined} rel={event.external ? 'noreferrer' : undefined} className={`flex items-start justify-between gap-2 hover:opacity-70 ${micro ? 'py-1' : 'py-2'}`}>{content}</a> : <div className={`flex items-start justify-between gap-2 ${micro ? 'py-1' : 'py-2'}`}>{content}</div>}</li>;
+    return <li key={event.id}>{event.href ? <a href={event.external || (event.href.startsWith('/waypoint/') || event.href.startsWith('/Resonant-Relay/arrow/')) ? event.href : appPageUrl(event.href)} target={event.external ? '_blank' : undefined} rel={event.external ? 'noreferrer' : undefined} className={`flex items-start justify-between gap-2 hover:opacity-70 ${micro ? 'py-1' : 'py-2'}`}>{content}</a> : <div className={`flex items-start justify-between gap-2 ${micro ? 'py-1' : 'py-2'}`}>{content}</div>}</li>;
   })}</ul>;
 }
 

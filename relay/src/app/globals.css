@@ -168,14 +168,20 @@ body {
   30% { transform: translateY(-0.16rem); opacity: 1; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+@media (prefers-reduced-motion: reduce) {:root:not([data-arrow-motion="full"]) *,:root:not([data-arrow-motion="full"]) *::before,:root:not([data-arrow-motion="full"]) *::after{
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
+:root[data-arrow-motion="reduce"] *,:root[data-arrow-motion="reduce"] *::before,:root[data-arrow-motion="reduce"] *::after{
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
 
 :focus-visible {
   outline: 2px solid rgb(var(--accent));
@@ -546,28 +552,30 @@ html.arrow-orbit-is-launching body {
   overscroll-behavior: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .arrow-orbit-launch {
+@media (prefers-reduced-motion: reduce) {:root:not([data-arrow-motion="full"]) .arrow-orbit-launch{
     animation: none !important;
-  }
-
-  .arrow-orbit-launch-craft,
-  .arrow-orbit-launch-ring,
-  .arrow-orbit-launch-particle,
-  .arrow-orbit-launch p {
+  }:root:not([data-arrow-motion="full"]) .arrow-orbit-launch-craft,:root:not([data-arrow-motion="full"]) .arrow-orbit-launch-ring,:root:not([data-arrow-motion="full"]) .arrow-orbit-launch-particle,:root:not([data-arrow-motion="full"]) .arrow-orbit-launch p{
     animation: none !important;
-  }
-
-  .arrow-orbit-launch-craft {
+  }:root:not([data-arrow-motion="full"]) .arrow-orbit-launch-craft{
     left: 50%;
     top: 50%;
     opacity: 0.9;
-  }
-
-  .arrow-orbit-launch p {
+  }:root:not([data-arrow-motion="full"]) .arrow-orbit-launch p{
     opacity: 0.7;
   }
 }
+:root[data-arrow-motion="reduce"] .arrow-orbit-launch{
+    animation: none !important;
+  }:root[data-arrow-motion="reduce"] .arrow-orbit-launch-craft,:root[data-arrow-motion="reduce"] .arrow-orbit-launch-ring,:root[data-arrow-motion="reduce"] .arrow-orbit-launch-particle,:root[data-arrow-motion="reduce"] .arrow-orbit-launch p{
+    animation: none !important;
+  }:root[data-arrow-motion="reduce"] .arrow-orbit-launch-craft{
+    left: 50%;
+    top: 50%;
+    opacity: 0.9;
+  }:root[data-arrow-motion="reduce"] .arrow-orbit-launch p{
+    opacity: 0.7;
+  }
+
 
 
 /* --- ARROW / Arrival from Orbit ---------------------------------------- */
@@ -675,17 +683,18 @@ html.arrow-orbit-is-launching body {
   100% { opacity: 0; transform: translateX(-50%) translateY(-0.2rem); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .arrow-orbit-arrival {
+@media (prefers-reduced-motion: reduce) {:root:not([data-arrow-motion="full"]) .arrow-orbit-arrival{
     animation: none !important;
-  }
-
-  .arrow-orbit-arrival-craft,
-  .arrow-orbit-arrival-ring,
-  .arrow-orbit-arrival p {
+  }:root:not([data-arrow-motion="full"]) .arrow-orbit-arrival-craft,:root:not([data-arrow-motion="full"]) .arrow-orbit-arrival-ring,:root:not([data-arrow-motion="full"]) .arrow-orbit-arrival p{
     animation: none !important;
   }
 }
+:root[data-arrow-motion="reduce"] .arrow-orbit-arrival{
+    animation: none !important;
+  }:root[data-arrow-motion="reduce"] .arrow-orbit-arrival-craft,:root[data-arrow-motion="reduce"] .arrow-orbit-arrival-ring,:root[data-arrow-motion="reduce"] .arrow-orbit-arrival p{
+    animation: none !important;
+  }
+
 
 
 /* --- ARROW system island ------------------------------------------------ */

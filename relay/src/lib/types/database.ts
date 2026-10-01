@@ -58,6 +58,12 @@ export interface Database {
           },
         ];
       };
+      relay_calendar_events: {
+        Row: { id: string; user_id: string; title: string; event_date: string; start_time: string | null; end_time: string | null; is_all_day: boolean; source_key: string | null; created_at: string; updated_at: string };
+        Insert: { user_id: string; title: string; event_date: string; start_time?: string | null; end_time?: string | null; is_all_day?: boolean; source_key?: string | null };
+        Update: Partial<Database['public']['Tables']['relay_calendar_events']['Insert']>;
+        Relationships: [];
+      };
       todos: {
         Row: {
           id: string;

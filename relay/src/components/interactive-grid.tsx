@@ -10,6 +10,7 @@ export function InteractiveGrid() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const reduced=()=>document.documentElement.dataset.arrowMotion ? document.documentElement.dataset.arrowMotion==='reduce' : media.matches;
     let frame = 0, w = 0, h = 0, columns = 0, rows = 0;
     let mx = 0, my = 0, x = 0, y = 0, strength = 0, targetStrength = 0, visible = true;
     let color = getComputedStyle(parent).color;
@@ -23,7 +24,7 @@ export function InteractiveGrid() {
       wake();
     };
     const pointer = (e: PointerEvent) => {
-      if (media.matches) return;
+      if (reduced()) return;
       const rect = parent.getBoundingClientRect(); mx = e.clientX - rect.left; my = e.clientY - rect.top;
       if (!strength) { x = mx; y = my; }
       targetStrength = 1; wake();
@@ -50,7 +51,7 @@ export function InteractiveGrid() {
       }
       ctx.globalAlpha = 1;
       // Once the mouse and falloff settle, the canvas stays still at zero frame cost.
-      if (!media.matches && (Math.abs(mx - x) > 0.1 || Math.abs(my - y) > 0.1 || strength !== targetStrength)) wake();
+      if (!reduced() && (Math.abs(mx - x) > 0.1 || Math.abs(my - y) > 0.1 || strength !== targetStrength)) wake();
     };
     const theme = new MutationObserver(() => { color = getComputedStyle(parent).color; wake(); });
     theme.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
@@ -58,11 +59,11 @@ export function InteractiveGrid() {
     const intersection = new IntersectionObserver(([entry]) => { visible = entry?.isIntersecting ?? true; wake(); }); intersection.observe(parent);
     const visibility = () => { cancelAnimationFrame(frame); frame = 0; wake(); };
     resize(); parent.addEventListener('pointermove', pointer, { passive: true }); parent.addEventListener('pointerleave', leave);
-    document.addEventListener('visibilitychange', visibility); media.addEventListener('change', wake);
+    document.addEventListener('visibilitychange', visibility); media.addEventListener('change', wake); window.addEventListener('arrow:motionchange',wake);
     return () => {
       cancelAnimationFrame(frame); size.disconnect(); intersection.disconnect(); theme.disconnect();
       parent.removeEventListener('pointermove', pointer); parent.removeEventListener('pointerleave', leave);
-      document.removeEventListener('visibilitychange', visibility); media.removeEventListener('change', wake);
+      document.removeEventListener('visibilitychange', visibility); media.removeEventListener('change', wake); window.removeEventListener('arrow:motionchange',wake);
     };
   }, []);
   return <canvas ref={ref} className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true" />;

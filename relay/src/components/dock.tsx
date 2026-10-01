@@ -1,7 +1,7 @@
 'use client';
 
 import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
-import { APP_TITLE, appPageUrl, appPathname, ARROW_INTEGRATION_ENABLED, BASE_PATH } from '@/lib/config';
+import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, IS_BETA } from '@/lib/config';
 import { cn } from '@/lib/utils';
 import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, TimerReset, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -27,7 +27,7 @@ const RELAY_DESKTOP_DOCK_ITEMS = [
   { href: '/schedule', label: 'Schedule', icon: CalendarClock },
 ] as const;
 
-const DESKTOP_DOCK_ITEMS = ARROW_INTEGRATION_ENABLED ? RELAY_DESKTOP_DOCK_ITEMS : FULL_DESKTOP_DOCK_ITEMS;
+const DESKTOP_DOCK_ITEMS = RELAY_DESKTOP_DOCK_ITEMS;
 
 type AppRole = 'user' | 'moderator' | 'admin' | 'owner';
 
@@ -45,14 +45,13 @@ export function Dock({
   const pathname = usePathname();
   const currentPath = appPathname(pathname);
   const canOpenStaff = role !== 'user';
-  const mobileItems: Array<{ href: string; label: string; mobileLabel?: string; icon: LucideIcon }> = ARROW_INTEGRATION_ENABLED
+  const mobileItems: Array<{ href: string; label: string; mobileLabel?: string; icon: LucideIcon }> = IS_BETA
     ? canOpenStaff
       ? [
           { href: '/', label: 'Home', mobileLabel: 'Home', icon: House },
           { href: '/chats', label: 'Chats', icon: MessageCircle },
           { href: '/planner', label: 'Plans', icon: SquareCheck },
           { href: '/schedule', label: 'Schedule', icon: CalendarClock },
-          { href: '/admin/moderation', label: 'Reports', icon: ShieldCheck },
           { href: '/contacts', label: 'Contacts', icon: Users },
         ]
       : [
@@ -67,7 +66,6 @@ export function Dock({
           { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
           { href: '/chats', label: 'Chats', icon: MessageCircle },
           { href: '/schedule', label: 'Schedule', icon: CalendarClock },
-          { href: '/admin/moderation', label: 'Reports', icon: ShieldCheck },
           { href: '/contacts', label: 'Contacts', icon: Users },
           { href: '/profile', label: 'Settings', icon: Settings },
         ]
@@ -117,14 +115,7 @@ export function Dock({
         </ul>
 
         <ul className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
-          {canOpenStaff && (
-            <DockLink
-              item={{ href: '/admin', label: staffConsoleLabel(role), icon: Shield }}
-              active={isDockPathActive(currentPath, '/admin')}
-              variant="rail"
-              collapsed={collapsed}
-            />
-          )}
+          
         </ul>
 
         <div className="mt-3 border-t border-border pt-3">

@@ -1,7 +1,7 @@
 'use client';
 
 import { PageLoading } from '@/components/page-loading';
-import { appUrl, IS_BETA, isAllowedArrowReturnPath } from '@/lib/config';
+import { appUrl, IS_BETA } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { useSearchParams } from 'next/navigation';
@@ -18,7 +18,7 @@ function consumeArrowPostAuthUrl() {
     if (!value) return null;
     const parsed = new URL(value, window.location.origin);
     if (parsed.origin !== window.location.origin) return null;
-    if (!isAllowedArrowReturnPath(parsed.pathname)) return null;
+    if (!parsed.pathname.startsWith('/Resonant-Orbit/') && !parsed.pathname.startsWith('/Resonant-Relay/arrow/')) return null;
     return parsed.toString();
   } catch {
     return null;
@@ -30,12 +30,6 @@ async function goAfterSignIn() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     window.location.replace(`${window.location.origin}${LOGIN_PATH}`);
-    return;
-  }
-
-  const arrowDestination = consumeArrowPostAuthUrl();
-  if (arrowDestination) {
-    window.location.replace(arrowDestination);
     return;
   }
 
@@ -52,6 +46,9 @@ async function goAfterSignIn() {
     .select('onboarding_completed_at')
     .eq('id', user.id)
     .single();
+
+  const arrowDestination = profile?.onboarding_completed_at ? consumeArrowPostAuthUrl() : null;
+  if(arrowDestination){window.location.replace(arrowDestination);return;}
 
   const destination = profile?.onboarding_completed_at ? appUrl(IS_BETA ? '/space/' : '/') : appUrl('/onboarding/');
   window.location.replace(`${window.location.origin}${destination}`);
