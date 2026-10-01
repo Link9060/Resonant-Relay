@@ -27,7 +27,7 @@ const RELAY_DESKTOP_DOCK_ITEMS = [
   { href: '/schedule', label: 'Schedule', icon: CalendarClock },
 ] as const;
 
-const DESKTOP_DOCK_ITEMS = IS_BETA ? RELAY_DESKTOP_DOCK_ITEMS : FULL_DESKTOP_DOCK_ITEMS;
+const DESKTOP_DOCK_ITEMS = RELAY_DESKTOP_DOCK_ITEMS;
 
 type AppRole = 'user' | 'moderator' | 'admin' | 'owner';
 
@@ -52,7 +52,6 @@ export function Dock({
           { href: '/chats', label: 'Chats', icon: MessageCircle },
           { href: '/planner', label: 'Plans', icon: SquareCheck },
           { href: '/schedule', label: 'Schedule', icon: CalendarClock },
-          { href: '/admin/moderation', label: 'Reports', icon: ShieldCheck },
           { href: '/contacts', label: 'Contacts', icon: Users },
         ]
       : [
@@ -67,7 +66,6 @@ export function Dock({
           { href: '/', label: 'Dashboard', mobileLabel: 'Home', icon: House },
           { href: '/chats', label: 'Chats', icon: MessageCircle },
           { href: '/schedule', label: 'Schedule', icon: CalendarClock },
-          { href: '/admin/moderation', label: 'Reports', icon: ShieldCheck },
           { href: '/contacts', label: 'Contacts', icon: Users },
           { href: '/profile', label: 'Settings', icon: Settings },
         ]
@@ -117,14 +115,7 @@ export function Dock({
         </ul>
 
         <ul className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
-          {canOpenStaff && (
-            <DockLink
-              item={{ href: '/admin', label: staffConsoleLabel(role), icon: Shield }}
-              active={isDockPathActive(currentPath, '/admin')}
-              variant="rail"
-              collapsed={collapsed}
-            />
-          )}
+          
         </ul>
 
         <div className="mt-3 border-t border-border pt-3">
