@@ -655,7 +655,7 @@ html[data-relay-lock-in='true'] .relay-dock-link:not([aria-current='page']) { op
   html[data-relay-experience='lucid'] .relay-mobile-main { border-radius: 1.1rem !important; }
 }
 
-@media (prefers-reduced-motion: reduce) {:root:not([data-arrow-motion="full"])[data-relay-experience] .relay-app-shell :where(button,:root:not([data-arrow-motion="full"]) a),:root:not([data-arrow-motion="full"])[data-relay-experience] .relay-mobile-main[data-phase]{ transform: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-relay-experience] .relay-app-shell :where(button, a),
+  html[data-relay-experience] .relay-mobile-main[data-phase] { transform: none !important; }
 }
-:root[data-arrow-motion="reduce"][data-relay-experience] .relay-app-shell :where(button,:root[data-arrow-motion="reduce"] a),:root[data-arrow-motion="reduce"][data-relay-experience] .relay-mobile-main[data-phase]{ transform: none !important; }
-

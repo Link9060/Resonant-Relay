@@ -134,10 +134,9 @@
   .beta-experience .relay-mobile-nav .relay-dock-link { font-size: 12px; }
   .beta-experience[data-ready="true"] .relay-mobile-nav { animation: beta-header-enter 480ms cubic-bezier(.16,1,.3,1); }
 }
-@media (prefers-reduced-motion: reduce) {:root:not([data-arrow-motion="full"]) .beta-experience *,:root:not([data-arrow-motion="full"]) .beta-experience *::before,:root:not([data-arrow-motion="full"]) .beta-experience *::after{ animation-duration: 1ms !important; transition-duration: 1ms !important; transition-delay: 0ms !important; }
+@media (prefers-reduced-motion: reduce) {
+  .beta-experience *, .beta-experience *::before, .beta-experience *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; transition-delay: 0ms !important; }
 }
-:root[data-arrow-motion="reduce"] .beta-experience *,:root[data-arrow-motion="reduce"] .beta-experience *::before,:root[data-arrow-motion="reduce"] .beta-experience *::after{ animation-duration: 1ms !important; transition-duration: 1ms !important; transition-delay: 0ms !important; }
-
 
 /* ARROW owns cross-app cinematic motion now.
    Keep Relay's local micro-interactions, but never run the retired startup,
