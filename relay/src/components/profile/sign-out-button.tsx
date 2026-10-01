@@ -1,8 +1,13 @@
 'use client';
 
+import { authEntryUrl } from '@/lib/config';
+import { createClient } from '@/lib/supabase/client';
+
 export function SignOutButton() {
-  function handleSignOut() {
-    window.location.assign('https://enterarrow.com/signout/');
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.assign(authEntryUrl());
   }
 
   return (
@@ -14,3 +19,4 @@ export function SignOutButton() {
     </button>
   );
 }
+

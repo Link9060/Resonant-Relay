@@ -1,17 +1,244 @@
 'use client';
 
-import { useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { appPageUrl, appUrl, BASE_PATH, BETA_SITE_URL, IS_BETA, PUBLIC_SITE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '@/lib/config';
+import { FunctionsHttpError } from '@supabase/supabase-js';
+import { FormEvent, useEffect, useState } from 'react';
+
+const REQUEST_COOLDOWN_MS = 60 * 1000;
+const POST_AUTH_NEXT_KEY = 'relay-post-auth-next';
+
+function safeInternalNext(value: string | null) {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return null;
+  try {
+    const parsed = new URL(value, window.location.origin);
+    if (parsed.origin !== window.location.origin) return null;
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return null;
+  }
+}
+
+function currentAuthCallbackUrl() {
+  const origin = window.location.origin.replace(/\/+$/, '');
+
+  if (
+    window.location.hostname === 'resonantrelay.org' ||
+    window.location.hostname === 'www.resonantrelay.org'
+  ) {
+    return `${origin}/auth/callback/`;
+  }
+
+  return `${origin}${appUrl('/auth/callback/')}`;
+}
+
+function retryTime(timestamp: number) {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(timestamp);
+}
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [retryAfter, setRetryAfter] = useState<number | null>(null);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+
   useEffect(() => {
-    const target = new URL('https://enterarrow.com/');
-    target.searchParams.set('next', '/relay/');
-    window.location.replace(target.toString());
+    const next = safeInternalNext(new URLSearchParams(window.location.search).get('next'));
+    if (next) {
+      try { window.localStorage.setItem(POST_AUTH_NEXT_KEY, next); } catch {}
+    }
+
+    let active = true;
+
+    void fetch(`${SUPABASE_URL}/auth/v1/settings`, {
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY },
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((settings) => {
+        if (active) setGoogleEnabled(settings?.external?.google === true);
+      })
+      .catch(() => {
+        // Email sign-in remains available if provider discovery is unavailable.
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
+  useEffect(() => {
+    if (!retryAfter) return;
+
+    const timer = window.setTimeout(() => {
+      setRetryAfter(null);
+      setMessage(null);
+    }, Math.max(0, retryAfter - Date.now()) + 250);
+
+    return () => window.clearTimeout(timer);
+  }, [retryAfter]);
+
+  async function handleGoogleSignIn() {
+    setBusy(true);
+    setMessage(null);
+    const supabase = createClient();
+    await supabase.auth.signOut({ scope: 'local' });
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: currentAuthCallbackUrl(),
+        scopes: 'openid email profile',
+        queryParams: {
+          prompt: 'select_account',
+        },
+      },
+    });
+    if (error) {
+      setMessage('Google sign-in is not configured yet. Use the email option below.');
+      setBusy(false);
+    }
+  }
+
+  async function handleEmailSignIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (retryAfter) {
+      setMessage(`That email was requested too recently. Try again after ${retryTime(retryAfter)}.`);
+      return;
+    }
+
+    setBusy(true);
+    setMessage(null);
+
+    const normalizedEmail = email.trim();
+    const supabase = createClient();
+    await supabase.auth.signOut({ scope: 'local' });
+
+    const branded = await supabase.functions.invoke('auth-email', {
+      body: { email: normalizedEmail },
+    });
+
+    if (!branded.error) {
+      setRetryAfter(null);
+      setMessage('Sign-in link sent. Check your inbox for the newest email from Relay.');
+      setBusy(false);
+      return;
+    }
+
+    let status = 500;
+    let detail = 'Relay could not send the sign-in email.';
+    if (branded.error instanceof FunctionsHttpError) {
+      status = branded.error.context.status;
+      const body = await branded.error.context.json().catch(() => null) as { error?: string } | null;
+      if (body?.error) detail = body.error;
+    }
+
+    if (status === 429) {
+      const nextAttempt = Date.now() + REQUEST_COOLDOWN_MS;
+      setRetryAfter(nextAttempt);
+      setMessage(`Too many sign-in emails were requested. Try again after ${retryTime(nextAttempt)}.`);
+      setBusy(false);
+      return;
+    }
+
+    // Keep Relay sign-in available while the branded sender is being configured.
+    // This fallback uses the existing verified Supabase/Resend SMTP path.
+    const fallback = await supabase.auth.signInWithOtp({
+      email: normalizedEmail,
+      options: { emailRedirectTo: currentAuthCallbackUrl() },
+    });
+
+    if (fallback.error) {
+      const isRateLimit = fallback.error.status === 429 || fallback.error.message.toLowerCase().includes('rate limit');
+      if (isRateLimit) {
+        const nextAttempt = Date.now() + REQUEST_COOLDOWN_MS;
+        setRetryAfter(nextAttempt);
+        setMessage(`That email was requested too recently. Try again after ${retryTime(nextAttempt)}.`);
+      } else {
+        setMessage(detail);
+      }
+    } else {
+      setRetryAfter(null);
+      setMessage('Sign-in link sent. Check your inbox for the newest email from Relay.');
+    }
+
+    setBusy(false);
+  }
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-canvas px-6">
-      <p className="text-sm text-ink-muted">Opening ARROW sign in…</p>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-canvas px-6 py-10">
+      <div className="w-full max-w-sm text-center">
+        <div className="relay-brand-lockup justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${BASE_PATH}/relay-icon.svg`} alt="" className="h-12 w-12" />
+          <h1 className="font-display text-4xl font-medium tracking-tight text-ink">Relay{IS_BETA ? ' Beta' : ''}</h1>
+        </div>
+        {IS_BETA && <div className="mt-3 inline-flex rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Private Beta</div>}
+        <p className="mt-3 text-sm text-ink-muted">
+          {IS_BETA ? 'Early Relay builds for approved testers.' : 'The place you open to figure out your day.'}
+        </p>
+
+        <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left">
+          <p className="text-sm font-semibold text-ink">Use a personal email account</p>
+          <p className="mt-1 text-xs leading-5 text-ink-muted">
+            <strong>Do not use a school-administered, work-managed, or other administrator-controlled email.</strong> Managed accounts can block Relay sign-in or connected-service permissions and may be disabled by the organization later.
+          </p>
+        </div>
+
+        {googleEnabled && (
+          <>
+            <button onClick={handleGoogleSignIn} disabled={busy} className="mt-6 flex w-full items-center justify-center gap-3 rounded-md border border-border bg-surface-raised px-4 py-3 text-sm font-medium text-ink transition-colors hover:bg-surface">
+              <GoogleIcon />
+              Continue with Google
+            </button>
+            <div className="my-5 flex items-center gap-3 text-xs text-ink-faint" aria-hidden="true"><span className="h-px flex-1 bg-border" />or<span className="h-px flex-1 bg-border" /></div>
+          </>
+        )}
+
+        <form onSubmit={handleEmailSignIn} className={`${googleEnabled ? '' : 'mt-6 '}space-y-3 text-left`}>
+          <label htmlFor="email" className="block text-xs font-medium text-ink-muted">Personal email address</label>
+          <input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="w-full rounded-md border border-border bg-surface-raised px-3 py-3 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-ink-muted" />
+          <button type="submit" disabled={busy || Boolean(retryAfter)} className="w-full rounded-md bg-ink px-4 py-3 text-sm font-medium text-canvas transition-opacity disabled:opacity-50">
+            {retryAfter ? `Try again after ${retryTime(retryAfter)}` : 'Email me a sign-in link'}
+          </button>
+        </form>
+
+        {message && <p role="status" className="mt-4 text-sm text-ink-muted">{message}</p>}
+
+        {IS_BETA ? (
+          <div className="mt-7 rounded-xl border border-border bg-surface p-4 text-left">
+            <div className="text-sm font-semibold text-ink">Not a Beta tester yet?</div>
+            <p className="mt-1 text-xs leading-5 text-ink-muted">Sign in with your normal Relay account, then request a Beta spot. Only approved accounts can enter the Beta build.</p>
+            <a href={appPageUrl('/beta-access')} className="mt-3 inline-block text-sm font-medium text-ink underline underline-offset-4">Request Beta access</a>
+          </div>
+        ) : (
+          <div className="mt-7 rounded-xl border border-border bg-surface p-4 text-left">
+            <div className="text-sm font-semibold text-ink">Looking for Relay Beta?</div>
+            <p className="mt-1 text-xs leading-5 text-ink-muted">Approved testers can sign in to early builds before they reach the public release.</p>
+            <a href={`${BETA_SITE_URL}/login/`} className="mt-3 inline-block text-sm font-medium text-ink underline underline-offset-4">Open Beta login</a>
+          </div>
+        )}
+
+        <p className="mt-6 text-xs text-ink-faint">After sign-in, you&apos;ll choose a username and get a Relay Number for direct adds.</p>
+        <p className="mt-4 text-[11px] text-ink-faint">By continuing, you agree to Relay&apos;s <a href={IS_BETA ? `${PUBLIC_SITE_URL}/terms/` : appPageUrl('/terms')} className="underline underline-offset-2">Terms</a> and acknowledge the <a href={IS_BETA ? `${PUBLIC_SITE_URL}/privacy/` : appPageUrl('/privacy')} className="underline underline-offset-2">Privacy Policy</a>.</p>
+        {IS_BETA && <p className="mt-4 text-xs"><a href={`${PUBLIC_SITE_URL}/login/`} className="text-ink-muted underline underline-offset-4">Back to public Relay</a></p>}
+      </div>
     </main>
   );
 }
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+      <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z" />
+      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.9v2.33A9 9 0 0 0 9 18z" />
+      <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.66 9c0-.59.1-1.16.29-1.7V4.97H.9A9 9 0 0 0 0 9c0 1.45.35 2.83.9 4.03l3.05-2.33z" />
+      <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .9 4.97l3.05 2.33C4.66 5.17 6.65 3.58 9 3.58z" />
+    </svg>
+  );
+}
+

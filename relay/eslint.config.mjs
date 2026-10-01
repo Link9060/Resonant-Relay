@@ -88,5 +88,5 @@ export default defineConfig([
       'react/no-unescaped-entities': 'off',
     },
   },
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts']),
+  globalIgnores(['.arrow-beta-build/**', '.next/**', 'out/**', 'build/**', 'next-env.d.ts']),
 ]);

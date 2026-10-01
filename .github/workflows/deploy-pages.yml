@@ -51,8 +51,8 @@ jobs:
       - name: Motion regression tests
         run: npm run test:motion
 
-      - name: Build static beta site
-        run: npm run build
+      - name: Build integrated ARROW beta site
+        run: node scripts/build-arrow-beta.mjs
 
       - name: Disable Jekyll processing
         run: touch out/.nojekyll

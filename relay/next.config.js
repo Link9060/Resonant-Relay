@@ -1,15 +1,14 @@
 /** @type {import('next').NextConfig} */
-const isGitHubPages = process.env.NEXT_PUBLIC_RELAY_DEPLOY_TARGET === 'github-pages';
-
-// Public Relay is mounted by the ARROW gateway at enterarrow.com/relay/.
-// Keep GitHub Pages beta on its repository base path.
-const basePath = isGitHubPages ? '/Resonant-Relay' : '/relay';
+const deployTarget = process.env.NEXT_PUBLIC_RELAY_DEPLOY_TARGET ?? 'standalone';
+const isGitHubPages = deployTarget === 'github-pages';
+const isArrowHosted = deployTarget === 'arrow';
+const basePath = isGitHubPages ? '/Resonant-Relay' : isArrowHosted ? '/relay' : '';
 
 const nextConfig = {
   output: 'export',
   allowedDevOrigins: ['terminal.local'],
   basePath,
-  assetPrefix: basePath,
+  assetPrefix: basePath || undefined,
   trailingSlash: true,
   images: { unoptimized: true },
 };

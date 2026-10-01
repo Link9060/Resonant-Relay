@@ -4,7 +4,7 @@ import { DashboardStudio } from '@/components/dashboard/dashboard-studio';
 import { PageLoading } from '@/components/page-loading';
 import { createTodo, setTodoCompleted } from '@/lib/actions/todos';
 import { markNotificationRead } from '@/lib/actions/notifications';
-import { appPageUrl, normalizeAppLink } from '@/lib/config';
+import { appPageUrl, normalizeAppLink, IS_BETA } from '@/lib/config';
 import { localDateKey } from '@/lib/date';
 import {
   DASHBOARD_LAYOUT_EVENT,
@@ -149,7 +149,7 @@ export default function DashboardPage() {
     let notificationChannel: RealtimeChannel | null = null;
     let planningChannel: RealtimeChannel | null = null;
     let userId=''; let refreshing=false;
-    const refreshPlanning=async()=>{if(!active||!userId||refreshing)return;refreshing=true;try{const [tasks,calendar]=await Promise.all([supabase.from('todos').select('*').eq('user_id',userId).order('completed').order('due_on',{nullsFirst:false}).order('position').limit(100),supabase.from('relay_calendar_events').select('id,title,event_date,start_time,is_all_day').eq('user_id',userId).gte('event_date',localDateKey()).order('event_date').order('start_time').limit(100)]);if(!active)return;setState(current=>current?{...current,todos:tasks.error?current.todos:tasks.data??[],taskError:!!tasks.error,events:calendar.error?current.events:[...current.events.filter(e=>!e.id.startsWith('shared-')),...(calendar.data??[]).map(event=>({id:'shared-'+event.id,title:event.title,startsAt:event.event_date+'T'+(event.start_time||'12:00:00'),source:'ARROW calendar',href:'/waypoint/?tab=calendar&item='+encodeURIComponent(event.id),isAllDay:event.is_all_day}))].sort((a,b)=>new Date(a.startsAt).getTime()-new Date(b.startsAt).getTime()).slice(0,24)}:current);}finally{refreshing=false;}};
+    const refreshPlanning=async()=>{if(!active||!userId||refreshing)return;refreshing=true;try{const [tasks,calendar]=await Promise.all([supabase.from('todos').select('*').eq('user_id',userId).order('completed').order('due_on',{nullsFirst:false}).order('position').limit(100),supabase.from('relay_calendar_events').select('id,title,event_date,start_time,is_all_day').eq('user_id',userId).gte('event_date',localDateKey()).order('event_date').order('start_time').limit(100)]);if(!active)return;setState(current=>current?{...current,todos:tasks.error?current.todos:tasks.data??[],taskError:!!tasks.error,events:calendar.error?current.events:[...current.events.filter(e=>!e.id.startsWith('shared-')),...(calendar.data??[]).map(event=>({id:'shared-'+event.id,title:event.title,startsAt:event.event_date+'T'+(event.start_time||'12:00:00'),source:'ARROW calendar',href:(IS_BETA?'/Resonant-Relay/arrow/waypoint/':'/waypoint/')+'?tab=calendar&item='+encodeURIComponent(event.id),isAllDay:event.is_all_day}))].sort((a,b)=>new Date(a.startsAt).getTime()-new Date(b.startsAt).getTime()).slice(0,24)}:current);}finally{refreshing=false;}};
     const refresh=()=>void refreshPlanning();const storage=(event:StorageEvent)=>{if(event.key==='arrow_shared_data_ping_v1')refresh();};
     window.addEventListener('arrow:planning-changed',refresh);window.addEventListener('focus',refresh);window.addEventListener('storage',storage);
     const poll=window.setInterval(()=>{if(!document.hidden)refresh();},30000);
@@ -686,7 +686,7 @@ function PlaceholderCard({ widget, icon, title, text, href, index }: { widget: D
 function EventList({ events, compact, micro = false }: { events: DashboardEvent[]; compact: boolean; micro?: boolean }) {
   return <ul className="divide-y divide-border">{events.map((event) => {
     const content = <><div className="min-w-0"><p className={`truncate font-medium text-ink ${micro ? 'text-xs' : 'text-sm'}`}>{event.title}</p>{!compact && <p className="mt-1 truncate text-xs text-ink-faint">{event.source}</p>}</div><time className={`shrink-0 text-ink-muted ${micro ? 'text-[10px]' : 'text-xs'}`}>{formatDashboardEventTime(event)}</time></>;
-    return <li key={event.id}>{event.href ? <a href={event.external || event.href.startsWith('/waypoint/') ? event.href : appPageUrl(event.href)} target={event.external ? '_blank' : undefined} rel={event.external ? 'noreferrer' : undefined} className={`flex items-start justify-between gap-2 hover:opacity-70 ${micro ? 'py-1' : 'py-2'}`}>{content}</a> : <div className={`flex items-start justify-between gap-2 ${micro ? 'py-1' : 'py-2'}`}>{content}</div>}</li>;
+    return <li key={event.id}>{event.href ? <a href={event.external || (event.href.startsWith('/waypoint/') || event.href.startsWith('/Resonant-Relay/arrow/')) ? event.href : appPageUrl(event.href)} target={event.external ? '_blank' : undefined} rel={event.external ? 'noreferrer' : undefined} className={`flex items-start justify-between gap-2 hover:opacity-70 ${micro ? 'py-1' : 'py-2'}`}>{content}</a> : <div className={`flex items-start justify-between gap-2 ${micro ? 'py-1' : 'py-2'}`}>{content}</div>}</li>;
   })}</ul>;
 }
 

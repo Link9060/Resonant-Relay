@@ -10,7 +10,7 @@ import { PageLoading } from '@/components/page-loading';
 import { StaffCommandPaletteGlobal } from '@/components/staff-command-palette';
 import { StillShortcuts } from '@/components/still-shortcuts';
 import { VisualPreferencesAccountSync } from '@/components/visual-preferences-account-sync';
-import { appPageUrl, IS_BETA } from '@/lib/config';
+import { appPageUrl, authEntryUrl, IS_BETA } from '@/lib/config';
 import { createClient, ensureArrowBrowserSession } from '@/lib/supabase/client';
 import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT, setRolePreview } from '@/lib/role-preview';
 import { syncVisualPreferencesWithAccount } from '@/lib/visual-preferences-account';
@@ -161,12 +161,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const user = await getAuthenticatedUser();
         if (!active) return;
         if (!user) {
-          const target = new URL('https://enterarrow.com/');
-          const requested = window.location.pathname.startsWith('/relay/')
-            ? window.location.pathname + window.location.search + window.location.hash
-            : '/relay/';
-          target.searchParams.set('next', requested);
-          window.location.replace(target.toString());
+          window.location.replace(authEntryUrl(appPageUrl('/')));
           return;
         }
 
@@ -245,7 +240,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   async function leaveDisabledAccount() {
-    window.location.replace('https://enterarrow.com/signout/');
+    await createClient().auth.signOut();
+    window.location.replace(authEntryUrl());
   }
 
   if (loadError) {

@@ -1,8 +1,6 @@
 'use client';
 
-const ORBIT_URL =
-  process.env.NEXT_PUBLIC_ORBIT_SITE_URL ??
-  'https://link9060.github.io/Resonant-Orbit/';
+import { ARROW_ORBIT_URL } from '@/lib/config';
 
 type ArrowOSWindow = Window & {
   ArrowOS?: {
@@ -18,7 +16,7 @@ export function OrbitReturnButton() {
       return;
     }
 
-    const destination = new URL(ORBIT_URL);
+    const destination = new URL(ARROW_ORBIT_URL, window.location.origin);
     destination.searchParams.set('from', 'relay');
     window.location.assign(destination.toString());
   };
