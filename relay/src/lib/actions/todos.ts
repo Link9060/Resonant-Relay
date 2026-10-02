@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
 import type { Todo } from '@/lib/types/database';
+import { broadcastArrowPlanningChange } from '@/lib/arrow-planning';
 
 type TodoResult = { ok: true; data: Todo } | { ok: false; error: string };
 type EmptyResult = { ok: true } | { ok: false; error: string };
@@ -20,6 +21,7 @@ export async function createTodo(title: string, dueOn: string): Promise<TodoResu
     .select('*')
     .single();
 
+  if (!error && data) broadcastArrowPlanningChange();
   return error || !data
     ? { ok: false, error: 'That task could not be added.' }
     : { ok: true, data };
@@ -38,6 +40,7 @@ export async function setTodoCompleted(id: string, completed: boolean): Promise<
     .select('*')
     .single();
 
+  if (!error && data) broadcastArrowPlanningChange();
   return error || !data
     ? { ok: false, error: 'That task could not be updated.' }
     : { ok: true, data };
@@ -48,5 +51,6 @@ export async function deleteTodo(id: string): Promise<EmptyResult> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Not signed in.' };
   const { error } = await supabase.from('todos').delete().eq('id', id).eq('user_id', user.id);
+  if (!error) broadcastArrowPlanningChange();
   return error ? { ok: false, error: 'That task could not be removed.' } : { ok: true };
 }
