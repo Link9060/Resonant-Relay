@@ -23,7 +23,7 @@ function compile(repo,center,key){
   cpSync(path.join(dir,'out'),path.join(output,'arrow',center),{recursive:true});return dir;
 }
 const orbit=compile('Resonant-Orbit','orbit','NEXT_PUBLIC_ORBIT_BASE_PATH');
-run(process.execPath,['--test','tests/arrow-shell.test.cjs','tests/entertainment.test.cjs'],orbit);
+run(process.execPath,['--test','tests/arrow-shell.test.cjs','tests/entertainment.test.cjs','tests/auth-gate.test.cjs'],orbit);
 compile('Resonant-Waypoint','waypoint','NEXT_PUBLIC_WAYPOINT_BASE_PATH');
 const atlas=source('Resonant-Field');cpSync(path.join(atlas,'apps/explorer'),path.join(output,'arrow','atlas'),{recursive:true});
 const ravin=source('Project-R.A.V.I.N.-1.1');cpSync(path.join(ravin,'ravin/public'),path.join(output,'arrow','ravin'),{recursive:true});
