@@ -2,7 +2,7 @@
 
 Scope: the integrated beta based on Relay `13348f2e0fd918108a8bc4b7d929abe519dfe7cf` and its four pinned centers. Production main is outside this change.
 
-The request was for 100 significant bugs and improvements. This pass records **87 actionable findings and guardrails**, grouped by distinct user-visible failures. It does **not** claim 100 verified critical bugs. Most evidence is source review; the executable regression suites cover the highest-risk races, failure handling, routing, and attachment ownership. The signed-in live application was not exercised with a real account.
+The request was for 100 significant bugs and improvements. This pass records **100 actionable findings and guardrails**, grouped by distinct user-visible failures. The list includes critical bugs and substantial reliability improvements; it does **not** claim that every finding is a separately reproduced critical bug. Most evidence is source review; the executable regression suites cover the highest-risk races, failure handling, routing, and attachment ownership. The signed-in live application was not exercised with a real account.
 
 “Fixed” below means implemented in this change. The account-center Edge Function changes are **source-only, not deployed** to the shared backend. Severity: H = lost data, private-data exposure, or blocked primary flow; M = broken secondary flow or a meaningful reliability improvement.
 
@@ -97,9 +97,27 @@ The request was for 100 significant bugs and improvements. This pass records **8
 
 | 87 | H | Leaving Notes through client-side navigation cancels the autosave timer and loses unconfirmed edits. | Account-scoped tab draft recovery, shared per-note save queues, and save flushing on unmount. |
 
+| 88 | H | Planner route changes retain or asynchronously publish the previous plan. | Route-bound responses and cancelled loads. |
+| 89 | H | Planner authentication/network failures leave endless loading or misleading “not found” messages. | Separate failed checks from missing data and expose recovery. |
+| 90 | H | Failed member/response queries are shown as empty RSVP data; a missing group can crash the view. | Validate every prerequisite query and the group before rendering. |
+
+| 91 | H | Timed-out or old-account visual preference requests can later overwrite the current account's appearance. | Verify the caller is still current before applying preferences. |
+| 92 | H | Overlapping Contacts refreshes can restore stale connection/request state. | Publish only the latest load generation. |
+| 93 | H | Chat attachment signing failures can retrigger an endless signing loop; long-open chats retain expired URLs. | Update only successful URLs, expose retry, and refresh before expiration. |
+
+| 94 | H | A confirmed chat send never appears if its realtime INSERT event is lost. | Return and merge the confirmed message row; realtime deduplication prevents duplicates. |
+
+| 95 | H | Atlas's “include this node in RAVIN” checkbox changes the permission for every manual node. | Select a stable readable/private source bucket for each new node without changing the other bucket. |
+| 96 | H | Atlas closes node creation as successful after content or AI-permission writes fail. | Verify every write, retain the form, and attempt cleanup of the new partial node with explicit uncertainty reporting. |
+| 97 | H | Repeated Atlas node submission can create duplicate nodes. | Immediate creation guard and disabled submit control. |
+| 98 | H | Atlas node creation dereferences or uses a changed account between its writes. | Capture the user and invalidate the operation on account change. |
+
+| 99 | H | Atlas paging uses nonunique timestamps or no ordering, so equal-time records can be duplicated or skipped between pages. | Add primary-key tie-breakers to every paginated collection. |
+| 100 | H | Failed Atlas source-permission queries are treated as empty permission data and display AI access as off even when it is allowed. | Require permission data before publishing the live graph. |
+
 ## Validation
 
-- Relay: lint has zero errors (27 existing warnings); TypeScript passes; 44 regression tests pass; static beta build passes.
+- Relay: lint has zero errors (27 existing warnings); TypeScript passes; 49 regression tests pass; static beta build passes.
 - Orbit: TypeScript and static beta build pass; 52 Node regressions pass against the reviewed shared shell, including new route and account-isolation cases.
 - Waypoint: TypeScript and static beta build pass; account/idempotency/update regression suite passes.
 - RAVIN: edited JavaScript parses; token/ownership/SSE regression suite passes.
@@ -115,4 +133,4 @@ The request was for 100 significant bugs and improvements. This pass records **8
 - Multi-device Notes conflict resolution still needs server-side revision checks; the new queue protects concurrent edits within this editor.
 - Verify signed-in beta handoff, push permissions on real devices, live RLS behavior, and backend deletion/export operations with controlled accounts. No live destructive account test was performed.
 
-These items require further implementation or live evidence. The requested 100-item critical audit is unfinished; unidentified issues are not invented to meet the count.
+These items require further implementation or live evidence. This is a 100-item code audit with implemented corrections, not a claim of 100 independently reproduced live critical bugs. The remaining items above are explicitly outside the completed fixes.

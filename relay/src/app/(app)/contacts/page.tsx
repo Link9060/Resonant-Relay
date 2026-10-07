@@ -33,7 +33,9 @@ export default function ContactsPage() {
     let refreshTimer: number | null = null;
     const supabase = createClient();
 
+    let loadVersion=0;
     async function loadContacts(id: string) {
+      const version=++loadVersion;
       try {
         const [a, b, incoming, outgoing, preferences] = await withTimeout(Promise.all([
           supabase.from('connections').select('id,created_at,other:profiles!connections_user_b_fkey(id,display_name,avatar_url,school,bio,role)').eq('user_a', id),
@@ -44,7 +46,7 @@ export default function ContactsPage() {
         ]));
 
         const failed = [a, b, incoming, outgoing, preferences].find((result) => result.error)?.error;
-        if (!active) return;
+        if (!active || version!==loadVersion) return;
         if (failed) {
           setState((current: any) => ({ ...(current ?? {}), error: failed.message }));
           return;
@@ -61,7 +63,7 @@ export default function ContactsPage() {
           outgoing: (outgoing.data ?? []).filter((row: any) => row.recipient),
         });
       } catch (error) {
-        if (!active) return;
+        if (!active || version!==loadVersion) return;
         setState((current: any) => ({
           ...(current ?? {}),
           error: error instanceof Error ? error.message : 'Contacts could not load.',
@@ -240,3 +242,4 @@ function TabButton({
     </button>
   );
 }
+

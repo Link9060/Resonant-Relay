@@ -1,6 +1,6 @@
 'use client';
 
-import { sendMessage } from '@/lib/actions/chats';
+import { sendMessage, type SentMessage } from '@/lib/actions/chats';
 import { appPageUrl } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { CornerUpLeft, Paperclip, Send, UserPlus, X } from 'lucide-react';
@@ -14,7 +14,7 @@ type MessageComposerProps = {
   replyTo?: { id: string; label: string; body: string } | null;
   replyToId?: string | null;
   onCancelReply?: () => void;
-  onSent?: () => void;
+  onSent?: (message: SentMessage) => void;
 };
 
 export function MessageComposer({ conversationId, onTypingChange, replyTo, replyToId, onCancelReply, onSent }: MessageComposerProps) {
@@ -98,7 +98,7 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, reply
         setValue('');
         setFiles([]);
         onCancelReply?.();
-        onSent?.();
+        onSent?.(result.data);
       }
       } finally { sendingRef.current = false; }
     });

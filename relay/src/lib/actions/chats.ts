@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/client';
-import type { MessageAttachment } from '@/lib/types/database';
+import type { Database, MessageAttachment } from '@/lib/types/database';
+
+export type SentMessage = Database['public']['Tables']['messages']['Row'];
 
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -27,7 +29,7 @@ export async function leaveGroup(groupId: string): Promise<ActionResult> {
   } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
-export async function sendMessage(conversationId: string, body: string, files: File[] = [], replyToId: string | null = null): Promise<ActionResult> {
+export async function sendMessage(conversationId: string, body: string, files: File[] = [], replyToId: string | null = null): Promise<ActionResult<SentMessage>> {
   try {
   const trimmed = body.trim();
   if (!trimmed && files.length === 0) return { ok: false, error: 'Add a message or attachment.' };
@@ -48,7 +50,7 @@ export async function sendMessage(conversationId: string, body: string, files: F
     }
     attachments.push({ path, name: file.name.slice(0, 180), type: file.type || 'application/octet-stream', size: file.size });
   }
-  const { error } = await supabase.from('messages').insert({ conversation_id: conversationId, sender_id: user.id, body: trimmed, attachments, reply_to_id: replyToId });
+  const { data: sent, error } = await supabase.from('messages').insert({ conversation_id: conversationId, sender_id: user.id, body: trimmed, attachments, reply_to_id: replyToId }).select('*').single();
   if (error) {
     if (attachments.length) await supabase.storage.from('chat-attachments').remove(attachments.map((item) => item.path));
     const { data: status } = await (supabase as any).rpc('conversation_send_status', { p_conversation_id: conversationId });
@@ -56,7 +58,8 @@ export async function sendMessage(conversationId: string, body: string, files: F
     if (status?.[0]?.can_send === false && reason) return { ok: false, error: reason };
     return { ok: false, error: 'Could not send that message right now.' };
   }
-  return { ok: true, data: undefined };
+  if (!sent) return {ok:false,error:'The message was not confirmed. Check the chat before retrying.'};
+  return { ok: true, data: sent };
 
   } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }

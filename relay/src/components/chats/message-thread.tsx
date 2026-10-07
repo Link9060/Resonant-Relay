@@ -34,6 +34,7 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
   const [editError, setEditError] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
+  const [attachmentError, setAttachmentError] = useState(false);
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
@@ -80,7 +81,18 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
     return () => { active = false; typingChannelRef.current = null; void supabase.removeChannel(messageChannel); void supabase.removeChannel(reactionChannel); if (typingChannel) void supabase.removeChannel(typingChannel); };
   }, [conversationId, currentUserId, participantsById]);
 
-  useEffect(() => { const paths = messages.flatMap((message) => message.attachments ?? []).map((attachment) => attachment.path).filter((path) => !attachmentUrls[path]); if (!paths.length) return; let active = true; void createClient().storage.from('chat-attachments').createSignedUrls(paths, 3600).then(({ data }) => { if (active && data) setAttachmentUrls((current) => ({ ...current, ...Object.fromEntries(data.filter((item) => item.signedUrl).map((item) => [item.path, item.signedUrl])) })); }).catch(() => { /* Failed attachment signing can be retried by reopening the chat. */ }); return () => { active = false; }; }, [attachmentUrls, messages]);
+  useEffect(() => {
+    const paths=messages.flatMap(message=>message.attachments ?? []).map(attachment=>attachment.path).filter(path=>!attachmentUrls[path]);
+    if(!paths.length)return;let active=true;
+    void createClient().storage.from('chat-attachments').createSignedUrls(paths,3600).then(({data,error})=>{
+      if(!active)return;
+      const signed=(data ?? []).filter(item=>item.signedUrl);
+      setAttachmentError(Boolean(error) || signed.length<paths.length);
+      if(signed.length)setAttachmentUrls(current=>({...current,...Object.fromEntries(signed.map(item=>[item.path,item.signedUrl]))}));
+    }).catch(()=>{if(active)setAttachmentError(true);});
+    return()=>{active=false;};
+  },[attachmentUrls,messages]);
+  useEffect(()=>{const timer=window.setInterval(()=>setAttachmentUrls({}),50*60_000);return()=>window.clearInterval(timer);},[]);
   useEffect(() => { const timer = window.setInterval(() => { const now = Date.now(); setClock(now); setTypingUsers((current) => Object.fromEntries(Object.entries(current).filter(([, expiresAt]) => expiresAt > now))); }, 15_000); return () => window.clearInterval(timer); }, []);
   useEffect(() => {
     const pane = scrollRef.current;
@@ -145,7 +157,7 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
       {membersOpen && <GroupControls title={title} members={members} availableContacts={availableContacts} currentUserId={currentUserId} currentIsAdmin={currentIsAdmin} rolesById={rolesById} preferencesById={preferencesById} error={adminError} onClose={() => setMembersOpen(false)} onRename={rename} onAdd={add} onPromote={promote} onRemove={remove} onReport={(member) => setReportTarget({ userId: member.id, label: member.display_name })} />}
     </header>
 
-    <div ref={scrollRef} onScroll={event => { const pane=event.currentTarget; stickToBottom.current=pane.scrollHeight-pane.scrollTop-pane.clientHeight < 80; }} className="flex-1 overflow-y-auto px-4 py-4">{hasOlder && <button type="button" disabled={historyBusy} onClick={() => void loadOlder()} className="mb-4 rounded-md border border-border px-3 py-2 text-sm text-ink-muted">{historyBusy ? 'Loading history…' : 'Load older messages'}</button>}{historyError && <p role="alert" className="mb-3 text-sm text-red-500">{historyError}</p>}{messages.length === 0 ? <p className="mt-10 text-center text-sm text-ink-faint">Say hi.</p> : <ul>{messages.map((message, index) => {
+    <div ref={scrollRef} onScroll={event => { const pane=event.currentTarget; stickToBottom.current=pane.scrollHeight-pane.scrollTop-pane.clientHeight < 80; }} className="flex-1 overflow-y-auto px-4 py-4">{hasOlder && <button type="button" disabled={historyBusy} onClick={() => void loadOlder()} className="mb-4 rounded-md border border-border px-3 py-2 text-sm text-ink-muted">{historyBusy ? 'Loading history…' : 'Load older messages'}</button>}{attachmentError && <button type="button" className="mb-3 text-sm text-red-500 underline" onClick={()=>setAttachmentUrls({})}>Some attachments could not load. Retry attachments.</button>}{historyError && <p role="alert" className="mb-3 text-sm text-red-500">{historyError}</p>}{messages.length === 0 ? <p className="mt-10 text-center text-sm text-ink-faint">Say hi.</p> : <ul>{messages.map((message, index) => {
       const isMine = message.sender_id === currentUserId;
       const startsGroup = messages[index - 1]?.sender_id !== message.sender_id;
       const endsGroup = messages[index + 1]?.sender_id !== message.sender_id;
@@ -197,7 +209,7 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
     </div>
 
     {replyTo && <div className="relay-motion-expand flex items-center gap-3 border-t border-border bg-surface px-4 py-2"><CornerUpLeft size={14} className="text-ink-faint" /><div className="min-w-0 flex-1"><p className="text-[10px] font-medium uppercase tracking-wide text-ink-faint">Replying to</p><p className="truncate text-xs text-ink-muted">{replyTo.body || 'Attachment'}</p></div><button type="button" onClick={() => setReplyTo(null)} className="flex h-8 w-8 items-center justify-center rounded-md text-ink-faint hover:bg-canvas"><X size={14} /></button></div>}
-    <MessageComposer conversationId={conversationId} replyTo={replyTo ? {id:replyTo.id,label:participantsById[replyTo.sender_id]?.display_name ?? 'message',body:replyTo.body} : null} onCancelReply={() => setReplyTo(null)} onSent={() => { stickToBottom.current=true; setReplyTo(null); }} onTypingChange={sendTypingSignal} />
+    <MessageComposer conversationId={conversationId} replyTo={replyTo ? {id:replyTo.id,label:participantsById[replyTo.sender_id]?.display_name ?? 'message',body:replyTo.body} : null} onCancelReply={() => setReplyTo(null)} onSent={message => { stickToBottom.current=true; setReplyTo(null); setMessages(current=>current.some(item=>item.id===message.id)?current:[...current,message]); }} onTypingChange={sendTypingSignal} />
     {reportTarget && <ReportDialog target={reportTarget} onClose={() => setReportTarget(null)} />}
   </div>;
 }

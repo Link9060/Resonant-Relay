@@ -132,7 +132,7 @@ export function applyAccountVisualPreferences(preferences: VisualPreferences) {
   window.dispatchEvent(new CustomEvent(EXPERIENCE_EVENT, { detail: normalized }));
 }
 
-export async function syncVisualPreferencesWithAccount(userId: string) {
+export async function syncVisualPreferencesWithAccount(userId: string, isCurrent: () => boolean = () => true) {
   const supabase = client();
   const { data, error } = await supabase
     .from('user_ui_preferences')
@@ -140,6 +140,7 @@ export async function syncVisualPreferencesWithAccount(userId: string) {
     .eq('user_id', userId)
     .maybeSingle();
 
+  if (!isCurrent()) return {preferences:{...DEFAULT_VISUAL_PREFERENCES},synced:false};
   if (error) {
     applyAccountVisualPreferences(DEFAULT_VISUAL_PREFERENCES);
     return { preferences: { ...DEFAULT_VISUAL_PREFERENCES }, synced: false };
@@ -178,3 +179,4 @@ export async function persistActiveVisualPreferences(userId: string) {
     }, { onConflict: 'user_id' });
   return !error;
 }
+

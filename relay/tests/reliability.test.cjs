@@ -53,3 +53,10 @@ test('account exports read all pages and discard partial exports on later failur
   const failed=await awaitAllRows(()=>({range:async(start,end)=>start?{data:null,error:{message:'offline'}}:{data:rows.slice(start,end+1),error:null}}));
   assert.equal(failed.data,null);assert.ok(failed.error);
 });
+
+test('a confirmed send returns its message even if realtime is unavailable',async()=>{
+  const sent={id:'confirmed',conversation_id:'conversation',sender_id:'owner',body:'hello',attachments:[],reply_to_id:null,created_at:'2026-10-07T12:00:00Z',edited_at:null};
+  const chain={insert:()=>chain,select:()=>chain,single:async()=>({data:sent,error:null})};
+  const actions=compile('src/lib/actions/chats.ts',{'@/lib/supabase/client':{createClient:()=>({auth:{getUser:async()=>({data:{user:{id:'owner'}}})},from:()=>chain})}});
+  const result=await actions.sendMessage('conversation','hello');assert.equal(result.ok,true);assert.equal(result.data.id,'confirmed');
+});

@@ -195,11 +195,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         // before exposing the app shell so another account's browser cache can
         // never become this user's starting appearance.
         loadStage = 'visual preferences';
+        let preferencesActive=true;
         try {
-          await withTimeout(syncVisualPreferencesWithAccount(user.id), 'Visual preferences', 5_000);
+          await withTimeout(syncVisualPreferencesWithAccount(user.id,()=>active && preferencesActive && accountRef.current===user.id), 'Visual preferences', 5_000);
         } catch (error) {
           console.error('Relay visual preference sync failed; using defaults', error);
-        }
+        } finally { preferencesActive=false; }
         if (!active) return;
 
         accountRef.current = user.id;
