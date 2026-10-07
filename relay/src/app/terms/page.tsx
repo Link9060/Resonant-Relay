@@ -5,10 +5,10 @@ export default function TermsPage() {
     <main className="min-h-screen bg-canvas px-5 py-10">
       <article className="mx-auto max-w-2xl">
         <a href={appPageUrl('/')} className="text-sm text-ink-muted hover:text-ink">← Relay</a>
-        <h1 className="mt-8 font-display text-3xl font-medium tracking-tight text-ink">Relay Terms of Use</h1>
+        <h1 className="mt-8 font-display text-3xl font-medium tracking-tight text-ink">ARROW Terms of Use</h1>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-faint">
           <span>Effective September 3, 2026</span>
-          <span>Last updated September 22, 2026</span>
+          <span>Last updated October 6, 2026</span>
         </div>
 
         <div className="legal-copy mt-8 space-y-5 text-sm leading-7 text-ink-muted">
@@ -17,10 +17,10 @@ export default function TermsPage() {
             <p>Use Relay respectfully, protect your account, share only content you have the right to share, and report conduct that may put people or the service at risk. You keep ownership of your content and can export or delete your account from Settings.</p>
           </section>
 
-          <p>These terms apply when you use Relay. By using Relay, you agree to use it responsibly and only if you have any permission required by your parent, guardian, school, or local law.</p>
+          <p>These terms apply when you use ARROW, including Orbit, Relay, RAVIN, Atlas and Waypoint. By using Relay, you agree to use it responsibly and only if you have any permission required by your parent, guardian, school, or local law.</p>
 
           <h2>Your account</h2>
-          <p>Keep access to your sign-in email secure and provide accurate profile information. You are responsible for activity performed through your account. Relay Numbers are for finding people you know; do not use them to spam or impersonate others.</p>
+          <p>Keep your username, password and linked recovery methods secure. Email and phone are optional at account creation. If you lose your password without a linked recovery method, recovery may be unavailable. Provide accurate profile information. You are responsible for activity performed through your account. Relay Numbers are for finding people you know; do not use them to spam or impersonate others.</p>
 
           <h2>Students and younger users</h2>
           <p>Relay is designed for school communities but is not automatically an official school service. Follow your school&apos;s rules and any permission requirements that apply to you. Do not post highly sensitive personal information. If something on Relay concerns you, use Relay&apos;s reporting tools and involve a trusted adult or appropriate school staff when needed.</p>

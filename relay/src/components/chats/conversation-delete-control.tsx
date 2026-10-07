@@ -34,14 +34,14 @@ export function ConversationDeleteControl({ conversationId, title }: { conversat
           <button type="button" aria-label="Close conversation actions" className="fixed inset-0 z-30 cursor-default" onClick={() => setOpen(false)} />
           <div className="relay-popover absolute bottom-full right-0 z-40 mb-2 w-56 rounded-xl border border-border bg-surface-raised p-2 shadow-xl">
             <div className="flex items-center justify-between gap-2 px-2 py-1">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Conversation</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Conversation</span>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="text-ink-faint"><X size={13} /></button>
             </div>
             <button type="button" disabled={busy} onClick={() => void remove()} className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-medium text-red-500 hover:bg-red-500/10 disabled:opacity-50">
               <Trash2 size={14} />{busy ? 'Deleting…' : 'Delete conversation'}
             </button>
-            <p className="px-3 pb-1 pt-2 text-[10px] leading-4 text-ink-faint">This removes the chat only from your Relay view. Shared history is not destroyed.</p>
-            {error && <p className="mt-1 rounded-md bg-red-500/10 px-3 py-2 text-[10px] text-red-600">{error}</p>}
+            <p className="px-3 pb-1 pt-2 text-xs leading-4 text-ink-faint">This removes the chat only from your Relay view. Shared history is not destroyed.</p>
+            {error && <p className="mt-1 rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-600">{error}</p>}
           </div>
         </>
       )}

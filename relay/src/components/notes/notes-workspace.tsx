@@ -185,7 +185,7 @@ export function NotesWorkspace() {
                 {filtered.map((note) => <li key={note.id} className={newNoteId === note.id ? 'relay-motion-row-in' : ''}><button type="button" onClick={() => selectNote(note.id)} className={`w-full px-3 py-3 text-left transition-colors ${selectedId === note.id ? 'bg-canvas' : 'hover:bg-surface'}`}>
                   <div className="flex items-center gap-1.5"><span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{note.title || 'Untitled'}</span>{note.is_pinned && <Pin size={11} className="shrink-0 text-ink-faint" />}</div>
                   <p className="mt-1 truncate text-xs text-ink-faint">{noteSnippet(note) || 'Empty note'}</p>
-                  <p className="mt-1.5 text-[10px] text-ink-faint">{formatUpdated(note.updated_at)}</p>
+                  <p className="mt-1.5 text-xs text-ink-faint">{formatUpdated(note.updated_at)}</p>
                 </button></li>)}
               </ul>
             )}
@@ -213,7 +213,7 @@ export function NotesWorkspace() {
               <div className="mt-5 flex flex-wrap gap-1.5 border-t border-border pt-4" aria-label="Add a block">
                 {BLOCK_BUTTONS.map(({ type, label, icon: Icon }) => <button key={type} type="button" onClick={() => addBlock(type)} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:bg-surface-raised hover:text-ink"><Icon size={13} />{label}</button>)}
               </div>
-              <p className="mt-3 text-[11px] text-ink-faint">Enter adds another block. Shift + Enter starts a new line.</p>
+              <p className="mt-3 text-xs text-ink-faint">Enter adds another block. Shift + Enter starts a new line.</p>
             </div>
           </div>
         ) : (

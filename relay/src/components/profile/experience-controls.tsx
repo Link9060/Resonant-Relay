@@ -86,7 +86,7 @@ export function ExperienceControls() {
           aria-hidden="true"
         />
         <span className="min-w-0 flex-1 truncate">{option.name}</span>
-        {option.duo && <span className="shrink-0 text-[8px] font-semibold uppercase tracking-wider text-ink-faint">Duo</span>}
+        {option.duo && <span className="shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-faint">Duo</span>}
       </button>
     ));
   }
@@ -98,7 +98,7 @@ export function ExperienceControls() {
           <h3 className="text-sm font-semibold text-ink">Relay Experience</h3>
           <p className="mt-1 text-xs leading-5 text-ink-faint">Choose how Relay moves, feels and uses color. Your palette and light or dark mode shape the final look.</p>
         </div>
-        {IS_BETA && <span className="shrink-0 rounded-full border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-[.12em] text-ink-muted">Beta</span>}
+        {IS_BETA && <span className="shrink-0 rounded-full border border-border px-2 py-1 text-xs font-semibold uppercase tracking-[.12em] text-ink-muted">Beta</span>}
       </div>
 
       <div className="mt-4 grid auto-rows-fr gap-2 sm:grid-cols-2">
@@ -114,7 +114,7 @@ export function ExperienceControls() {
             <span className="flex items-start justify-between gap-3">
               <span className="min-w-0">
                 <span className="block text-sm font-semibold">{option.name}</span>
-                <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-[.12em] text-ink-faint">{option.signature}</span>
+                <span className="mt-0.5 block text-xs font-medium uppercase tracking-[.12em] text-ink-faint">{option.signature}</span>
               </span>
               <span className="relay-mode-preview shrink-0" aria-hidden="true"><i /><i /><i /></span>
             </span>

@@ -103,7 +103,7 @@ export default function BetaAccessPage() {
       <div className="w-full max-w-lg">
         <div className="text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-border bg-surface text-ink"><FlaskConical size={20} /></div>
-          <div className="mt-3 inline-flex rounded-full border border-border bg-surface px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Private Beta</div>
+          <div className="mt-3 inline-flex rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">Private Beta</div>
           <h1 className="mt-3 font-display text-3xl font-medium tracking-tight text-ink">Relay Beta access</h1>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-muted">Beta is where approved testers get early Relay builds before they reach the public release.</p>
         </div>
@@ -120,7 +120,7 @@ export default function BetaAccessPage() {
               <CheckCircle2 className="mx-auto text-ink" size={28} />
               <h2 className="mt-3 text-lg font-semibold text-ink">You’re approved for Beta</h2>
               <p className="mt-2 text-sm text-ink-muted">{displayName ? `${displayName}, your account` : 'Your account'} is on the active Beta tester list.</p>
-              {status.response_message && <div className="mt-4 rounded-xl border border-border bg-canvas px-4 py-3 text-left text-sm text-ink-muted"><div className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">Owner message</div><div className="mt-1">{status.response_message}</div></div>}
+              {status.response_message && <div className="mt-4 rounded-xl border border-border bg-canvas px-4 py-3 text-left text-sm text-ink-muted"><div className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Owner message</div><div className="mt-1">{status.response_message}</div></div>}
               <a href={appPageUrl('/space')} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-md bg-ink px-4 text-sm font-medium text-canvas">Enter Relay Beta <ArrowRight size={15} /></a>
             </div>
           ) : status?.request_status === 'pending' ? (
@@ -128,7 +128,7 @@ export default function BetaAccessPage() {
               <Clock3 className="mx-auto text-ink" size={27} />
               <h2 className="mt-3 text-lg font-semibold text-ink">Your Beta request is pending</h2>
               <p className="mt-2 text-sm leading-6 text-ink-muted">Owner review is required before this account can enter Relay Beta.</p>
-              {status.request_message && <div className="mt-4 rounded-xl border border-border bg-canvas px-4 py-3 text-left text-sm text-ink-muted"><div className="text-[10px] font-semibold uppercase tracking-wide text-ink-faint">Your request</div><div className="mt-1">{status.request_message}</div></div>}
+              {status.request_message && <div className="mt-4 rounded-xl border border-border bg-canvas px-4 py-3 text-left text-sm text-ink-muted"><div className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Your request</div><div className="mt-1">{status.request_message}</div></div>}
               {status.requested_at && <div className="mt-3 text-xs text-ink-faint">Requested {new Date(status.requested_at).toLocaleString()}</div>}
             </div>
           ) : (

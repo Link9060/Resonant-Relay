@@ -57,12 +57,12 @@ export function PlanList({ plans, memberCountByGroup, responseCountByInstance }:
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate text-sm font-semibold text-ink">{plan.name}</p>
-                    <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-medium text-ink-faint">{REPEAT_LABEL[plan.repeat_rule]}</span>
+                    <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-xs font-medium text-ink-faint">{REPEAT_LABEL[plan.repeat_rule]}</span>
                   </div>
                   <p className="mt-1.5 text-xs text-ink-muted">{nextLabel}</p>
-                  <p className="mt-1 text-[11px] text-ink-faint">{plan.group?.name ?? 'Relay group'} · {upcoming.length} upcoming {upcoming.length === 1 ? 'day' : 'days'}</p>
+                  <p className="mt-1 text-xs text-ink-faint">{plan.group?.name ?? 'Relay group'} · {upcoming.length} upcoming {upcoming.length === 1 ? 'day' : 'days'}</p>
                 </div>
-                {nextInstance && <span className="shrink-0 rounded-full border border-border bg-surface px-2.5 py-1 text-[11px] font-medium text-ink-muted">{responseCount}/{memberCount} responded</span>}
+                {nextInstance && <span className="shrink-0 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-ink-muted">{responseCount}/{memberCount} responded</span>}
               </div>
             </a>
           </li>

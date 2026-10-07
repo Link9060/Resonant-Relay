@@ -32,7 +32,7 @@ export function MobileStaffAlert({ role }: { role: AppRole }) {
       <a href={appPageUrl('/admin/moderation')} className="flex min-h-14 items-center gap-3 rounded-2xl border border-border bg-surface px-3 py-3 shadow-sm">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-ink"><AlertTriangle size={18} /></span>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Staff · Needs attention</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Staff · Needs attention</div>
           <div className="mt-0.5 text-sm font-medium text-ink">{openReports} open report{openReports === 1 ? '' : 's'}</div>
         </div>
         <ArrowRight size={17} className="shrink-0 text-ink-muted" />

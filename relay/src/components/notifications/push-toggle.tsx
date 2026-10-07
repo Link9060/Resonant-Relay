@@ -222,12 +222,12 @@ export function PushToggle({ variant = 'card' }: { variant?: Variant }) {
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-ink">Device alerts</p>
-            <p className="mt-0.5 text-[11px] leading-4 text-ink-faint">{compactDescription(status)}</p>
+            <p className="mt-0.5 text-xs leading-4 text-ink-faint">{compactDescription(status)}</p>
           </div>
           {status === 'off' && <ActionButton onClick={() => void enable()} disabled={loading}>{loading ? <Loader2 size={13} className="animate-spin" /> : 'Enable'}</ActionButton>}
           {status === 'on' && <ActionButton onClick={() => void sendTest()} disabled={testing}>{testing ? <Loader2 size={13} className="animate-spin" /> : 'Test'}</ActionButton>}
         </div>
-        {(message || error) && <p className={`mt-2 pl-11 text-[11px] ${error ? 'text-red-500' : 'text-ink-muted'}`}>{error ?? message}</p>}
+        {(message || error) && <p className={`mt-2 pl-11 text-xs ${error ? 'text-red-500' : 'text-ink-muted'}`}>{error ?? message}</p>}
       </div>
     );
   }
@@ -264,7 +264,7 @@ export function PushToggle({ variant = 'card' }: { variant?: Variant }) {
 
           <div className="mt-4 rounded-lg border border-border bg-canvas px-3 py-3">
             <p className="text-xs font-medium text-ink">Also check your device settings</p>
-            <p className="mt-1 text-[11px] leading-5 text-ink-faint">Relay needs notification permission in both the browser and your device settings. Make sure notifications are allowed for the browser you use for Relay. On Mac, open System Settings → Notifications → Chrome, Safari, or Edge → Allow Notifications.</p>
+            <p className="mt-1 text-xs leading-5 text-ink-faint">Relay needs notification permission in both the browser and your device settings. Make sure notifications are allowed for the browser you use for Relay. On Mac, open System Settings → Notifications → Chrome, Safari, or Edge → Allow Notifications.</p>
           </div>
         </div>
       </div>

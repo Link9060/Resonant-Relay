@@ -33,7 +33,7 @@ export function LeaveGroupButton({ groupId }: { groupId: string }) {
       ) : (
         <div className="rounded-md border border-red-200 bg-red-50 p-3 text-right dark:border-red-900 dark:bg-red-950/30">
           <p className="text-xs font-medium text-red-800 dark:text-red-300">Leave this group?</p>
-          <p className="mt-1 text-[11px] text-red-700 dark:text-red-400">You’ll lose access to its chat and plans.</p>
+          <p className="mt-1 text-xs text-red-700 dark:text-red-400">You’ll lose access to its chat and plans.</p>
           <div className="mt-2 flex justify-end gap-2">
             <button
               type="button"

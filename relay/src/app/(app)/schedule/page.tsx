@@ -340,7 +340,7 @@ export default function SchedulePage() {
           const today = key === localDateKey();
           return (
             <button key={key} type="button" onClick={() => setSelectedDate(key)} className={`min-w-0 border-r border-border px-2 py-3 text-center last:border-r-0 ${selected ? 'bg-ink text-canvas' : 'text-ink hover:bg-surface'}`}>
-              <span className={`block text-[10px] font-semibold uppercase tracking-[.12em] ${selected ? 'text-canvas/70' : 'text-ink-faint'}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span>
+              <span className={`block text-xs font-semibold uppercase tracking-[.12em] ${selected ? 'text-canvas/70' : 'text-ink-faint'}`}>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span>
               <span className="mt-1 block text-lg font-semibold">{day.getDate()}</span>
               {today && <span className={`mx-auto mt-1 block h-1 w-1 rounded-full ${selected ? 'bg-canvas' : 'bg-ink'}`} />}
             </button>
@@ -354,7 +354,7 @@ export default function SchedulePage() {
         <section className="min-w-0 overflow-hidden rounded-xl border border-border bg-canvas">
           {allDayItems.length > 0 && (
             <div className="border-b border-border bg-surface/50 px-4 py-3">
-              <div className="flex items-start gap-3"><span className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-ink-faint">All day</span><div className="flex min-w-0 flex-1 flex-wrap gap-2">{allDayItems.map((event) => <span key={event.id} className="rounded-md border border-border bg-surface-raised px-2.5 py-1.5 text-xs text-ink">{event.summary || 'Calendar event'}</span>)}</div></div>
+              <div className="flex items-start gap-3"><span className="mt-1 text-xs font-semibold uppercase tracking-wider text-ink-faint">All day</span><div className="flex min-w-0 flex-1 flex-wrap gap-2">{allDayItems.map((event) => <span key={event.id} className="rounded-md border border-border bg-surface-raised px-2.5 py-1.5 text-xs text-ink">{event.summary || 'Calendar event'}</span>)}</div></div>
             </div>
           )}
 
@@ -362,13 +362,13 @@ export default function SchedulePage() {
             {Array.from({ length: 20 }, (_, index) => {
               const minute = START_MINUTE + index * 60;
               const top = (minute - START_MINUTE) * PX_PER_MINUTE;
-              return <div key={minute} className="absolute inset-x-0 border-t border-border/70" style={{ top }}><span className="absolute left-3 -translate-y-1/2 bg-canvas pr-2 text-[11px] font-medium text-ink-faint">{formatMinute(minute)}</span></div>;
+              return <div key={minute} className="absolute inset-x-0 border-t border-border/70" style={{ top }}><span className="absolute left-3 -translate-y-1/2 bg-canvas pr-2 text-xs font-medium text-ink-faint">{formatMinute(minute)}</span></div>;
             })}
 
             {isToday && nowMinute >= START_MINUTE && nowMinute <= END_MINUTE && (
               <div className="pointer-events-none absolute left-16 right-0 z-20 border-t border-red-500" style={{ top: (nowMinute - START_MINUTE) * PX_PER_MINUTE }}>
                 <span className="absolute -left-1 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-500" />
-                <span className="absolute left-2 -translate-y-[120%] rounded bg-red-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">Now</span>
+                <span className="absolute left-2 -translate-y-[120%] rounded bg-red-500 px-1.5 py-0.5 text-xs font-bold uppercase tracking-wider text-white">Now</span>
               </div>
             )}
 

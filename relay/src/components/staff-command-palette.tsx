@@ -103,7 +103,7 @@ export function StaffCommandPaletteGlobal({ role }: { role: AppRole }) {
         </div>
 
         <div className="max-h-[55vh] overflow-y-auto p-2">
-          <div className="px-2 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">{role === 'owner' ? 'Owner commands' : role === 'admin' ? 'Admin commands' : 'Moderator commands'}</div>
+          <div className="px-2 pb-2 pt-1 text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">{role === 'owner' ? 'Owner commands' : role === 'admin' ? 'Admin commands' : 'Moderator commands'}</div>
           {commands.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border px-4 py-7 text-center text-sm text-ink-muted">No staff commands match that search.</div>
           ) : commands.map((item) => {
@@ -118,7 +118,7 @@ export function StaffCommandPaletteGlobal({ role }: { role: AppRole }) {
           })}
         </div>
 
-        <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-[10px] text-ink-faint">
+        <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-xs text-ink-faint">
           <span>Role-gated staff access</span>
           <span>⌘K / Ctrl+K · ESC to close</span>
         </div>

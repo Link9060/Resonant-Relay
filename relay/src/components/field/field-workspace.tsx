@@ -331,7 +331,7 @@ export function FieldWorkspace() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-[11px] font-medium text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-50"
+            className="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-50"
           >
             {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
             <span className="hidden sm:inline">{uploading ? 'Adding…' : 'Add file'}</span>
@@ -342,7 +342,7 @@ export function FieldWorkspace() {
             disabled={loading || syncing}
             aria-label="Sync Field"
             title="Sync Field"
-            className="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-[11px] font-medium text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-50"
+            className="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink disabled:opacity-50"
           >
             <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
             <span className="hidden sm:inline">{syncing ? 'Syncing…' : 'Sync'}</span>
@@ -368,7 +368,7 @@ export function FieldWorkspace() {
                 placeholder="Search Field"
                 className="w-full rounded-lg border border-border bg-canvas/70 py-2.5 pl-8 pr-10 text-xs text-ink outline-none placeholder:text-ink-faint focus:border-ink-faint"
               />
-              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 py-0.5 text-[8px] text-ink-faint">⌘K</span>
+              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 py-0.5 text-xs text-ink-faint">⌘K</span>
             </label>
           </div>
 

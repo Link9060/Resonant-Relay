@@ -184,7 +184,7 @@ function DockLink({
         href={appPageUrl(item.href)}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'relay-dock-link flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium transition-colors',
+          'relay-dock-link flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-xs font-medium transition-colors',
           active ? 'text-ink' : 'text-ink-faint'
         )}
       >

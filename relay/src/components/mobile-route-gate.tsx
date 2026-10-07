@@ -57,7 +57,7 @@ export function MobileRouteGate({ children, role }: { children: React.ReactNode;
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-canvas text-ink-muted">
           <Laptop size={21} />
         </div>
-        <div className="mt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">Relay Mobile · Full on desktop</div>
+        <div className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-ink-faint">Relay Mobile · Full on desktop</div>
         <h1 className="mt-2 font-display text-2xl font-medium tracking-tight text-ink">{blocked.title}</h1>
         <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-ink-muted">{blocked.body}</p>
 

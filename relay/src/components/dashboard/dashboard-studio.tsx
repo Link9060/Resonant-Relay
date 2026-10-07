@@ -269,7 +269,7 @@ export function DashboardStudio({
     <div className="fixed inset-0 z-[90] overflow-y-auto overscroll-contain bg-canvas text-ink">
       <header className="sticky top-0 z-50 flex min-h-16 items-center justify-between gap-4 border-b border-border bg-canvas/95 px-4 shadow-sm backdrop-blur-xl md:px-6">
         <div className="min-w-0">
-          <div className="flex items-center gap-2"><LayoutGrid size={18} /><h1 className="truncate text-base font-semibold">Dashboard Studio</h1><span className="hidden rounded-full border border-border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[.14em] text-ink-faint sm:inline-flex">Live editor</span></div>
+          <div className="flex items-center gap-2"><LayoutGrid size={18} /><h1 className="truncate text-base font-semibold">Dashboard Studio</h1><span className="hidden rounded-full border border-border px-2 py-0.5 text-xs font-semibold uppercase tracking-[.14em] text-ink-faint sm:inline-flex">Live editor</span></div>
           <p className="mt-0.5 hidden text-xs text-ink-faint md:block">Drag, resize, and arrange. The page now uses one smooth scroll surface.</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -283,7 +283,7 @@ export function DashboardStudio({
         <main className="min-w-0 bg-surface/30 p-3 md:p-6">
           <div className="mx-auto max-w-6xl">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div><p className="text-[10px] font-semibold uppercase tracking-[.16em] text-ink-faint">Live dashboard</p><p className="mt-1 text-xs text-ink-muted">Draft changes stay local until you save.</p></div>
+              <div><p className="text-xs font-semibold uppercase tracking-[.16em] text-ink-faint">Live dashboard</p><p className="mt-1 text-xs text-ink-muted">Draft changes stay local until you save.</p></div>
               <button type="button" onClick={() => setShowGrid((value) => !value)} className={`rounded-lg border px-3 py-2 text-xs font-medium ${showGrid ? 'border-ink bg-ink text-canvas' : 'border-border bg-canvas text-ink-muted'}`}>Grid {showGrid ? 'on' : 'off'}</button>
             </div>
 
@@ -314,7 +314,7 @@ export function DashboardStudio({
                       <div className="h-full min-h-0 overflow-hidden rounded-xl">{renderWidget(widget, index)}</div>
                       <div className={`absolute left-2 top-2 z-20 flex items-center gap-1 rounded-lg border border-border bg-canvas/95 p-1 shadow-sm ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                         <div draggable onDragStart={() => startDrag(widget.id)} onDragEnd={finishDrag} title="Drag widget" className="grid h-7 w-7 cursor-grab place-items-center rounded-md text-ink-muted active:cursor-grabbing hover:bg-surface"><GripVertical size={14} /></div>
-                        <span className="px-1 text-[10px] font-semibold tabular-nums text-ink-faint">{widget.cols}×{widget.rows}</span>
+                        <span className="px-1 text-xs font-semibold tabular-nums text-ink-faint">{widget.cols}×{widget.rows}</span>
                       </div>
                       {isSelected && <><button type="button" aria-label="Resize widget width" onPointerDown={(event) => beginResize(event, widget, 'x')} className="absolute -right-1.5 top-1/2 z-30 h-16 w-3 -translate-y-1/2 cursor-ew-resize rounded-full border border-border bg-canvas shadow-sm" /><button type="button" aria-label="Resize widget height" onPointerDown={(event) => beginResize(event, widget, 'y')} className="absolute -bottom-1.5 left-1/2 z-30 h-3 w-16 -translate-x-1/2 cursor-ns-resize rounded-full border border-border bg-canvas shadow-sm" /><button type="button" aria-label="Resize widget" onPointerDown={(event) => beginResize(event, widget, 'both')} className="absolute -bottom-2 -right-2 z-40 grid h-5 w-5 cursor-nwse-resize place-items-center rounded-full border border-ink bg-canvas shadow-md"><Maximize2 size={10} /></button></>}
                     </div>

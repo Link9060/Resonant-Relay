@@ -136,7 +136,7 @@ export function EditPlanDialog({ plan }: { plan: EditablePlan }) {
                 {repeatRule === 'custom' ? (
                   <Field label="Pick future days">
                     <CustomDateCalendar value={customDates} onChange={setCustomDates} minDate={today()} />
-                    <p className="mt-2 text-[11px] leading-4 text-ink-faint">Unchanged dates keep their existing responses. Removing a future date removes that occurrence and its responses.</p>
+                    <p className="mt-2 text-xs leading-4 text-ink-faint">Unchanged dates keep their existing responses. Removing a future date removes that occurrence and its responses.</p>
                   </Field>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -152,7 +152,7 @@ export function EditPlanDialog({ plan }: { plan: EditablePlan }) {
                 )}
 
                 <div className="rounded-xl border border-border bg-canvas p-3">
-                  <div className="mb-3 flex items-center gap-2"><Clock3 size={14} className="text-ink-faint" /><p className="text-xs font-semibold text-ink">Time</p><span className="ml-auto text-[11px] text-ink-faint">Blank = all day</span></div>
+                  <div className="mb-3 flex items-center gap-2"><Clock3 size={14} className="text-ink-faint" /><p className="text-xs font-semibold text-ink">Time</p><span className="ml-auto text-xs text-ink-faint">Blank = all day</span></div>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="Starts"><input type="time" value={startTime} onChange={(event) => { setStartTime(event.target.value); if (!event.target.value) setEndTime(''); }} className={inputClass} /></Field>
                     <Field label="Ends (optional)"><input type="time" value={endTime} min={startTime || undefined} disabled={!startTime} onChange={(event) => setEndTime(event.target.value)} className={`${inputClass} disabled:cursor-not-allowed disabled:opacity-40`} /></Field>

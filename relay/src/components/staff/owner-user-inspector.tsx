@@ -132,7 +132,7 @@ export function OwnerUserInspector({ user, currentUserId, busy, onSelectUser, on
     <div>
       <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">◆ Owner Inspector</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">◆ Owner Inspector</span>
           <h2 className="mt-2 text-xl font-semibold text-ink">{user.display_name}</h2>
           <p className="mt-1 text-xs text-ink-muted">{user.primary_email ?? 'No primary email'} · {formatRelay(user.relay_number)}</p>
           {user.school && <p className="mt-1 text-xs text-ink-faint">{user.school}</p>}
@@ -186,7 +186,7 @@ function OverviewTab({ data, health }: { data: any; health: ReturnType<typeof ac
           <div><div className="text-sm font-semibold text-ink">Account health</div><p className="mt-1 text-xs text-ink-muted">Real account signals only — no synthetic score.</p></div>
           <HealthBadge status={health.status} label={health.label} />
         </div>
-        <div className="mt-4 flex flex-wrap gap-2">{health.signals.map((signal) => <span key={signal} className="rounded-full border border-border bg-surface px-2.5 py-1 text-[11px] text-ink-muted">{signal}</span>)}</div>
+        <div className="mt-4 flex flex-wrap gap-2">{health.signals.map((signal) => <span key={signal} className="rounded-full border border-border bg-surface px-2.5 py-1 text-xs text-ink-muted">{signal}</span>)}</div>
       </section>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Metric label="Messages" value={overview.message_count ?? 0} />
@@ -213,7 +213,7 @@ function ContactsTab({ contacts, onSelectUser }: { contacts: any[]; onSelectUser
     <li key={contact.id}>
       <button type="button" onClick={() => onSelectUser(contact.id)} className="flex min-h-16 w-full items-center justify-between gap-3 px-3 py-3 text-left hover:bg-canvas">
         <div className="min-w-0"><p className="truncate text-sm font-medium text-ink">{contact.display_name}</p><p className="mt-1 truncate text-xs text-ink-faint">{formatRelay(contact.relay_number)}{contact.school ? ` · ${contact.school}` : ''}</p></div>
-        <div className="shrink-0 text-right"><p className="text-xs text-ink-muted">{Number(contact.mutual_count ?? 0)} mutual</p><p className="mt-1 text-[10px] text-ink-faint">Connected {formatDate(contact.connected_at)}</p></div>
+        <div className="shrink-0 text-right"><p className="text-xs text-ink-muted">{Number(contact.mutual_count ?? 0)} mutual</p><p className="mt-1 text-xs text-ink-faint">Connected {formatDate(contact.connected_at)}</p></div>
       </button>
     </li>
   ))}</ul>;

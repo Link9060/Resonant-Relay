@@ -235,7 +235,7 @@ function TabButton({
     >
       <Icon size={15} className="shrink-0" />
       <span className="truncate">{label}</span>
-      {count !== undefined && <span className="text-[10px] text-ink-faint">{count}</span>}
+      {count !== undefined && <span className="text-xs text-ink-faint">{count}</span>}
       {attention && <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-ink" aria-label="New requests" />}
     </button>
   );

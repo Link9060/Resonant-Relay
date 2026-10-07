@@ -1,0 +1,18 @@
+/* ARROW account and control surfaces. */
+.auth-page { display:grid; place-items:center; padding-top:max(40px,env(safe-area-inset-top)); padding-bottom:max(40px,env(safe-area-inset-bottom)); }
+.auth-methods { display:flex; gap:4px; padding:4px; border:1px solid rgb(var(--border)); border-radius:10px; background:rgb(var(--canvas)); }
+.auth-methods button { flex:1; min-width:0; min-height:44px; border-radius:7px; padding:8px 10px; font-size:14px; color:rgb(var(--ink-muted)); }
+.auth-methods button[aria-pressed="true"] { background:rgb(var(--surface-raised)); color:rgb(var(--ink)); box-shadow:0 1px 5px rgb(0 0 0 / .08); outline:1px solid rgba(var(--arrow-accent-rgb,47,111,237),.45); }
+.account-action { min-height:44px; display:inline-flex; justify-content:center; align-items:center; padding:10px 14px; border:1px solid rgb(var(--border)); border-radius:8px; background:rgb(var(--surface-raised)); color:rgb(var(--ink)); font-size:14px; font-weight:500; }
+.account-action:hover { border-color:var(--arrow-accent-color,rgb(var(--ink-muted))); }
+.account-action:disabled { opacity:.55; cursor:wait; }
+.auth-submit { background:var(--arrow-accent-color,rgb(var(--ink))); color:var(--arrow-accent-on,rgb(var(--canvas))); border-color:transparent; }
+.profile-input { width:100%; min-height:44px; font-size:16px; }
+:root :is(.profile-input,input,textarea,select):focus-visible { outline:2px solid var(--arrow-accent-color,rgb(var(--ink))); outline-offset:2px; }
+:root[data-arrow-accent="custom"] :is(.dock-link.active,[aria-current="page"]) { border-color:var(--arrow-accent-color); background:rgba(var(--arrow-accent-rgb),.1); }
+:root[data-arrow-accent="custom"] :is(.message-compose-send,.message-composer button[type="submit"],.dashboard-preset-button.is-active) { background:var(--arrow-accent-color); color:var(--arrow-accent-on); }
+:root[data-arrow-accent="custom"] :is(.profile-input:focus,.dashboard-card:hover,.note-card:hover) { border-color:var(--arrow-accent-color); }
+:root[data-arrow-accent="custom"] :is(.relay-brand-mark,.notification-unread-dot) { color:var(--arrow-accent-color); }
+:is(.legal-copy,.profile-input) { overflow-wrap:anywhere; }
+:is(.auth-page,.legal-copy) a:focus-visible { outline:2px solid var(--arrow-accent-color,rgb(var(--ink))); outline-offset:3px; }
+@media(max-width:680px) { .auth-page { padding-inline:12px; } .auth-page > div { padding:24px 18px; } .profile-input { font-size:16px; } }

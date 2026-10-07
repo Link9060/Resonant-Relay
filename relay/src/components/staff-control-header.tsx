@@ -28,7 +28,7 @@ export function StaffControlHeader({ role, active }: { role: StaffRole; active: 
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-canvas px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-canvas px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-ink">
                 <span aria-hidden="true">{roleCopy.mark}</span>
                 {roleCopy.label}
               </span>
@@ -49,7 +49,7 @@ export function StaffControlHeader({ role, active }: { role: StaffRole; active: 
 
           <div className="flex shrink-0 flex-col gap-2 sm:items-end">
             <div className="rounded-xl border border-border bg-canvas/80 px-4 py-3 text-left sm:text-right">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Access level</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Access level</div>
               <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-ink sm:justify-end">
                 <ShieldCheck size={15} />
                 {roleCopy.access}
@@ -62,7 +62,7 @@ export function StaffControlHeader({ role, active }: { role: StaffRole; active: 
             >
               <Command size={14} />
               Command Center
-              <span className="rounded border border-border px-1.5 py-0.5 font-mono text-[9px] text-ink-faint">⌘K</span>
+              <span className="rounded border border-border px-1.5 py-0.5 font-mono text-xs text-ink-faint">⌘K</span>
             </button>
           </div>
         </div>

@@ -39,7 +39,7 @@ export function LayoutControls({ value, onChange }: { value?: RelayLayout; onCha
           <h3 className="text-sm font-semibold text-ink">Desktop layout</h3>
           <p className="mt-1 text-xs leading-5 text-ink-faint">Rearrange Relay on larger screens. Mobile keeps its simpler fixed layout.</p>
         </div>
-        <span className="hidden rounded-full border border-border px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-ink-faint md:inline-flex">Desktop only</span>
+        <span className="hidden rounded-full border border-border px-2 py-1 text-xs font-semibold uppercase tracking-[.12em] text-ink-faint md:inline-flex">Desktop only</span>
       </div>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -56,7 +56,7 @@ export function LayoutControls({ value, onChange }: { value?: RelayLayout; onCha
               <span className="flex items-start justify-between gap-3">
                 <span>
                   <span className="block text-sm font-semibold">{option.name}</span>
-                  <span className={`mt-0.5 block text-[10px] font-semibold uppercase tracking-[.12em] ${active ? 'text-canvas/65' : 'text-ink-faint'}`}>{option.signature}</span>
+                  <span className={`mt-0.5 block text-xs font-semibold uppercase tracking-[.12em] ${active ? 'text-canvas/65' : 'text-ink-faint'}`}>{option.signature}</span>
                 </span>
                 <span className={`grid h-6 w-6 place-items-center rounded-full border ${active ? 'border-canvas/30' : 'border-border'}`}>{active ? <Check size={13} /> : null}</span>
               </span>

@@ -1,5 +1,9 @@
 'use client';
 
+import { AccountAccess } from '@/components/account-access';
+import { ExperienceControls } from '@/components/profile/experience-controls';
+import { LayoutControls } from '@/components/profile/layout-controls';
+import { ParticleControls } from '@/components/profile/particle-controls';
 import { PushToggle } from '@/components/notifications/push-toggle';
 import { UserRoleBadge } from '@/components/user-role-badge';
 import { PageLoading } from '@/components/page-loading';
@@ -48,8 +52,9 @@ export default function ProfilePage() {
     void (async () => {
       const supabase = createClient() as any;
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase.from('profiles').select('id,display_name,first_name,last_name,username,username_changed_at,avatar_url,relay_number,school,graduation_year,bio,role').eq('id', user.id).single();
+      if (!user) { setError('Sign in to load your profile.'); return; }
+      const { data, error: loadError } = await supabase.from('profiles').select('id,display_name,first_name,last_name,username,username_changed_at,avatar_url,relay_number,school,graduation_year,bio,role').eq('id', user.id).single();
+      if (loadError || !data) { setError('Your profile could not load. Refresh to try again.'); return; }
       if (data) {
         const parts = String(data.display_name ?? '').trim().split(/\s+/).filter(Boolean);
         const typed = {
@@ -64,7 +69,7 @@ export default function ProfilePage() {
     })();
   }, []);
 
-  if (!profile) return <PageLoading />;
+  if (!profile) return error ? <div role="alert" className="mx-auto max-w-lg p-6"><p>{error}</p><button className="account-action mt-4" onClick={()=>location.reload()}>Retry</button></div> : <PageLoading />;
 
   function update<Field extends keyof EditableProfile>(field: Field, value: EditableProfile[Field]) {
     setProfile((current) => current ? { ...current, [field]: value } : current);
@@ -185,7 +190,7 @@ export default function ProfilePage() {
           <input value={profile.avatar_url ?? ''} maxLength={500} onChange={(event) => update('avatar_url', event.target.value)} placeholder="https://..." className="profile-input" inputMode="url" />
         </ProfileField>
 
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
         <button type="submit" disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-md bg-ink px-4 py-2.5 text-sm font-medium text-canvas disabled:opacity-50">
           {saving ? <Loader2 size={16} className="animate-spin" /> : saved ? <Check size={16} /> : null}
           {saved ? 'Saved' : 'Save profile'}
@@ -216,8 +221,8 @@ export default function ProfilePage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full border border-border bg-canvas px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink">◆ Owner</span>
-                    <span className="flex items-center gap-1.5 text-[11px] text-ink-faint"><span className="h-1.5 w-1.5 rounded-full bg-ink" />Full access</span>
+                    <span className="rounded-full border border-border bg-canvas px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-ink">◆ Owner</span>
+                    <span className="flex items-center gap-1.5 text-xs text-ink-faint"><span className="h-1.5 w-1.5 rounded-full bg-ink" />Full access</span>
                   </div>
                   <h2 className="mt-3 text-base font-semibold text-ink">Owner Tools</h2>
                   <p className="mt-1 text-xs leading-5 text-ink-muted">Preview lower permission levels without changing your real account or losing Owner access.</p>
@@ -230,7 +235,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {PREVIEW_ROLES.map((option) => (
                     <button key={option.role} type="button" onClick={() => changePreviewRole(option.role)} className={cn('rounded-lg border px-3 py-2.5 text-left transition-colors', previewRole === option.role ? 'border-ink bg-ink text-canvas' : 'border-border bg-canvas text-ink-muted hover:bg-surface-raised hover:text-ink')}>
-                      <div className="text-sm font-semibold">{option.mark}</div><div className="mt-1 text-[10px] font-medium uppercase tracking-wide">{option.label}</div>
+                      <div className="text-sm font-semibold">{option.mark}</div><div className="mt-1 text-xs font-medium uppercase tracking-wide">{option.label}</div>
                     </button>
                   ))}
                 </div>
@@ -247,6 +252,8 @@ export default function ProfilePage() {
 
       <section className="mt-8 border-t border-border pt-6"><h2 className="text-sm font-medium text-ink">Privacy and terms</h2><div className="mt-3 flex gap-3 text-sm"><a href={appPageUrl('/privacy')} className="text-ink-muted underline underline-offset-4 hover:text-ink">Privacy policy</a><a href={appPageUrl('/terms')} className="text-ink-muted underline underline-offset-4 hover:text-ink">Terms</a></div></section>
 
+      <AccountAccess />
+      <section id="appearance" className="mt-8 scroll-mt-24 border-t border-border pt-6"><h2 className="mb-4 text-base font-semibold text-ink">Relay appearance and layout</h2><div className="space-y-5"><ExperienceControls /><LayoutControls /><ParticleControls /></div></section>
       <AccountDataControls />
       <div className="mt-8"><SignOutButton /></div>
     </div>

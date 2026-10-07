@@ -411,11 +411,11 @@ export default function OnboardingPage() {
               <OnboardingPanel eyebrow="You’re in" title={`Welcome to Relay, ${firstName}.`} body="Your account is ready. People can now find you the ways you chose.">
                 <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-surface">
                   <div className="border-b border-border px-5 py-4">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Username</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Username</div>
                     <div className="mt-1 font-display text-2xl font-medium text-ink">@{finished.username}</div>
                   </div>
                   <div className="px-5 py-4">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Relay Number</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Relay Number</div>
                     <div className="mt-1 font-display text-2xl font-medium text-ink">{formatRelayNumber(finished.relay_number)}</div>
                     <div className="mt-1 text-xs text-ink-faint">Use this when you want an exact, direct add.</div>
                   </div>
@@ -440,7 +440,7 @@ export default function OnboardingPage() {
 function OnboardingPanel({ eyebrow, title, body, children }: { eyebrow: string; title: string; body: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">{eyebrow}</div>
+      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-faint">{eyebrow}</div>
       <h1 className="mt-2 max-w-xl font-display text-3xl font-medium tracking-tight text-ink sm:text-4xl">{title}</h1>
       <p className="mt-3 max-w-xl text-sm leading-6 text-ink-muted">{body}</p>
       {children}

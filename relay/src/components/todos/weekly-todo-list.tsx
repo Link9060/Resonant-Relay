@@ -125,7 +125,7 @@ export function WeeklyTodoList() {
             <section key={key} className="border-b border-border last:border-b-0">
               <button type="button" onClick={() => toggleDay(key)} aria-expanded={isOpen} className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-surface">
                 <div className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-md ${isToday ? 'bg-ink text-canvas' : 'bg-surface text-ink'}`}>
-                  <span className="text-[11px] uppercase leading-none">{day.toLocaleDateString(undefined, { weekday: 'short' })}</span>
+                  <span className="text-xs uppercase leading-none">{day.toLocaleDateString(undefined, { weekday: 'short' })}</span>
                   <span className="mt-1 text-base font-semibold leading-none">{day.getDate()}</span>
                 </div>
                 <div className="min-w-0 flex-1">

@@ -216,7 +216,7 @@ export default function FocusPage() {
         <aside className="rounded-2xl border border-border bg-surface p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">Task queue</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-faint">Task queue</p>
               <h2 className="mt-1 text-sm font-semibold text-ink">What are you working on?</h2>
             </div>
             <CheckCircle2 size={18} className="text-ink-faint" />
@@ -231,7 +231,7 @@ export default function FocusPage() {
               className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${selectedTodoId === null ? 'border-ink/25 bg-surface-raised' : 'border-transparent hover:bg-surface-raised'}`}
             >
               <span className="block text-sm font-medium text-ink">Open focus</span>
-              <span className="mt-0.5 block text-[11px] text-ink-faint">No task attached</span>
+              <span className="mt-0.5 block text-xs text-ink-faint">No task attached</span>
             </button>
             {todos.map((todo) => (
               <button
@@ -241,7 +241,7 @@ export default function FocusPage() {
                 className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${selectedTodoId === todo.id ? 'border-ink/25 bg-surface-raised' : 'border-transparent hover:bg-surface-raised'}`}
               >
                 <span className="block truncate text-sm font-medium text-ink">{todo.title}</span>
-                <span className="mt-0.5 block text-[11px] text-ink-faint">{todo.due_on === todayKey ? 'Due today' : `Due ${formatTaskDate(todo.due_on)}`}</span>
+                <span className="mt-0.5 block text-xs text-ink-faint">{todo.due_on === todayKey ? 'Due today' : `Due ${formatTaskDate(todo.due_on)}`}</span>
               </button>
             ))}
             {todos.length === 0 && !loadError && (
@@ -253,7 +253,7 @@ export default function FocusPage() {
         <main className="relative overflow-hidden rounded-3xl border border-border bg-surface px-5 py-8 text-center sm:px-8 sm:py-10">
           <div className="pointer-events-none absolute inset-x-[12%] top-12 h-40 rounded-full bg-ink/[0.025] blur-3xl" />
           <div className="relative mx-auto max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-canvas/70 px-3 py-1.5 text-[11px] font-medium text-ink-muted">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-canvas/70 px-3 py-1.5 text-xs font-medium text-ink-muted">
               {mode === 'focus' ? <Brain size={13} /> : <Coffee size={13} />}
               {mode === 'focus' ? 'Focus session' : 'Break'}
             </div>

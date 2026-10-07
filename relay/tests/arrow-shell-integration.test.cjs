@@ -25,8 +25,8 @@ test('Relay loads the shared ARROW shell assets in public and beta', () => {
 });
 
 
-test('Relay profile does not expose retired startup or particle-transition controls', () => {
+test('Relay profile restores experience, layout, particle and account controls', () => {
   const profile = fs.readFileSync('src/app/(app)/profile/page.tsx', 'utf8');
   assert.doesNotMatch(profile, /Replay startup animation/);
-  assert.doesNotMatch(profile, /<ParticleControls/);
+  for (const control of ['ParticleControls', 'LayoutControls', 'ExperienceControls', 'AccountAccess']) assert.ok(profile.includes('<' + control));
 });

@@ -95,7 +95,7 @@ function ParticleSlider({ label, value, min, max, step, onChange }: { label: str
         className="beta-particle-slider mt-3 w-full"
         style={{ '--particle-fill': `${fill}%` } as React.CSSProperties}
       />
-      <span className="mt-1.5 flex justify-between text-[11px] text-ink-faint"><span>Subtle</span><span>Maximum</span></span>
+      <span className="mt-1.5 flex justify-between text-xs text-ink-faint"><span>Subtle</span><span>Maximum</span></span>
     </label>
   );
 }

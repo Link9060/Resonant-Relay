@@ -174,7 +174,7 @@ export function StaffInboxButton({ role }: { role: AppRole }) {
       >
         <Inbox size={18} />
         {newCount > 0 && (
-          <span className="absolute right-0.5 top-0.5 min-w-4 rounded-full bg-ink px-1 text-center text-[9px] font-semibold leading-4 text-canvas">
+          <span className="absolute right-0.5 top-0.5 min-w-4 rounded-full bg-ink px-1 text-center text-xs font-semibold leading-4 text-canvas">
             {newCount > 9 ? '9+' : newCount}
           </span>
         )}
@@ -188,9 +188,9 @@ export function StaffInboxButton({ role }: { role: AppRole }) {
               <div>
                 <div className="flex items-center gap-2">
                   <div className="text-sm font-semibold text-ink">Needs Attention</div>
-                  <span className="rounded-full border border-border bg-canvas px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-ink-muted">{identity.mark} {identity.label}</span>
+                  <span className="rounded-full border border-border bg-canvas px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">{identity.mark} {identity.label}</span>
                 </div>
-                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-ink-faint">
+                <div className="mt-1 flex items-center gap-1.5 text-xs text-ink-faint">
                   <span className="h-1.5 w-1.5 rounded-full bg-ink" />
                   Live routing · {openCount} open · {newCount} new
                 </div>

@@ -331,7 +331,7 @@ export function WhatsNew({ onboardingCompletedAt }: WhatsNewProps) {
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-canvas px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-canvas px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
                   <Sparkles size={12} /> What’s New
                 </span>
                 <span className="text-xs text-ink-faint">Relay {currentRelease.version} · {currentRelease.status}</span>
@@ -349,7 +349,7 @@ export function WhatsNew({ onboardingCompletedAt }: WhatsNewProps) {
           <div className="space-y-5">
             {currentRelease.groups.map((group) => (
               <section key={group.label}>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">{group.label}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">{group.label}</p>
                 <div className="mt-2 space-y-2">
                   {group.items.map((item) => (
                     <div key={item} className="flex items-start gap-2.5 text-sm leading-5 text-ink-muted">
@@ -370,7 +370,7 @@ export function WhatsNew({ onboardingCompletedAt }: WhatsNewProps) {
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-left [&::-webkit-details-marker]:hidden">
                     <div>
                       <div className="text-sm font-medium text-ink">Relay {release.version}</div>
-                      <div className="mt-0.5 text-[11px] text-ink-faint">{release.status}</div>
+                      <div className="mt-0.5 text-xs text-ink-faint">{release.status}</div>
                     </div>
                     <span className="text-xs text-ink-faint transition-transform group-open:rotate-45">+</span>
                   </summary>

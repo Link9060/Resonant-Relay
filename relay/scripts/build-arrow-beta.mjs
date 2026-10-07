@@ -33,10 +33,10 @@ cpSync(path.join(relay,'public/arrow-beta-guard.js'),path.join(common,'arrow-bet
 cpSync(path.join(ravin,'ravin/src/nextMove.js'),path.join(common,'next-move.js'));
 cpSync(path.join(ravin,'ravin/src/autoPlanner.js'),path.join(common,'autoPlanner.js'));
 function patchHtml(dir){for(const entry of readdirSync(dir,{withFileTypes:true})){const file=path.join(dir,entry.name);if(entry.isDirectory())patchHtml(file);else if(entry.name.endsWith('.html')){
-  let html=readFileSync(file,'utf8').replace(/(["'])\/arrow-shell\.(js|css)(\?[^"']*)?\1/g,(_m,quote,ext)=>quote+base+'/arrow-shell.'+ext+'?v=beta-repair-1'+quote);
+  let html=readFileSync(file,'utf8').replace(/(["'])\/arrow-shell\.(js|css)(\?[^"']*)?\1/g,(_m,quote,ext)=>quote+base+'/arrow-shell.'+ext+'?v=review-20261006'+quote);
   html=html.replace(/<script[^>]*src=["']\/arrow-auth-guard\.js[^"']*["'][^>]*><\/script>/g,'');
   html=html.replace(/<link[^>]*href=["']\/arrow-auth-guard\.js[^"']*["'][^>]*>/g,'');
-  html=html.replace(/<head>/i,'<head><script src="'+base+'/arrow-beta-guard.js?v=beta-repair-1"></script>');writeFileSync(file,html);
+  html=html.replace(/<head>/i,'<head><script src="'+base+'/arrow-beta-guard.js?v=review-20261006"></script>');writeFileSync(file,html);
 }}}
 patchHtml(common);
 writeFileSync(path.join(output,'.nojekyll'),'');

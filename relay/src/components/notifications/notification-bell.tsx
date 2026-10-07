@@ -76,7 +76,7 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
       <button type="button" aria-label={unreadCount ? `Notifications, ${unreadCount} new` : 'Notifications'} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((current) => !current)} className="relative flex h-9 w-9 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface hover:text-ink">
         <Bell size={18} />
         {unreadCount > 0 && (
-          <span key={`${unreadCount}:${freshId ?? 'steady'}`} className={`relay-attention-signal absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-canvas ${freshId ? 'relay-motion-badge' : ''}`} aria-hidden="true">
+          <span key={`${unreadCount}:${freshId ?? 'steady'}`} className={`relay-attention-signal absolute -right-0.5 -top-0.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-xs font-semibold leading-none text-white ring-2 ring-canvas ${freshId ? 'relay-motion-badge' : ''}`} aria-hidden="true">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -103,7 +103,7 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
             <div className="border-b border-border bg-canvas/65 px-4 py-3">
               <div className="flex items-start gap-2.5">
                 <Settings2 size={14} className="mt-0.5 shrink-0 text-ink-faint" />
-                <p className="text-[11px] leading-4.5 text-ink-faint">
+                <p className="text-xs leading-4.5 text-ink-faint">
                   <span className="font-medium text-ink-muted">One more step:</span> your device also has to allow notifications for the browser you use. If Relay tests appear here but not on your screen, check your device notification settings and make sure Chrome, Safari, or Edge is allowed. On Mac, go to System Settings → Notifications → your browser.
                 </p>
               </div>
@@ -119,7 +119,7 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
               <div className="min-h-0 flex-1 overflow-y-auto py-1">
                 {sections.map((section) => (
                   <section key={section.label} aria-label={section.label}>
-                    <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">{section.label}</p>
+                    <p className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">{section.label}</p>
                     <div>{section.items.map((notification) => <NotificationRow key={notification.id} notification={notification} fresh={notification.id === freshId} onSelect={handleSelect} />)}</div>
                   </section>
                 ))}

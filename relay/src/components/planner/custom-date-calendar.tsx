@@ -52,7 +52,7 @@ export function CustomDateCalendar({
 
       <div className="p-3">
         <div className="grid grid-cols-7 gap-1">
-          {WEEKDAYS.map((day, index) => <div key={`${day}-${index}`} className="py-1 text-center text-[10px] font-semibold text-ink-faint">{day}</div>)}
+          {WEEKDAYS.map((day, index) => <div key={`${day}-${index}`} className="py-1 text-center text-xs font-semibold text-ink-faint">{day}</div>)}
           {days.map((date) => {
             const key = dateKey(date);
             const inMonth = date.getMonth() === month.getMonth();

@@ -1,0 +1,1802 @@
+[
+  {
+    "area": "Project-R.A.V.I.N.-1.1",
+    "file": "Project-R.A.V.I.N.-1.1/ravin/public/ravin-clean.css",
+    "target": ".ravin-clean-nav-item",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-001"
+  },
+  {
+    "area": "Project-R.A.V.I.N.-1.1",
+    "file": "Project-R.A.V.I.N.-1.1/ravin/public/ravin-product.css",
+    "target": ".ravin-auth-card form > label",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-002"
+  },
+  {
+    "area": "Project-R.A.V.I.N.-1.1",
+    "file": "Project-R.A.V.I.N.-1.1/ravin/public/ravin-product.css",
+    "target": ".ravin-auth-note",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-003"
+  },
+  {
+    "area": "Project-R.A.V.I.N.-1.1",
+    "file": "Project-R.A.V.I.N.-1.1/ravin/public/ravin-product.css",
+    "target": ".ravin-auth-password-row button",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-004"
+  },
+  {
+    "area": "Project-R.A.V.I.N.-1.1",
+    "file": "Project-R.A.V.I.N.-1.1/ravin/public/ravin-product.css",
+    "target": ".ravin-delete-card p",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-005"
+  },
+  {
+    "area": "Project-R.A.V.I.N.-1.1",
+    "file": "Project-R.A.V.I.N.-1.1/ravin/public/ravin-product.css",
+    "target": ".ravin-delete-error",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-006"
+  },
+  {
+    "area": "Project-R.A.V.I.N.-1.1",
+    "file": "Project-R.A.V.I.N.-1.1/ravin/public/ravin-product.css",
+    "target": ".ravin-delete-title",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-007"
+  },
+  {
+    "area": "Project-R.A.V.I.N.-1.1",
+    "file": "Project-R.A.V.I.N.-1.1/ravin/public/ravin-product.css",
+    "target": ".ravin-product-toast",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-008"
+  },
+  {
+    "area": "Project-R.A.V.I.N.-1.1",
+    "file": "Project-R.A.V.I.N.-1.1/ravin/public/ravin-product.css",
+    "target": ".ravin-settings-base .theme-value",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-009"
+  },
+  {
+    "area": "Project-R.A.V.I.N.-1.1",
+    "file": "Project-R.A.V.I.N.-1.1/ravin/public/ravin-product.css",
+    "target": ".ravin-shell-loading",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-010"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/contacts/page.tsx",
+    "target": "text block near original line 238",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-011"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/focus/page.tsx",
+    "target": "text block near original line 219",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-012"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/focus/page.tsx",
+    "target": "text block near original line 234",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-013"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/focus/page.tsx",
+    "target": "text block near original line 244",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-014"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/focus/page.tsx",
+    "target": "text block near original line 256",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-015"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/planner/view/page.tsx",
+    "target": "text block near original line 109",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-016"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/profile/page.tsx",
+    "target": "text block near original line 224",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-017"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/profile/page.tsx",
+    "target": "text block near original line 225",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-018"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/profile/page.tsx",
+    "target": "text block near original line 238",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-019"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/schedule/page.tsx",
+    "target": "text block near original line 343",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-020"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/schedule/page.tsx",
+    "target": "text block near original line 357",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-021"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/schedule/page.tsx",
+    "target": "text block near original line 365",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-022"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/(app)/schedule/page.tsx",
+    "target": "text block near original line 371",
+    "finding": "9px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-023"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/beta-access/page.tsx",
+    "target": "text block near original line 106",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-024"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/beta-access/page.tsx",
+    "target": "text block near original line 123",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-025"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/beta-access/page.tsx",
+    "target": "text block near original line 131",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-026"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/onboarding/page.tsx",
+    "target": "text block near original line 414",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-027"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/onboarding/page.tsx",
+    "target": "text block near original line 418",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-028"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/app/onboarding/page.tsx",
+    "target": "text block near original line 443",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-029"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/app-header.tsx",
+    "target": "text block near original line 11",
+    "finding": "9px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-030"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/chats/conversation-delete-control.tsx",
+    "target": "text block near original line 37",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-031"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/chats/conversation-delete-control.tsx",
+    "target": "text block near original line 43",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-032"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/chats/conversation-delete-control.tsx",
+    "target": "text block near original line 44",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-033"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/chats/message-composer.tsx",
+    "target": "text block near original line 120",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-034"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/chats/message-thread.tsx",
+    "target": "text block near original line 123",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-035"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/chats/message-thread.tsx",
+    "target": "text block near original line 125",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-036"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/chats/message-thread.tsx",
+    "target": "text block near original line 99",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-037"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/dashboard/dashboard-page.tsx",
+    "target": "text block near original line 513",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-038"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/dashboard/dashboard-page.tsx",
+    "target": "text block near original line 514",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-039"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/dashboard/dashboard-page.tsx",
+    "target": "text block near original line 516",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-040"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/dashboard/dashboard-studio.tsx",
+    "target": "text block near original line 272",
+    "finding": "9px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-041"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/dashboard/dashboard-studio.tsx",
+    "target": "text block near original line 286",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-042"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/dashboard/dashboard-studio.tsx",
+    "target": "text block near original line 317",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-043"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/dock.tsx",
+    "target": "text block near original line 187",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-044"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/field/field-workspace.tsx",
+    "target": "text block near original line 334",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-045"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/field/field-workspace.tsx",
+    "target": "text block near original line 345",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-046"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/field/field-workspace.tsx",
+    "target": "text block near original line 371",
+    "finding": "8px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-047"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/groups/leave-group-button.tsx",
+    "target": "text block near original line 36",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-048"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/mobile-route-gate.tsx",
+    "target": "text block near original line 60",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-049"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/mobile-staff-alert.tsx",
+    "target": "text block near original line 35",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-050"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/notes/notes-workspace.tsx",
+    "target": "text block near original line 188",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-051"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/notes/notes-workspace.tsx",
+    "target": "text block near original line 216",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-052"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/notifications/notification-bell.tsx",
+    "target": "text block near original line 106",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-053"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/notifications/notification-bell.tsx",
+    "target": "text block near original line 122",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-054"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/notifications/notification-bell.tsx",
+    "target": "text block near original line 79",
+    "finding": "9px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-055"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/notifications/push-toggle.tsx",
+    "target": "text block near original line 225",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-056"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/notifications/push-toggle.tsx",
+    "target": "text block near original line 230",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-057"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/notifications/push-toggle.tsx",
+    "target": "text block near original line 267",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-058"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/planner/custom-date-calendar.tsx",
+    "target": "text block near original line 55",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-059"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/planner/edit-plan-dialog.tsx",
+    "target": "text block near original line 139",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-060"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/planner/edit-plan-dialog.tsx",
+    "target": "text block near original line 155",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-061"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/planner/new-plan-dialog.tsx",
+    "target": "text block near original line 143",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-062"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/planner/new-plan-dialog.tsx",
+    "target": "text block near original line 159",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-063"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/planner/new-plan-dialog.tsx",
+    "target": "text block near original line 195",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-064"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/planner/plan-list.tsx",
+    "target": "text block near original line 60",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-065"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/planner/plan-list.tsx",
+    "target": "text block near original line 63",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-066"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/planner/plan-list.tsx",
+    "target": "text block near original line 65",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-067"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/profile/account-data-controls.tsx",
+    "target": "text block near original line 40",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-068"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/profile/experience-controls.tsx",
+    "target": "text block near original line 101",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-069"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/profile/experience-controls.tsx",
+    "target": "text block near original line 117",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-070"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/profile/experience-controls.tsx",
+    "target": "text block near original line 89",
+    "finding": "8px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-071"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/profile/layout-controls.tsx",
+    "target": "text block near original line 42",
+    "finding": "9px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-072"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/profile/layout-controls.tsx",
+    "target": "text block near original line 59",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-073"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/profile/particle-controls.tsx",
+    "target": "text block near original line 98",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-074"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/staff-command-palette.tsx",
+    "target": "text block near original line 106",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-075"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/staff-command-palette.tsx",
+    "target": "text block near original line 121",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-076"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/staff-control-header.tsx",
+    "target": "text block near original line 31",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-077"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/staff-control-header.tsx",
+    "target": "text block near original line 52",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-078"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/staff-control-header.tsx",
+    "target": "text block near original line 65",
+    "finding": "9px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-079"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/staff/owner-user-inspector.tsx",
+    "target": "text block near original line 135",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-080"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/staff/owner-user-inspector.tsx",
+    "target": "text block near original line 189",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-081"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/staff/owner-user-inspector.tsx",
+    "target": "text block near original line 216",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-082"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/staff/staff-inbox-button.tsx",
+    "target": "text block near original line 177",
+    "finding": "9px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-083"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/staff/staff-inbox-button.tsx",
+    "target": "text block near original line 191",
+    "finding": "9px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-084"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/staff/staff-inbox-button.tsx",
+    "target": "text block near original line 193",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-085"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/todos/weekly-todo-list.tsx",
+    "target": "text block near original line 128",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-086"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/user-role-badge.tsx",
+    "target": "text block near original line 16",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-087"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/whats-new.tsx",
+    "target": "text block near original line 334",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-088"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/whats-new.tsx",
+    "target": "text block near original line 352",
+    "finding": "10px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-089"
+  },
+  {
+    "area": "Relay",
+    "file": "relay/relay/src/components/whats-new.tsx",
+    "target": "text block near original line 373",
+    "finding": "11px text is difficult to read",
+    "change": "Use the 12px text-xs size",
+    "status": "fixed in source",
+    "id": "UI-090"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": "#zoomLabel",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-091"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".calendar-preview strong",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-092"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".content-overflow-note",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-093"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".delete-node",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-094"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".extracted-preview",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-095"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".file-icon",
+    "finding": "7px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-096"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".file-preview span, .todo-preview span",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-097"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".file-preview strong, .todo-preview strong",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-098"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".filter-left",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-099"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".group-map-toggle",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-100"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".icon-action, .square-action",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-101"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".image-preview figcaption",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-102"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".link-preview > span",
+    "finding": "7px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-103"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".link-preview small",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-104"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".link-preview strong",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-105"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".meta-card span",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-106"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".meta-card strong",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-107"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".node-source-link",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-108"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".node-type",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-109"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".note-preview blockquote",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-110"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".note-preview p, .calendar-preview p",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-111"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".permission-row",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-112"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".preview-check",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-113"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".ravin-orb",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-114"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".related-item span",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-115"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".related-item strong",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-116"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".section-label",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-117"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".text-button",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-118"
+  },
+  {
+    "area": "Resonant-Field",
+    "file": "Resonant-Field/apps/explorer/styles.css",
+    "target": ".text-preview",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-119"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-control",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-120"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-empty",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-121"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-field > span,\n.arrow-os-section-label",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-122"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-focus-label",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-123"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-handoff p",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-124"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-import",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-125"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-inline-form button,\n.arrow-os-link-form button,\n.arrow-os-calendar-form button,\n.arrow-os-focus-actions button,\n.arrow-os-presets button,\n.arrow-os-segmented button,\n.arrow-os-settings-actions button",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-126"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-list-row label span small",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-127"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-list-row span",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-128"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-list-row strong,\n.arrow-os-list-row label span",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-129"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-loading",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-130"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-module",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-131"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-name",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-132"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-owner-note a",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-133"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-owner-note p",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-134"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-owner-note span",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-135"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-panel-foot",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-136"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-panel-head span",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-137"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-ravin-card span",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-138"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-ravin-form button,\n.arrow-os-note-form button",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-139"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-ravin-prompts button",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-140"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-settings-card > span",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-141"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/public/arrow-shell.css",
+    "target": ".arrow-os-settings-card small",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-142"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".arrival-code",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-143"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".arrival-primary,\n.arrival-return",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-144"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".core-kicker",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-145"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".eyebrow",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-146"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".focus-button",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-147"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".handoff-state",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-148"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".incoming-source-label",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-149"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".inspector-topline",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-150"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".navigator-empty",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-151"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".navigator-footer",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-152"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".navigator-heading p",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-153"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".navigator-index",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-154"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".navigator-result-copy span,\n.navigator-result-description",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-155"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".navigator-route",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-156"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".navigator-search kbd,\n.navigator-footer kbd",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-157"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".node-code",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-158"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".node-status",
+    "finding": "7px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-159"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".orbit-shortcut kbd",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-160"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".orbit-shortcut span:last-child",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-161"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".orbit-shortcuts-label",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-162"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".stage-footer",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-163"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".startup-copy p",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-164"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".startup-prompt",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-165"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".startup-skip",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-166"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".suite-name,\n.product-name,\n.header-meta",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-167"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".travel-status",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-168"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".world-control-row button,\n.control-hint",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-169"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".world-control-row kbd",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-170"
+  },
+  {
+    "area": "Resonant-Orbit",
+    "file": "Resonant-Orbit/src/app/globals.css",
+    "target": ".world-inspector > p",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-171"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".capture-copy em",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-172"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".capture-copy small",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-173"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".capture-history-row small,\n.capture-history-row > span",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-174"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".capture-why, .capture-deps",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-175"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".day-name",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-176"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".dump-actions, .capture-footer",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-177"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".eyebrow",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-178"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".horizon-row span",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-179"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".nav-badge",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-180"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".next-step small",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-181"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".plan-top",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-182"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".progress-label",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-183"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".question-row > span",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-184"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".question-row strong",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-185"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".reasoning-detail span",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-186"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".reasoning-next p",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-187"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".route-copy p",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-188"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".route-index",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-189"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".route-timing",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-190"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".sidebar-caption",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-191"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".signal-card p",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-192"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".signal-kind",
+    "finding": "8px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-193"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".soft-pill",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-194"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".task-check",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-195"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".task-index",
+    "finding": "10px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-196"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".task-main small",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-197"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".time-block",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-198"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".waypoint-sync-state",
+    "finding": "11px text is difficult to read",
+    "change": "Increase to 12px",
+    "status": "fixed in source",
+    "id": "UI-199"
+  },
+  {
+    "area": "Resonant-Waypoint",
+    "file": "Resonant-Waypoint/src/app/globals.css",
+    "target": ".waypoint-sync-state button,\n.row-action",
+    "finding": "9px text is difficult to read",
+    "change": "Increase to 14px",
+    "status": "fixed in source",
+    "id": "UI-200"
+  }
+]

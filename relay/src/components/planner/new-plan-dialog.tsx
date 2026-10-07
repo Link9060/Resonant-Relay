@@ -140,7 +140,7 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
               {repeatRule === 'custom' ? (
                 <Field label="Pick the days">
                   <CustomDateCalendar value={customDates} onChange={setCustomDates} minDate={today()} />
-                  <p className="mt-2 text-[11px] leading-4 text-ink-faint">Click any day box to add or remove it. Use the arrows to move between months.</p>
+                  <p className="mt-2 text-xs leading-4 text-ink-faint">Click any day box to add or remove it. Use the arrows to move between months.</p>
                 </Field>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -156,7 +156,7 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
               )}
 
               <div className="rounded-xl border border-border bg-surface/60 p-3">
-                <div className="mb-3 flex items-center gap-2"><Clock3 size={14} className="text-ink-faint" /><p className="text-xs font-semibold text-ink">Time</p><span className="ml-auto text-[11px] text-ink-faint">Leave blank for all day</span></div>
+                <div className="mb-3 flex items-center gap-2"><Clock3 size={14} className="text-ink-faint" /><p className="text-xs font-semibold text-ink">Time</p><span className="ml-auto text-xs text-ink-faint">Leave blank for all day</span></div>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Starts">
                     <input type="time" value={startTime} onChange={(event) => { setStartTime(event.target.value); if (!event.target.value) setEndTime(''); }} className={inputClass} />
@@ -192,7 +192,7 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
               {responseType === 'custom_text' && (
                 <Field label="Question">
                   <input value={responsePrompt} onChange={(event) => setResponsePrompt(event.target.value)} maxLength={120} placeholder="Which teacher are you going to?" className={inputClass} />
-                  <p className="mt-1.5 text-[11px] leading-4 text-ink-faint">Each person gets their own short answer box.</p>
+                  <p className="mt-1.5 text-xs leading-4 text-ink-faint">Each person gets their own short answer box.</p>
                 </Field>
               )}
             </Section>

@@ -106,7 +106,7 @@ function PlanView() {
           <section className="mt-7 rounded-2xl border border-border bg-surface/45 p-3">
             <div className="flex items-center justify-between gap-3 px-1 pb-2">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-ink-faint">Upcoming day</p>
+                <p className="text-xs font-semibold uppercase tracking-[.14em] text-ink-faint">Upcoming day</p>
                 <p className="mt-0.5 text-xs text-ink-muted">{state.instances.length} upcoming {state.instances.length === 1 ? 'occurrence' : 'occurrences'} · past days stay out of the way</p>
               </div>
               <ChevronDown size={15} className="text-ink-faint" />
