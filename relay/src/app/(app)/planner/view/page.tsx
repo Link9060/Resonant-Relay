@@ -12,6 +12,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 type Instance = { id: string; occurs_on: string };
 
 type PlanState = {
+  routeId: string;
   plan: any;
   group: { id: string; name: string };
   instances: Instance[];
@@ -31,41 +32,48 @@ function PlanView() {
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return;
     let active = true;
 
     void (async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !active) return;
+      if (!active) return;
+      if (!user) throw new Error('Sign in again to open this plan.');
 
-      const { data: rawPlan } = await (supabase.from('plans') as any)
+      const { data: rawPlan, error: planError } = await (supabase.from('plans') as any)
         .select('id,name,notes,response_type,response_prompt,repeat_rule,created_by,starts_on,repeat_until,start_time,end_time,group:groups(id,name),options:plan_options(id,label,sort_order),instances:plan_instances(id,occurs_on)')
         .eq('id', id)
         .single();
+      if (!active) return;
+      if (planError) throw new Error('This plan could not load. Check your connection.');
       const plan = rawPlan as any;
 
       if (!plan) {
-        setState({ error: 'Plan not found.' } as PlanState);
+        setState({ routeId:id, error: 'Plan not found.' } as PlanState);
         return;
       }
 
       const group = plan.group;
+      if (!group?.id) throw new Error('The group for this plan is unavailable.');
       const allInstances = [...(plan.instances ?? [])].sort((a: Instance, b: Instance) => a.occurs_on.localeCompare(b.occurs_on));
       const today = localDateKey();
       const upcomingInstances = allInstances.filter((instance: Instance) => instance.occurs_on >= today);
       const instanceIds = upcomingInstances.map((instance: Instance) => instance.id);
 
-      const [{ data: members }, responseResult, { data: membership }] = await Promise.all([
+      const [membersResult, responseResult, membershipResult] = await Promise.all([
         supabase.from('group_members').select('user_id,profile:profiles(id,display_name)').eq('group_id', group.id),
         instanceIds.length
           ? supabase.from('plan_responses').select('id,plan_instance_id,user_id,option_id,rsvp_status,text_response').in('plan_instance_id', instanceIds)
           : Promise.resolve({ data: [] }),
-        supabase.from('group_members').select('role').eq('group_id', group.id).eq('user_id', user.id).single(),
+        supabase.from('group_members').select('role').eq('group_id', group.id).eq('user_id', user.id).maybeSingle(),
       ]);
 
       if (!active) return;
+      if(membersResult.error || membershipResult.error || ('error' in responseResult && responseResult.error)) throw new Error('Plan members or responses could not load. Refresh to retry.');
+      const members=membersResult.data; const membership=membershipResult.data;
       setState({
+        routeId:id,
         plan: { ...plan, instances: allInstances },
         group,
         instances: upcomingInstances,
@@ -77,7 +85,7 @@ function PlanView() {
         canEdit: plan.created_by === user.id,
       });
       setSelectedInstanceId(upcomingInstances[0]?.id ?? null);
-    })();
+    })().catch(error=>{if(active)setState({routeId:id,error:error instanceof Error?error.message:'This plan could not load.'} as PlanState);});
 
     return () => { active = false; };
   }, [id]);
@@ -88,7 +96,8 @@ function PlanView() {
   );
 
   if (!id) return <p className="p-8 text-sm text-red-500">Missing plan.</p>;
-  if (!state) return <PageLoading />;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return <p className="p-8 text-sm text-red-500">Invalid plan link.</p>;
+  if (!state || state.routeId !== id) return <PageLoading />;
   if (state.error) return <p className="p-8 text-sm text-red-500">{state.error}</p>;
 
   return (
@@ -163,3 +172,4 @@ function formatTime(value: string) {
   date.setHours(hours || 0, minutes || 0, 0, 0);
   return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
+

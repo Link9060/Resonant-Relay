@@ -1,3 +1,4 @@
+import { isValidDateKey } from '@/lib/date';
 import { createClient } from '@/lib/supabase/client';
 import type { Todo } from '@/lib/types/database';
 
@@ -25,7 +26,6 @@ type TodoResult = { ok: true; data: ScheduleTodo } | { ok: false; error: string 
 type BlockResult = { ok: true; data: ScheduleBlock } | { ok: false; error: string };
 type EmptyResult = { ok: true } | { ok: false; error: string };
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/;
 
 function validMinutes(value: number) {
@@ -38,7 +38,8 @@ export async function scheduleTodo(
   scheduledStart: string,
   estimatedMinutes: number,
 ): Promise<TodoResult> {
-  if (!DATE_RE.test(scheduledOn) || !TIME_RE.test(scheduledStart)) return { ok: false, error: 'Choose a valid time.' };
+  try {
+  if (!isValidDateKey(scheduledOn) || !TIME_RE.test(scheduledStart)) return { ok: false, error: 'Choose a valid time.' };
   if (!validMinutes(estimatedMinutes)) return { ok: false, error: 'Choose a duration between 5 minutes and 12 hours.' };
 
   const supabase = createClient() as any;
@@ -54,9 +55,12 @@ export async function scheduleTodo(
     .single();
 
   return error || !data ? { ok: false, error: 'That task could not be scheduled.' } : { ok: true, data };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function setTodoEstimate(id: string, estimatedMinutes: number): Promise<TodoResult> {
+  try {
   if (!validMinutes(estimatedMinutes)) return { ok: false, error: 'Choose a duration between 5 minutes and 12 hours.' };
   const supabase = createClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
@@ -69,9 +73,12 @@ export async function setTodoEstimate(id: string, estimatedMinutes: number): Pro
     .select('*')
     .single();
   return error || !data ? { ok: false, error: 'That estimate could not be saved.' } : { ok: true, data };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function clearTodoSchedule(id: string): Promise<TodoResult> {
+  try {
   const supabase = createClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Not signed in.' };
@@ -83,6 +90,8 @@ export async function clearTodoSchedule(id: string): Promise<TodoResult> {
     .select('*')
     .single();
   return error || !data ? { ok: false, error: 'That task could not be unscheduled.' } : { ok: true, data };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function createScheduleBlock(input: {
@@ -92,10 +101,11 @@ export async function createScheduleBlock(input: {
   endTime: string;
   kind?: ScheduleBlockKind;
 }): Promise<BlockResult> {
+  try {
   const title = input.title.trim();
   if (!title || title.length > 120) return { ok: false, error: 'Give the block a short name.' };
-  if (!DATE_RE.test(input.occursOn) || !TIME_RE.test(input.startTime) || !TIME_RE.test(input.endTime)) return { ok: false, error: 'Choose a valid day and time.' };
-  if (input.endTime <= input.startTime) return { ok: false, error: 'End time must be after start time.' };
+  if (!isValidDateKey(input.occursOn) || !TIME_RE.test(input.startTime) || !TIME_RE.test(input.endTime)) return { ok: false, error: 'Choose a valid day and time.' };
+  if (input.endTime.slice(0, 5) <= input.startTime.slice(0, 5)) return { ok: false, error: 'End time must be after start time.' };
 
   const supabase = createClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
@@ -113,10 +123,13 @@ export async function createScheduleBlock(input: {
     .select('*')
     .single();
   return error || !data ? { ok: false, error: 'That time block could not be created.' } : { ok: true, data };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function moveScheduleBlock(id: string, occursOn: string, startTime: string, endTime: string): Promise<BlockResult> {
-  if (!DATE_RE.test(occursOn) || !TIME_RE.test(startTime) || !TIME_RE.test(endTime) || endTime <= startTime) return { ok: false, error: 'Choose a valid time.' };
+  try {
+  if (!isValidDateKey(occursOn) || !TIME_RE.test(startTime) || !TIME_RE.test(endTime) || endTime.slice(0, 5) <= startTime.slice(0, 5)) return { ok: false, error: 'Choose a valid time.' };
   const supabase = createClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Not signed in.' };
@@ -128,12 +141,18 @@ export async function moveScheduleBlock(id: string, occursOn: string, startTime:
     .select('*')
     .single();
   return error || !data ? { ok: false, error: 'That time block could not be moved.' } : { ok: true, data };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function deleteScheduleBlock(id: string): Promise<EmptyResult> {
+  try {
   const supabase = createClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Not signed in.' };
   const { error } = await supabase.from('schedule_blocks').delete().eq('id', id).eq('user_id', user.id);
   return error ? { ok: false, error: 'That time block could not be removed.' } : { ok: true };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
+

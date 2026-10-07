@@ -13,6 +13,7 @@ export function createClient() {
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY,
     {
+      global: { fetch: (input, init = {}) => fetch(input, { ...init, signal: init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000) }) },
       auth: {
         flowType: 'pkce',
         detectSessionInUrl: false,
@@ -69,3 +70,4 @@ export async function ensureArrowBrowserSession() {
 
   return data.session ?? null;
 }
+

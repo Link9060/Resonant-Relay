@@ -11,6 +11,8 @@ import { useEffect, useMemo, useState } from 'react';
 export function NotificationBell({ currentUserId, initial }: { currentUserId: string; initial: Notification[] }) {
   const [notifications, setNotifications] = useState(initial);
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState('');
+  const [marking, setMarking] = useState(false);
   const [freshId, setFreshId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,17 +60,26 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
 
   async function handleSelect(notification: Notification) {
     if (!notification.read_at) {
-      setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, read_at: new Date().toISOString() } : item));
-      await markNotificationRead(notification.id);
+      try {
+        const result = await markNotificationRead(notification.id);
+        if (!result.ok) { setError('This alert could not be marked as read. Retry.'); return; }
+        setNotifications(current => current.map(item => item.id === notification.id ? {...item, read_at:new Date().toISOString()} : item));
+      } catch { setError('This alert could not be updated. Retry.'); return; }
     }
     setOpen(false);
     if (notification.link) window.location.assign(appPageUrl(normalizeAppLink(notification.link)));
   }
 
   async function handleMarkAllRead() {
+    if (marking) return;
+    setMarking(true); setError('');
     const timestamp = new Date().toISOString();
-    setNotifications((current) => current.map((notification) => ({ ...notification, read_at: notification.read_at ?? timestamp })));
-    await markAllNotificationsRead();
+    try {
+      const result = await markAllNotificationsRead(timestamp);
+      if (!result.ok) { setError('Alerts could not be marked as read. Retry.'); return; }
+      setNotifications(current => current.map(notification => new Date(notification.created_at) <= new Date(timestamp) ? {...notification,read_at:notification.read_at ?? timestamp} : notification));
+    } catch { setError('Alerts could not be updated. Retry.'); }
+    finally { setMarking(false); }
   }
 
   return (
@@ -92,12 +103,13 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
                 {unreadCount > 0 && <span className="text-xs text-ink-faint">{unreadCount} new</span>}
               </div>
               {unreadCount > 0 && (
-                <button type="button" onClick={() => void handleMarkAllRead()} className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-ink-faint transition-colors hover:bg-surface hover:text-ink">
+                <button type="button" disabled={marking} onClick={() => void handleMarkAllRead()} className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-ink-faint transition-colors hover:bg-surface hover:text-ink">
                   <Check size={13} /> Mark all read
                 </button>
               )}
             </div>
 
+            {error && <p role="alert" className="px-4 py-2 text-sm text-red-500">{error}</p>}
             <PushToggle variant="compact" />
 
             <div className="border-b border-border bg-canvas/65 px-4 py-3">
@@ -174,3 +186,4 @@ function relativeTime(iso: string): string {
   if (days < 7) return `${days}d`;
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(iso));
 }
+

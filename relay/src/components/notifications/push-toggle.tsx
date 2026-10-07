@@ -83,7 +83,9 @@ export function PushToggle({ variant = 'card' }: { variant?: Variant }) {
 
       if (existing) {
         setCurrentEndpoint(existing.endpoint);
-        await persist(existing);
+        if (!await persist(existing)) {
+          setStatus('off');setError('Relay could not register this device. Retry enabling alerts.');return;
+        }
         await loadDevices();
       }
       setStatus(existing ? 'on' : 'off');
@@ -95,14 +97,14 @@ export function PushToggle({ variant = 'card' }: { variant?: Variant }) {
     setError(null);
     setMessage(null);
     try {
-      await navigator.serviceWorker.register(appUrl('/sw.js'), { scope: appUrl('/') });
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         setStatus(permission === 'denied' ? 'denied' : 'off');
         return;
       }
 
-      const registration = await navigator.serviceWorker.ready;
+      const registered = await navigator.serviceWorker.register(appUrl('/sw.js'), {scope:appUrl('/')});
+      const registration = await waitForPushWorker(registered);
       const existing = await registration.pushManager.getSubscription();
       const subscription = existing ?? await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -140,7 +142,7 @@ export function PushToggle({ variant = 'card' }: { variant?: Variant }) {
       setCurrentEndpoint(null);
       setStatus('off');
       await loadDevices();
-    } finally {
+    } catch { setError('This device could not be disabled. Check your connection and retry.'); } finally {
       setLoading(false);
     }
   }
@@ -156,7 +158,9 @@ export function PushToggle({ variant = 'card' }: { variant?: Variant }) {
       const publicKey = typeof health.data?.publicKey === 'string' ? health.data.publicKey : serverKey;
       if (health.error || !publicKey) throw new Error('Relay could not verify its notification service.');
 
-      const registration = await navigator.serviceWorker.ready;
+      const registered = await navigator.serviceWorker.getRegistration(appUrl('/'));
+      if (!registered) throw new Error('Enable notifications on this device first.');
+      const registration = await waitForPushWorker(registered);
       let subscription = await registration.pushManager.getSubscription();
       if (!subscription || !subscriptionUsesKey(subscription, publicKey)) {
         if (subscription) {
@@ -372,4 +376,20 @@ function urlBase64ToArrayBuffer(base64String: string): ArrayBuffer {
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
   return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0))).buffer;
+}
+
+
+export function waitForPushWorker(registration: ServiceWorkerRegistration): Promise<ServiceWorkerRegistration> {
+  if (registration.active?.state === 'activated') return Promise.resolve(registration);
+  const worker = registration.installing ?? registration.waiting ?? registration.active;
+  if (!worker) return Promise.reject(new Error('Notification worker did not start. Retry enabling alerts.'));
+  return new Promise((resolve,reject) => {
+    const cleanup = () => {clearTimeout(timer);worker.removeEventListener('statechange',changed);};
+    const changed = () => {
+      if (worker.state === 'activated') {cleanup();resolve(registration);}
+      else if (worker.state === 'redundant') {cleanup();reject(new Error('Notification worker failed to install. Retry.'));}
+    };
+    const timer = setTimeout(() => {cleanup();reject(new Error('Notification worker timed out. Retry enabling alerts.'));},15000);
+    worker.addEventListener('statechange',changed);changed();
+  });
 }

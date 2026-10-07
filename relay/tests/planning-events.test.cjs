@@ -15,7 +15,7 @@ test('successful Relay task writes notify shared tabs; failed writes do not',asy
   const shared=compile('src/lib/arrow-planning.ts',{}, {window,CustomEvent:class {constructor(type){this.type=type;}}});
   const chain={insert:()=>chain,update:()=>chain,delete:()=>chain,select:()=>chain,eq:(key,value)=>{filters.push([key,value]);return chain;},single:async()=>({data:error?null:{id:'task'},error}),then:resolve=>Promise.resolve({error}).then(resolve)};
   const client={auth:{getUser:async()=>({data:{user:{id:'owner'}}})},from:()=>chain};
-  const actions=compile('src/lib/actions/todos.ts',{'@/lib/supabase/client':{createClient:()=>client},'@/lib/arrow-planning':shared});
+  const actions=compile('src/lib/actions/todos.ts',{'@/lib/supabase/client':{createClient:()=>client},'@/lib/arrow-planning':shared,'@/lib/date':compile('src/lib/date.ts',{})});
   for(const action of [()=>actions.createTodo('New task','2026-10-01'),()=>actions.setTodoCompleted('task',true),()=>actions.deleteTodo('task')]){
     const before=changes.length;error=null;assert.equal((await action()).ok,true);assert.equal(changes.length,before+1);
     error={message:'network error'};assert.equal((await action()).ok,false);assert.equal(changes.length,before+1);
@@ -23,3 +23,4 @@ test('successful Relay task writes notify shared tabs; failed writes do not',asy
   assert.ok(writes.every(entry=>entry.key==='arrow_shared_data_ping_v1'));assert.equal(new Set(writes.map(entry=>entry.value)).size,3);
   assert.ok(filters.some(([key,value])=>key==='user_id'&&value==='owner'));
 });
+

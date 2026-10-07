@@ -1,7 +1,7 @@
 'use client';
 
 import { PageLoading } from '@/components/page-loading';
-import { appUrl, IS_BETA } from '@/lib/config';
+import { appUrl, BASE_PATH, IS_BETA, isAllowedArrowReturnPath } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { useSearchParams } from 'next/navigation';
@@ -13,12 +13,14 @@ const EMAIL_OTP_TYPES = new Set<string>(['email', 'magiclink', 'invite', 'recove
 
 function consumeArrowPostAuthUrl() {
   try {
-    const value = window.localStorage.getItem(ARROW_POST_AUTH_URL_KEY);
+    const value = window.localStorage.getItem(ARROW_POST_AUTH_URL_KEY) || window.localStorage.getItem('relay-post-auth-next');
+    window.localStorage.removeItem('relay-post-auth-next');
     window.localStorage.removeItem(ARROW_POST_AUTH_URL_KEY);
     if (!value) return null;
     const parsed = new URL(value, window.location.origin);
     if (parsed.origin !== window.location.origin) return null;
-    if (!parsed.pathname.startsWith('/Resonant-Orbit/') && !parsed.pathname.startsWith('/Resonant-Relay/arrow/')) return null;
+    if (!isAllowedArrowReturnPath(parsed.pathname) && !(BASE_PATH && parsed.pathname.startsWith(BASE_PATH + '/'))) return null;
+    if (/\/(login|auth|beta-access)(\/|$)/.test(parsed.pathname)) return null;
     return parsed.toString();
   } catch {
     return null;
@@ -35,18 +37,20 @@ async function goAfterSignIn() {
 
   if (IS_BETA) {
     const { data: betaAccess, error: betaError } = await supabase.rpc('beta_access_status');
-    if (betaError || !betaAccess?.approved) {
+    if (betaError) throw betaError;
+    if (!betaAccess?.approved) {
       window.location.replace(`${window.location.origin}${appUrl('/beta-access/')}`);
       return;
     }
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('onboarding_completed_at')
     .eq('id', user.id)
     .single();
 
+  if (profileError) throw profileError;
   const arrowDestination = profile?.onboarding_completed_at ? consumeArrowPostAuthUrl() : null;
   if(arrowDestination){window.location.replace(arrowDestination);return;}
 
@@ -106,7 +110,7 @@ function Callback() {
         console.error('Relay sign-in code exchange failed', exchangeError);
         setError(
           callbackError
-            ? decodeURIComponent(callbackError.replaceAll('+', ' '))
+            ? callbackError
             : 'Relay could not finish this sign-in. Request a fresh sign-in and try again from the same Relay site.',
         );
         return;
@@ -120,10 +124,10 @@ function Callback() {
 
       setError(
         callbackError
-          ? decodeURIComponent(callbackError.replaceAll('+', ' '))
+          ? callbackError
           : 'This sign-in link is no longer usable. Request a fresh link and open it in the same browser.',
       );
-    })();
+    })().catch(() => setError('Sign-in could not finish. Check your connection and request a fresh link.'));
   }, [params]);
 
   if (!error) return <PageLoading label="Finishing sign in…" />;
@@ -147,3 +151,4 @@ export default function AuthCallbackPage() {
     </Suspense>
   );
 }
+

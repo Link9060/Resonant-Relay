@@ -21,7 +21,7 @@ type PreferenceMap = Record<string, { nickname: string | null; color_key: Contac
 type ReportTarget = { messageId?: string; userId?: string; label: string };
 const REACTIONS = ['👍', '❤️', '😂', '‼️', '❓', '🎉'];
 
-export function MessageThread({ conversationId, title: initialTitle, isGroup, groupId, currentUserId, participantsById, preferencesById, rolesById, initialMessages, initialReactions, initialPinnedIds, initialMuted }: { conversationId: string; title: string; isGroup: boolean; groupId: string | null; currentUserId: string; participantsById: ProfileMap; preferencesById: PreferenceMap; rolesById: Record<string, 'admin' | 'member'>; initialMessages: Message[]; initialReactions: Reaction[]; initialPinnedIds: string[]; initialMuted: boolean }) {
+export function MessageThread({ conversationId, title: initialTitle, isGroup, groupId, currentUserId, participantsById, preferencesById, rolesById, initialMessages, initialReactions, initialPinnedIds, initialMuted, initialHistoryCursor, initialHasOlder }: { conversationId: string; title: string; isGroup: boolean; groupId: string | null; currentUserId: string; participantsById: ProfileMap; preferencesById: PreferenceMap; rolesById: Record<string, 'admin' | 'member'>; initialMessages: Message[]; initialReactions: Reaction[]; initialPinnedIds: string[]; initialMuted: boolean; initialHistoryCursor?: {id:string;created_at:string} | null; initialHasOlder?: boolean }) {
   const [title, setTitle] = useState(initialTitle);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [reactions, setReactions] = useState<Reaction[]>(initialReactions);
@@ -34,6 +34,7 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
   const [editError, setEditError] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
+  const [attachmentError, setAttachmentError] = useState(false);
   const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
@@ -43,6 +44,14 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
   const [freshMessageId, setFreshMessageId] = useState<string | null>(null);
   const [removingMessageId, setRemovingMessageId] = useState<string | null>(null);
   const [reactionPulse, setReactionPulse] = useState<string | null>(null);
+  const [historyBusy, setHistoryBusy] = useState(false);
+  const [historyError, setHistoryError] = useState('');
+  const [hasOlder, setHasOlder] = useState(initialHasOlder ?? initialMessages.length === 200);
+  const historyCursor = useRef(initialHistoryCursor ?? initialMessages[0] ?? null);
+  const historyPending = useRef(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottom = useRef(true);
+  const prependScroll = useRef<{height:number;top:number} | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
   const currentIsAdmin = rolesById[currentUserId] === 'admin';
@@ -68,13 +77,28 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
         window.setTimeout(() => setReactionPulse((current) => current === pulseKey ? null : current), 280);
       }
     }).subscribe();
-    void (async () => { await supabase.realtime.setAuth(); if (!active) return; typingChannel = supabase.channel(`typing:${conversationId}`, { config: { private: true } }).on('broadcast', { event: 'typing' }, ({ payload }) => { const signal = payload as { userId?: string; typing?: boolean }; if (!signal.userId || signal.userId === currentUserId || !participantsById[signal.userId]) return; setTypingUsers((current) => { const next = { ...current }; if (signal.typing) next[signal.userId!] = Date.now() + 3500; else delete next[signal.userId!]; return next; }); }).subscribe(); typingChannelRef.current = typingChannel; })();
+    void (async () => { await supabase.realtime.setAuth(); if (!active) return; typingChannel = supabase.channel(`typing:${conversationId}`, { config: { private: true } }).on('broadcast', { event: 'typing' }, ({ payload }) => { const signal = payload as { userId?: string; typing?: boolean }; if (!signal.userId || signal.userId === currentUserId || !participantsById[signal.userId]) return; setTypingUsers((current) => { const next = { ...current }; if (signal.typing) next[signal.userId!] = Date.now() + 3500; else delete next[signal.userId!]; return next; }); }).subscribe(); typingChannelRef.current = typingChannel; })().catch(() => { /* Chat works even if ephemeral typing cannot connect. */ });
     return () => { active = false; typingChannelRef.current = null; void supabase.removeChannel(messageChannel); void supabase.removeChannel(reactionChannel); if (typingChannel) void supabase.removeChannel(typingChannel); };
   }, [conversationId, currentUserId, participantsById]);
 
-  useEffect(() => { const paths = messages.flatMap((message) => message.attachments ?? []).map((attachment) => attachment.path).filter((path) => !attachmentUrls[path]); if (!paths.length) return; let active = true; void createClient().storage.from('chat-attachments').createSignedUrls(paths, 3600).then(({ data }) => { if (active && data) setAttachmentUrls((current) => ({ ...current, ...Object.fromEntries(data.filter((item) => item.signedUrl).map((item) => [item.path, item.signedUrl])) })); }); return () => { active = false; }; }, [attachmentUrls, messages]);
+  useEffect(() => {
+    const paths=messages.flatMap(message=>message.attachments ?? []).map(attachment=>attachment.path).filter(path=>!attachmentUrls[path]);
+    if(!paths.length)return;let active=true;
+    void createClient().storage.from('chat-attachments').createSignedUrls(paths,3600).then(({data,error})=>{
+      if(!active)return;
+      const signed=(data ?? []).filter(item=>item.signedUrl);
+      setAttachmentError(Boolean(error) || signed.length<paths.length);
+      if(signed.length)setAttachmentUrls(current=>({...current,...Object.fromEntries(signed.map(item=>[item.path,item.signedUrl]))}));
+    }).catch(()=>{if(active)setAttachmentError(true);});
+    return()=>{active=false;};
+  },[attachmentUrls,messages]);
+  useEffect(()=>{const timer=window.setInterval(()=>setAttachmentUrls({}),50*60_000);return()=>window.clearInterval(timer);},[]);
   useEffect(() => { const timer = window.setInterval(() => { const now = Date.now(); setClock(now); setTypingUsers((current) => Object.fromEntries(Object.entries(current).filter(([, expiresAt]) => expiresAt > now))); }, 15_000); return () => window.clearInterval(timer); }, []);
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages.length]);
+  useEffect(() => {
+    const pane = scrollRef.current;
+    if (pane && prependScroll.current) { pane.scrollTop = prependScroll.current.top + pane.scrollHeight - prependScroll.current.height; prependScroll.current=null; }
+    else if (stickToBottom.current) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
   useEffect(() => { if (!membersOpen || !currentIsAdmin) return; void (async () => { const supabase = createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return; const [asA, asB] = await Promise.all([supabase.from('connections').select('other:profiles!connections_user_b_fkey(id,display_name,avatar_url,role)').eq('user_a', user.id), supabase.from('connections').select('other:profiles!connections_user_a_fkey(id,display_name,avatar_url,role)').eq('user_b', user.id)]); setAvailableContacts([...(asA.data ?? []), ...(asB.data ?? [])].map((row: any) => row.other).filter((profile: any) => profile && !participantsById[profile.id])); })(); }, [currentIsAdmin, membersOpen, participantsById]);
 
   const sendTypingSignal = useCallback((typing: boolean) => { void typingChannelRef.current?.send({ type: 'broadcast', event: 'typing', payload: { userId: currentUserId, typing } }); }, [currentUserId]);
@@ -82,6 +106,38 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
   const members = useMemo(() => Object.values(participantsById).sort((a, b) => rolesById[b.id] === 'admin' && rolesById[a.id] !== 'admin' ? 1 : a.id === currentUserId ? -1 : a.display_name.localeCompare(b.display_name)), [currentUserId, participantsById, rolesById]);
   const directOther = !isGroup ? members.find((member) => member.id !== currentUserId) : null;
   const messageById = useMemo(() => Object.fromEntries(messages.map((message) => [message.id, message])), [messages]);
+
+  async function loadOlder() {
+    if (historyPending.current || !historyCursor.current) return;
+    historyPending.current=true;
+    setHistoryBusy(true); setHistoryError('');
+    try {
+      const first = historyCursor.current;
+      if (!first) return;
+      const supabase = createClient();
+      const {data, error} = await supabase.from('messages').select('id,conversation_id,sender_id,body,created_at,edited_at,attachments,reply_to_id')
+        .eq('conversation_id', conversationId).or(`created_at.lt.${first.created_at},and(created_at.eq.${first.created_at},id.lt.${first.id})`)
+        .order('created_at', {ascending:false}).order('id',{ascending:false}).limit(200);
+      if (error) throw error;
+      const ids = (data ?? []).map(message => message.id);
+      const [hidden, reactionsResult, pins] = ids.length ? await Promise.all([
+        supabase.from('hidden_messages').select('message_id').eq('user_id',currentUserId).in('message_id',ids),
+        supabase.from('message_reactions').select('*').in('message_id',ids),
+        supabase.from('message_pins').select('message_id').eq('user_id',currentUserId).in('message_id',ids),
+      ]) : [{data:[],error:null},{data:[],error:null},{data:[],error:null}];
+      if (hidden.error || reactionsResult.error || pins.error) throw new Error('History details could not load.');
+      historyCursor.current = data?.[data.length - 1] ?? null;
+      const hiddenIds = new Set((hidden.data ?? []).map(row => row.message_id));
+      const visible = [...(data ?? [])].reverse().filter(message => !hiddenIds.has(message.id));
+      if (visible.length && scrollRef.current) prependScroll.current = {height:scrollRef.current.scrollHeight,top:scrollRef.current.scrollTop};
+      stickToBottom.current=false;
+      setMessages(current => [...visible.filter(message => !current.some(item=>item.id===message.id)),...current]);
+      setReactions(current => [...(reactionsResult.data ?? []),...current]);
+      setPinnedIds(current => new Set([...current,...(pins.data ?? []).map(row=>row.message_id)]));
+      setHasOlder((data?.length ?? 0) === 200);
+    } catch { setHistoryError('Older messages could not load. Try again.'); }
+    finally { historyPending.current=false; setHistoryBusy(false); }
+  }
 
   async function saveEdit(event: FormEvent, message: Message) { event.preventDefault(); setEditSaving(true); setEditError(null); const result = await editMessage(message.id, editValue); setEditSaving(false); if (!result.ok) { setEditError(result.error); return; } setMessages((current) => current.map((item) => item.id === message.id ? { ...result.data, reply_to_id: message.reply_to_id } : item)); setEditingId(null); }
   async function changeReaction(messageId: string, emoji: string) { const active = reactions.some((item) => item.message_id === messageId && item.user_id === currentUserId && item.emoji === emoji); const before = reactions; const pulseKey = `${messageId}:${emoji}`; setReactionPulse(pulseKey); window.setTimeout(() => setReactionPulse((current) => current === pulseKey ? null : current), 280); setReactions(active ? reactions.filter((item) => !(item.message_id === messageId && item.user_id === currentUserId && item.emoji === emoji)) : [...reactions, { message_id: messageId, user_id: currentUserId, emoji, created_at: new Date().toISOString() }]); const result = await toggleReaction(messageId, emoji, active); if (!result.ok) setReactions(before); setOpenMenuId(null); }
@@ -101,7 +157,7 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
       {membersOpen && <GroupControls title={title} members={members} availableContacts={availableContacts} currentUserId={currentUserId} currentIsAdmin={currentIsAdmin} rolesById={rolesById} preferencesById={preferencesById} error={adminError} onClose={() => setMembersOpen(false)} onRename={rename} onAdd={add} onPromote={promote} onRemove={remove} onReport={(member) => setReportTarget({ userId: member.id, label: member.display_name })} />}
     </header>
 
-    <div className="flex-1 overflow-y-auto px-4 py-4">{messages.length === 0 ? <p className="mt-10 text-center text-sm text-ink-faint">Say hi.</p> : <ul>{messages.map((message, index) => {
+    <div ref={scrollRef} onScroll={event => { const pane=event.currentTarget; stickToBottom.current=pane.scrollHeight-pane.scrollTop-pane.clientHeight < 80; }} className="flex-1 overflow-y-auto px-4 py-4">{hasOlder && <button type="button" disabled={historyBusy} onClick={() => void loadOlder()} className="mb-4 rounded-md border border-border px-3 py-2 text-sm text-ink-muted">{historyBusy ? 'Loading history…' : 'Load older messages'}</button>}{attachmentError && <button type="button" className="mb-3 text-sm text-red-500 underline" onClick={()=>setAttachmentUrls({})}>Some attachments could not load. Retry attachments.</button>}{historyError && <p role="alert" className="mb-3 text-sm text-red-500">{historyError}</p>}{messages.length === 0 ? <p className="mt-10 text-center text-sm text-ink-faint">Say hi.</p> : <ul>{messages.map((message, index) => {
       const isMine = message.sender_id === currentUserId;
       const startsGroup = messages[index - 1]?.sender_id !== message.sender_id;
       const endsGroup = messages[index + 1]?.sender_id !== message.sender_id;
@@ -153,7 +209,7 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
     </div>
 
     {replyTo && <div className="relay-motion-expand flex items-center gap-3 border-t border-border bg-surface px-4 py-2"><CornerUpLeft size={14} className="text-ink-faint" /><div className="min-w-0 flex-1"><p className="text-[10px] font-medium uppercase tracking-wide text-ink-faint">Replying to</p><p className="truncate text-xs text-ink-muted">{replyTo.body || 'Attachment'}</p></div><button type="button" onClick={() => setReplyTo(null)} className="flex h-8 w-8 items-center justify-center rounded-md text-ink-faint hover:bg-canvas"><X size={14} /></button></div>}
-    <MessageComposer conversationId={conversationId} replyToId={replyTo?.id ?? null} onSent={() => setReplyTo(null)} onTypingChange={sendTypingSignal} />
+    <MessageComposer conversationId={conversationId} replyTo={replyTo ? {id:replyTo.id,label:participantsById[replyTo.sender_id]?.display_name ?? 'message',body:replyTo.body} : null} onCancelReply={() => setReplyTo(null)} onSent={message => { stickToBottom.current=true; setReplyTo(null); setMessages(current=>current.some(item=>item.id===message.id)?current:[...current,message]); }} onTypingChange={sendTypingSignal} />
     {reportTarget && <ReportDialog target={reportTarget} onClose={() => setReportTarget(null)} />}
   </div>;
 }
@@ -164,3 +220,4 @@ function ReportDialog({ target, onClose }: { target: ReportTarget; onClose: () =
 function TypingIndicator({ names }: { names: string[] }) { const label = names.length === 1 ? `${names[0]} is typing` : names.length === 2 ? `${names[0]} and ${names[1]} are typing` : `${names[0]} and ${names.length - 1} others are typing`; return <div className="mt-3 flex items-center gap-2 text-xs text-ink-faint"><span className="relay-typing-bubble"><i /><i /><i /></span><span>{label}</span></div>; }
 function AttachmentList({ attachments, urls, isMine }: { attachments: MessageAttachment[]; urls: Record<string, string>; isMine: boolean }) { return <div className={`grid max-w-full gap-1.5 ${attachments.length > 1 ? 'sm:grid-cols-2' : ''}`}>{attachments.map((attachment) => { const url = urls[attachment.path]; if (attachment.type.startsWith('image/')) return <a key={attachment.path} href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-border bg-surface">{url ? <Image src={url} alt={attachment.name} width={720} height={480} unoptimized className="max-h-72 w-full object-cover" /> : <span className="block h-36 w-60 animate-pulse bg-surface" />}</a>; return <a key={attachment.path} href={url} download={attachment.name} target="_blank" rel="noreferrer" className={`flex min-w-52 items-center gap-3 rounded-lg border px-3 py-2.5 ${isMine ? 'border-ink-faint/40 bg-ink text-canvas' : 'border-border bg-surface-raised text-ink'}`}><FileText size={19} className="shrink-0 opacity-70" /><span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium">{attachment.name}</span><span className="block text-[10px] opacity-60">{formatBytes(attachment.size)}</span></span><ArrowDownToLine size={15} /></a>; })}</div>; }
 function formatBytes(size: number) { return size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / (1024 * 1024)).toFixed(1)} MB`; }
+

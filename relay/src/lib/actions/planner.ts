@@ -30,6 +30,7 @@ export interface UpdatePlanInput {
 }
 
 export async function createPlan(input: CreatePlanInput): Promise<ActionResult<{ planId: string }>> {
+  try {
   const supabase = createClient();
   const { data, error } = await (supabase.rpc as any)('create_plan_v3', {
     p_group_id: input.groupId,
@@ -49,9 +50,12 @@ export async function createPlan(input: CreatePlanInput): Promise<ActionResult<{
   if (error) return { ok: false, error: error.message };
   if (typeof data !== 'string') return { ok: false, error: 'Relay could not create that plan.' };
   return { ok: true, data: { planId: data } };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function updatePlan(input: UpdatePlanInput): Promise<ActionResult<{ planId: string }>> {
+  try {
   const supabase = createClient();
   const { data, error } = await (supabase.rpc as any)('update_plan_v1', {
     p_plan_id: input.planId,
@@ -68,12 +72,15 @@ export async function updatePlan(input: UpdatePlanInput): Promise<ActionResult<{
   if (error) return { ok: false, error: error.message };
   if (typeof data !== 'string') return { ok: false, error: 'Relay could not update that plan.' };
   return { ok: true, data: { planId: data } };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function submitPlanResponse(
   instanceId: string,
   response: { optionId: string } | { rsvpStatus: 'yes' | 'no' | 'maybe' } | { textResponse: string },
 ): Promise<ActionResult> {
+  try {
   const { error } = await createClient().rpc('submit_plan_response_v2', {
     p_instance_id: instanceId,
     p_option_id: 'optionId' in response ? response.optionId : null,
@@ -81,9 +88,15 @@ export async function submitPlanResponse(
     p_text_response: 'textResponse' in response ? response.textResponse : null,
   });
   return error ? { ok: false, error: error.message } : { ok: true, data: undefined };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function deletePlan(planId: string): Promise<ActionResult> {
+  try {
   const { error } = await createClient().rpc('delete_plan', { p_plan_id: planId });
   return error ? { ok: false, error: error.message } : { ok: true, data: undefined };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
+

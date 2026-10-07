@@ -14,7 +14,7 @@ import { appPageUrl, authEntryUrl, IS_BETA } from '@/lib/config';
 import { createClient, ensureArrowBrowserSession } from '@/lib/supabase/client';
 import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT, setRolePreview } from '@/lib/role-preview';
 import { syncVisualPreferencesWithAccount } from '@/lib/visual-preferences-account';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 const DOCK_COLLAPSED_KEY = 'relay-dock-collapsed';
 const DOCK_COLLAPSED_EVENT = 'relay-dock-collapsed-change';
@@ -66,6 +66,7 @@ async function wait(ms: number) {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<{ userId: string; profile: any; notifications: any[] } | null>(null);
+  const accountRef = useRef<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [previewRole, setPreviewRoleState] = useState<AppRole>('user');
   const dockCollapsed = useSyncExternalStore(subscribeDockCollapsed, getDockCollapsedSnapshot, getServerDockCollapsedSnapshot);
@@ -165,6 +166,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        accountRef.current = user.id;
         if (IS_BETA) {
           loadStage = 'beta access';
           const { data: betaAccess, error: betaError } = await withTimeout<SupabaseResult<any>>(
@@ -193,13 +195,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         // before exposing the app shell so another account's browser cache can
         // never become this user's starting appearance.
         loadStage = 'visual preferences';
+        let preferencesActive=true;
         try {
-          await syncVisualPreferencesWithAccount(user.id);
+          await withTimeout(syncVisualPreferencesWithAccount(user.id,()=>active && preferencesActive && accountRef.current===user.id), 'Visual preferences', 5_000);
         } catch (error) {
           console.error('Relay visual preference sync failed; using defaults', error);
-        }
+        } finally { preferencesActive=false; }
         if (!active) return;
 
+        accountRef.current = user.id;
         setState({
           userId: user.id,
           profile,
@@ -218,6 +222,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       }
     })();
 
+    const { data: authListener } = supabase.auth.onAuthStateChange((event: string, session: any) => {
+      if (event === 'SIGNED_OUT') { active = false; accountRef.current=null; setState(null); window.location.replace(authEntryUrl()); }
+      if (event === 'SIGNED_IN' && accountRef.current && session?.user?.id !== accountRef.current) { active=false; setState(null); window.location.reload(); }
+    });
+
     const onPreviewChange = (event: Event) => {
       const role = (event as CustomEvent<AppRole>).detail;
       setPreviewRoleState(role);
@@ -226,6 +235,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     return () => {
       active = false;
+      authListener.subscription.unsubscribe();
       window.removeEventListener(ROLE_PREVIEW_EVENT, onPreviewChange);
     };
   }, []);
@@ -312,3 +322,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </BetaExperience>
   );
 }
+
