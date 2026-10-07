@@ -64,14 +64,14 @@ export function RequestsList({
             </div>
           </div>
           <div className="flex shrink-0 gap-2">
-            <button
+            <button type="button"
               disabled={busyId !== null}
               onClick={() => void runAction(req.id, acceptConnectionRequest)}
               className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-canvas disabled:opacity-45"
             >
               {busyId === req.id ? 'Working…' : 'Accept'}
             </button>
-            <button
+            <button type="button"
               disabled={busyId !== null}
               onClick={() => void runAction(req.id, declineConnectionRequest)}
               className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted disabled:opacity-45"
@@ -94,7 +94,7 @@ export function RequestsList({
               <p className="text-xs text-ink-faint">Request sent — waiting</p>
             </div>
           </div>
-          <button
+          <button type="button"
             disabled={busyId !== null}
             onClick={() => void runAction(req.id, cancelConnectionRequest)}
             className="shrink-0 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted disabled:opacity-45"

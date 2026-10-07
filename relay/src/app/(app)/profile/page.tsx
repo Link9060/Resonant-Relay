@@ -69,7 +69,7 @@ export default function ProfilePage() {
     })();
   }, []);
 
-  if (!profile) return error ? <div role="alert" className="mx-auto max-w-lg p-6"><p>{error}</p><button className="account-action mt-4" onClick={()=>location.reload()}>Retry</button></div> : <PageLoading />;
+  if (!profile) return error ? <div role="alert" className="mx-auto max-w-lg p-6"><p>{error}</p><button type="button" className="account-action mt-4" onClick={()=>location.reload()}>Retry</button></div> : <PageLoading />;
 
   function update<Field extends keyof EditableProfile>(field: Field, value: EditableProfile[Field]) {
     setProfile((current) => current ? { ...current, [field]: value } : current);

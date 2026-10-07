@@ -83,7 +83,7 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
       }}
     >
       <Dialog.Trigger asChild>
-        <button className="flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-sm font-medium text-canvas transition-all hover:opacity-90 active:scale-[0.97]">
+        <button type="button" className="flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-sm font-medium text-canvas transition-all hover:opacity-90 active:scale-[0.97]">
           <MessageCirclePlus size={16} />
           New
         </button>
@@ -121,7 +121,7 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
                 <ul className="max-h-64 space-y-1 overflow-y-auto">
                   {contacts.map((c) => { const displayName=contactDisplayName(c,c.preference); const color=contactColor(c.preference?.color_key); return (
                     <li key={c.id}>
-                      <button
+                      <button type="button"
                         disabled={loading}
                         onClick={() => handleStartDirect(c.id)}
                         className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-surface"
@@ -166,7 +166,7 @@ export function NewChatDialog({ contacts }: { contacts: Contact[] }) {
                       </li>
                     )})}
                   </ul>
-                  <button
+                  <button type="button"
                     onClick={handleCreateGroup}
                     disabled={loading}
                     className="mt-4 flex w-full items-center justify-center gap-2 rounded-md bg-ink py-2.5 text-sm font-medium text-canvas disabled:opacity-40"

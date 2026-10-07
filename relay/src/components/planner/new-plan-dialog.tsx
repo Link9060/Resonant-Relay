@@ -96,7 +96,7 @@ export function NewPlanDialog({ groups }: { groups: Group[] }) {
   return (
     <Dialog.Root open={open} onOpenChange={(next) => { setOpen(next); if (!next) reset(); }}>
       <Dialog.Trigger asChild>
-        <button className="flex items-center gap-1.5 rounded-lg bg-ink px-3.5 py-2 text-sm font-medium text-canvas transition hover:opacity-90 active:scale-[0.98]">
+        <button type="button" className="flex items-center gap-1.5 rounded-lg bg-ink px-3.5 py-2 text-sm font-medium text-canvas transition hover:opacity-90 active:scale-[0.98]">
           <CalendarPlus size={16} /> New plan
         </button>
       </Dialog.Trigger>

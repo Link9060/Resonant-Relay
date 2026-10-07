@@ -8,7 +8,7 @@ export function DisconnectGoogleButton({ service }: { service: GoogleService }) 
   const [isPending, startTransition] = useTransition();
 
   return (
-    <button
+    <button type="button"
       disabled={isPending}
       onClick={() => startTransition(async () => { await disconnectGoogle(service); window.location.reload(); })}
       className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-surface disabled:opacity-40"

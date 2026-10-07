@@ -30,7 +30,7 @@ export function ConnectGoogleButton({ service, next }: { service: GoogleService;
 
   return (
     <div className="text-right">
-      <button
+      <button type="button"
         onClick={handleConnect}
         disabled={loading}
         className="rounded-md bg-ink px-4 py-2.5 text-sm font-medium text-canvas transition-all hover:opacity-90 active:scale-[0.97] disabled:opacity-50"

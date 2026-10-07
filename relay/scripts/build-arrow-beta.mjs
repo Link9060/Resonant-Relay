@@ -2,6 +2,7 @@ import {execFileSync} from 'node:child_process';
 import {cpSync,existsSync,mkdirSync,readFileSync,writeFileSync,rmSync,readdirSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
 
 const relay=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const work=path.join(relay,'.arrow-beta-build');
@@ -23,7 +24,7 @@ function compile(repo,center,key){
   cpSync(path.join(dir,'out'),path.join(output,'arrow',center),{recursive:true});return dir;
 }
 const orbit=compile('Resonant-Orbit','orbit','NEXT_PUBLIC_ORBIT_BASE_PATH');
-run(process.execPath,['--test','tests/arrow-shell.test.cjs','tests/entertainment.test.cjs','tests/auth-gate.test.cjs'],orbit);
+run(process.execPath,['--test','tests/arrow-shell.test.cjs','tests/entertainment.test.cjs','tests/auth-gate.test.cjs','tests/orbit-refinement.test.cjs'],orbit);
 compile('Resonant-Waypoint','waypoint','NEXT_PUBLIC_WAYPOINT_BASE_PATH');
 const atlas=source('Resonant-Field');cpSync(path.join(atlas,'apps/explorer'),path.join(output,'arrow','atlas'),{recursive:true});
 const ravin=source('Project-R.A.V.I.N.-1.1');cpSync(path.join(ravin,'ravin/public'),path.join(output,'arrow','ravin'),{recursive:true});
@@ -39,5 +40,27 @@ function patchHtml(dir){for(const entry of readdirSync(dir,{withFileTypes:true})
   html=html.replace(/<head>/i,'<head><script src="'+base+'/arrow-beta-guard.js?v=review-20261006"></script>');writeFileSync(file,html);
 }}}
 patchHtml(common);
+const betaPrefix='/Resonant-Relay';
+// Use content revisions so fresh markup cannot retain obsolete center stylesheets.
+function versionHtml(dir){for(const entry of readdirSync(dir,{withFileTypes:true})){
+  const file=path.join(dir,entry.name);
+  if(entry.isDirectory())versionHtml(file);
+  else if(entry.name.endsWith('.html')){
+    const route=path.relative(output,file).split(path.sep).join('/');
+    const baseUrl='https://link9060.github.io'+betaPrefix+'/'+route;
+    let html=readFileSync(file,'utf8');
+    html=html.replace(/(<(?:script|link)\b[^>]*(?:src|href)=)(["'])([^"']+)\2/g,(match,start,quote,href)=>{
+      const url=new URL(href,baseUrl);
+      if(url.hostname!=='link9060.github.io'||!url.pathname.startsWith(betaPrefix+'/')||! /\.(?:js|css)$/.test(url.pathname))return match;
+      const asset=path.join(output,decodeURIComponent(url.pathname.slice(betaPrefix.length)));
+      if(!existsSync(asset))throw new Error('Missing versioned asset: '+url.pathname);
+      url.searchParams.set('v',createHash('sha256').update(readFileSync(asset)).digest('hex').slice(0,12));
+      return start+quote+url.pathname+url.search+url.hash+quote;
+    });
+    writeFileSync(file,html);
+  }
+}}
+versionHtml(output);
+writeFileSync(path.join(common,'version.json'),JSON.stringify({centers:manifest,shell:createHash('sha256').update(readFileSync(path.join(common,'arrow-shell.js'))).digest('hex').slice(0,12)},null,2));
 writeFileSync(path.join(output,'.nojekyll'),'');
 run(process.execPath,['scripts/validate-arrow-beta-assets.mjs'],relay);

@@ -177,8 +177,8 @@ export function BetaIntro() {
     }
   }}>
     <canvas ref={canvasRef} aria-hidden="true" />
-    <button ref={skipRef} className="beta-intro-skip" onClick={finish}>Skip intro</button>
-    {!active && <button className="beta-intro-start" data-relay-sound="none" onClick={() => {
+    <button type="button" ref={skipRef} className="beta-intro-skip" onClick={finish}>Skip intro</button>
+    {!active && <button type="button" className="beta-intro-start" data-relay-sound="none" onClick={() => {
       if (reducedMotion()) { finish(); return; }
       if (readSoundPreference()) {
         const audio = new Audio(`${BASE_PATH}/audio/startup-humordome.mp3`);
