@@ -29,5 +29,26 @@ jobs:
           cache-dependency-path: relay/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npm run test:motion
       - run: npm run typecheck
       - run: npm run build
+
+
+  beta-package:
+    if: github.event.pull_request.base.ref == 'beta'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: relay
+    env:
+      NEXT_PUBLIC_RELAY_DEPLOY_TARGET: github-pages
+      NEXT_PUBLIC_SITE_URL: https://link9060.github.io/Resonant-Relay
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: relay/package-lock.json
+      - run: npm ci
+      - run: node scripts/build-arrow-beta.mjs

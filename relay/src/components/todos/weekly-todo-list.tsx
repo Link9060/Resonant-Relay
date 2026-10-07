@@ -32,7 +32,8 @@ export function WeeklyTodoList() {
     void (async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !active) return;
+      if (!active) return;
+      if (!user) { setError('Sign in again to load your tasks.'); setLoadedRange(`${startKey}:${endKey}`); return; }
       const { data, error: loadError } = await supabase
         .from('todos')
         .select('*')
@@ -46,7 +47,7 @@ export function WeeklyTodoList() {
       setTodos(data ?? []);
       setError(loadError ? 'Your tasks could not load.' : null);
       setLoadedRange(`${startKey}:${endKey}`);
-    })();
+    })().catch(() => { if (active) { setError('Your tasks could not load. Check your connection.'); setLoadedRange(`${startKey}:${endKey}`); } });
     return () => { active = false; };
   }, [startKey, endKey]);
 
@@ -165,3 +166,4 @@ export function WeeklyTodoList() {
     </div>
   );
 }
+

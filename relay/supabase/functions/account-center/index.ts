@@ -3,6 +3,9 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const ALLOWED_ORIGINS = new Set([
   'https://resonantrelay.org',
+  'https://www.resonantrelay.org',
+  'https://enterarrow.com',
+  'https://www.enterarrow.com',
   'https://link9060.github.io',
   'http://localhost:3000',
 ]);
@@ -46,10 +49,10 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
 
     if (body.action === 'unsend_message') {
-      const { data: message } = await admin.from('messages').select('id,sender_id,created_at,attachments').eq('id', body.messageId).maybeSingle();
+      const { data: message } = await admin.from('messages').select('id,conversation_id,sender_id,created_at,attachments').eq('id', body.messageId).maybeSingle();
       if (!message || message.sender_id !== user.id) return json(req, { error: 'Message not found.' }, 404);
       if (Date.now() - new Date(message.created_at).getTime() > 2 * 60_000) return json(req, { error: 'The 2-minute unsend window has ended.' }, 409);
-      const paths = attachmentPaths(message.attachments);
+      const paths = attachmentPaths(message.attachments, message.conversation_id, user.id);
       if (paths.length) {
         const { error } = await admin.storage.from('chat-attachments').remove(paths);
         if (error) throw new Error('Could not remove message files.');
@@ -62,18 +65,20 @@ Deno.serve(async (req: Request) => {
     if (body.action === 'export') {
       const [profile, messages, todos, notes, memberships, plans, responses, contacts, blocks, notifications, accounts, reports] = await Promise.all([
         admin.from('profiles').select('*').eq('id', user.id).maybeSingle(),
-        admin.from('messages').select('id,conversation_id,body,attachments,reply_to_id,created_at,edited_at').eq('sender_id', user.id).order('created_at'),
-        admin.from('todos').select('*').eq('user_id', user.id).order('created_at'),
-        admin.from('notes').select('*').eq('user_id', user.id).order('updated_at'),
-        admin.from('group_members').select('group_id,role,joined_at,group:groups(name)').eq('user_id', user.id),
-        admin.from('plans').select('*').eq('created_by', user.id).order('created_at'),
-        admin.from('plan_responses').select('*').eq('user_id', user.id).order('responded_at'),
-        admin.from('contact_preferences').select('contact_id,nickname,color_key,updated_at').eq('owner_id', user.id),
-        admin.from('user_blocks').select('blocked_id,created_at').eq('blocker_id', user.id),
-        admin.from('notifications').select('*').eq('user_id', user.id).order('created_at'),
-        admin.from('calendar_integrations').select('id,provider,email_address,display_name,granted_scope,connected_at').eq('user_id', user.id),
-        admin.from('reports').select('id,reported_user_id,message_id,reason,details,status,created_at').eq('reporter_id', user.id),
+        awaitAllRows(() => admin.from('messages').select('id,conversation_id,body,attachments,reply_to_id,created_at,edited_at').eq('sender_id', user.id).order('created_at').order('id')),
+        awaitAllRows(() => admin.from('todos').select('*').eq('user_id', user.id).order('created_at').order('id')),
+        awaitAllRows(() => admin.from('notes').select('*').eq('user_id', user.id).order('updated_at').order('id')),
+        awaitAllRows(() => admin.from('group_members').select('group_id,role,joined_at,group:groups(name)').eq('user_id', user.id).order('group_id')),
+        awaitAllRows(() => admin.from('plans').select('*').eq('created_by', user.id).order('created_at').order('id')),
+        awaitAllRows(() => admin.from('plan_responses').select('*').eq('user_id', user.id).order('responded_at').order('id')),
+        awaitAllRows(() => admin.from('contact_preferences').select('contact_id,nickname,color_key,updated_at').eq('owner_id', user.id).order('contact_id')),
+        awaitAllRows(() => admin.from('user_blocks').select('blocked_id,created_at').eq('blocker_id', user.id).order('blocked_id')),
+        awaitAllRows(() => admin.from('notifications').select('*').eq('user_id', user.id).order('created_at').order('id')),
+        awaitAllRows(() => admin.from('calendar_integrations').select('id,provider,email_address,display_name,granted_scope,connected_at').eq('user_id', user.id).order('id')),
+        awaitAllRows(() => admin.from('reports').select('id,reported_user_id,message_id,reason,details,status,created_at').eq('reporter_id', user.id).order('id')),
       ]);
+      const results = [profile,messages,todos,notes,memberships,plans,responses,contacts,blocks,notifications,accounts,reports];
+      if (results.some(result => result.error)) throw new Error('Account export could not load every section. Retry later.');
       return json(req, {
         exportedAt: new Date().toISOString(),
         accountEmail: user.email ?? null,
@@ -94,11 +99,13 @@ Deno.serve(async (req: Request) => {
 
     if (body.action === 'delete_account') {
       if (body.confirmation !== 'DELETE') return json(req, { error: 'Type DELETE to confirm.' }, 400);
-      const [{ data: sentMessages }, { data: accounts }] = await Promise.all([
-        admin.from('messages').select('attachments').eq('sender_id', user.id),
+      const [messageResult, accountResult] = await Promise.all([
+        awaitAllRows(() => admin.from('messages').select('id,conversation_id,attachments').eq('sender_id', user.id).order('id')),
         admin.from('calendar_integrations').select('provider,refresh_token').eq('user_id', user.id),
       ]);
-      const paths = (sentMessages ?? []).flatMap((message: any) => attachmentPaths(message.attachments));
+      if (messageResult.error || accountResult.error) throw new Error('Account data could not be checked. Nothing was deleted.');
+      const sentMessages=messageResult.data; const accounts=accountResult.data;
+      const paths = (sentMessages ?? []).flatMap((message: any) => attachmentPaths(message.attachments, message.conversation_id, user.id));
       for (let index = 0; index < paths.length; index += 100) {
         const { error } = await admin.storage.from('chat-attachments').remove(paths.slice(index, index + 100));
         if (error) throw new Error('Could not remove account files.');
@@ -118,7 +125,20 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-function attachmentPaths(value: unknown): string[] {
+function attachmentPaths(value: unknown, conversationId: string, userId: string): string[] {
   if (!Array.isArray(value)) return [];
-  return value.map((item) => item && typeof item === 'object' && 'path' in item ? String((item as { path: unknown }).path) : '').filter(Boolean);
+  return value.map((item) => item && typeof item === 'object' && 'path' in item ? String((item as { path: unknown }).path) : '').filter(path => path.startsWith(`${conversationId}/${userId}/`) && !path.split('/').some(part => part === '..' || part === '.'));
+}
+
+
+// PostgREST caps results per request. Never treat a capped page as a full export.
+async function awaitAllRows(query: () => any) {
+  const rows: any[] = [];
+  const pageSize = 500;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await query().range(offset, offset + pageSize - 1);
+    if (error) return { data: null, error };
+    rows.push(...(data ?? []));
+    if ((data?.length ?? 0) < pageSize) return { data: rows, error: null };
+  }
 }

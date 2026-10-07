@@ -62,7 +62,7 @@ export default function LoginPage(){
     try{const {error}=await createClient().auth.signInWithOAuth({provider:'google',options:{redirectTo:callback(),scopes:'openid email profile',queryParams:{prompt:'select_account'}}});if(error)throw error;}
     catch(error){setMessage(error instanceof Error?error.message:'Google sign-in is unavailable.');setBusy(false);}
   }
-  function changeMethod(value:typeof method){setMethod(value);setMessage('');}
+  function changeMethod(value:typeof method){setMethod(value);setMessage('');setPendingPhone('');setCode('');setPassword('');}
   return <main className="auth-page min-h-screen bg-canvas px-5 py-10"><div className="mx-auto w-full max-w-md rounded-2xl border border-border bg-surface p-6 sm:p-8"><p className="text-sm font-medium tracking-widest text-ink-muted">ARROW {IS_BETA?'BETA':''}</p><h1 className="mt-3 font-display text-3xl font-medium text-ink">{signup&&method==='account'?'Create your account':'Welcome back'}</h1><p className="mt-2 text-sm text-ink-muted">One account for Orbit, Relay, RAVIN, Atlas and Waypoint.</p>
     <div className="auth-methods mt-6" aria-label="Sign-in method">{(['account','email','phone'] as const).map(value=><button type="button" key={value} disabled={busy} aria-pressed={method===value} onClick={()=>changeMethod(value)}>{value==='account'?'Username':value==='email'?'Email':'Phone'}</button>)}</div>
     {method==='phone'&&!providers?.phone?<p role="status" className="mt-5 text-sm text-ink-muted">{providers?'Text-message sign-in is unavailable. Use username or email.':'Checking phone sign-in availability…'}</p>:<form onSubmit={submit} className="mt-5 space-y-4" aria-busy={busy}>
@@ -77,3 +77,4 @@ export default function LoginPage(){
     <p className="mt-5 text-sm text-ink-faint">By continuing, you agree to the <a href={appPageUrl('/terms')} className="underline">terms</a> and acknowledge the <a href={appPageUrl('/privacy')} className="underline">privacy policy</a>.</p>
   </div></main>;
 }
+

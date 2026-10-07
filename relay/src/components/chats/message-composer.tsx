@@ -24,6 +24,7 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, reply
   const [canSend, setCanSend] = useState<boolean | null>(null);
   const [sendReason, setSendReason] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const sendingRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const stopTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingSignal = useRef(0);
@@ -36,13 +37,14 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, reply
         const { data, error: statusError } = await (createClient() as any).rpc('conversation_send_status', { p_conversation_id: conversationId });
         if (!active) return;
         if (statusError) {
-          setCanSend(true);
+          setCanSend(false);
+          setSendReason('Send permission could not be verified. Refresh the chat to retry.');
           return;
         }
         const row = data?.[0];
-        setCanSend(row?.can_send !== false);
+        setCanSend(row?.can_send === true);
         setSendReason(row?.reason ?? null);
-      })();
+      })().catch(() => { if (active) { setCanSend(false); setSendReason('Send permission could not be verified. Refresh the chat to retry.'); } });
     }, 0);
     return () => { active = false; window.clearTimeout(timer); };
   }, [conversationId]);
@@ -68,33 +70,37 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, reply
   }
 
   function handleSend() {
-    if (canSend === false) return;
+    if (canSend !== true) return;
     const body = value.trim();
-    if ((!body && files.length === 0) || isPending) return;
+    if ((!body && files.length === 0) || isPending || sendingRef.current) return;
     if (body.length > MAX_MESSAGE_LENGTH) {
       setError(`Messages must be ${MAX_MESSAGE_LENGTH.toLocaleString()} characters or fewer.`);
       return;
     }
-    setValue('');
+    sendingRef.current = true;
     const pendingFiles = files;
-    setFiles([]);
     setError(null);
     onTypingChange?.(false);
 
     startTransition(async () => {
-      const result = await sendMessage(conversationId, body, pendingFiles, replyTo?.id ?? replyToId ?? null);
+      try {
+      let result;
+      try { result = await sendMessage(conversationId, body, pendingFiles, replyTo?.id ?? replyToId ?? null); }
+      catch { setError('Message was not confirmed. Check the chat before retrying. Your draft is still here.'); return; }
       if (!result.ok) {
         setError(result.error);
-        setValue(body);
         setFiles(pendingFiles);
         if (/reconnect|no longer send/i.test(result.error)) {
           setCanSend(false);
           setSendReason(result.error);
         }
       } else {
+        setValue('');
+        setFiles([]);
         onCancelReply?.();
         onSent?.();
       }
+      } finally { sendingRef.current = false; }
     });
 
     inputRef.current?.focus();
@@ -119,11 +125,11 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, reply
     <div className="border-t border-border bg-surface px-3 py-3 sm:px-4">
       {replyTo && <div className="mb-2 flex items-center gap-2 rounded-md border-l-2 border-accent bg-surface px-3 py-2"><CornerUpLeft size={14} className="shrink-0 text-ink-faint" /><div className="min-w-0 flex-1"><p className="text-xs font-medium text-ink-muted">Replying to {replyTo.label}</p><p className="truncate text-xs text-ink-faint">{replyTo.body || 'Attachment'}</p></div><button type="button" onClick={onCancelReply} aria-label="Cancel reply" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-faint hover:bg-canvas hover:text-ink"><X size={14} /></button></div>}
       {error && <p className="mb-2 text-xs text-red-500">{error}</p>}
-      {files.length > 0 && <ul className="mb-2 flex flex-wrap gap-2">{files.map((file, index) => <li key={`${file.name}-${index}`} className="flex max-w-52 items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-ink"><Paperclip size={13} className="shrink-0" /><span className="truncate">{file.name}</span><button type="button" aria-label={`Remove ${file.name}`} onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="flex h-8 w-8 items-center justify-center text-ink-faint hover:text-ink"><X size={13} /></button></li>)}</ul>}
+      {files.length > 0 && <ul className="mb-2 flex flex-wrap gap-2">{files.map((file, index) => <li key={`${file.name}-${index}`} className="flex max-w-52 items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-ink"><Paperclip size={13} className="shrink-0" /><span className="truncate">{file.name}</span><button type="button" aria-label={`Remove ${file.name}`} disabled={isPending} onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="flex h-8 w-8 items-center justify-center text-ink-faint hover:text-ink"><X size={13} /></button></li>)}</ul>}
       <div className="flex items-center gap-2">
         <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border text-ink-muted hover:bg-canvas hover:text-ink" aria-label="Attach photos or files">
           <Paperclip size={18} />
-          <input type="file" multiple className="sr-only" accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,text/plain,text/csv,application/zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx" onChange={(event) => { const selected = Array.from(event.target.files ?? []); setError(null); setFiles((current) => [...current, ...selected].slice(0, 5)); event.target.value = ''; }} />
+          <input type="file" disabled={isPending} multiple className="sr-only" accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,text/plain,text/csv,application/zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx" onChange={(event) => { const selected = Array.from(event.target.files ?? []); setError(null); setFiles((current) => [...current, ...selected].slice(0, 5)); event.target.value = ''; }} />
         </label>
         <input
           ref={inputRef}
@@ -132,13 +138,13 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, reply
           onChange={(e) => { setValue(e.target.value); signalTyping(e.target.value); }}
           onBlur={() => onTypingChange?.(false)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
               handleSend();
             }
           }}
           placeholder={canSend === null ? 'Checking chat…' : 'Message'}
-          disabled={canSend === null}
+          disabled={canSend === null || isPending}
           className="min-h-11 min-w-0 flex-1 rounded-xl border border-border bg-canvas px-3 py-2.5 text-base text-ink outline-none focus-visible:border-accent disabled:opacity-50 sm:text-sm"
         />
         <button
@@ -154,3 +160,4 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, reply
     </div>
   );
 }
+

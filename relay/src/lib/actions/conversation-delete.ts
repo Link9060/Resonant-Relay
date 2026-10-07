@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/client';
 export type ConversationDeleteResult = { ok: true } | { ok: false; error: string };
 
 export async function deleteConversationForMe(conversationId: string): Promise<ConversationDeleteResult> {
+  try {
   const supabase = createClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Not signed in.' };
@@ -20,4 +21,7 @@ export async function deleteConversationForMe(conversationId: string): Promise<C
   return error
     ? { ok: false, error: 'Could not delete this conversation from your Chats view.' }
     : { ok: true };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
+

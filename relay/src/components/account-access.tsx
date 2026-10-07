@@ -17,7 +17,7 @@ export function AccountAccess() {
   const [message,setMessage]=useState('');
   const [recovery,setRecovery]=useState(false);
   const [ready,setReady]=useState(false);
-  useEffect(()=>{let active=true;void createClient().auth.getUser().then(({data})=>{if(active && data.user){setRecovery(Boolean(data.user.email && !data.user.email.endsWith('@accounts.enterarrow.invalid')));setReady(true);}});void fetch(`${SUPABASE_URL}/auth/v1/settings`,{headers:{apikey:SUPABASE_PUBLISHABLE_KEY}}).then(r=>r.json()).then(s=>{if(active)setSms(s.external?.phone===true);}).catch(()=>{});return()=>{active=false;};},[]);
+  useEffect(()=>{let active=true;void createClient().auth.getUser().then(({data})=>{if(active && data.user){setRecovery(Boolean(data.user.email && !data.user.email.endsWith('@accounts.enterarrow.invalid')));setReady(true);}else if(active){setMessage('Sign in again to change account details.');}}).catch(()=>{if(active)setMessage('Account details could not load. Refresh to retry.');});void fetch(`${SUPABASE_URL}/auth/v1/settings`,{headers:{apikey:SUPABASE_PUBLISHABLE_KEY},signal:AbortSignal.timeout(10000)}).then(r=>r.json()).then(s=>{if(active)setSms(s.external?.phone===true);}).catch(()=>{});return()=>{active=false;};},[]);
   async function update(event:FormEvent,kind:'email'|'emailverify'|'phone'|'password'|'verify') {
     event.preventDefault();if(busy || !ready)return;setBusy(true);setMessage('');
     const client=createClient();
@@ -51,3 +51,4 @@ export function AccountAccess() {
   </section>;
 }
 export function normalizePhone(value:string){const raw=value.trim();const digits=raw.replace(/\D/g,'');return raw.startsWith('+')?'+'+digits:digits.length===10?'+1'+digits:digits.length===11&&digits.startsWith('1')?'+'+digits:'';}
+

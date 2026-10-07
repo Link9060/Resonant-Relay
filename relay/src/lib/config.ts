@@ -102,9 +102,14 @@ export function staticDetailPath(kind: 'chats' | 'planner', id: string) {
 }
 
 export function normalizeAppLink(link: string) {
-  const chat = link.match(/^\/chats\/([^/?#]+)/);
-  if (chat?.[1]) return staticDetailPath('chats', chat[1]);
-  const plan = link.match(/^\/planner\/([^/?#]+)/);
-  if (plan?.[1]) return staticDetailPath('planner', plan[1]);
-  return link;
+  try {
+    const parsed = new URL(link, 'https://arrow.invalid');
+    const pathname = appPathname(parsed.pathname);
+    const detail = pathname.match(/^\/(chats|planner)\/([^/?#]+)\/?$/);
+    if (!detail || !detail[2] || detail[2] === 'view') return link;
+    const target = new URL(staticDetailPath(detail[1] as 'chats' | 'planner', decodeURIComponent(detail[2])), 'https://arrow.invalid');
+    for (const [key,value] of parsed.searchParams) if (key !== 'id') target.searchParams.append(key,value);
+    target.hash = parsed.hash;
+    return target.pathname + target.search + target.hash;
+  } catch { return '/'; }
 }

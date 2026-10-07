@@ -4,7 +4,7 @@ import { createNote, deleteNote, newNoteBlock, updateNote } from '@/lib/actions/
 import { createClient } from '@/lib/supabase/client';
 import type { Note, NoteBlock, NoteBlockType } from '@/lib/types/database';
 import { ArrowDown, ArrowUp, Check, CheckSquare, FilePlus2, Heading2, List, Loader2, MessageSquareQuote, Pin, PinOff, Plus, Search, Trash2, Type } from 'lucide-react';
-import { KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const BLOCK_BUTTONS: Array<{ type: NoteBlockType; label: string; icon: typeof Type }> = [
   { type: 'paragraph', label: 'Text', icon: Type },
@@ -14,36 +14,51 @@ const BLOCK_BUTTONS: Array<{ type: NoteBlockType; label: string; icon: typeof Ty
   { type: 'quote', label: 'Quote', icon: MessageSquareQuote },
 ];
 
+const noteSaveQueues = new Map<string, Promise<boolean>>();
+
 export function NotesWorkspace() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [dirtyId, setDirtyId] = useState<string | null>(null);
+  const [dirtyIds, setDirtyIds] = useState<Set<string>>(new Set());
+  const deletingIds = useRef(new Set<string>());
+  const revisions = useRef(new Map<string, number>());
+  const saveQueues = useRef(noteSaveQueues);
+  const savingVersions = useRef(new Map<string, number>());
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [newNoteId, setNewNoteId] = useState<string | null>(null);
   const [newBlockId, setNewBlockId] = useState<string | null>(null);
   const [movingBlockId, setMovingBlockId] = useState<string | null>(null);
   const [removingBlockId, setRemovingBlockId] = useState<string | null>(null);
+  const draftAccount = useRef<string | null>(null);
+  const dirtyRef = useRef(dirtyIds);
+  useEffect(() => { dirtyRef.current=dirtyIds; },[dirtyIds]);
   const notesRef = useRef(notes);
-  notesRef.current = notes;
+  useEffect(() => { notesRef.current = notes; }, [notes]);
 
   useEffect(() => {
     let active = true;
     void (async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !active) return;
+      if (!active) return;
+      if (!user) { setLoading(false); setError('Sign in again to load your notes.'); return; }
       const { data, error: loadError } = await supabase.from('notes').select('*').eq('user_id', user.id).order('is_pinned', { ascending: false }).order('updated_at', { ascending: false });
       if (!active) return;
-      const loaded = data ?? [];
+      draftAccount.current=user.id;
+      let drafts: Note[] = [];
+      try { drafts=JSON.parse(window.sessionStorage.getItem('relay-note-drafts:'+user.id) || '[]'); if(!Array.isArray(drafts)) drafts=[]; } catch { drafts=[]; }
+      drafts=drafts.filter(note=>note && typeof note.id==='string' && typeof note.title==='string' && Array.isArray(note.content) && note.content.every(block=>block && typeof block.id==='string' && typeof block.text==='string'));
+      const loaded = [...(data ?? []).map(note=>drafts.find(draft=>draft.id===note.id) ?? note),...drafts.filter(draft=>!(data ?? []).some(note=>note.id===draft.id))];
+      if(drafts.length){for(const note of drafts) revisions.current.set(note.id,1);setDirtyIds(new Set(drafts.map(note=>note.id)));}
       setNotes(loaded);
       setSelectedId(loaded[0]?.id ?? null);
       setError(loadError ? 'Your notes could not load.' : null);
       setLoading(false);
-    })();
+    })().catch(() => { if (active) { setLoading(false); setError('Your notes could not load. Check your connection.'); } });
     return () => { active = false; };
   }, []);
 
@@ -54,19 +69,59 @@ export function NotesWorkspace() {
     return notes.filter((note) => `${note.title} ${noteSnippet(note)}`.toLowerCase().includes(needle));
   }, [notes, query]);
 
-  useEffect(() => {
-    if (!selected || dirtyId !== selected.id) return;
-    const timer = window.setTimeout(() => { void persist(selected); }, 700);
-    return () => window.clearTimeout(timer);
-  }, [selected, dirtyId]);
+  const persist = useCallback(async (note: Note): Promise<boolean> => {
+    if (deletingIds.current.has(note.id)) return false;
+    const version = revisions.current.get(note.id) ?? 0;
+    const previous = saveQueues.current.get(note.id) ?? Promise.resolve(true);
+    if (savingVersions.current.get(note.id) === version) return previous;
+    savingVersions.current.set(note.id, version);
+    const queued = previous.catch(() => false).then(async () => {
+      try {
+        const result = await updateNote(note.id, note.title, note.content, note.is_pinned);
+        if (!result.ok) throw new Error(result.error);
+        if (revisions.current.get(note.id) === version) {
+          setNotes(current => sortNotes(current.map(item => item.id === note.id ? result.data : item)));
+          setDirtyIds(current => { const next = new Set(current); next.delete(note.id); return next; });
+          setSaveState('saved');
+        }
+        return true;
+      } catch (failure) {
+        setSaveState('error');
+        setError(failure instanceof Error ? failure.message : 'Your changes were not saved. Retry when connected.');
+        return false;
+      } finally {
+        if (savingVersions.current.get(note.id) === version) savingVersions.current.delete(note.id);
+      }
+    });
+    saveQueues.current.set(note.id, queued);
+    return queued;
+  }, []);
 
-  async function persist(note: Note) {
-    const result = await updateNote(note.id, note.title, note.content, note.is_pinned);
-    if (!result.ok) { setSaveState('error'); setError(result.error); return; }
-    setNotes((current) => sortNotes(current.map((item) => item.id === note.id ? result.data : item)));
-    setDirtyId((current) => current === note.id ? null : current);
-    setSaveState('saved');
-  }
+  useEffect(() => {
+    if (!dirtyIds.size) return;
+    const timer = window.setTimeout(() => {
+      for (const note of notesRef.current) if (dirtyIds.has(note.id)) void persist(note);
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [notes, dirtyIds, persist]);
+
+  useEffect(() => {
+    if (!draftAccount.current) return;
+    try { window.sessionStorage.setItem('relay-note-drafts:'+draftAccount.current,JSON.stringify(notes.filter(note=>dirtyIds.has(note.id)))); } catch { /* The tab-close warning still protects unconfirmed edits. */ }
+  },[notes,dirtyIds]);
+
+  useEffect(() => () => {
+    for(const note of notesRef.current) if(dirtyRef.current.has(note.id)) void persist(note);
+  },[persist]);
+
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => {
+      if (dirtyIds.size) { event.preventDefault(); event.returnValue = ''; }
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirtyIds]);
+
 
   async function addNote() {
     setCreating(true);
@@ -82,15 +137,16 @@ export function NotesWorkspace() {
   }
 
   function selectNote(id: string) {
-    if (selected && dirtyId === selected.id) void persist(selected);
+    if (selected && dirtyIds.has(selected.id)) void persist(selected);
     setSelectedId(id);
     setSaveState('idle');
   }
 
   function changeSelected(change: (note: Note) => Note) {
-    if (!selectedId) return;
+    if (!selectedId || deletingIds.current.has(selectedId)) return;
     setNotes((current) => current.map((note) => note.id === selectedId ? change(note) : note));
-    setDirtyId(selectedId);
+    revisions.current.set(selectedId, (revisions.current.get(selectedId) ?? 0) + 1);
+    setDirtyIds(current => new Set(current).add(selectedId));
     setSaveState('saving');
     setError(null);
   }
@@ -139,7 +195,7 @@ export function NotesWorkspace() {
   }
 
   function blockKeyDown(event: KeyboardEvent<HTMLTextAreaElement>, block: NoteBlock, index: number) {
-    if (event.key === 'Enter' && !event.shiftKey && event.currentTarget.selectionStart === block.text.length) {
+    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && event.currentTarget.selectionStart === block.text.length) {
       event.preventDefault();
       addBlock(block.type === 'todo' || block.type === 'bullet' ? block.type : 'paragraph', index);
     } else if (event.key === 'Backspace' && !block.text && selected && selected.content.length > 1) {
@@ -150,12 +206,17 @@ export function NotesWorkspace() {
 
   async function removeSelected() {
     if (!selected || !window.confirm(`Delete “${selected.title || 'Untitled'}”? This cannot be undone.`)) return;
-    const result = await deleteNote(selected.id);
+    const id = selected.id;
+    if (deletingIds.current.has(id)) return;
+    deletingIds.current.add(id);
+    // Stop new writes, then finish in-flight writes before deleting.
+    await saveQueues.current.get(id);
+    const result = await deleteNote(id);
+    deletingIds.current.delete(id);
     if (!result.ok) { setError(result.error); return; }
-    const remaining = notes.filter((note) => note.id !== selected.id);
-    setNotes(remaining);
-    setSelectedId(remaining[0]?.id ?? null);
-    setDirtyId(null);
+    setNotes(current => current.filter(note => note.id !== id));
+    setSelectedId(current => current === id ? null : current);
+    setDirtyIds(current => { const next = new Set(current); next.delete(id); return next; });
     setSaveState('idle');
   }
 
@@ -171,7 +232,7 @@ export function NotesWorkspace() {
         </button>
       </div>
 
-      {error && <p className="mb-3 rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-600">{error}</p>}
+      {error && <div role="alert" className="mb-3 rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-600">{error}{dirtyIds.size > 0 && <button type="button" className="ml-3 underline" onClick={() => { for (const note of notesRef.current) if (dirtyIds.has(note.id)) void persist(note); }}>Retry saving</button>}</div>}
       <div className="grid min-h-[34rem] overflow-hidden rounded-xl border border-border bg-surface md:grid-cols-[15rem_minmax(0,1fr)]">
         <aside className="border-b border-border bg-surface-raised md:border-b-0 md:border-r">
           <label className="relative m-3 block">
@@ -260,3 +321,4 @@ function formatUpdated(value: string) {
   if (hours < 24) return `Updated ${hours}h ago`;
   return `Updated ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
 }
+

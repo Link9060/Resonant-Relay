@@ -132,7 +132,8 @@
 
   async function refreshArrowSession(session) {
     if (!session?.refresh_token) return null;
-    if (window.__arrowSessionRefreshPromise) return window.__arrowSessionRefreshPromise;
+    if (window.__arrowSessionRefreshPromise && window.__arrowSessionRefreshToken === session.refresh_token) return window.__arrowSessionRefreshPromise;
+    window.__arrowSessionRefreshToken=session.refresh_token;
     window.__arrowSessionRefreshPromise = (async () => {
       const response = await fetch(ARROW_SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
         method: 'POST', signal: AbortSignal.timeout(15000), headers: { apikey: ARROW_SUPABASE_KEY, 'content-type': 'application/json' },
@@ -141,10 +142,12 @@
       if (!response.ok) return null;
       const fresh = await response.json();
       const merged = { ...session, ...fresh, user: fresh.user || session.user };
+      if(readArrowSession()?.refresh_token !== session.refresh_token) throw new Error('Your ARROW account changed. Open this panel again.');
       saveArrowSession(merged); return merged;
     })();
-    try { return await window.__arrowSessionRefreshPromise; }
-    finally { window.__arrowSessionRefreshPromise = null; }
+    const pending=window.__arrowSessionRefreshPromise;
+    try { return await pending; }
+    finally { if(window.__arrowSessionRefreshPromise===pending) window.__arrowSessionRefreshPromise = null; }
   }
 
   async function arrowData(pathname, options = {}, retry = true) {
@@ -154,10 +157,12 @@
       error.code = 'ARROW_AUTH_REQUIRED';
       throw error;
     }
+    const accountId=session.user?.id;
     if (session.expires_at && Number(session.expires_at) * 1000 < Date.now() + 30000) {
       session = await refreshArrowSession(session) || session;
     }
 
+    if(readArrowSession()?.user?.id !== accountId) throw new Error('Your ARROW account changed. Open this panel again.');
     const headers = {
       apikey: ARROW_SUPABASE_KEY,
       Authorization: 'Bearer ' + session.access_token,
@@ -167,13 +172,13 @@
     if (options.body !== undefined) headers['content-type'] = 'application/json';
 
     const response = await fetch(ARROW_SUPABASE_URL + pathname, {
-      signal: AbortSignal.timeout(20000),
       method: options.method || 'GET',
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
       signal: AbortSignal.timeout(options.timeoutMs || 20000),
     });
 
+    if(readArrowSession()?.user?.id !== accountId) throw new Error('Your ARROW account changed. Open this panel again.');
     if (response.status === 401 && retry) {
       const fresh = await refreshArrowSession(session);
       if (fresh) return arrowData(pathname, options, false);
@@ -190,6 +195,7 @@
 
     if (response.status === 204) return null;
     const text = await response.text();
+    if(readArrowSession()?.user?.id !== accountId) throw new Error('Your ARROW account changed. Open this panel again.');
     return text ? JSON.parse(text) : null;
   }
 
@@ -828,8 +834,11 @@
   }
 
   let calendarLoad = null;
+  let calendarLoadOwner = null;
   async function loadCalendarSources() {
-    if(calendarLoad)return calendarLoad;
+    const owner=currentArrowUserId();
+    if(calendarLoad && calendarLoadOwner===owner)return calendarLoad;
+    calendarLoadOwner=owner;
     calendarLoad=(async()=>{
       const warnings=[];
       const [owned,memberships,connected]=await Promise.all([
@@ -862,7 +871,8 @@
       }
       return {events:events.sort((a,b)=>(a.event_date+' '+(a.start_time||'')).localeCompare(b.event_date+' '+(b.start_time||''))),warnings};
     })();
-    try{return await calendarLoad;}finally{calendarLoad=null;}
+    const pending=calendarLoad;
+    try{return await pending;}finally{if(calendarLoad===pending)calendarLoad=null;}
   }
 
   async function nextMove() {
@@ -879,7 +889,7 @@
     const session = readArrowSession();
     if (!session) throw new Error('Sign in to see what is next.');
     const fresh = session.expires_at * 1000 < Date.now() + 30000 ? await refreshArrowSession(session) || session : session;
-    const response = await fetch('/ravin/api/arrow/next', { method: 'POST', headers: { Authorization: 'Bearer ' + fresh.access_token, 'content-type': 'application/json' }, body: JSON.stringify({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }), signal: AbortSignal.timeout(25000) });
+    const response = await fetch(ON_ENTERARROW ? '/ravin/api/arrow/next' : 'https://ravin-hyeq.onrender.com/api/arrow/next', { method: 'POST', headers: { Authorization: 'Bearer ' + fresh.access_token, 'content-type': 'application/json' }, body: JSON.stringify({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }), signal: AbortSignal.timeout(25000) });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'RAVIN could not load your next move.');
     return result;
@@ -1897,7 +1907,13 @@
   window.addEventListener('resize', repositionPanel);
   window.visualViewport?.addEventListener('resize', repositionPanel);
 
+  let shellAccountId=currentArrowUserId();
   window.addEventListener('storage', event => {
+    if(event.key===ARROW_AUTH_STORAGE_KEY){
+      const account=currentArrowUserId();
+      if(account!==shellAccountId){shellAccountId=account;calendarLoad=null;closePanel(false);}
+      return;
+    }
     if (event.key === 'arrow_shared_data_ping_v1') {
       if (['notes', 'tasks', 'calendar'].includes(state.activePanel)) renderPanel(state.activePanel);
       window.dispatchEvent(new CustomEvent('arrow:planning-changed'));
@@ -1981,3 +1997,4 @@
     nextMove,
   };
 })();
+

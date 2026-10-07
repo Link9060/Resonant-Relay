@@ -28,15 +28,19 @@ export type BlockedPerson = {
 };
 
 export async function lookupRelayNumber(rawInput: string): Promise<ActionResult<{ id: string; display_name: string; avatar_url: string | null; school: string | null }>> {
+  try {
   const relayNumber = normalizeRelayNumber(rawInput);
   if (relayNumber.length !== 7) return { ok: false, error: 'Relay Numbers are 7 digits — check for a typo.' };
   const { data, error } = await createClient().rpc('find_by_relay_number', { p_relay_number: relayNumber });
   if (error) return { ok: false, error: error.message.includes('too many') ? error.message : "Couldn't look that up right now." };
   if (!data?.length) return { ok: false, error: 'No one has that Relay Number.' };
   return { ok: true, data: data[0]! };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function searchContactDiscovery(query: string): Promise<ActionResult<DiscoveryPerson[]>> {
+  try {
   const cleanQuery = query.trim();
   if (cleanQuery.length < 2) return { ok: false, error: 'Type at least 2 characters to search.' };
 
@@ -52,15 +56,21 @@ export async function searchContactDiscovery(query: string): Promise<ActionResul
   }
 
   return { ok: true, data: (data ?? []) as DiscoveryPerson[] };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function getContactDiscoverySuggestions(): Promise<ActionResult<DiscoveryPerson[]>> {
+  try {
   const { data, error } = await (createClient() as any).rpc('contact_discovery_suggestions', { p_limit: 12 });
   if (error) return { ok: false, error: 'Suggestions are unavailable right now.' };
   return { ok: true, data: (data ?? []) as DiscoveryPerson[] };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function getContactDiscoveryPrivacy(): Promise<ActionResult<DiscoveryPrivacy>> {
+  try {
   const supabase = createClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Not signed in.' };
@@ -71,9 +81,12 @@ export async function getContactDiscoveryPrivacy(): Promise<ActionResult<Discove
     .single();
   if (error || !data) return { ok: false, error: 'Discovery privacy settings are unavailable right now.' };
   return { ok: true, data: data as DiscoveryPrivacy };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function updateContactDiscoveryPrivacy(settings: DiscoveryPrivacy): Promise<ActionResult<DiscoveryPrivacy>> {
+  try {
   const supabase = createClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Not signed in.' };
@@ -89,9 +102,12 @@ export async function updateContactDiscoveryPrivacy(settings: DiscoveryPrivacy):
     .single();
   if (error || !data) return { ok: false, error: 'Discovery privacy settings could not be saved.' };
   return { ok: true, data: data as DiscoveryPrivacy };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function sendConnectionRequest(recipientId: string): Promise<ActionResult> {
+  try {
   const supabase = createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return { ok: false, error: 'Your session expired. Sign in again and retry.' };
@@ -119,21 +135,32 @@ export async function sendConnectionRequest(recipientId: string): Promise<Action
   }
 
   return { ok: true, data: undefined };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function acceptConnectionRequest(requestId: string): Promise<ActionResult> {
+  try {
   const { error } = await createClient().rpc('accept_connection_request', { p_request_id: requestId });
   return error ? { ok: false, error: 'That request is no longer available.' } : { ok: true, data: undefined };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function declineConnectionRequest(requestId: string): Promise<ActionResult> {
+  try {
   const { error } = await createClient().rpc('decline_connection_request', { p_request_id: requestId });
   return error ? { ok: false, error: 'That request is no longer available.' } : { ok: true, data: undefined };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function cancelConnectionRequest(requestId: string): Promise<ActionResult> {
+  try {
   const { error } = await createClient().rpc('cancel_connection_request', { p_request_id: requestId });
   return error ? { ok: false, error: 'That request is no longer available.' } : { ok: true, data: undefined };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function updateContactPreference(
@@ -141,6 +168,7 @@ export async function updateContactPreference(
   nickname: string,
   colorKey: ContactColorKey,
 ): Promise<ActionResult<{ nickname: string | null; color_key: ContactColorKey }>> {
+  try {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Not signed in.' };
@@ -162,29 +190,44 @@ export async function updateContactPreference(
     .single();
   if (error || !data) return { ok: false, error: 'Your contact settings could not be saved.' };
   return { ok: true, data: { nickname: data.nickname, color_key: data.color_key as ContactColorKey } };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function removeContact(contactId: string): Promise<ActionResult> {
+  try {
   const { error } = await (createClient() as any).rpc('remove_contact', { p_contact_id: contactId });
   if (error) return { ok: false, error: 'This contact could not be removed right now.' };
   return { ok: true, data: undefined };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function blockContact(contactId: string): Promise<ActionResult> {
+  try {
   const { error } = await createClient().rpc('block_user', { p_blocked_id: contactId });
   return error
     ? { ok: false, error: 'This person could not be blocked right now.' }
     : { ok: true, data: undefined };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function getBlockedPeople(): Promise<ActionResult<BlockedPerson[]>> {
+  try {
   const { data, error } = await (createClient() as any).rpc('list_blocked_people');
   if (error) return { ok: false, error: 'Blocked people could not be loaded right now.' };
   return { ok: true, data: (data ?? []) as BlockedPerson[] };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
 
 export async function unblockContact(contactId: string): Promise<ActionResult> {
+  try {
   const { error } = await createClient().rpc('unblock_user', { p_blocked_id: contactId });
   if (error) return { ok: false, error: 'This person could not be unblocked right now.' };
   return { ok: true, data: undefined };
+
+  } catch { return { ok: false, error: 'The request was not confirmed. Check your connection and retry.' }; }
 }
+

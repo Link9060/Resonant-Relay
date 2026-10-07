@@ -1,4 +1,4 @@
-const CACHE = 'relay-shell-v6';
+const CACHE = 'relay-shell-v7';
 const SCOPE_URL = new URL(self.registration.scope);
 const BASE = SCOPE_URL.pathname.replace(/\/$/, '');
 
@@ -13,7 +13,11 @@ const SHELL = [appPath('/'), appPath('/offline/'), appPath('/manifest.webmanifes
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then((cache) => cache.addAll(SHELL))
+      .then(async (cache) => {
+        // Optional icons must not prevent the worker from activating.
+        await cache.add(appPath('/offline/'));
+        await Promise.allSettled(SHELL.filter(url=>url!==appPath('/offline/')).map(url=>cache.add(url)));
+      })
       .then(() => self.skipWaiting()),
   );
 });
@@ -97,6 +101,12 @@ self.addEventListener('notificationclick', (event) => {
   try {
     const candidate = new URL(rawLink, self.location.origin);
     if (candidate.origin === self.location.origin) {
+      const relativePath = BASE && candidate.pathname.startsWith(BASE+'/') ? candidate.pathname.slice(BASE.length) : candidate.pathname;
+      const detail = relativePath.match(/^\/(chats|planner)\/([^/]+)\/?$/);
+      if (detail && detail[2] !== 'view') {
+        candidate.pathname=appPath('/'+detail[1]+'/view/');
+        candidate.searchParams.set('id',decodeURIComponent(detail[2]));
+      }
       const pathWithSuffix = `${candidate.pathname}${candidate.search}${candidate.hash}`;
       const alreadyScoped = BASE && (candidate.pathname === BASE || candidate.pathname.startsWith(`${BASE}/`));
       targetPath = alreadyScoped ? pathWithSuffix : appPath(pathWithSuffix);
@@ -109,12 +119,13 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       for (const client of clients) {
-        if ('focus' in client) {
-          void client.navigate(link);
-          return client.focus();
+        const clientUrl = new URL(client.url);
+        if (clientUrl.origin === self.location.origin && (BASE ? clientUrl.pathname === BASE || clientUrl.pathname.startsWith(BASE + '/') : !/^\/(orbit|ravin|atlas|waypoint)(\/|$)/.test(clientUrl.pathname)) && !clientUrl.pathname.includes('/arrow/') && 'focus' in client) {
+          return client.navigate(link).then(() => client.focus());
         }
       }
       return self.clients.openWindow?.(link);
     }),
   );
 });
+
