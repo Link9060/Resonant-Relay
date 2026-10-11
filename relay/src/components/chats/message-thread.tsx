@@ -49,6 +49,7 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
   const [historyError, setHistoryError] = useState('');
   const [hasOlder, setHasOlder] = useState(initialHasOlder ?? initialMessages.length === 200);
   const historyCursor = useRef(initialHistoryCursor ?? initialMessages[0] ?? null);
+  const recoveryCursor = useRef(initialHistoryCursor ?? initialMessages[0] ?? null);
   const historyPending = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
@@ -76,11 +77,11 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
         while (requested && active) {
           requested = false;
           const version = revision.current;
-          const snapshot = await recoverChat(supabase, conversationId, currentUserId, historyCursor.current);
+          const snapshot = await recoverChat(supabase, conversationId, currentUserId, recoveryCursor.current);
           if (!active) return;
           // Realtime events and successful local writes win over an older fetch.
           if (revision.current !== version || historyPending.current) { requested = true; continue; }
-          if (!historyCursor.current) { historyCursor.current = snapshot.oldest; setHasOlder(snapshot.hasOlder); }
+          if (!recoveryCursor.current) { recoveryCursor.current = snapshot.oldest; historyCursor.current = snapshot.oldest; setHasOlder(snapshot.hasOlder); }
           setMessages(snapshot.messages as Message[]);
           setReactions(snapshot.reactions as Reaction[]);
           setPinnedIds(new Set(snapshot.pins));
@@ -166,6 +167,7 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
       ]) : [{data:[],error:null},{data:[],error:null},{data:[],error:null}];
       if (hidden.error || reactionsResult.error || pins.error) throw new Error('History details could not load.');
       historyCursor.current = data?.[data.length - 1] ?? null;
+      if (historyCursor.current) recoveryCursor.current = historyCursor.current;
       const hiddenIds = new Set((hidden.data ?? []).map(row => row.message_id));
       const visible = [...(data ?? [])].reverse().filter(message => !hiddenIds.has(message.id));
       if (visible.length && scrollRef.current) prependScroll.current = {height:scrollRef.current.scrollHeight,top:scrollRef.current.scrollTop};
