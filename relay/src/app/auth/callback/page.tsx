@@ -1,7 +1,7 @@
 'use client';
 
 import { PageLoading } from '@/components/page-loading';
-import { appUrl, BASE_PATH, IS_BETA, isAllowedArrowReturnPath } from '@/lib/config';
+import { appUrl, defaultSignedInUrl, BASE_PATH, IS_BETA, isAllowedArrowReturnPath } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { useSearchParams } from 'next/navigation';
@@ -54,8 +54,8 @@ async function goAfterSignIn() {
   const arrowDestination = profile?.onboarding_completed_at ? consumeArrowPostAuthUrl() : null;
   if(arrowDestination){window.location.replace(arrowDestination);return;}
 
-  const destination = profile?.onboarding_completed_at ? appUrl(IS_BETA ? '/space/' : '/') : appUrl('/onboarding/');
-  window.location.replace(`${window.location.origin}${destination}`);
+  const destination = profile?.onboarding_completed_at ? defaultSignedInUrl() : appUrl('/onboarding/');
+  window.location.replace(new URL(destination, window.location.origin).href);
 }
 
 function Callback() {

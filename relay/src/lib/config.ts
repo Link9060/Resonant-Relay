@@ -113,3 +113,7 @@ export function normalizeAppLink(link: string) {
     return target.pathname + target.search + target.hash;
   } catch { return '/'; }
 }
+
+export function defaultSignedInUrl() {
+  return ARROW_INTEGRATION_ENABLED ? ARROW_ORBIT_URL : appPageUrl(IS_BETA ? '/space' : '/');
+}
