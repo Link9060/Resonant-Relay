@@ -1,5 +1,6 @@
 'use client';
 
+import { recoverChat } from '@/lib/chat-recovery';
 import { MessageComposer } from '@/components/chats/message-composer';
 import { UserRoleBadge } from '@/components/user-role-badge';
 import { LeaveGroupButton } from '@/components/groups/leave-group-button';
@@ -23,9 +24,9 @@ const REACTIONS = ['👍', '❤️', '😂', '‼️', '❓', '🎉'];
 
 export function MessageThread({ conversationId, title: initialTitle, isGroup, groupId, currentUserId, participantsById, preferencesById, rolesById, initialMessages, initialReactions, initialPinnedIds, initialMuted, initialHistoryCursor, initialHasOlder }: { conversationId: string; title: string; isGroup: boolean; groupId: string | null; currentUserId: string; participantsById: ProfileMap; preferencesById: PreferenceMap; rolesById: Record<string, 'admin' | 'member'>; initialMessages: Message[]; initialReactions: Reaction[]; initialPinnedIds: string[]; initialMuted: boolean; initialHistoryCursor?: {id:string;created_at:string} | null; initialHasOlder?: boolean }) {
   const [title, setTitle] = useState(initialTitle);
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [reactions, setReactions] = useState<Reaction[]>(initialReactions);
-  const [pinnedIds, setPinnedIds] = useState(new Set(initialPinnedIds));
+  const [messages, updateMessages] = useState<Message[]>(initialMessages);
+  const [reactions, updateReactions] = useState<Reaction[]>(initialReactions);
+  const [pinnedIds, updatePinnedIds] = useState(new Set(initialPinnedIds));
   const [muted, setMuted] = useState(initialMuted);
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
   const [membersOpen, setMembersOpen] = useState(false);
@@ -48,6 +49,7 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
   const [historyError, setHistoryError] = useState('');
   const [hasOlder, setHasOlder] = useState(initialHasOlder ?? initialMessages.length === 200);
   const historyCursor = useRef(initialHistoryCursor ?? initialMessages[0] ?? null);
+  const recoveryCursor = useRef(initialHistoryCursor ?? initialMessages[0] ?? null);
   const historyPending = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
@@ -55,9 +57,43 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingChannelRef = useRef<RealtimeChannel | null>(null);
   const currentIsAdmin = rolesById[currentUserId] === 'admin';
+  const revision = useRef(0);
+  const setMessages = useCallback((value: React.SetStateAction<Message[]>) => { revision.current++; updateMessages(value); }, []);
+  const setReactions = useCallback((value: React.SetStateAction<Reaction[]>) => { revision.current++; updateReactions(value); }, []);
+  const setPinnedIds = useCallback((value: React.SetStateAction<Set<string>>) => { revision.current++; updatePinnedIds(value); }, []);
+  const [recoveryState, setRecoveryState] = useState('');
+  const retryRecovery = useRef<() => void>(() => {});
+
 
   useEffect(() => {
     const supabase = createClient(); let active = true; let typingChannel: RealtimeChannel | null = null;
+    let running = false, requested = false;
+    async function reconcile() {
+      requested = true;
+      if (running || !active) return;
+      running = true;
+      setRecoveryState('Updating messages…');
+      try {
+        while (requested && active) {
+          requested = false;
+          const version = revision.current;
+          const snapshot = await recoverChat(supabase, conversationId, currentUserId, recoveryCursor.current);
+          if (!active) return;
+          // Realtime events and successful local writes win over an older fetch.
+          if (revision.current !== version || historyPending.current) { requested = true; continue; }
+          if (!recoveryCursor.current) { recoveryCursor.current = snapshot.oldest; historyCursor.current = snapshot.oldest; setHasOlder(snapshot.hasOlder); }
+          setMessages(snapshot.messages as Message[]);
+          setReactions(snapshot.reactions as Reaction[]);
+          setPinnedIds(new Set(snapshot.pins));
+        }
+        if (active) setRecoveryState('');
+      } catch { if (active) setRecoveryState('Messages could not sync.'); }
+      finally { running = false; }
+    }
+    const resume = () => { if (document.visibilityState !== 'hidden') void reconcile(); };
+    retryRecovery.current = resume;
+    window.addEventListener('online', resume);
+    document.addEventListener('visibilitychange', resume);
     const messageChannel = supabase.channel(`messages:${conversationId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => {
         const incoming = payload.new as Message;
@@ -67,7 +103,11 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, (payload) => { const updated = payload.new as Message; setMessages((current) => current.map((message) => message.id === updated.id ? updated : message)); })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, (payload) => { const removed = payload.old as { id?: string }; if (removed.id) setMessages((current) => current.filter((message) => message.id !== removed.id)); })
-      .subscribe();
+      .subscribe(status => {
+        if (!active) return;
+        if (status === 'SUBSCRIBED') void reconcile();
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setRecoveryState('Connection interrupted. Reconnecting…');
+      });
     const reactionChannel = supabase.channel(`reactions:${conversationId}`).on('postgres_changes', { event: '*', schema: 'public', table: 'message_reactions' }, (payload) => {
       const oldRow = payload.old as Reaction; const newRow = payload.new as Reaction;
       setReactions((current) => payload.eventType === 'DELETE' ? current.filter((item) => !(item.message_id === oldRow.message_id && item.user_id === oldRow.user_id && item.emoji === oldRow.emoji)) : [...current.filter((item) => !(item.message_id === newRow.message_id && item.user_id === newRow.user_id && item.emoji === newRow.emoji)), newRow]);
@@ -76,10 +116,10 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
         setReactionPulse(pulseKey);
         window.setTimeout(() => setReactionPulse((current) => current === pulseKey ? null : current), 280);
       }
-    }).subscribe();
+    }).subscribe(status => { if (status === 'SUBSCRIBED' && active) void reconcile(); });
     void (async () => { await supabase.realtime.setAuth(); if (!active) return; typingChannel = supabase.channel(`typing:${conversationId}`, { config: { private: true } }).on('broadcast', { event: 'typing' }, ({ payload }) => { const signal = payload as { userId?: string; typing?: boolean }; if (!signal.userId || signal.userId === currentUserId || !participantsById[signal.userId]) return; setTypingUsers((current) => { const next = { ...current }; if (signal.typing) next[signal.userId!] = Date.now() + 3500; else delete next[signal.userId!]; return next; }); }).subscribe(); typingChannelRef.current = typingChannel; })().catch(() => { /* Chat works even if ephemeral typing cannot connect. */ });
-    return () => { active = false; typingChannelRef.current = null; void supabase.removeChannel(messageChannel); void supabase.removeChannel(reactionChannel); if (typingChannel) void supabase.removeChannel(typingChannel); };
-  }, [conversationId, currentUserId, participantsById]);
+    return () => { active = false; window.removeEventListener('online', resume); document.removeEventListener('visibilitychange', resume); retryRecovery.current = () => {}; typingChannelRef.current = null; void supabase.removeChannel(messageChannel); void supabase.removeChannel(reactionChannel); if (typingChannel) void supabase.removeChannel(typingChannel); };
+  }, [conversationId, currentUserId, participantsById, setMessages, setReactions, setPinnedIds]);
 
   useEffect(() => {
     const paths=messages.flatMap(message=>message.attachments ?? []).map(attachment=>attachment.path).filter(path=>!attachmentUrls[path]);
@@ -127,6 +167,7 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
       ]) : [{data:[],error:null},{data:[],error:null},{data:[],error:null}];
       if (hidden.error || reactionsResult.error || pins.error) throw new Error('History details could not load.');
       historyCursor.current = data?.[data.length - 1] ?? null;
+      if (historyCursor.current) recoveryCursor.current = historyCursor.current;
       const hiddenIds = new Set((hidden.data ?? []).map(row => row.message_id));
       const visible = [...(data ?? [])].reverse().filter(message => !hiddenIds.has(message.id));
       if (visible.length && scrollRef.current) prependScroll.current = {height:scrollRef.current.scrollHeight,top:scrollRef.current.scrollTop};
@@ -157,6 +198,7 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
       {membersOpen && <GroupControls title={title} members={members} availableContacts={availableContacts} currentUserId={currentUserId} currentIsAdmin={currentIsAdmin} rolesById={rolesById} preferencesById={preferencesById} error={adminError} onClose={() => setMembersOpen(false)} onRename={rename} onAdd={add} onPromote={promote} onRemove={remove} onReport={(member) => setReportTarget({ userId: member.id, label: member.display_name })} />}
     </header>
 
+    {recoveryState && <div role="status" className="border-b border-border px-4 py-2 text-xs text-ink-muted">{recoveryState}{recoveryState !== 'Updating messages…' && <button type="button" className="ml-3 underline" onClick={() => retryRecovery.current()}>Retry sync</button>}</div>}
     <div ref={scrollRef} onScroll={event => { const pane=event.currentTarget; stickToBottom.current=pane.scrollHeight-pane.scrollTop-pane.clientHeight < 80; }} className="flex-1 overflow-y-auto px-4 py-4">{hasOlder && <button type="button" disabled={historyBusy} onClick={() => void loadOlder()} className="mb-4 rounded-md border border-border px-3 py-2 text-sm text-ink-muted">{historyBusy ? 'Loading history…' : 'Load older messages'}</button>}{attachmentError && <button type="button" className="mb-3 text-sm text-red-500 underline" onClick={()=>setAttachmentUrls({})}>Some attachments could not load. Retry attachments.</button>}{historyError && <p role="alert" className="mb-3 text-sm text-red-500">{historyError}</p>}{messages.length === 0 ? <p className="mt-10 text-center text-sm text-ink-faint">Say hi.</p> : <ul>{messages.map((message, index) => {
       const isMine = message.sender_id === currentUserId;
       const startsGroup = messages[index - 1]?.sender_id !== message.sender_id;
