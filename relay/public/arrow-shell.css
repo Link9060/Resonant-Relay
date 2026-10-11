@@ -1574,3 +1574,7 @@ html[data-arrow-experience="glass"] .arrow-os-root .arrow-os-content { backgroun
 html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-filter:none; box-shadow:0 8px 24px #0002; border-radius:12px; }
 @media(max-width:680px) { .arrow-os-root .arrow-os-content { grid-template-columns:repeat(2,minmax(0,1fr)); width:min(320px,calc(100vw - 32px)); } .arrow-os-root .arrow-os-control { font-size:14px; } }
 @media(forced-colors:active) { .arrow-os-root .arrow-os-content { border:1px solid CanvasText; background:Canvas; color:CanvasText; box-shadow:none; } }
+
+.arrow-os-task-filters { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+.arrow-os-task-filters button { padding:8px 12px; color:inherit; background:rgb(var(--arrow-os-fg) / .04); border:1px solid rgb(var(--arrow-os-fg) / .18); border-radius:8px; }
+.arrow-os-task-filters button[aria-pressed="true"] { border-color:var(--arrow-accent-color); background:rgba(var(--arrow-accent-rgb),.12); }

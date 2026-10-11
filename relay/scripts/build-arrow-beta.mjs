@@ -30,7 +30,7 @@ function compile(repo,center,key){
 const orbit=compile('Resonant-Orbit','orbit','NEXT_PUBLIC_ORBIT_BASE_PATH');
 run(process.execPath,['--test','tests/arrow-shell.test.cjs','tests/entertainment.test.cjs','tests/auth-gate.test.cjs','tests/orbit-refinement.test.cjs','tests/module-routing.test.cjs'],orbit,{ARROW_SHELL_SOURCE:path.join(relay,'public/arrow-shell.js')});
 const waypoint=compile('Resonant-Waypoint','waypoint','NEXT_PUBLIC_WAYPOINT_BASE_PATH');
-run(process.execPath,['--test','tests/account-safety.test.cjs'],waypoint);
+run(process.execPath,['--test','tests/account-safety.test.cjs','tests/daily-plan.test.cjs'],waypoint);
 const atlas=source('Resonant-Field');run(process.execPath,['--test','tests/account-safety.test.mjs'],atlas);cpSync(path.join(atlas,'apps/explorer'),path.join(output,'arrow','atlas'),{recursive:true});
 const ravin=source('Project-R.A.V.I.N.-1.1');run(process.execPath,['--test','tests/arrow-account-safety.test.cjs'],ravin);cpSync(path.join(ravin,'ravin/public'),path.join(output,'arrow','ravin'),{recursive:true});
 const common=path.join(output,'arrow');
