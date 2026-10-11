@@ -55,6 +55,9 @@ function versionHtml(dir){for(const entry of readdirSync(dir,{withFileTypes:true
       if(url.hostname!=='link9060.github.io'||!url.pathname.startsWith(betaPrefix+'/')||! /\.(?:js|css)$/.test(url.pathname))return match;
       const asset=path.join(output,decodeURIComponent(url.pathname.slice(betaPrefix.length)));
       if(!existsSync(asset))throw new Error('Missing versioned asset: '+url.pathname);
+      // Next/Turbopack owns chunk identity and derives a shared suffix from its runtime URL.
+      // Per-file query hashes strand runtime dependencies before React can hydrate.
+      if(url.pathname.includes('/_next/'))return match;
       url.searchParams.set('v',createHash('sha256').update(readFileSync(asset)).digest('hex').slice(0,12));
       return start+quote+url.pathname+url.search+url.hash+quote;
     });
