@@ -150,7 +150,8 @@ export default function DashboardPage() {
     let userId=''; let refreshing=false;
     const refreshPlanning=async()=>{if(!active||!userId||refreshing)return;refreshing=true;try{const [tasks,calendar]=await Promise.all([supabase.from('todos').select('*').eq('user_id',userId).order('completed').order('due_on',{nullsFirst:false}).order('position').limit(100),supabase.from('relay_calendar_events').select('id,title,event_date,start_time,is_all_day').eq('user_id',userId).gte('event_date',localDateKey()).order('event_date').order('start_time').limit(100)]);if(!active)return;setState(current=>current?{...current,todos:tasks.error?current.todos:tasks.data??[],taskError:!!tasks.error,events:calendar.error?current.events:[...current.events.filter(e=>!e.id.startsWith('shared-')),...(calendar.data??[]).map(event=>({id:'shared-'+event.id,title:event.title,startsAt:event.event_date+'T'+(event.start_time||'12:00:00'),source:'ARROW calendar',href:(IS_BETA?'/Resonant-Relay/arrow/waypoint/':'/waypoint/')+'?tab=calendar&item='+encodeURIComponent(event.id),isAllDay:event.is_all_day}))].sort((a,b)=>new Date(a.startsAt).getTime()-new Date(b.startsAt).getTime()).slice(0,24)}:current);}finally{refreshing=false;}};
     const refresh=()=>void refreshPlanning();const storage=(event:StorageEvent)=>{if(event.key==='arrow_shared_data_ping_v1')refresh();};
-    window.addEventListener('arrow:planning-changed',refresh);window.addEventListener('focus',refresh);window.addEventListener('storage',storage);
+    window.addEventListener('arrow:planning-changed',refresh);window.addEventListener('focus',refresh);window.addEventListener('storage',storage);window.addEventListener('online',refresh);
+    const visible=()=>{if(!document.hidden)refresh();};document.addEventListener('visibilitychange',visible);
     const poll=window.setInterval(()=>{if(!document.hidden)refresh();},30000);
 
     void (async () => {
@@ -245,7 +246,7 @@ export default function DashboardPage() {
       active = false;
       if (notificationChannel) void supabase.removeChannel(notificationChannel);
       if (planningChannel) void supabase.removeChannel(planningChannel);
-      window.clearInterval(poll);window.removeEventListener('arrow:planning-changed',refresh);window.removeEventListener('focus',refresh);window.removeEventListener('storage',storage);
+      window.clearInterval(poll);window.removeEventListener('online',refresh);document.removeEventListener('visibilitychange',visible);window.removeEventListener('arrow:planning-changed',refresh);window.removeEventListener('focus',refresh);window.removeEventListener('storage',storage);
     };
   }, []);
 

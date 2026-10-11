@@ -878,9 +878,9 @@
   async function nextMove() {
     if(BETA_BASE){
       const [tasks,events,plans]=await Promise.all([
-        arrowData('/rest/v1/todos?select=id,title,due_on,completed,position,scheduled_on,scheduled_start&limit=500'),
+        arrowData('/rest/v1/todos?select=id,title,due_on,completed,position,scheduled_on,scheduled_start,depends_on,priority&limit=500'),
         loadCalendarSources().then(result=>result.events),
-        arrowData('/rest/v1/waypoint_items?status=eq.active&select=id,title,source_key,due_date,due_time,depends_on,why,status&limit=100')
+        arrowData('/rest/v1/waypoint_items?status=eq.active&select=id,title,item_type,placement,source_key,due_date,due_time,depends_on,why,status&limit=100')
       ]);
       const {planningCandidates}=await import(BETA_BASE+'/next-move.js?v=beta-repair-1');
       const candidates=planningCandidates({tasks,events,plans,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone});
@@ -898,11 +898,11 @@
   async function previewPlan(start,end){
     if(!BETA_BASE)throw new Error('This preview is available in ARROW Beta.');
     const [tasks,events]=await Promise.all([
-      arrowData('/rest/v1/todos?select=id,title,due_on,completed,position,estimated_minutes,scheduled_on,scheduled_start&limit=500'),
+      arrowData('/rest/v1/todos?select=id,title,due_on,completed,position,estimated_minutes,scheduled_on,scheduled_start,priority,depends_on&limit=500'),
       loadCalendarSources().then(result=>result.events)
     ]);
     const {buildSchedule}=await import(BETA_BASE+'/autoPlanner.js?v=beta-repair-1');
-    return {...buildSchedule({tasks,events,start,end,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone}),source:'calendar',can_apply:false};
+    return {...buildSchedule({tasks,events,start,end,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone}),source:'calendar',can_apply:true};
   }
 
   function moduleRavinProfile(module) {
@@ -1907,6 +1907,20 @@
   window.addEventListener('resize', repositionPanel);
   window.visualViewport?.addEventListener('resize', repositionPanel);
 
+  let planningPanelRefresh;
+  const refreshPlanningPanel=()=>{
+    if(document.hidden || !['notes','tasks','calendar'].includes(state.activePanel)) return;
+    // Incoming changes must not discard an unsaved quick-add draft.
+    if(state.panelBody.querySelector('textarea')?.value?.trim() || state.panelBody.querySelector('input[type=\"text\"]')?.value?.trim()) return;
+    if(state.panelBody.contains(document.activeElement) && document.activeElement.matches('input,textarea,select,[contenteditable]')) return;
+    clearTimeout(planningPanelRefresh);
+    planningPanelRefresh=setTimeout(()=>{calendarLoad=null;if(['notes','tasks','calendar'].includes(state.activePanel))renderPanel(state.activePanel);},200);
+  };
+  window.addEventListener('arrow:planning-changed',refreshPlanningPanel);
+  window.addEventListener('online',refreshPlanningPanel);
+  window.addEventListener('focus',refreshPlanningPanel);
+  document.addEventListener('visibilitychange',refreshPlanningPanel);
+  setInterval(refreshPlanningPanel,30000);
   let shellAccountId=currentArrowUserId();
   window.addEventListener('storage', event => {
     if(event.key===ARROW_AUTH_STORAGE_KEY){
@@ -1915,7 +1929,6 @@
       return;
     }
     if (event.key === 'arrow_shared_data_ping_v1') {
-      if (['notes', 'tasks', 'calendar'].includes(state.activePanel)) renderPanel(state.activePanel);
       window.dispatchEvent(new CustomEvent('arrow:planning-changed'));
       return;
     }
