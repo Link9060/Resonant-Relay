@@ -31,3 +31,11 @@ test('beta packaging preserves Next chunk identity while versioning custom asset
     assert.match(result, /arrow-shell\.css\?v=[a-f0-9]{12}/);
   } finally { fs.rmSync(output, {recursive:true, force:true}); }
 });
+
+test('Next client layout props and planner module imports receive a fresh custom asset revision',async()=>{
+ const {reviseShellReferences,revisePlannerReferences}=await import('../scripts/shell-revision.mjs');
+ const layout='<Script src={`${base}/arrow-shell.js?v=review-20261006`} /><link href={`${base}/arrow-shell.css?v=review-20261006`} />';
+ const revised=reviseShellReferences(layout,'abc123');assert.ok(!revised.includes('review-20261006'));assert.equal((revised.match(/v=abc123/g)||[]).length,2);
+ const moduleSource="import {localClock} from './autoPlanner.js'; const load=()=>import(base+'/next-move.js?v=beta-repair-1');";
+ const result=revisePlannerReferences(moduleSource,'planner123','next123');assert.match(result,/autoPlanner.js\?v=planner123/);assert.match(result,/next-move.js\?v=next123/);assert.ok(!result.includes('beta-repair-1'));
+});

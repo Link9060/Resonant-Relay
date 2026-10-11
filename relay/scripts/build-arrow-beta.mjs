@@ -3,6 +3,7 @@ import {cpSync,existsSync,mkdirSync,readFileSync,writeFileSync,rmSync,readdirSyn
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
+import {reviseShellReferences,revisePlannerReferences} from './shell-revision.mjs';
 
 const relay=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const work=path.join(relay,'.arrow-beta-build');
@@ -11,7 +12,8 @@ const base='/Resonant-Relay/arrow';
 const manifest=JSON.parse(readFileSync(path.join(relay,'scripts/arrow-beta-centers.json'),'utf8'));
 const run=(command,args,cwd,env={})=>execFileSync(command,args,{cwd,env:{...process.env,...env},stdio:'inherit'});
 if(process.env.NEXT_PUBLIC_RELAY_DEPLOY_TARGET!=='github-pages')throw new Error('ARROW beta packaging must use the GitHub Pages beta target.');
-run('npm',['run','build'],relay);
+const shellRevision=createHash('sha256').update(readFileSync(path.join(relay,'public/arrow-shell.js'))).update(readFileSync(path.join(relay,'public/arrow-shell.css'))).update(JSON.stringify(manifest)).update(readFileSync(fileURLToPath(import.meta.url))).digest('hex').slice(0,12);
+run('npm',['run','build'],relay,{NEXT_PUBLIC_ARROW_SHELL_REVISION:shellRevision});
 rmSync(work,{recursive:true,force:true});mkdirSync(work,{recursive:true});
 function source(repo){
   if(process.env.ARROW_BETA_LOCAL_ROOT)return path.join(process.env.ARROW_BETA_LOCAL_ROOT,repo);
@@ -20,6 +22,8 @@ function source(repo){
 }
 function compile(repo,center,key){
   const dir=source(repo);if(!process.env.ARROW_BETA_LOCAL_ROOT)run('npm',existsSync(path.join(dir,'package-lock.json'))?['ci']:['install','--no-audit','--no-fund'],dir);
+  const layout=path.join(dir,'src/app/layout.tsx');
+  if(existsSync(layout))writeFileSync(layout,reviseShellReferences(readFileSync(layout,'utf8'),shellRevision));
   run('npm',['run','build'],dir,{[key]:base+'/'+center,NEXT_PUBLIC_ARROW_SHELL_BASE:base});
   cpSync(path.join(dir,'out'),path.join(output,'arrow',center),{recursive:true});return dir;
 }
@@ -34,6 +38,12 @@ for(const name of ['arrow-shell.js','arrow-shell.css'])cpSync(path.join(relay,'p
 cpSync(path.join(relay,'public/arrow-beta-guard.js'),path.join(common,'arrow-beta-guard.js'));
 cpSync(path.join(ravin,'ravin/src/nextMove.js'),path.join(common,'next-move.js'));
 cpSync(path.join(ravin,'ravin/src/autoPlanner.js'),path.join(common,'autoPlanner.js'));
+const plannerRevision=createHash('sha256').update(readFileSync(path.join(common,'autoPlanner.js'))).digest('hex').slice(0,12);
+const nextFile=path.join(common,'next-move.js');
+writeFileSync(nextFile,revisePlannerReferences(readFileSync(nextFile,'utf8'),plannerRevision,'unused'));
+const nextRevision=createHash('sha256').update(readFileSync(nextFile)).digest('hex').slice(0,12);
+for(const shell of [path.join(output,'arrow-shell.js'),path.join(common,'arrow-shell.js')])writeFileSync(shell,revisePlannerReferences(readFileSync(shell,'utf8'),plannerRevision,nextRevision));
+
 function patchHtml(dir){for(const entry of readdirSync(dir,{withFileTypes:true})){const file=path.join(dir,entry.name);if(entry.isDirectory())patchHtml(file);else if(entry.name.endsWith('.html')){
   let html=readFileSync(file,'utf8').replace(/(["'])\/arrow-shell\.(js|css)(\?[^"']*)?\1/g,(_m,quote,ext)=>quote+base+'/arrow-shell.'+ext+'?v=review-20261006'+quote);
   html=html.replace(/<script[^>]*src=["']\/arrow-auth-guard\.js[^"']*["'][^>]*><\/script>/g,'');
