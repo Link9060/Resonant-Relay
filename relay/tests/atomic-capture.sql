@@ -10,12 +10,26 @@ begin
  if saved_end <> '18:00'::time then raise exception 'Duration failed'; end if;
  if exists(select 1 from public.todos where user_id=owner_id and source_key='waypoint:fixture-future') then raise exception 'Undated future became deadline'; end if;
  if not exists(select 1 from public.waypoint_items where user_id=owner_id and source_key='waypoint:fixture-future' and due_date is null) then raise exception 'Future missing'; end if;
+ perform public.arrow_activate_action('waypoint:fixture-future','2026-10-12');
+ if not exists(select 1 from public.todos where user_id=owner_id and source_key='waypoint:fixture-future' and due_on='2026-10-12') then raise exception 'Future action activation failed'; end if;
+ if exists(select 1 from public.waypoint_items where user_id=owner_id and source_key='waypoint:fixture-future' and status='active') then raise exception 'Activation left duplicate action'; end if;
+ perform public.arrow_activate_action('waypoint:fixture-future','2026-10-12');
  result:=public.arrow_apply_capture(capture,'[{"id":"fixture-task","title":"Duplicate","type":"task","date":"2026-10-12"}]'::jsonb);
  if not (result->>'already_applied')::boolean then raise exception 'Retry not idempotent'; end if;
  select id into task_id from public.todos where user_id=owner_id and source_key='waypoint:fixture-task';
  perform public.arrow_schedule_task(task_id,'2026-12-30','06:00','06:20');
  if not exists(select 1 from public.todos where id=task_id and scheduled_on='2026-12-30') then raise exception 'Task schedule missing'; end if;
  if not exists(select 1 from public.relay_calendar_events where user_id=owner_id and source_key='schedule:'||task_id::text and end_time='06:20') then raise exception 'Calendar schedule missing'; end if;
+ update public.todos set title='ARROW renamed fixture' where id=task_id;
+ if not exists(select 1 from public.relay_calendar_events where user_id=owner_id and source_key='schedule:'||task_id::text and title='ARROW renamed fixture') then raise exception 'Rename did not sync'; end if;
+ update public.relay_calendar_events set title='ARROW calendar edit',start_time='07:00',end_time='07:45' where user_id=owner_id and source_key='schedule:'||task_id::text;
+ if not exists(select 1 from public.todos where id=task_id and title='ARROW calendar edit' and scheduled_start='07:00' and estimated_minutes=45) then raise exception 'Calendar edit did not sync'; end if;
+ update public.todos set completed=true where id=task_id;
+ if exists(select 1 from public.relay_calendar_events where user_id=owner_id and source_key='schedule:'||task_id::text) then raise exception 'Completion left a blocked calendar slot'; end if;
+ update public.todos set completed=false where id=task_id;
+ if not exists(select 1 from public.relay_calendar_events where user_id=owner_id and source_key='schedule:'||task_id::text) then raise exception 'Reopening lost calendar block'; end if;
+ delete from public.relay_calendar_events where user_id=owner_id and source_key='schedule:'||task_id::text;
+ if exists(select 1 from public.todos where id=task_id and scheduled_on is not null) then raise exception 'Calendar delete did not unschedule task'; end if;
  begin
   perform public.arrow_schedule_task(task_id,'2026-10-12','16:30','17:00');
   raise exception 'Collision was accepted';

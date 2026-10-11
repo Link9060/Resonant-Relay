@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Node CommonJS regression test. */
 const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');const {JSDOM}=require('jsdom');
 test('shared panel refreshes on same-tab changes and reconnect without discarding draft input',async()=>{
  const dom=new JSDOM('<div id="panel"><textarea></textarea></div>',{pretendToBeVisual:true});const {window}=dom;const state={activePanel:'notes',panelBody:window.document.getElementById('panel')};let renders=0;
