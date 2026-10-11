@@ -1037,12 +1037,17 @@
     } finally { if (control) { delete control.dataset.busy; control.disabled = false; } }
   }
 
+  let taskListView = "open";
+  let taskListPage = 0;
   async function renderTasks() {
     if (state.activePanel !== 'tasks') return;
     const version = ++state.renderVersion;
     state.panelBody.innerHTML = '<div class="arrow-os-loading" role="status">Loading shared tasks…</div>';
     try {
-      const tasks = await arrowData('/rest/v1/todos?select=id,title,due_on,completed,position,created_at&order=completed.asc,due_on.asc,position.asc,created_at.asc&limit=80');
+      const filter = taskListView==='all' ? '' : '&completed=eq.'+(taskListView==='completed');
+      const order = taskListView==='open' ? 'due_on.asc,position.asc,created_at.asc,id.asc' : 'created_at.desc,id.asc';
+      const page = await arrowData('/rest/v1/todos?select=id,title,due_on,completed,position,created_at,scheduled_on,scheduled_start'+filter+'&order='+order+'&limit=81&offset='+taskListPage*80);
+      const tasks = (page || []).slice(0,80);
       if (state.activePanel !== 'tasks' || version !== state.renderVersion) return;
       state.panelBody.innerHTML =
         ownerNote('today', 'Waypoint is the planning view. Relay and RAVIN use this exact same task data.') +
@@ -1051,14 +1056,18 @@
           '<input type="date" aria-label="Due date" required />' +
           '<button type="submit" aria-label="Add task">' + icon('plus') + '</button>' +
         '</form>' +
+        '<div class="arrow-os-task-filters" role="group" aria-label="Task view">'+['open','completed','all'].map(view=>'<button type="button" data-task-view="'+view+'" aria-pressed="'+(view===taskListView)+'">'+(view==='open'?'Open':view==='completed'?'Completed':'All')+'</button>').join('')+'</div>'+
+        '<p class="arrow-os-panel-copy">'+(taskListView==='open'?'Open tasks · completed work is in Completed.':'Page '+(taskListPage+1))+'</p>'+
         '<div class="arrow-os-list">' +
           (tasks?.length ? tasks.map(task =>
             '<div class="arrow-os-list-row ' + (task.completed ? 'is-done' : '') + '" data-id="' + escapeAttr(task.id) + '">' +
-              '<label><input type="checkbox" ' + (task.completed ? 'checked' : '') + ' /><span>' + escapeHtml(task.title) + '<small>' + escapeHtml(task.due_on || '') + '</small></span></label>' +
+              '<label><input type="checkbox" ' + (task.completed ? 'checked' : '') + ' /><span>' + escapeHtml(task.title) + '<small>' + escapeHtml((task.due_on || 'No deadline')+(task.scheduled_on?' · Scheduled '+task.scheduled_on+' '+(task.scheduled_start?.slice(0,5)||''):'')) + '</small></span></label>' +
               '<button type="button" class="arrow-os-row-delete" aria-label="Delete task">' + icon('trash') + '</button>' +
             '</div>'
-          ).join('') : panelEmpty('No tasks yet.')) +
-        '</div>';
+          ).join('') : panelEmpty(taskListView==='open'?'No open tasks.':'No tasks in this view.')) +
+        '</div><div class="arrow-os-task-filters"><button type="button" data-task-page="previous" '+(taskListPage===0?'disabled':'')+'>Previous tasks</button><button type="button" data-task-page="next" '+((page||[]).length<=80?'disabled':'')+'>Next tasks</button></div>';
+      state.panelBody.querySelectorAll('[data-task-view]').forEach(button=>button.addEventListener('click',()=>{taskListView=button.dataset.taskView;taskListPage=0;renderTasks();}));
+      state.panelBody.querySelectorAll('[data-task-page]').forEach(button=>button.addEventListener('click',()=>{taskListPage=Math.max(0,taskListPage+(button.dataset.taskPage==='next'?1:-1));renderTasks();}));
 
       const form = state.panelBody.querySelector('.arrow-os-task-form');
       form.querySelector('input[type="date"]').value = localDateInputValue();
@@ -1111,30 +1120,37 @@
           '<div class="arrow-os-form-grid">' +
             '<input type="date" aria-label="Event date" required />' +
             '<input type="time" aria-label="Event time" />' +
+            '<input type="time" aria-label="Event end time" disabled />' +
           '</div>' +
           '<button type="submit">Add shared event</button>' +
         '</form>' +
         '<div class="arrow-os-list arrow-os-events">' +
           (events?.length ? events.map(item =>
             '<div class="arrow-os-list-row" data-id="' + escapeAttr(item.id) + '">' +
-              '<div><strong>' + escapeHtml(item.title) + '</strong><span>' + escapeHtml(formatEventDate(item.event_date, item.start_time?.slice(0, 5) || '')) + '</span></div>' +
+              '<div><strong>' + escapeHtml(item.title) + '</strong><span>' + escapeHtml(formatEventDate(item.event_date, item.is_all_day?'All day':(item.start_time?.slice(0,5)||'')+(item.end_time?'–'+item.end_time.slice(0,5):item.start_time?' · end time not set':''))) + '</span></div>' +
               (item.read_only ? '<a class="arrow-os-source-link" href="'+escapeAttr(item.source_href||resolveHref('/relay/')+'calendar/')+'">'+escapeHtml(item.source||'Open source')+' ↗</a>' : '<button type="button" class="arrow-os-row-delete" aria-label="Delete event">' + icon('trash') + '</button>') +
             '</div>'
           ).join('') : panelEmpty('No ARROW events yet.')) +
         '</div>';
 
       const form = state.panelBody.querySelector('.arrow-os-calendar-form');
+      const [startInput,endInput] = form.querySelectorAll('input[type="time"]');
+      startInput.addEventListener('change',()=>{endInput.disabled=!startInput.value;endInput.required=!!startInput.value;if(!startInput.value)endInput.value='';});
       form.querySelector('input[type="date"]').value = localDateInputValue();
       form.addEventListener('submit', async event => {
         event.preventDefault();
-        const [titleInput, dateInput, timeInput] = form.querySelectorAll('input');
+        const [titleInput, dateInput, timeInput, endInput] = form.querySelectorAll('input');
         const userId = currentArrowUserId();
         const title = titleInput.value.trim();
         if (!title || !dateInput.value || !userId) return;
+        if(timeInput.value && (!endInput.value || endInput.value<=timeInput.value)) {
+          endInput.setCustomValidity('Choose an end time after the start time.');endInput.reportValidity();
+          endInput.addEventListener('input',()=>endInput.setCustomValidity(''),{once:true});return;
+        }
         const saved = await savePanelAction(form.querySelector('button'), () => arrowData('/rest/v1/relay_calendar_events', {
           method: 'POST',
           headers: { Prefer: 'return=minimal' },
-          body: { user_id: userId, title, event_date: dateInput.value, is_all_day: !timeInput.value, start_time: timeInput.value || null },
+          body: { user_id: userId, title, event_date: dateInput.value, is_all_day: !timeInput.value, start_time: timeInput.value || null, end_time: timeInput.value ? endInput.value : null },
         }));
         if (saved) renderCalendar();
       });

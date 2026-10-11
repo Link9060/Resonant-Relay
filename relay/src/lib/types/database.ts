@@ -70,6 +70,9 @@ export interface Database {
           user_id: string;
           title: string;
           due_on: string;
+          scheduled_on?: string | null;
+          scheduled_start?: string | null;
+          estimated_minutes?: number | null;
           completed: boolean;
           position: number;
           created_at: string;
