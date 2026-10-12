@@ -1578,3 +1578,10 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 .arrow-os-task-filters { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
 .arrow-os-task-filters button { padding:8px 12px; color:inherit; background:rgb(var(--arrow-os-fg) / .04); border:1px solid rgb(var(--arrow-os-fg) / .18); border-radius:8px; }
 .arrow-os-task-filters button[aria-pressed="true"] { border-color:var(--arrow-accent-color); background:rgba(var(--arrow-accent-rgb),.12); }
+
+
+/* Keep tool names intact in the compact launcher. */
+.arrow-os-root .arrow-os-control span { min-width:0; overflow-wrap:normal; word-break:normal; }
+
+.arrow-os-root .arrow-os-control { font-size:12px; gap:6px; padding:8px; }
+@media(max-width:480px) { .arrow-os-root .arrow-os-content { grid-template-columns:repeat(2,minmax(0,1fr)); } .arrow-os-root .arrow-os-control { font-size:13px; } }
