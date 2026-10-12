@@ -7,6 +7,20 @@ const vm=require('node:vm');
 const {JSDOM}=require('jsdom');
 const sourceRoot=process.env.ARROW_RAVIN_SOURCE;
 const flush=()=>new Promise(resolve=>setTimeout(resolve,40));
+test('real stylesheet cascade keeps message bodies and actions out of the label track',{skip:!sourceRoot},()=>{
+ const publicRoot=path.join(sourceRoot,'ravin/public');const html=fs.readFileSync(path.join(publicRoot,'index.html'),'utf8');
+ const styles=[...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map(match=>match[1].split('?')[0]).filter(file=>!file.startsWith('/')&&!file.startsWith('http'));
+ const dom=new JSDOM('<html data-arrow-ravin="true"><head></head><body></body></html>');
+ try {
+  for(const file of styles){const style=dom.window.document.createElement('style');style.textContent=fs.readFileSync(path.join(publicRoot,file),'utf8');dom.window.document.head.appendChild(style);}
+  for(const role of ['user','assistant']){
+   const article=dom.window.document.createElement('article');article.className='ravin-message '+role;article.innerHTML='<div class="ravin-message-role">Label</div><div class="ravin-message-body">A real sentence that should use the wide content column.</div><div class="ravin-message-actions">Copy</div>';dom.window.document.body.appendChild(article);
+   const computed=dom.window.getComputedStyle(article);assert.equal(computed.display,'grid');assert.match(computed.gridTemplateColumns,role==='user'?/^minmax\(0,\s*1fr\) 64px$/ : /^64px minmax\(0,\s*1fr\)$/);
+   assert.equal(computed.gridTemplateAreas,role==='user'?'"body role" "actions ."':'"role body" ". actions"');
+   assert.equal(dom.window.getComputedStyle(article.querySelector('.ravin-message-body')).gridArea,'body');assert.equal(dom.window.getComputedStyle(article.querySelector('.ravin-message-actions')).gridArea,'actions');
+  }
+ }finally{dom.window.close();}
+});
 async function fixture(){
  const dom=new JSDOM('<!doctype html><html data-arrow-ravin="true"><body></body></html>',{url:'https://example.test/arrow/ravin/',runScripts:'outside-only',pretendToBeVisual:true});
  const w=dom.window;
