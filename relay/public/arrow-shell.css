@@ -1582,3 +1582,6 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 
 /* Keep tool names intact in the compact launcher. */
 .arrow-os-root .arrow-os-control span { min-width:0; overflow-wrap:normal; word-break:normal; }
+
+.arrow-os-root .arrow-os-control { font-size:12px; gap:6px; padding:8px; }
+@media(max-width:480px) { .arrow-os-root .arrow-os-content { grid-template-columns:repeat(2,minmax(0,1fr)); } .arrow-os-root .arrow-os-control { font-size:13px; } }

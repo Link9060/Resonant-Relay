@@ -1861,17 +1861,20 @@
     updateHostTheme();
   }
 
-  function closeEverythingOnOutsidePointer(event) {
-    const insideRoot = [...state.instances].some(instance => instance.root.contains(event.target));
-    const insidePanel = state.panelEl?.contains(event.target);
-    if (insideRoot || insidePanel) return;
-
+  function closeSharedOverlays() {
     closePanel(false);
     state.instances.forEach(instance => {
       instance.pinned = false;
       instance.root.dataset.pinned = 'false';
       setOpen(instance, false);
     });
+  }
+
+  function closeEverythingOnOutsidePointer(event) {
+    const insideRoot = [...state.instances].some(instance => instance.root.contains(event.target));
+    const insidePanel = state.panelEl?.contains(event.target);
+    if (insideRoot || insidePanel) return;
+    closeSharedOverlays();
   }
 
   document.addEventListener('pointerdown', closeEverythingOnOutsidePointer);
@@ -2011,6 +2014,7 @@
     mountAll,
     openPanel,
     closePanel,
+    closeOverlays: closeSharedOverlays,
     applyTheme,
     applyMotion,
     applyAccent,

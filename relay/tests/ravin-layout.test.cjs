@@ -19,7 +19,7 @@ async function fixture(){
  w.localStorage.setItem('ravin_user',JSON.stringify({id:'fixture',email:'fixture@example.test'}));
  w.localStorage.setItem('ravin_token_expires_at',String(Date.now()+3600000));
  w.fetch=async()=>({ok:true,status:200,json:async()=>[],text:async()=> '[]'});
- w.ArrowOS={closePanel(){}};
+ w.ArrowOS={closedOverlays:0,closeOverlays(){this.closedOverlays++;},closePanel(){}};
  w.eval(fs.readFileSync(path.join(sourceRoot,'ravin/public/ravin-shell.js'),'utf8'));
  await flush();
  w.eval(fs.readFileSync(path.join(sourceRoot,'ravin/public/ravin-clean.js'),'utf8'));
@@ -36,10 +36,16 @@ test('collapse is a separate keyboard button; search shortcut reveals collapsed 
 });
 test('settings uses a dialog, Escape restores focus, and shared panels close it',{skip:!sourceRoot},async()=>{
  const f=await fixture();try{
- const anchor=f.d.getElementById('settingsBtn');anchor.click();await flush();let pop=f.d.querySelector('.ravin-popover');assert.equal(pop.getAttribute('role'),'dialog');assert.ok(pop.querySelector('[data-ravin-appearance]'));assert.match(pop.style.getPropertyValue('--ravin-popover-top'),/px$/);
+ const anchor=f.d.getElementById('settingsBtn');anchor.click();await flush();let pop=f.d.querySelector('.ravin-popover');assert.ok(f.w.ArrowOS.closedOverlays>0);assert.equal(pop.getAttribute('role'),'dialog');assert.ok(pop.querySelector('[data-ravin-appearance]'));assert.match(pop.style.getPropertyValue('--ravin-popover-top'),/px$/);
  pop.dispatchEvent(new f.w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));assert.equal(f.d.querySelector('.ravin-popover'),null);assert.equal(f.d.activeElement,anchor);assert.equal(anchor.getAttribute('aria-expanded'),'false');
  anchor.click();await flush();f.w.dispatchEvent(new f.w.CustomEvent('arrow:panelopen'));assert.equal(f.d.querySelector('.ravin-popover'),null);assert.equal(anchor.getAttribute('aria-expanded'),'false');
  }finally{f.close();}
+});
+test('closing shared overlays also dismisses a keyboard-pinned launcher',()=>{
+ const source=fs.readFileSync('public/arrow-shell.js','utf8');const instance={root:{dataset:{}},pinned:true};const open=[];let panelClosed=false;
+ const scope={state:{instances:[instance]},closePanel:()=>{panelClosed=true;},setOpen:(_instance,value)=>open.push(value)};
+ vm.runInNewContext(source.slice(source.indexOf('  function closeSharedOverlays('),source.indexOf('  function closeEverythingOnOutsidePointer(')),scope);scope.closeSharedOverlays();
+ assert.equal(panelClosed,true);assert.equal(instance.pinned,false);assert.deepEqual(open,[false]);
 });
 test('RAVIN appearance positioning honors the smaller keyboard viewport',{skip:!sourceRoot},()=>{
  const source=fs.readFileSync(path.join(sourceRoot,'ravin/public/ravin-shell.js'),'utf8');
