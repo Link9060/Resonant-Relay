@@ -558,28 +558,25 @@
   function positionPanel(anchor) {
     const panel = ensurePanel();
     const rect = anchor?.getBoundingClientRect();
-    const mobile = innerWidth <= 680;
-    const availableHeight = window.visualViewport?.height || innerHeight;
-
-    if (mobile) {
-      panel.style.left = '12px';
-      panel.style.right = '12px';
-      panel.style.top = Math.max(64, (rect?.bottom || 58) + 8) + 'px';
-      panel.style.width = 'auto';
-    } else {
-      const right = Math.max(12, innerWidth - (rect?.right || innerWidth - 20));
-      panel.style.left = 'auto';
-      panel.style.right = right + 'px';
-      panel.style.top = Math.max(58, (rect?.bottom || 50) + 8) + 'px';
-      panel.style.width = 'min(430px, calc(100vw - 24px))';
-    }
-    const top = Math.min(parseFloat(panel.style.top), Math.max(12, availableHeight - 160));
+    const viewport = window.visualViewport;
+    const availableWidth = viewport?.width || innerWidth;
+    const availableHeight = viewport?.height || innerHeight;
+    const offsetLeft = viewport?.offsetLeft || 0;
+    const offsetTop = viewport?.offsetTop || 0;
+    const margin = 12;
+    const width = Math.max(0, Math.min(430, availableWidth - margin * 2));
+    const left = Math.max(offsetLeft + margin, Math.min((rect?.right || offsetLeft + availableWidth - margin) - width, offsetLeft + availableWidth - width - margin));
+    const top = Math.max(offsetTop + margin, Math.min((rect?.bottom || offsetTop + 50) + 8, offsetTop + availableHeight - Math.min(240, availableHeight - margin * 2) - margin));
+    panel.style.left = left + 'px';
+    panel.style.right = 'auto';
+    panel.style.width = width + 'px';
     panel.style.top = top + 'px';
-    panel.style.maxHeight = Math.max(80, availableHeight - top - 12) + 'px';
+    panel.style.maxHeight = Math.max(80, offsetTop + availableHeight - top - margin) + 'px';
   }
 
   function openPanel(name, module, anchor) {
     if (!PANEL_LABELS[name]) return;
+    window.dispatchEvent(new CustomEvent('arrow:panelopen', {detail:{name}}));
     const panel = ensurePanel();
     state.renderVersion++;
     state.activePanel = name;
@@ -595,7 +592,9 @@
     renderPanel(name);
 
     state.instances.forEach(instance => {
-      setOpen(instance, true);
+      instance.pinned = false;
+      instance.root.dataset.pinned = 'false';
+      setOpen(instance, false);
       updateInstanceState(instance);
     });
 
@@ -2026,4 +2025,5 @@
     nextMove,
   };
 })();
+
 
