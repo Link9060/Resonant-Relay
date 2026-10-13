@@ -86,3 +86,18 @@ test('shared panel stays inside the viewport even when launched from the left si
   assert.ok(left>=viewport.offsetLeft+12);assert.ok(left+width<=viewport.offsetLeft+viewport.width-12);assert.ok(top>=viewport.offsetTop+12);assert.ok(top+height<=viewport.offsetTop+viewport.height-12);
  }
 });
+test('RAVIN compact appearance removes the color grid and IME Enter does not submit',{skip:!sourceRoot},async()=>{
+ const f=await fixture();try{
+  f.d.getElementById('settingsBtn').click();await flush();assert.equal(f.d.querySelector('.ravin-palette-grid'),null);const select=f.d.querySelector('[data-ravin-experience-select]');assert.ok(select);
+  let writes=0;const original=f.w.Storage.prototype.setItem;f.w.Storage.prototype.setItem=function(key,value){if(key==='ravin_experience')writes++;return original.call(this,key,value);};
+  select.value='still';select.dispatchEvent(new f.w.Event('change',{bubbles:true}));assert.equal(f.w.localStorage.getItem('ravin_experience'),'still');select.value='flow';select.dispatchEvent(new f.w.Event('change',{bubbles:true}));assert.equal(writes,2);
+  const input=f.d.getElementById('messageInput');input.value='In-progress composition';let submitted=0;f.d.getElementById('composer').requestSubmit=()=>submitted++;input.dispatchEvent(new f.w.KeyboardEvent('keydown',{key:'Enter',isComposing:true,bubbles:true,cancelable:true}));assert.equal(submitted,0);
+ }finally{f.close();}
+});
+test('RAVIN drawers consume Escape before navigation and leave unrelated Escape untouched',{skip:!sourceRoot},()=>{
+ for(const file of ['ravin-v02.js','ravin-files-ui.js']){
+  const source=fs.readFileSync(path.join(sourceRoot,'ravin/public',file),'utf8');const start=source.lastIndexOf('    '+(file==='ravin-v02.js'?'addEventListener':'document.addEventListener')+'("keydown"');const end=source.indexOf('\n    });',start)+8;let handler;let open=true;let closed=0;
+  const scope={document:{querySelector:()=>open,addEventListener:(_type,callback)=>{handler=callback;}},addEventListener:(_type,callback)=>{handler=callback;},closeDrawer:()=>closed++};vm.runInNewContext(source.slice(start,end),scope);
+  let prevented=false,stopped=false;handler({key:'Escape',preventDefault:()=>{prevented=true;},stopImmediatePropagation:()=>{stopped=true;}});assert.equal(closed,1);assert.equal(prevented,true);assert.equal(stopped,true);open=false;handler({key:'Escape',preventDefault(){assert.fail('No drawer was open');},stopImmediatePropagation(){assert.fail('No drawer was open');}});assert.equal(closed,1);
+ }
+});
