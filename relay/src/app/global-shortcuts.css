@@ -1,2 +1,10 @@
 /* Desktop shortcut UI is shared across experiences; the component gates mobile rendering. */
+.relay-still-help-trigger { position:fixed; right:18px; bottom:18px; z-index:90; display:inline-flex; align-items:center; gap:7px; min-height:36px; padding:8px 12px; border:1px solid rgb(var(--border)); border-radius:12px; background:rgb(var(--surface-raised)); color:rgb(var(--ink-muted)); font-size:12px; cursor:pointer; }
+.relay-still-overlay { position:fixed; right:18px; bottom:64px; z-index:95; max-width:calc(100vw - 36px); max-height:calc(100dvh - 96px); padding:18px; overflow:auto; overscroll-behavior:contain; border:1px solid rgb(var(--border)); border-radius:18px; background:rgb(var(--surface-raised)); color:rgb(var(--ink)); box-shadow:0 16px 40px rgb(var(--ink) / .1); }
+.relay-still-shortcut-card { width:340px; }
+.relay-still-experience-card { width:420px; }
+.relay-still-overlay-title { margin-bottom:14px; font-size:13px; font-weight:650; }
+.relay-still-shortcut-list { display:grid; gap:10px; }
+.relay-still-shortcut-row { display:flex; align-items:center; gap:12px; font-size:13px; }
+.relay-still-shortcut-row kbd,.relay-still-help-trigger kbd { min-width:30px; font:600 12px/1.4 ui-monospace,monospace; }
 
