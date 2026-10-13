@@ -7,4 +7,5 @@
 .relay-still-shortcut-list { display:grid; gap:10px; }
 .relay-still-shortcut-row { display:flex; align-items:center; gap:12px; font-size:13px; }
 .relay-still-shortcut-row kbd,.relay-still-help-trigger kbd { min-width:30px; font:600 12px/1.4 ui-monospace,monospace; }
+html[data-relay-experience='still'] :is(.relay-still-help-trigger,.relay-still-overlay) { right:auto; }
 
