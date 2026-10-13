@@ -13,7 +13,6 @@ import {
   experiences,
   normalizeExperience,
   normalizePalette,
-  palettes,
   resetExperience,
   saveExperience,
   saveLockIn,
@@ -55,8 +54,6 @@ export function ExperienceControls() {
   const intensity = useSyncExternalStore(subscribe, getIntensitySnapshot, () => DEFAULT_INTENSITY);
   const lockIn = useSyncExternalStore(subscribe, getLockInSnapshot, () => DEFAULT_LOCK_IN);
   const isDefault = experience === DEFAULT_EXPERIENCE && palette === DEFAULT_PALETTE && intensity === DEFAULT_INTENSITY && !lockIn;
-  const singlePalettes = palettes.filter((option) => !option.duo);
-  const duoPalettes = palettes.filter((option) => option.duo);
 
   function update(
     nextExperience: RelayExperience = experience,
@@ -66,84 +63,27 @@ export function ExperienceControls() {
     saveExperience(nextExperience, nextPalette, nextIntensity);
   }
 
-  function renderPaletteOptions(options: typeof palettes) {
-    return options.map((option) => (
-      <button
-        key={option.id}
-        type="button"
-        aria-pressed={palette === option.id}
-        onClick={() => update(experience, option.id)}
-        className="relay-accent-option flex min-w-0 items-center gap-2 rounded-lg border border-border bg-canvas px-2.5 py-2 text-left text-xs text-ink"
-      >
-        <span
-          className="relay-accent-swatch h-3.5 w-3.5 shrink-0 rounded-full"
-          style={{
-            '--swatch-light-a': option.light,
-            '--swatch-light-b': option.secondaryLight,
-            '--swatch-dark-a': option.dark,
-            '--swatch-dark-b': option.secondaryDark,
-          } as CSSProperties}
-          aria-hidden="true"
-        />
-        <span className="min-w-0 flex-1 truncate">{option.name}</span>
-        {option.duo && <span className="shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-faint">Duo</span>}
-      </button>
-    ));
-  }
 
   return (
     <div className="relay-experience-controls w-full rounded-2xl border border-border bg-surface p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-ink">Relay Experience</h3>
-          <p className="mt-1 text-xs leading-5 text-ink-faint">Choose how Relay moves, feels and uses color. Your palette and light or dark mode shape the final look.</p>
+          <p className="mt-1 text-xs leading-5 text-ink-faint">Choose an experience and adjust its motion. Shared colors and theme are in ARROW appearance.</p>
         </div>
         {IS_BETA && <span className="shrink-0 rounded-full border border-border px-2 py-1 text-xs font-semibold uppercase tracking-[.12em] text-ink-muted">Beta</span>}
       </div>
 
-      <div className="mt-4 grid auto-rows-fr gap-2 sm:grid-cols-2">
-        {experiences.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            data-experience-preview={option.id}
-            aria-pressed={experience === option.id}
-            onClick={() => update(option.id)}
-            className="relay-experience-option flex h-full min-w-0 flex-col rounded-xl border border-border bg-canvas p-3 text-left text-ink"
-          >
-            <span className="flex items-start justify-between gap-3">
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold">{option.name}</span>
-                <span className="mt-0.5 block text-xs font-medium uppercase tracking-[.12em] text-ink-faint">{option.signature}</span>
-              </span>
-              <span className="relay-mode-preview shrink-0" aria-hidden="true"><i /><i /><i /></span>
-            </span>
-            <span className="mt-2 block flex-1 text-xs leading-5 text-ink-faint">{option.description}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-5 border-t border-border pt-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="text-xs font-medium text-ink-muted">Color palette</div>
-          <span className="text-[9px] font-semibold uppercase tracking-[.12em] text-ink-faint">{palettes.length} options</span>
-        </div>
-        <p className="mt-1 text-[11px] leading-4 text-ink-faint">Most modes use color as an accent. Vivid uses lighter and darker shades of your selected primary color across panels, borders, controls and particles.</p>
-
-        <div className="mt-3">
-          <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[.14em] text-ink-faint">Single colors</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {renderPaletteOptions(singlePalettes)}
-          </div>
-        </div>
-
-        <div className="mt-3">
-          <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[.14em] text-ink-faint">Two-color palettes</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {renderPaletteOptions(duoPalettes)}
-          </div>
-        </div>
-      </div>
+      <label className="mt-4 block text-sm text-ink-muted">
+        Experience
+        <select aria-label="Relay experience" className="profile-input mt-2" value={experience} onChange={(event) => update(event.target.value as RelayExperience)}>
+          {experiences.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
+        </select>
+      </label>
+      {IS_BETA && <button type="button" className="account-action mt-3" onClick={(event) => {
+        const arrow = (window as Window & { ArrowOS?: { openPanel: (name: string, module: string, anchor: HTMLElement) => void } }).ArrowOS;
+        arrow?.openPanel('appearance', 'relay', event.currentTarget);
+      }}>ARROW appearance</button>}
 
       <label className="mt-5 block border-t border-border pt-4">
         <span className="flex justify-between text-xs font-medium text-ink-muted"><span>Visual intensity</span><span>{intensity}%</span></span>
@@ -182,3 +122,4 @@ export function ExperienceControls() {
     </div>
   );
 }
+

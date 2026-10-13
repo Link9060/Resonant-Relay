@@ -1879,7 +1879,7 @@
 
   document.addEventListener('pointerdown', closeEverythingOnOutsidePointer);
   window.addEventListener('keydown', event => {
-    if (event.key !== 'Escape') return;
+    if (event.key !== 'Escape' || event.defaultPrevented) return;
     if (!state.activePanel && event.target instanceof Element && event.target.closest('[data-arrow-escape-local],dialog[open],[role="dialog"][aria-modal="true"]')) return;
 
     if (state.activePanel) { event.preventDefault(); event.stopPropagation(); closePanel(); return; }
@@ -2029,5 +2029,6 @@
     nextMove,
   };
 })();
+
 
 

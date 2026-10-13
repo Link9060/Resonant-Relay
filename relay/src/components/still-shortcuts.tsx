@@ -29,7 +29,6 @@ export function StillShortcuts() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [experienceOpen, setExperienceOpen] = useState(false);
   const [desktopActive, setDesktopActive] = useState(false);
-  const [isStill, setIsStill] = useState(false);
 
   const shortcutMap = useMemo(() => new Map(SHORTCUTS.map((item) => [item.key.toLowerCase(), item.href])), []);
 
@@ -37,36 +36,37 @@ export function StillShortcuts() {
     const media = window.matchMedia('(min-width: 768px)');
     const sync = () => {
       const desktop = media.matches;
-      const still = desktop && document.documentElement.dataset.relayExperience === 'still';
       setDesktopActive(desktop);
-      setIsStill(still);
-      if (!still) {
+      if (!desktop) {
         setHelpOpen(false);
         setExperienceOpen(false);
       }
     };
     const initialFrame = window.requestAnimationFrame(sync);
-    const observer = new MutationObserver(sync);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-relay-experience'] });
     media.addEventListener('change', sync);
     return () => {
       window.cancelAnimationFrame(initialFrame);
-      observer.disconnect();
       media.removeEventListener('change', sync);
     };
   }, []);
 
   useEffect(() => {
-    if (!desktopActive || !isStill) return;
+    if (!desktopActive) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isInteractiveTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
-
+      if (event.defaultPrevented || event.isComposing || event.repeat) return;
       if (event.key === 'Escape') {
-        setHelpOpen(false);
-        setExperienceOpen(false);
+        if (helpOpen || experienceOpen) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          setHelpOpen(false);
+          setExperienceOpen(false);
+        }
         return;
       }
+      if (isInteractiveTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.shiftKey && event.key !== '?') return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"],dialog[open],.arrow-os-panel[data-open="true"]')) return;
 
       if (event.key === '?') {
         event.preventDefault();
@@ -84,9 +84,13 @@ export function StillShortcuts() {
 
       if (event.key.toLowerCase() === 'd') {
         event.preventDefault();
-        const next = !document.documentElement.classList.contains('dark');
-        document.documentElement.classList.toggle('dark', next);
-        try { localStorage.setItem('relay-theme', next ? 'dark' : 'light'); } catch { /* Theme still changes without storage. */ }
+        const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+        const arrow = (window as Window & { ArrowOS?: { applyTheme: (theme: string, save: boolean) => void } }).ArrowOS;
+        if (arrow) arrow.applyTheme(next, true);
+        else {
+          document.documentElement.classList.toggle('dark', next === 'dark');
+          try { localStorage.setItem('relay-theme', next); localStorage.setItem('arrow_os_theme_v1', next); } catch { /* Theme still changes without storage. */ }
+        }
         return;
       }
 
@@ -94,22 +98,26 @@ export function StillShortcuts() {
       const href = shortcutMap.get(lookup);
       if (!href) return;
       event.preventDefault();
+      setHelpOpen(false);
+      setExperienceOpen(false);
       const appHref = appPageUrl(href);
       router.push(appHref.startsWith(BASE_PATH) ? appHref.slice(BASE_PATH.length) || '/' : appHref);
     };
 
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [desktopActive, isStill, router, shortcutMap]);
+    const closeLocalOverlays = () => { setHelpOpen(false); setExperienceOpen(false); };
+    window.addEventListener('arrow:panelopen', closeLocalOverlays);
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => { window.removeEventListener('keydown', onKeyDown, true); window.removeEventListener('arrow:panelopen', closeLocalOverlays); };
+  }, [desktopActive, helpOpen, experienceOpen, router, shortcutMap]);
 
-  if (!desktopActive || !isStill) return null;
+  if (!desktopActive) return null;
 
   return (
     <>
       <button
         type="button"
         className="relay-still-help-trigger"
-        aria-label="Show Still keyboard shortcuts"
+        aria-label="Show Relay keyboard shortcuts"
         aria-expanded={helpOpen}
         onClick={() => { setHelpOpen((value) => !value); setExperienceOpen(false); }}
       >
@@ -118,8 +126,8 @@ export function StillShortcuts() {
       </button>
 
       {helpOpen && (
-        <aside className="relay-still-overlay relay-still-shortcut-card" aria-label="Still keyboard shortcuts">
-          <div className="relay-still-overlay-title">Still shortcuts</div>
+        <aside className="relay-still-overlay relay-still-shortcut-card" aria-label="Relay keyboard shortcuts" data-arrow-escape-local>
+          <div className="relay-still-overlay-title">Relay shortcuts</div>
           <div className="relay-still-shortcut-list">
             {SHORTCUTS.map((item) => <div key={item.key} className="relay-still-shortcut-row"><kbd>{item.key}</kbd><span>{item.label}</span></div>)}
             <div className="relay-still-shortcut-row"><kbd>D</kbd><span>Light / dark</span></div>
@@ -131,10 +139,11 @@ export function StillShortcuts() {
       )}
 
       {experienceOpen && (
-        <aside className="relay-still-overlay relay-still-experience-card" aria-label="Change Relay experience">
+        <aside className="relay-still-overlay relay-still-experience-card" aria-label="Change Relay experience" data-arrow-escape-local>
           <ExperienceControls />
         </aside>
       )}
     </>
   );
 }
+
