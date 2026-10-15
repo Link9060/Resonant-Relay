@@ -37,6 +37,29 @@ const DEVELOPMENT_RELEASE = { ...RELEASE_11, status: 'Beta · Development' } as 
 const PUBLIC_RELEASES = [
   RELEASE_11,
   {
+    version: '1.0.9',
+    status: 'Cleanup update',
+    publishedAt: '2026-10-15T00:00:00Z',
+    title: 'Relay 1.0.9 · Cleanup & Polish',
+    summary: 'A recap of the cleanup work leading into 1.1: smoother navigation, simpler preferences, and more organized staff tools across ARROW.',
+    groups: [
+      {
+        label: 'Everyday polish',
+        items: [
+          'Cleaned up keyboard shortcut behavior and simplified appearance preferences by removing the oversized color selection.',
+          'Improved shared navigation, layout behavior, and consistency between Relay and the other ARROW workspaces.',
+        ],
+      },
+      {
+        label: 'Staff workspace',
+        items: [
+          'Moved staff controls into a dedicated Orbit workspace with clearer organization for owners, admins, and moderators.',
+          'Hardened role access and added owner experience previews for testing staff and normal-user views.',
+        ],
+      },
+    ],
+  },
+  {
     version: '1.0.8',
     status: 'Public release',
     publishedAt: '2026-09-28T01:00:00Z',
