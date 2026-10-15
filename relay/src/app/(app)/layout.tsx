@@ -12,7 +12,7 @@ import { StillShortcuts } from '@/components/still-shortcuts';
 import { VisualPreferencesAccountSync } from '@/components/visual-preferences-account-sync';
 import { appPageUrl, authEntryUrl, IS_BETA } from '@/lib/config';
 import { createClient, ensureArrowBrowserSession } from '@/lib/supabase/client';
-import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT, setRolePreview } from '@/lib/role-preview';
+import { AppRole, getRolePreview, ROLE_PREVIEW_EVENT } from '@/lib/role-preview';
 import { syncVisualPreferencesWithAccount } from '@/lib/visual-preferences-account';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
@@ -67,6 +67,7 @@ async function wait(ms: number) {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<{ userId: string; profile: any; notifications: any[] } | null>(null);
   const accountRef = useRef<string | null>(null);
+  const stateRoleRef = useRef<AppRole>('user');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [previewRole, setPreviewRoleState] = useState<AppRole>('user');
   const dockCollapsed = useSyncExternalStore(subscribeDockCollapsed, getDockCollapsedSnapshot, getServerDockCollapsedSnapshot);
@@ -210,6 +211,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           notifications: notificationResult.error ? [] : (notificationResult.data ?? []),
         });
         const actualRole = (profile.role ?? 'user') as AppRole;
+        stateRoleRef.current=actualRole;
         setPreviewRoleState(getRolePreview(actualRole));
       } catch (error) {
         if (!active) return;
@@ -228,15 +230,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     });
 
     const onPreviewChange = (event: Event) => {
-      const role = (event as CustomEvent<AppRole>).detail;
-      setPreviewRoleState(role);
+      void event;
+      setPreviewRoleState(getRolePreview((stateRoleRef.current ?? 'user') as AppRole));
     };
     window.addEventListener(ROLE_PREVIEW_EVENT, onPreviewChange);
+    const onPreviewStorage=(event:StorageEvent)=>{if(event.key==='relay-owner-role-preview')onPreviewChange(event);};
+    window.addEventListener('storage',onPreviewStorage);
 
     return () => {
       active = false;
       authListener.subscription.unsubscribe();
       window.removeEventListener(ROLE_PREVIEW_EVENT, onPreviewChange);
+      window.removeEventListener('storage',onPreviewStorage);
     };
   }, []);
 
@@ -290,12 +295,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const actualRole = (state.profile?.role ?? 'user') as AppRole;
   const effectiveRole = actualRole === 'owner' ? previewRole : actualRole;
-  const isPreviewing = actualRole === 'owner' && effectiveRole !== 'owner';
-
-  function returnToOwner() {
-    setRolePreview('owner');
-    setPreviewRoleState('owner');
-  }
 
   return (
     <BetaExperience>
@@ -304,12 +303,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div data-dock-collapsed={dockCollapsed} className={`relay-app-shell flex min-h-screen bg-canvas transition-[padding] duration-200 ${dockCollapsed ? 'md:pl-16' : 'md:pl-60'}`}>
         <Dock role={effectiveRole} collapsed={dockCollapsed} onCollapsedChange={handleDockCollapsedChange} onboardingCompletedAt={state.profile?.onboarding_completed_at ?? null} />
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-          {isPreviewing && (
-            <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 text-xs text-ink md:px-6">
-              <span>Previewing Relay as <strong>{effectiveRole === 'user' ? 'Normal User' : effectiveRole.charAt(0).toUpperCase() + effectiveRole.slice(1)}</strong>. Your real account is still Owner.</span>
-              <button type="button" onClick={returnToOwner} className="shrink-0 rounded-md border border-border px-2.5 py-1 font-medium hover:bg-surface-raised">Return to Owner View</button>
-            </div>
-          )}
           <AppHeader profile={{ ...state.profile, role: effectiveRole }} role={effectiveRole} currentUserId={state.userId} notifications={state.notifications} />
           <MobileStaffAlert role={effectiveRole} />
           <main className="relay-mobile-main min-w-0 flex-1 md:pb-0">
@@ -322,4 +315,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </BetaExperience>
   );
 }
-

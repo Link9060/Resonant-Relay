@@ -5,13 +5,11 @@ import type { AppRole } from '@/lib/role-preview';
 import {
   Activity,
   ArrowRight,
-  BarChart3,
   FlaskConical,
   Gauge,
   Inbox,
   Mail,
   Search,
-  Settings2,
   ShieldCheck,
   Users,
   X,
@@ -34,14 +32,12 @@ type StaffCommand = {
 export const STAFF_COMMAND_EVENT = 'relay:staff-command-palette';
 
 export const STAFF_COMMANDS: StaffCommand[] = [
-  { id: 'overview', label: 'Overview', description: 'Open the staff command overview', icon: Gauge, href: '/admin?section=overview', roles: ['moderator', 'admin', 'owner'] },
+  { id: 'overview', label: 'Overview', description: 'Open the staff command overview', icon: Gauge, href: '/admin?section=overview', roles: ['owner'] },
   { id: 'requests', label: 'Requests', description: 'Review bugs, applications, and feedback', icon: Inbox, href: '/admin/requests', roles: ['moderator', 'admin', 'owner'] },
   { id: 'support', label: 'Support', description: 'Read and reply to support@resonantrelay.org', icon: Mail, href: '/admin/support', roles: ['moderator', 'admin', 'owner'] },
   { id: 'users', label: 'Users', description: 'Search and inspect Relay accounts', icon: Users, href: '/admin/users', roles: ['admin', 'owner'] },
   { id: 'moderation', label: 'Moderation', description: 'Work through the moderation queue', icon: ShieldCheck, href: '/admin/moderation', roles: ['moderator', 'admin', 'owner'] },
   { id: 'beta', label: 'Beta', description: 'Review Beta requests and tester access', icon: FlaskConical, href: '/admin/beta', roles: ['owner'] },
-  { id: 'analytics', label: 'Analytics', description: 'Inspect detailed Relay usage metrics', icon: BarChart3, href: '/admin/analytics', roles: ['owner'] },
-  { id: 'system', label: 'System', description: 'View verified operational data', icon: Settings2, href: '/admin/system', roles: ['owner'] },
   { id: 'activity', label: 'Activity', description: 'Open the staff activity workspace', icon: Activity, href: '/admin/activity', roles: ['owner'] },
 ];
 
