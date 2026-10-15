@@ -655,14 +655,54 @@
     if (name === 'moderation') renderModeration();
   }
 
-  async function staffRole() {
+  const STAFF_PREVIEW_KEY = 'relay-owner-role-preview';
+  function staffPreviewRole(actualRole) {
+    if(actualRole !== 'owner')return actualRole;
+    const saved=readJson(STAFF_PREVIEW_KEY,null);
+    return saved?.userId===currentArrowUserId() && ['user','moderator','admin','owner'].includes(saved.role) ? saved.role : actualRole;
+  }
+  async function staffRole(actual = false) {
     const userId = currentArrowUserId();
     if (!userId) return 'user';
     const rows = await arrowData('/rest/v1/profiles?id=eq.' + encodeURIComponent(userId) + '&select=role,banned_at');
-    return rows?.[0]?.banned_at ? 'user' : rows?.[0]?.role || 'user';
+    const role = rows?.[0]?.banned_at ? 'user' : rows?.[0]?.role || 'user';
+    return actual ? role : staffPreviewRole(role);
+  }
+  async function setStaffPreview(role) {
+    if(!['user','moderator','admin','owner'].includes(role) || await staffRole(true)!=='owner')return;
+    writeJson(STAFF_PREVIEW_KEY,{userId:currentArrowUserId(),role});
+    window.dispatchEvent(new CustomEvent('relay-role-preview-change',{detail:role}));
+    if(role==='user' && document.querySelector('[data-arrow-staff-workspace]'))location.assign(resolveHref('/orbit/'));
+    else location.reload();
+  }
+  async function refreshStaffPreviewBar() {
+    const account=currentArrowUserId();
+    try {
+      const actual=await staffRole(true);
+      if(account!==currentArrowUserId())return;
+      document.querySelector('[data-arrow-role-preview]')?.remove();
+      const effective=staffPreviewRole(actual);
+      const workspace=document.querySelector('.arrow-staff-workspace');
+      if(state.activePanel==='moderation' && workspace && workspace.dataset.staffRole!==effective)void renderModeration();
+      if(actual!=='owner')return;
+      const bar=document.createElement('aside');bar.className='arrow-role-preview';bar.dataset.arrowRolePreview='true';bar.setAttribute('aria-label','Owner experience preview');
+      const label=document.createElement('label');label.textContent='View as ';
+      const select=document.createElement('select');select.setAttribute('aria-label','Preview experience as');
+      for(const [value,name] of [['owner','Owner'],['admin','Administrator'],['moderator','Moderator'],['user','Normal user']]){const option=document.createElement('option');option.value=value;option.textContent=name;option.selected=value===effective;select.append(option);}label.append(select);bar.append(label);
+      const copy=document.createElement('span');copy.textContent=effective==='owner'?'Owner access':'Read-only preview · account remains Owner';bar.append(copy);
+      select.onchange=()=>{select.disabled=true;void setStaffPreview(select.value).catch(()=>{select.disabled=false;});};
+      if(effective!=='owner'){const restore=document.createElement('button');restore.type='button';restore.textContent='Return to Owner';restore.onclick=()=>{void setStaffPreview('owner');};bar.append(restore);}
+      document.body.append(bar);
+    } catch { document.querySelector('[data-arrow-role-preview]')?.remove(); }
   }
 
-  const rpc = (name, body) => arrowData('/rest/v1/rpc/' + name, { method: 'POST', body });
+  const rpc = async (name, body) => {
+    if((name.startsWith('owner_') || name.startsWith('staff_update_') || name==='set_user_role') && !['owner_dashboard_stats','owner_storage_overview','owner_list_audit_log','owner_list_beta_requests'].includes(name)) {
+      const actual=await staffRole(true);
+      if(staffPreviewRole(actual)!==actual)throw new Error('Role preview is read-only. Return to Owner to make changes.');
+    }
+    return arrowData('/rest/v1/rpc/' + name, { method: 'POST', body });
+  };
 
   async function renderSupport() {
     // eslint-disable-next-line @next/next/no-assign-module-variable -- Browser-only ARROW center identifier.
@@ -696,6 +736,35 @@
       finally { button.disabled = false; }
     });
     await loadHistory();
+  }
+
+  function renderStaffInspector(host, data) {
+    host.replaceChildren();
+    const heading=document.createElement('h3');heading.textContent='Account inspector';host.append(heading);
+    const privacy=document.createElement('p');privacy.textContent='Operational account information. Private message bodies are excluded; reported messages stay in Reports.';host.append(privacy);
+    const nav=document.createElement('div');nav.className='arrow-staff-inspector-tabs';nav.setAttribute('role','tablist');nav.setAttribute('aria-label','Account inspector sections');
+    const panel=document.createElement('section');panel.className='arrow-staff-inspector-panel';panel.setAttribute('role','tabpanel');panel.tabIndex=0;
+    const prefix='staff-inspector-'+Math.random().toString(36).slice(2);panel.id=prefix+'-panel';host.append(nav,panel);
+    const labels={overview:'Overview',sessions:'Sessions',timeline:'Activity',contacts:'Contacts',groups:'Groups',conversations:'Conversations',reports:'Reports',storage:'Storage',notes:'Owner notes'};
+    const fields={overview:['display_name','primary_email','relay_number','school','role','created_at','last_sign_in_at','banned_at','ban_reason','message_count','contact_count','group_count','open_report_count','todo_count','calendar_accounts'],sessions:['created_at','refreshed_at','not_after','user_agent','aal'],timeline:['type','action','created_at','actor_name','other_user_name','subject','status'],contacts:['display_name','relay_number','school','connected_at','mutual_count'],groups:['name','role','joined_at','member_count','message_count','last_message_at'],conversations:['type','group_name','created_at','last_message_at','message_count'],reports:['reason','details','status','created_at','moderation_note','reporter_name','reported_name'],storage:['file_count','file_bytes','database_bytes_estimated','total_bytes','average_user_total_bytes'],notes:['note','created_by_name','created_at']};
+    const name=key=>key.replaceAll('_',' ').replace(/^./,c=>c.toUpperCase());
+    const format=(key,value)=>{
+      if(value===null||value===undefined||value==='')return key==='last_sign_in_at'?'Never signed in':'Not available';
+      if(key.endsWith('_at')||key==='not_after'){const parsed=new Date(value);return Number.isFinite(parsed.getTime())?parsed.toLocaleString():'Not available';}
+      if(key.includes('bytes')){const bytes=Number(value);return Number.isFinite(bytes)?(bytes>=1048576?(bytes/1048576).toLocaleString(undefined,{maximumFractionDigits:1})+' MB':bytes>=1024?(bytes/1024).toLocaleString(undefined,{maximumFractionDigits:1})+' KB':bytes.toLocaleString()+' B'):'Not available';}
+      return typeof value==='object'?'Not available':String(value);
+    };
+    function draw(key) {
+      panel.replaceChildren();panel.setAttribute('aria-labelledby',prefix+'-'+key);
+      nav.querySelectorAll('button').forEach(button=>{const selected=button.dataset.section===key;button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;});
+      if(key==='sessions'){const hint=document.createElement('p');hint.textContent='Stored authentication sessions are not proof that someone is online. Session expiry and refresh times are shown when available.';panel.append(hint);}
+      let entries=key==='reports'?[...(data.reports?.received||[]).map(row=>({...row,_heading:'Received report'})),...(data.reports?.submitted||[]).map(row=>({...row,_heading:'Submitted report'}))]:Array.isArray(data[key])?data[key]:data[key]?[data[key]]:[];
+      if(!entries.length){const empty=document.createElement('p');empty.textContent='No '+labels[key].toLowerCase()+' recorded.';panel.append(empty);return;}
+      for(const row of entries){const card=document.createElement('section');card.className='arrow-staff-inspector-card';const title=document.createElement('h4');title.textContent=row._heading||row.display_name||row.name||row.subject||labels[key];card.append(title);const facts=document.createElement('dl');facts.className='arrow-staff-account-facts';for(const field of fields[key]){if(!(field in row))continue;const pair=document.createElement('div');const label=document.createElement('dt');label.textContent=field==='last_sign_in_at'?'Last sign-in':name(field);const value=document.createElement('dd');value.textContent=format(field,row[field]);pair.append(label,value);facts.append(pair);}card.append(facts);panel.append(card);}
+    }
+    for(const [key,label] of Object.entries(labels)){const button=document.createElement('button');button.type='button';button.id=prefix+'-'+key;button.dataset.section=key;button.setAttribute('role','tab');button.setAttribute('aria-controls',panel.id);button.textContent=label;button.onclick=()=>draw(key);nav.append(button);}
+    nav.onkeydown=event=>{const buttons=[...nav.querySelectorAll('button')];const current=buttons.indexOf(document.activeElement);if(current<0||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const target=event.key==='Home'?0:event.key==='End'?buttons.length-1:(current+(event.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length;buttons[target].click();buttons[target].focus();};
+    draw('overview');
   }
 
   function renderOwnerOverview(host, stats, storage) {
@@ -739,7 +808,9 @@
   async function renderModeration() {
     state.panelBody.innerHTML = '<p class="arrow-os-loading" role="status">Verifying staff access…</p>';
     try {
-      const role = await staffRole();
+      const actualRole = await staffRole(true);
+      const role = staffPreviewRole(actualRole);
+      const previewing = actualRole === 'owner' && role !== 'owner';
       if (state.activePanel !== 'moderation') return;
       if (!['moderator', 'admin', 'owner'].includes(role)) {
         state.panelBody.innerHTML = panelEmpty('Staff access is required. For help, open ARROW support.'); return;
@@ -806,22 +877,33 @@
           const summary=document.createElement('summary');summary.className='arrow-staff-record-summary';
           const heading=document.createElement('div');heading.className='arrow-staff-record-heading';
           const title = document.createElement('strong');
-          title.textContent = row.subject || row.reason || row.action || row.display_name || row.email || row.primary_email || 'Account'; heading.append(title);
+          title.textContent = row.subject || row.reason || row.action || row.display_name || row.primary_email || row.email || 'Account'; heading.append(title);
           const meta=document.createElement('span');meta.className='arrow-staff-record-meta';
           const date=recordDate(row);
-          meta.textContent=[row.sender_email || row.email || row.metadata?.module || (active==='reports'?'Relay':'ARROW'), date ? new Date(date).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : ''].filter(Boolean).join(' · ');heading.append(meta);
+          meta.textContent=[row.sender_email || row.primary_email || row.email || row.requester_name || row.metadata?.module || (active==='reports'?'Relay':'ARROW'), date ? new Date(date).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : ''].filter(Boolean).join(' · ');heading.append(meta);
           const badge=document.createElement('span');badge.className='arrow-staff-status';badge.dataset.attention=String(needsAttention(row));badge.textContent=recordStatus(row).replaceAll('_',' ') || (active==='audit'?'Recorded':'Record');
           const affordance=document.createElement('span');affordance.className='arrow-staff-review-label';affordance.textContent=active==='audit'?'Details':'Review';
           summary.append(heading,badge,affordance);review.append(summary);article.append(review);
           const content=document.createElement('div');content.className='arrow-staff-record-body';review.append(content);
           const detail = document.createElement('p');detail.className='arrow-staff-record-copy';
-          detail.textContent = active === 'users' ? [row.email, row.role, row.banned_at ? 'Suspended' : 'Active'].filter(Boolean).join(' · ') : [row.description || row.details].filter(Boolean).join(' · '); if(detail.textContent)content.append(detail);
+          detail.textContent = active === 'users' ? [row.primary_email || row.email, row.role, row.banned_at ? 'Suspended' : 'Active'].filter(Boolean).join(' · ') : [row.description || row.details].filter(Boolean).join(' · '); if(detail.textContent)content.append(detail);
+          if(active==='users') {
+            const facts=document.createElement('dl');facts.className='arrow-staff-account-facts';
+            const date=value=>{const parsed=new Date(value);return value&&Number.isFinite(parsed.getTime())?parsed.toLocaleString():'Never signed in';};
+            const signIn=document.createElement('span');signIn.className='arrow-staff-sign-in';signIn.textContent='Last sign-in: '+date(row.last_sign_in_at);heading.append(signIn);
+            for(const [label,value] of [['Last sign-in',date(row.last_sign_in_at)],['Joined',row.created_at?date(row.created_at):'Unavailable'],['Relay number',row.relay_number||'Unavailable'],['School',row.school||'Not provided'],['Messages',row.message_count??'Unavailable'],['Connections',row.connection_count??'Unavailable'],['Open reports',row.open_report_count??'Unavailable'],['Account status',row.banned_at?'Suspended':'Enabled']]){const pair=document.createElement('div');const name=document.createElement('dt');name.textContent=label;const amount=document.createElement('dd');amount.textContent=String(value);pair.append(name,amount);facts.append(pair);}content.append(facts);
+            const hint=document.createElement('p');hint.textContent='Last sign-in records authentication, not live online presence.';content.append(hint);
+          }
+          if(active==='requests' || active==='reports') {
+            const context=document.createElement('p');context.textContent=active==='requests'?[row.requester_name,row.request_type?.replaceAll('_',' '),row.requested_role?'Requested role: '+row.requested_role:'',row.handled_by_name?'Handled by '+row.handled_by_name:''].filter(Boolean).join(' · '):[row.reporter_name?'Reported by '+row.reporter_name:'',row.reported_name?'Account: '+row.reported_name:''].filter(Boolean).join(' · ');content.append(context);
+            if(active==='reports' && row.message_body){const quote=document.createElement('blockquote');quote.className='arrow-staff-reported-message';quote.textContent=row.message_body;content.append(quote);}
+          }
           if (active === 'email') {
             const open=document.createElement('button');open.type='button';open.textContent='Open thread';content.append(open);
             open.onclick=async()=>{open.disabled=true;try{const messages=await arrowData('/rest/v1/support_email_messages?thread_id=eq.'+encodeURIComponent(row.id)+'&select=id,direction,from_email,text_body,created_at&order=created_at.asc&limit=200');const thread=document.createElement('section');thread.className='arrow-staff-thread';for(const message of messages){const copy=document.createElement('p');copy.style.whiteSpace='pre-wrap';copy.textContent=(message.direction==='outbound'?'Support':message.from_email)+' · '+new Date(message.created_at).toLocaleString()+'\n'+(message.text_body||'(No text body)');thread.append(copy);}
-              if(role!=='moderator'){const reply=document.createElement('textarea');reply.placeholder='Reply to '+row.sender_email;reply.setAttribute('aria-label','Reply to '+row.sender_email);reply.maxLength=10000;thread.append(reply);const send=document.createElement('button');send.type='button';send.textContent='Send reply';send.onclick=async()=>{if(!reply.value.trim()||!confirm('Send this reply to '+row.sender_email+'?'))return;send.disabled=true;try{await arrowData('/functions/v1/support-email',{method:'POST',body:{action:'reply',threadId:row.id,text:reply.value.trim()}});reply.value='';await load('email',offset);}catch(error){thread.append(Object.assign(document.createElement('p'),{textContent:error.message}));}finally{send.disabled=false;}};thread.append(send);
+              if(role!=='moderator'){const reply=document.createElement('textarea');reply.placeholder='Reply to '+row.sender_email;reply.setAttribute('aria-label','Reply to '+row.sender_email);reply.maxLength=10000;thread.append(reply);const send=document.createElement('button');send.type='button';send.textContent='Send reply';send.onclick=async()=>{if(previewing||!reply.value.trim()||!confirm('Send this reply to '+row.sender_email+'?'))return;send.disabled=true;try{await arrowData('/functions/v1/support-email',{method:'POST',body:{action:'reply',threadId:row.id,text:reply.value.trim()}});reply.value='';await load('email',offset);}catch(error){thread.append(Object.assign(document.createElement('p'),{textContent:error.message}));}finally{send.disabled=false;}};thread.append(send);
               const status=document.createElement('select');status.setAttribute('aria-label','Conversation status');for(const value of ['new','open','pending','closed']){const option=document.createElement('option');option.value=value;option.textContent=value;option.selected=value===row.status;status.append(option);}thread.append(status);const save=document.createElement('button');save.textContent='Save status';save.onclick=()=>action('staff_update_support_thread',{p_thread_id:row.id,p_status:status.value,p_assigned_to:null},save);thread.append(save);}
-              content.append(thread);open.remove();}catch(error){content.append(Object.assign(document.createElement('p'),{textContent:error.message}));open.disabled=false;}};
+              if(previewing)thread.querySelectorAll('textarea,select,button').forEach(control=>control.disabled=true);content.append(thread);open.remove();}catch(error){content.append(Object.assign(document.createElement('p'),{textContent:error.message}));open.disabled=false;}};
           } else if (active === 'audit') {
             const info = document.createElement('p'); info.textContent = [row.actor_name || row.actor_email, row.target_name || row.target_email, new Date(row.created_at).toLocaleString()].filter(Boolean).join(' · ');content.append(info);
             const details = document.createElement('details');const summary = document.createElement('summary');summary.textContent='Action details';const copy=document.createElement('pre');copy.textContent=JSON.stringify(row.metadata||{},null,2);details.append(summary,copy);content.append(details);
@@ -831,7 +913,7 @@
               for(const approved of [true,false]){const review=document.createElement('button');review.type='button';review.textContent=approved?'Approve access':'Decline';review.onclick=()=>{if(!reply.value.trim()){reply.focus();return;}void action('owner_review_beta_request',{p_request_id:row.request_id,p_approve:approved,p_message:reply.value.trim()},review);};content.append(review);}
             }
           } else if (active !== 'users') {
-            const note = document.createElement('textarea'); note.rows = 2; note.placeholder = 'Staff note'; note.maxLength = 2000; note.setAttribute('aria-label','Staff note for '+title.textContent); note.value = row.staff_note || row.moderation_note || ''; content.append(note);
+            const note = document.createElement('textarea'); note.rows = 2; note.placeholder = 'Staff note'; note.maxLength = active==='reports'?500:2000; note.setAttribute('aria-label','Staff note for '+title.textContent); note.value = row.staff_note || row.moderation_note || ''; content.append(note);
             const select = document.createElement('select');select.setAttribute('aria-label','Status for '+title.textContent);
             (active === 'requests' ? ['new','reviewing','resolved','dismissed'] : ['submitted','reviewing','resolved','dismissed']).forEach(status => { const option = document.createElement('option'); option.value = status; option.textContent = status; option.selected = status === row.status; select.append(option); }); content.append(select);
             const save = document.createElement('button'); save.textContent = 'Save status'; save.type = 'button'; content.append(save);
@@ -840,14 +922,14 @@
           } else if (role === 'owner') {
             const tools=document.createElement('details');tools.className='arrow-staff-account-tools';const summary=document.createElement('summary');summary.textContent='Manage account';tools.append(summary);content.append(tools);
             const inspect = document.createElement('button');inspect.type='button';inspect.textContent='Inspect account';tools.append(inspect);
-            inspect.onclick=async()=>{inspect.disabled=true;try{const result=await rpc('owner_user_inspector',{p_user_id:row.id});const details=document.createElement('details');details.open=true;const summary=document.createElement('summary');summary.textContent='Account details';details.append(summary);const renderValue=(host,label,value)=>{const section=document.createElement('section');const heading=document.createElement('h4');heading.textContent=label.replaceAll('_',' ');section.append(heading);if(value&&typeof value==='object'){for(const [key,item] of Object.entries(value)){if(item&&typeof item==='object'){renderValue(section,key,item);}else{const line=document.createElement('p');line.textContent=key.replaceAll('_',' ')+': '+String(item??'—');section.append(line);}}}else{const line=document.createElement('p');line.textContent=String(value??'—');section.append(line);}host.append(section);};for(const [label,value] of Object.entries(result||{}))renderValue(details,label,value);tools.append(details);}catch(error){tools.append(Object.assign(document.createElement('p'),{textContent:error.message}));}finally{inspect.disabled=false;}};
+            inspect.onclick=async()=>{inspect.disabled=true;try{const result=await rpc('owner_user_inspector',{p_user_id:row.id});let inspector=tools.querySelector('.arrow-staff-inspector');if(!inspector){inspector=document.createElement('section');inspector.className='arrow-staff-inspector';tools.append(inspector);}renderStaffInspector(inspector,result);}catch(error){tools.append(Object.assign(document.createElement('p'),{textContent:error.message,role:'alert'}));}finally{inspect.disabled=false;}};
             const ban = document.createElement('button'); ban.type = 'button'; ban.textContent = row.banned_at ? 'Restore account' : 'Suspend account'; tools.append(ban);
             ban.onclick = () => { const reason = prompt('Reason for this ARROW account action:'); if (reason === null || !reason.trim()) return; if (!confirm(ban.textContent + ' for ' + title.textContent + '?')) return; void action('owner_set_user_ban', {p_user_id:row.id, p_banned:!row.banned_at, p_reason:reason}, ban); };
             const roleSelect = document.createElement('select');roleSelect.setAttribute('aria-label','Role for '+title.textContent);
             ['user','moderator','admin','owner'].forEach(value => { const option = document.createElement('option'); option.value = value; option.textContent = value; option.selected = value === row.role; roleSelect.append(option); }); tools.append(roleSelect);
             const changeRole = document.createElement('button'); changeRole.type = 'button'; changeRole.textContent = 'Update role'; tools.append(changeRole);
             changeRole.onclick = () => { if (roleSelect.value === row.role || !confirm('Change ' + title.textContent + ' to ' + roleSelect.value + '?')) return; void action('set_user_role', {p_user_id:row.id,p_role:roleSelect.value},changeRole); };
-            const ownerNote=document.createElement('textarea');ownerNote.placeholder='Private owner note';ownerNote.maxLength=4000;ownerNote.setAttribute('aria-label','Private owner note');tools.append(ownerNote);
+            const ownerNote=document.createElement('textarea');ownerNote.placeholder='Private owner note';ownerNote.maxLength=1000;ownerNote.setAttribute('aria-label','Private owner note');tools.append(ownerNote);
             const addNote=document.createElement('button');addNote.type='button';addNote.textContent='Save owner note';addNote.onclick=()=>{if(ownerNote.value.trim())void action('owner_add_user_note',{p_user_id:row.id,p_note:ownerNote.value.trim()},addNote);};tools.append(addNote);
             const revokeBeta=document.createElement('button');revokeBeta.type='button';revokeBeta.textContent='Revoke beta access';revokeBeta.onclick=()=>{if(confirm('Revoke beta access for '+title.textContent+'?'))void action('owner_revoke_beta_access',{p_user_id:row.id,p_message:null},revokeBeta);};tools.append(revokeBeta);
             const deleteAccount=document.createElement('button');deleteAccount.type='button';deleteAccount.textContent='Delete account';deleteAccount.onclick=()=>{if(prompt('Permanently delete '+title.textContent+' and their data? Type DELETE to confirm.')==='DELETE')void action('owner_delete_user',{p_user_id:row.id},deleteAccount);};tools.append(deleteAccount);
@@ -861,6 +943,7 @@
 
 
           }
+          if(previewing)content.querySelectorAll('textarea,select,button').forEach(control=>{if(control.textContent!=='Open thread')control.disabled=true;});
           host.append(article);
         });
       }
@@ -870,7 +953,7 @@
         if(document.querySelector('[data-arrow-staff-workspace]')) { const url=new URL(location.href);url.searchParams.set('queue',queue);history.replaceState({},'',url); }
         state.panelBody.querySelectorAll('[data-queue]').forEach(button=>button.setAttribute('aria-current',button.dataset.queue===queue?'page':'false'));
         if(queue!==active) { search.value=''; statusFilter.replaceChildren(); const options=queue==='users'?['','active','suspended']:queue==='requests'?['','new','reviewing','resolved','dismissed']:queue==='reports'?['','submitted','reviewing','resolved','dismissed']:queue==='email'?['','new','open','pending','closed']:queue==='beta'?['','pending','approved','declined']:[''];for(const value of options){const option=document.createElement('option');option.value=value;option.textContent=value||'All statuses';statusFilter.append(option);} }
-        state.panelBody.querySelector('#arrow-staff-search-label').hidden=queue==='overview';state.panelBody.querySelector('#arrow-staff-sort-label').hidden=queue==='overview';clear.hidden=true;state.panelBody.querySelector('#arrow-staff-status-label').hidden=['overview','audit'].includes(queue);
+        state.panelBody.querySelector('.arrow-staff-toolbar').hidden=queue==='overview';state.panelBody.querySelector('#arrow-staff-search-label').hidden=queue==='overview';state.panelBody.querySelector('#arrow-staff-sort-label').hidden=queue==='overview';clear.hidden=true;state.panelBody.querySelector('#arrow-staff-status-label').hidden=['overview','audit'].includes(queue);
         resultCount.textContent='Loading…';updated.textContent='';refresh.disabled=true;search.disabled=true;statusFilter.disabled=true;sort.disabled=true;previous.disabled=true;nextPage.disabled=true;records=[];
         const version = ++loadVersion; offset = nextOffset; active = queue; host.setAttribute('aria-busy','true');host.innerHTML='<div class="arrow-staff-skeleton" aria-hidden="true"><i></i><i></i><i></i></div>'; 
         try {
@@ -884,10 +967,11 @@
             return;
           }
           paging.hidden=false;
-          const result = queue==='email'?await arrowData('/rest/v1/support_email_threads?select=id,sender_email,sender_name,subject,status,latest_message_at&order=latest_message_at.desc&limit=100&offset='+nextOffset):await rpc(queue === 'requests' ? 'staff_list_requests' : queue === 'reports' ? 'staff_list_reports' : queue==='audit'?'owner_list_audit_log':queue==='beta'?'owner_list_beta_requests':'admin_list_users_v2', { ...(['requests','reports','beta'].includes(queue) ? { p_status: null } : {}), p_limit: 100, p_offset: nextOffset }) || [];
+          const result = queue==='email'?await arrowData('/rest/v1/support_email_threads?select=id,sender_email,sender_name,subject,status,latest_message_at&order=latest_message_at.desc&limit=100&offset='+nextOffset):await rpc(queue === 'requests' ? 'staff_list_requests' : queue === 'reports' ? 'staff_list_reports' : queue==='audit'?'owner_list_audit_log':queue==='beta'?'owner_list_beta_requests':'admin_list_users_v2', { ...(['requests','reports','beta'].includes(queue) ? { p_status: queue==='beta'?'all':null } : {}), p_limit: 100, p_offset: nextOffset }) || [];
           if (version !== loadVersion || state.activePanel !== 'moderation') return;
-          records = result;
-          previous.disabled = nextOffset === 0; nextPage.disabled = records.length < 100; pageLabel.textContent = 'Page ' + (Math.floor(nextOffset / 100) + 1);
+          records = previewing && queue==='requests' ? result.filter(row=>role==='moderator'?row.request_type==='safety_report':['bug_report','feature_request','safety_report','general_feedback'].includes(row.request_type)) : result;
+          if(previewing && role==='moderator' && queue==='reports')records=records.map(row=>({...row,reported_email:null}));
+          previous.disabled = nextOffset === 0; nextPage.disabled = result.length < 100; pageLabel.textContent = 'Page ' + (Math.floor(nextOffset / 100) + 1);
           if (host.isConnected) { draw();updated.textContent='Updated '+new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
         } catch (error) { if (version === loadVersion && host.isConnected) { host.innerHTML = sharedDataError(error); resultCount.textContent='Could not load this section. Use Refresh to retry.'; } }
         finally { if(version===loadVersion) { refresh.disabled=false;search.disabled=false;statusFilter.disabled=false;sort.disabled=false;host.setAttribute('aria-busy','false'); } }
@@ -2013,7 +2097,7 @@
   window.addEventListener('storage', event => {
     if(event.key===ARROW_AUTH_STORAGE_KEY){
       const account=currentArrowUserId();
-      if(account!==shellAccountId){shellAccountId=account;calendarLoad=null;closePanel(false);}
+      if(account!==shellAccountId){shellAccountId=account;calendarLoad=null;if(state.activePanel==='moderation')state.panelBody?.replaceChildren();document.querySelector('[data-arrow-role-preview]')?.remove();closePanel(false);}
       return;
     }
     if (event.key === 'arrow_shared_data_ping_v1') {
@@ -2079,6 +2163,12 @@
   } else {
     startMounting();
   }
+
+  void refreshStaffPreviewBar();
+  window.addEventListener('focus',refreshStaffPreviewBar);
+  setInterval(()=>{if(!document.hidden && state.activePanel==='moderation')void refreshStaffPreviewBar();},30000);
+  window.addEventListener('relay-role-preview-change',()=>{if(state.activePanel==='moderation')void renderModeration();void refreshStaffPreviewBar();});
+  window.addEventListener('storage',event=>{if(event.key===STAFF_PREVIEW_KEY){if(state.activePanel==='moderation')void renderModeration();void refreshStaffPreviewBar();}});
 
   window.ArrowOS = {
     mountAll,
