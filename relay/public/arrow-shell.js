@@ -29,9 +29,12 @@
   const WAYPOINT_URL = BETA_BASE ? BETA_BASE+'/waypoint/' : ON_ENTERARROW ? '/waypoint/' : 'https://link9060.github.io/Resonant-Waypoint/';
   const RELAY_URL = BETA_BASE ? '/Resonant-Relay/' : ON_ENTERARROW ? '/relay/' : 'https://link9060.github.io/Resonant-Relay/';
   const RAVIN_URL = BETA_BASE ? BETA_BASE+'/ravin/' : ON_ENTERARROW ? '/ravin/' : 'https://link9060.github.io/Project-R.A.V.I.N.-1.1/';
+  const CHANNEL_LINK = BETA_BASE
+    ? '<a class="arrow-os-control arrow-os-channel-link" data-arrow-channel href="https://enterarrow.com/" aria-label="Back to public ARROW"><span>↗ Public site</span></a>'
+    : '<a class="arrow-os-control arrow-os-channel-link" data-arrow-channel href="https://link9060.github.io/Resonant-Relay/beta-access/" aria-label="Request or access ARROW Beta"><span>↗ Beta access</span></a>';
   const SIGNOUT_URL = BETA_BASE ? '/Resonant-Relay/login/' : ON_ENTERARROW ? '/signout/' : '';
 
-  document.addEventListener('click', event => {if(!BETA_BASE)return;const link=event.target.closest?.('a[href]');if(link)link.href=resolveHref(link.href);},true);
+  document.addEventListener('click', event => {if(!BETA_BASE)return;const link=event.target.closest?.('a[href]');if(link && !link.hasAttribute('data-arrow-channel'))link.href=resolveHref(link.href);},true);
 
   // Public client credentials only. User ownership is enforced by Supabase RLS.
   const ARROW_SUPABASE_URL = 'https://cnorozrjugxpanpfmssa.supabase.co';
@@ -408,7 +411,7 @@
           '<span class="arrow-os-divider" aria-hidden="true"></span>' +
           controlButton('appearance', 'Appearance') +
           controlButton('settings', 'Settings') +
-          controlButton('support', 'Support') +
+          controlButton('support', 'Support') + CHANNEL_LINK +
           '<span class="arrow-os-divider" aria-hidden="true"></span>' +
           '<span class="arrow-os-name" aria-hidden="true">ARROW</span>' +
         '</div>' +
@@ -1027,7 +1030,7 @@
   }
 
   async function nextMove() {
-    if(BETA_BASE){
+    if(BETA_BASE || ON_ENTERARROW){
       const [tasks,events,plans]=await Promise.all([
         arrowData('/rest/v1/todos?select=id,title,due_on,completed,position,scheduled_on,scheduled_start,depends_on,priority&limit=500'),
         loadCalendarSources().then(result=>result.events),
@@ -1047,7 +1050,7 @@
   }
 
   async function previewPlan(start,end){
-    if(!BETA_BASE)throw new Error('This preview is available in ARROW Beta.');
+    if(!BETA_BASE && !ON_ENTERARROW)throw new Error('Open ARROW to preview your plan.');
     const [tasks,events]=await Promise.all([
       arrowData('/rest/v1/todos?select=id,title,due_on,completed,position,estimated_minutes,scheduled_on,scheduled_start,priority,depends_on&limit=500'),
       loadCalendarSources().then(result=>result.events)
@@ -1596,6 +1599,9 @@
         '<a href="' + escapeAttr(resolveHref('/relay/privacy/')) + '">ARROW privacy policy</a>' +
         '<a href="' + escapeAttr(resolveHref('/relay/terms/')) + '">Terms of use</a>' +
         '<a href="' + escapeAttr(resolveHref('/relay/help/')) + '">Setup guide and help</a>' +
+        '<a data-arrow-channel href="https://link9060.github.io/Resonant-Relay/beta-access/">Request Beta access</a>' +
+        '<a data-arrow-channel href="https://link9060.github.io/Resonant-Relay/">Open Beta site</a>' +
+        '<a data-arrow-channel href="https://enterarrow.com/">'+(BETA_BASE?'Back to public ARROW':'Public ARROW site')+'</a>' +
         '<button type="button" data-settings-action="intro">Replay Orbit intro</button>' +
         '<button type="button" data-settings-action="export">Export preferences</button>' +
         '<label class="arrow-os-import">Import preferences<input type="file" accept="application/json" data-settings-action="import" /></label>' +

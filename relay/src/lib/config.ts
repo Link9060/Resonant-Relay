@@ -8,8 +8,8 @@ export const ARROW_INTEGRATION_ENABLED =
   isGitHubPages ||
   isArrowHosted ||
   process.env.NEXT_PUBLIC_ARROW_INTEGRATION === '1';
-export const PRODUCTION_VERSION = '1.0.7';
-export const PRODUCTION_RELEASE_NAME = 'Focus Update';
+export const PRODUCTION_VERSION = '1.0.8';
+export const PRODUCTION_RELEASE_NAME = 'ARROW Update';
 export const DEVELOPMENT_VERSION = '1.0.8';
 export const DEVELOPMENT_RELEASE_NAME = 'Next Update';
 export const APP_VERSION = IS_BETA ? DEVELOPMENT_VERSION : PRODUCTION_VERSION;
@@ -21,7 +21,7 @@ export const APP_TITLE = IS_BETA
   ? `Relay · Beta ${APP_VERSION} · ${DEVELOPMENT_RELEASE_NAME}`
   : `Relay · ${APP_VERSION} · ${PRODUCTION_RELEASE_NAME}`;
 export const BASE_PATH = isGitHubPages ? '/Resonant-Relay' : isArrowHosted ? '/relay' : '';
-export const PUBLIC_SITE_URL = 'https://resonantrelay.org';
+export const PUBLIC_SITE_URL = 'https://enterarrow.com/relay';
 export const BETA_SITE_URL = 'https://link9060.github.io/Resonant-Relay';
 export const ARROW_SITE_URL = 'https://enterarrow.com';
 export const ARROW_ORBIT_URL = process.env.NEXT_PUBLIC_ARROW_ORBIT_URL
