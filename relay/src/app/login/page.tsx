@@ -1,7 +1,7 @@
 'use client';
 import { createClient } from '@/lib/supabase/client';
 import { normalizePhone } from '@/components/account-access';
-import { appPageUrl, BASE_PATH, IS_BETA, SUPABASE_PUBLISHABLE_KEY as KEY, SUPABASE_URL as URL } from '@/lib/config';
+import { appPageUrl, ARROW_SITE_URL, BASE_PATH, BETA_SITE_URL, isAllowedArrowReturnPath, IS_BETA, SUPABASE_PUBLISHABLE_KEY as KEY, SUPABASE_URL as URL } from '@/lib/config';
 import { FormEvent, useEffect, useState } from 'react';
 
 export default function LoginPage(){
@@ -19,12 +19,12 @@ export default function LoginPage(){
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState('');
   const [cooldown,setCooldown]=useState(0);
-  const callback=()=>new globalThis.URL(appPageUrl('/auth/callback'),location.origin).href;
+  const callback=()=>new globalThis.URL(IS_BETA?appPageUrl('/auth/callback'):'/auth/callback/',location.origin).href;
   const finish=()=>location.replace(callback());
   useEffect(()=>{
     let active=true;
     const next=new URLSearchParams(location.search).get('next');
-    if(next?.startsWith(`${BASE_PATH}/`)&&!next.startsWith('//')){try{localStorage.setItem('relay-post-auth-next',next);}catch{}}
+    if(next && !next.startsWith('//') && (IS_BETA?next.startsWith(`${BASE_PATH}/`):isAllowedArrowReturnPath(next.split(/[?#]/)[0] || '/'))){try{localStorage.setItem(IS_BETA?'relay-post-auth-next':'arrow-auth-next-v1',next);}catch{}}
     void fetch(`${URL}/auth/v1/settings`,{headers:{apikey:KEY},signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).then(s=>{if(active)setProviders({google:s?.external?.google===true,phone:s?.external?.phone===true});}).catch(()=>{if(active)setProviders({google:false,phone:false});});
     return()=>{active=false;};
   },[]);
@@ -75,6 +75,7 @@ export default function LoginPage(){
     <p role="status" aria-live="polite" className="mt-4 text-sm text-ink">{message}</p>
     {providers?.google&&<button type="button" className="account-action mt-4 w-full" onClick={()=>void google()} disabled={busy}>Continue with Google</button>}
     {IS_BETA&&<p className="mt-5 text-sm text-ink-muted">Beta access requires approval after you sign in. <a href={appPageUrl('/beta-access')} className="underline">Request access</a>.</p>}
+    <p className="mt-4 text-sm text-ink-muted">{IS_BETA?<a href={ARROW_SITE_URL+'/'} className="underline">Back to public ARROW</a>:<a href={BETA_SITE_URL+'/beta-access/'} className="underline">Request or access ARROW Beta</a>}</p>
     <p className="mt-5 text-sm text-ink-faint">By continuing, you agree to the <a href={appPageUrl('/terms')} className="underline">terms</a> and acknowledge the <a href={appPageUrl('/privacy')} className="underline">privacy policy</a>.</p>
   </div></main>;
 }

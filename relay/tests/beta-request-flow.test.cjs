@@ -1,0 +1,12 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Public beta request regression fixture. */
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),ts=require('typescript'),React=require('react'),{JSDOM}=require('jsdom');
+test('public beta access submits a request and shows pending approval',async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'https://enterarrow.com/relay/beta-access/',pretendToBeVisual:true}),w=dom.window;
+ const keys=['window','document','navigator','HTMLElement','IS_REACT_ACT_ENVIRONMENT'],old=Object.fromEntries(keys.map(k=>[k,Object.getOwnPropertyDescriptor(global,k)]));for(const k of keys)Object.defineProperty(global,k,{configurable:true,value:k==='IS_REACT_ACT_ENVIRONMENT'?true:w[k]});
+ let status={approved:false,request_status:null};const calls=[];
+ const client={auth:{getUser:async()=>({data:{user:{id:'account'}}})},from:()=>({select:()=>({eq:()=>({single:async()=>({data:{display_name:'Tester'}})})})}),rpc:async(name,body)=>{calls.push({name,body});if(name==='request_beta_access')status={approved:false,request_status:'pending'};return {data:status};}};
+ const exports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/app/beta-access/page.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,{exports,window:w,require:id=>id==='@/lib/config'?{IS_BETA:false,ARROW_SITE_URL:'https://enterarrow.com',BETA_SITE_URL:'https://link9060.github.io/Resonant-Relay',appPageUrl:p=>'/relay'+p+'/'}:id==='@/lib/supabase/client'?{createClient:()=>client}:id==='@/components/page-loading'?{PageLoading:()=>React.createElement('p',null,'Loading')}:id==='lucide-react'?new Proxy({},{get:()=>()=>null}):require(id)});
+ const root=require('react-dom/client').createRoot(w.document.getElementById('root'));
+ try{await React.act(async()=>root.render(React.createElement(exports.default)));await React.act(async()=>{await new Promise(r=>setTimeout(r,30));});assert.ok(w.document.querySelector('form'));await React.act(async()=>w.document.querySelector('form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true})));assert.ok(calls.some(c=>c.name==='request_beta_access'));assert.match(w.document.body.textContent,/request is pending/);}
+ finally{await React.act(async()=>root.unmount());dom.window.close();for(const k of keys){if(old[k])Object.defineProperty(global,k,old[k]);else delete global[k];}}
+});
