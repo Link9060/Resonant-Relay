@@ -8,24 +8,34 @@ export const OPEN_WHATS_NEW_EVENT = 'relay-open-whats-new';
 
 const SEEN_VERSION_KEY = 'relay-whats-new-seen-version';
 
-const DEVELOPMENT_RELEASE = {
-  version: '1.0.8',
-  status: 'Beta · Development',
-  publishedAt: '2026-09-21T03:00:00Z',
-  title: 'The next Relay beta',
-  summary: 'Beta 1.0.8 starts from the complete 1.0.7 Focus Update. New development work will appear here as it lands.',
+const RELEASE_11 = {
+  version: '1.1',
+  status: 'Public release',
+  publishedAt: '2026-10-15T00:00:00Z',
+  title: 'Relay 1.1 · ARROW Update',
+  summary: 'Your daily workspace, connected to the complete ARROW suite with a refreshed RAVIN dashboard widget.',
   groups: [
     {
-      label: 'Starting point',
+      label: 'RAVIN on your dashboard',
       items: [
-        'The Focus workspace, cleaned-up Calendar and Chats layouts, responsive no-scroll dashboard widgets, calendar-only connected accounts, and launch polish all carry forward from 1.0.7.',
-        'Beta-only labels stay visible on the development channel so it is always clear when you are testing the next Relay build.',
+        'Write a multiline question, organize a brain dump, or start planning your day from the refreshed RAVIN widget.',
+        'Questions open as drafts in RAVIN so you can review them before sending. Public and beta open their matching RAVIN workspace.',
+      ],
+    },
+    {
+      label: 'Connected ARROW',
+      items: [
+        'The current integrated ARROW experience is available on public, including Orbit, Relay, Waypoint, Atlas, and RAVIN.',
+        'Request beta access from the public site, open the beta workspace when approved, and return to public from beta.',
       ],
     },
   ],
 } as const;
 
+const DEVELOPMENT_RELEASE = { ...RELEASE_11, status: 'Beta · Development' } as const;
+
 const PUBLIC_RELEASES = [
+  RELEASE_11,
   {
     version: '1.0.8',
     status: 'Public release',

@@ -8,10 +8,10 @@ export const ARROW_INTEGRATION_ENABLED =
   isGitHubPages ||
   isArrowHosted ||
   process.env.NEXT_PUBLIC_ARROW_INTEGRATION === '1';
-export const PRODUCTION_VERSION = '1.0.8';
+export const PRODUCTION_VERSION = '1.1';
 export const PRODUCTION_RELEASE_NAME = 'ARROW Update';
-export const DEVELOPMENT_VERSION = '1.0.8';
-export const DEVELOPMENT_RELEASE_NAME = 'Next Update';
+export const DEVELOPMENT_VERSION = '1.1';
+export const DEVELOPMENT_RELEASE_NAME = 'ARROW Update';
 export const APP_VERSION = IS_BETA ? DEVELOPMENT_VERSION : PRODUCTION_VERSION;
 export const RELEASE_LABEL = IS_BETA
   ? `Beta ${APP_VERSION} · ${DEVELOPMENT_RELEASE_NAME}`
