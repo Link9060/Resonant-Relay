@@ -751,13 +751,23 @@
         ...(role !== 'moderator' ? [{id:'users',label:'Accounts',group:'Accounts',description:'Find accounts and review their access.'}] : []),
         ...(role === 'owner' ? [{id:'beta',label:'Beta access',group:'Accounts',description:'Review pending beta applications.'},{id:'overview',label:'Overview',group:'Oversight',description:'Account, activity and storage statistics.'},{id:'audit',label:'Audit log',group:'Oversight',description:'Inspect recorded staff actions.'}] : []),
       ];
+      const identity = {
+        owner: {label:'Owner',initial:'O',title:'Steward the whole system.',copy:'A dedicated space for the people shaping ARROW.',scope:'Operations · Accounts · Oversight'},
+        admin: {label:'Administrator',initial:'A',title:'Keep ARROW moving.',copy:'Your workspace for supporting people and managing access.',scope:'Operations · Accounts'},
+        moderator: {label:'Moderator',initial:'M',title:'Care for the community.',copy:'A focused workspace for thoughtful reviews and support.',scope:'Support · Inbox · Reports'},
+      }[role];
+      const paths = {requests:'M4 5h16v11H9l-5 4V5Z',email:'M3 5h18v14H3V5Zm0 1 9 7 9-7',reports:'M6 21V3m0 1h13l-3 5 3 5H6',users:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m7-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8m13 10v-2a4 4 0 0 0-3-4m-1-12a4 4 0 0 1 0 8',beta:'m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z',overview:'M3 3h7v7H3V3Zm11 0h7v7h-7V3ZM3 14h7v7H3v-7Zm11 0h7v7h-7v-7Z',audit:'M8 3H5v18h14V3h-3M8 2h8v4H8V2Zm0 9h8m-8 5h5'};
+      const icon = name => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+paths[name]+'"/></svg>';
       let group = '';
-      const navigation = sections.map(section => { const heading = section.group !== group ? '<h3>'+section.group+'</h3>' : ''; group = section.group; return heading+'<button type="button" data-queue="'+section.id+'">'+section.label+'</button>'; }).join('');
-      state.panelBody.innerHTML = '<div class="arrow-staff-workspace"><nav class="arrow-staff-nav" aria-label="Staff sections"><div class="arrow-staff-role">'+escapeHtml(role)+' access</div>'+navigation+'</nav><section class="arrow-staff-content"><header class="arrow-staff-section-head"><div><h2 id="arrow-staff-section-title"></h2><p id="arrow-staff-section-description"></p></div><button type="button" id="arrow-staff-refresh">Refresh</button></header><div class="arrow-staff-toolbar"><label class="arrow-os-form" id="arrow-staff-search-label">Search this page<input id="arrow-staff-search" type="search" placeholder="Search loaded records" /></label><label class="arrow-os-form" id="arrow-staff-status-label">Status<select id="arrow-staff-status"></select></label></div><p id="arrow-staff-result-count" role="status"></p><div id="arrow-staff-queue" aria-live="polite"></div></section></div>';
+      const navigation = sections.map(section => { const heading = section.group !== group ? '<h3>'+section.group+'</h3>' : ''; group = section.group; return heading+'<button type="button" data-queue="'+section.id+'">'+icon(section.id)+'<span>'+section.label+'</span><span class="arrow-staff-nav-arrow" aria-hidden="true">↗</span></button>'; }).join('');
+      state.panelBody.innerHTML = '<div class="arrow-staff-workspace" data-staff-role="'+role+'"><nav class="arrow-staff-nav" aria-label="Staff sections"><div class="arrow-staff-identity"><span class="arrow-staff-crest" aria-hidden="true">'+identity.initial+'</span><div><span class="arrow-staff-eyebrow">ARROW STAFF</span><strong>'+identity.label+'</strong></div></div>'+navigation+'<div class="arrow-staff-nav-foot"><span class="arrow-staff-eyebrow">YOUR WORKSPACE</span><p>'+identity.scope+'</p></div></nav><section class="arrow-staff-content"><div class="arrow-staff-welcome"><div><span class="arrow-staff-eyebrow">'+identity.label+' workspace</span><h2>'+identity.title+'</h2><p>'+identity.copy+'</p></div><div class="arrow-staff-orbit" aria-hidden="true"><span>↗</span></div></div><header class="arrow-staff-section-head"><div><h2 id="arrow-staff-section-title"></h2><p id="arrow-staff-section-description"></p></div><div class="arrow-staff-refresh-group"><span id="arrow-staff-updated" role="status"></span><button type="button" id="arrow-staff-refresh">↻ Refresh</button></div></header><div class="arrow-staff-toolbar"><label class="arrow-os-form" id="arrow-staff-search-label">Search this page<input id="arrow-staff-search" type="search" placeholder="Search loaded records…" /></label><label class="arrow-os-form" id="arrow-staff-status-label">Status<select id="arrow-staff-status"></select></label><label class="arrow-os-form" id="arrow-staff-sort-label">Order<select id="arrow-staff-sort"><option value="priority">Needs attention first</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></label></div><div class="arrow-staff-results-bar"><p id="arrow-staff-result-count" role="status"></p><button type="button" id="arrow-staff-clear" hidden>Clear filters</button></div><div id="arrow-staff-queue" aria-live="polite" aria-busy="false"></div></section></div>';
       const host = state.panelBody.querySelector('#arrow-staff-queue');
       const search = state.panelBody.querySelector('#arrow-staff-search');
       const statusFilter = state.panelBody.querySelector('#arrow-staff-status');
       const refresh = state.panelBody.querySelector('#arrow-staff-refresh');
+      const sort = state.panelBody.querySelector('#arrow-staff-sort');
+      const clear = state.panelBody.querySelector('#arrow-staff-clear');
+      const updated = state.panelBody.querySelector('#arrow-staff-updated');
       const sectionTitle = state.panelBody.querySelector('#arrow-staff-section-title');
       const description = state.panelBody.querySelector('#arrow-staff-section-description');
       const resultCount = state.panelBody.querySelector('#arrow-staff-result-count');
@@ -773,41 +783,62 @@
         catch (error) { host.prepend(Object.assign(document.createElement('p'), { textContent: error.message, role: 'alert' })); }
         finally { button.disabled = false; }
       }
+      const recordStatus = row => active === 'users' ? (row.banned_at ? 'suspended' : 'active') : row.request_status || row.status || '';
+      const needsAttention = row => ['new','submitted','pending','open','reviewing'].includes(recordStatus(row));
+      const recordDate = row => { const value = new Date(row.latest_message_at || row.created_at || row.updated_at || '').getTime(); return Number.isFinite(value) ? value : 0; };
       function draw() {
         const query = search.value.toLowerCase();
         host.replaceChildren();
-        const visible = records.filter(row => JSON.stringify(row).toLowerCase().includes(query) && (!statusFilter.value || (active === 'users' ? (row.banned_at ? 'suspended' : 'active') : row.request_status || row.status) === statusFilter.value));
-        resultCount.textContent = visible.length+' of '+records.length+' records on this page';
-        if (!visible.length) host.innerHTML = panelEmpty('No matching items.');
+        const visible = records.filter(row => JSON.stringify(row).toLowerCase().includes(query) && (!statusFilter.value || recordStatus(row) === statusFilter.value));
+        visible.sort((a,b) => sort.value === 'priority' ? Number(needsAttention(b))-Number(needsAttention(a)) || recordDate(b)-recordDate(a) : sort.value === 'oldest' ? recordDate(a)-recordDate(b) : recordDate(b)-recordDate(a));
+        const attention = records.filter(needsAttention).length;
+        resultCount.textContent = visible.length+' of '+records.length+' records on this page'+(attention ? ' · '+attention+' need attention' : '');
+        clear.hidden = !search.value && !statusFilter.value;
+        if (!visible.length) {
+          const empty=document.createElement('div');empty.className='arrow-staff-empty';
+          const heading=document.createElement('h3');heading.textContent=records.length?'No matching records':'You’re up to date';
+          const copy=document.createElement('p');copy.textContent=records.length?'Try a different search or clear your filters.':'There are no records on this page. Refresh to check again.';
+          empty.append(heading,copy);host.append(empty);
+        }
         visible.forEach(row => {
-          const article = document.createElement('article'); article.className = 'arrow-os-support-row';
+          const article = document.createElement('article'); article.className = 'arrow-os-support-row arrow-staff-record';
+          const review=document.createElement('details');review.className='arrow-staff-review';
+          const summary=document.createElement('summary');summary.className='arrow-staff-record-summary';
+          const heading=document.createElement('div');heading.className='arrow-staff-record-heading';
           const title = document.createElement('strong');
-          title.textContent = row.subject || row.reason || row.action || row.display_name || row.email || 'Account'; article.append(title);
-          const detail = document.createElement('p');
-          detail.textContent = active === 'users' ? [row.email, row.role, row.banned_at ? 'Banned' : 'Active'].filter(Boolean).join(' · ') : [row.metadata?.module || (active === 'reports' ? 'relay' : 'arrow'), row.status, row.description || row.details].filter(Boolean).join(' · '); article.append(detail);
+          title.textContent = row.subject || row.reason || row.action || row.display_name || row.email || row.primary_email || 'Account'; heading.append(title);
+          const meta=document.createElement('span');meta.className='arrow-staff-record-meta';
+          const date=recordDate(row);
+          meta.textContent=[row.sender_email || row.email || row.metadata?.module || (active==='reports'?'Relay':'ARROW'), date ? new Date(date).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : ''].filter(Boolean).join(' · ');heading.append(meta);
+          const badge=document.createElement('span');badge.className='arrow-staff-status';badge.dataset.attention=String(needsAttention(row));badge.textContent=recordStatus(row).replaceAll('_',' ') || (active==='audit'?'Recorded':'Record');
+          const affordance=document.createElement('span');affordance.className='arrow-staff-review-label';affordance.textContent=active==='audit'?'Details':'Review';
+          summary.append(heading,badge,affordance);review.append(summary);article.append(review);
+          const content=document.createElement('div');content.className='arrow-staff-record-body';review.append(content);
+          const detail = document.createElement('p');detail.className='arrow-staff-record-copy';
+          detail.textContent = active === 'users' ? [row.email, row.role, row.banned_at ? 'Suspended' : 'Active'].filter(Boolean).join(' · ') : [row.description || row.details].filter(Boolean).join(' · '); if(detail.textContent)content.append(detail);
           if (active === 'email') {
-            const open=document.createElement('button');open.type='button';open.textContent='Open thread';article.append(open);
+            const open=document.createElement('button');open.type='button';open.textContent='Open thread';content.append(open);
             open.onclick=async()=>{open.disabled=true;try{const messages=await arrowData('/rest/v1/support_email_messages?thread_id=eq.'+encodeURIComponent(row.id)+'&select=id,direction,from_email,text_body,created_at&order=created_at.asc&limit=200');const thread=document.createElement('section');thread.className='arrow-staff-thread';for(const message of messages){const copy=document.createElement('p');copy.style.whiteSpace='pre-wrap';copy.textContent=(message.direction==='outbound'?'Support':message.from_email)+' · '+new Date(message.created_at).toLocaleString()+'\n'+(message.text_body||'(No text body)');thread.append(copy);}
-              if(role!=='moderator'){const reply=document.createElement('textarea');reply.placeholder='Reply to '+row.sender_email;reply.maxLength=10000;thread.append(reply);const send=document.createElement('button');send.type='button';send.textContent='Send reply';send.onclick=async()=>{if(!reply.value.trim()||!confirm('Send this reply to '+row.sender_email+'?'))return;send.disabled=true;try{await arrowData('/functions/v1/support-email',{method:'POST',body:{action:'reply',threadId:row.id,text:reply.value.trim()}});reply.value='';await load('email',offset);}catch(error){thread.append(Object.assign(document.createElement('p'),{textContent:error.message}));}finally{send.disabled=false;}};thread.append(send);
-              const status=document.createElement('select');for(const value of ['new','open','pending','closed']){const option=document.createElement('option');option.value=value;option.textContent=value;option.selected=value===row.status;status.append(option);}thread.append(status);const save=document.createElement('button');save.textContent='Save status';save.onclick=()=>action('staff_update_support_thread',{p_thread_id:row.id,p_status:status.value,p_assigned_to:null},save);thread.append(save);}
-              article.append(thread);open.remove();}catch(error){article.append(Object.assign(document.createElement('p'),{textContent:error.message}));open.disabled=false;}};
+              if(role!=='moderator'){const reply=document.createElement('textarea');reply.placeholder='Reply to '+row.sender_email;reply.setAttribute('aria-label','Reply to '+row.sender_email);reply.maxLength=10000;thread.append(reply);const send=document.createElement('button');send.type='button';send.textContent='Send reply';send.onclick=async()=>{if(!reply.value.trim()||!confirm('Send this reply to '+row.sender_email+'?'))return;send.disabled=true;try{await arrowData('/functions/v1/support-email',{method:'POST',body:{action:'reply',threadId:row.id,text:reply.value.trim()}});reply.value='';await load('email',offset);}catch(error){thread.append(Object.assign(document.createElement('p'),{textContent:error.message}));}finally{send.disabled=false;}};thread.append(send);
+              const status=document.createElement('select');status.setAttribute('aria-label','Conversation status');for(const value of ['new','open','pending','closed']){const option=document.createElement('option');option.value=value;option.textContent=value;option.selected=value===row.status;status.append(option);}thread.append(status);const save=document.createElement('button');save.textContent='Save status';save.onclick=()=>action('staff_update_support_thread',{p_thread_id:row.id,p_status:status.value,p_assigned_to:null},save);thread.append(save);}
+              content.append(thread);open.remove();}catch(error){content.append(Object.assign(document.createElement('p'),{textContent:error.message}));open.disabled=false;}};
           } else if (active === 'audit') {
-            const info = document.createElement('p'); info.textContent = [row.actor_name || row.actor_email, row.target_name || row.target_email, new Date(row.created_at).toLocaleString()].filter(Boolean).join(' · ');article.append(info);
-            const details = document.createElement('details');const summary = document.createElement('summary');summary.textContent='Action details';const copy=document.createElement('pre');copy.textContent=JSON.stringify(row.metadata||{},null,2);details.append(summary,copy);article.append(details);
+            const info = document.createElement('p'); info.textContent = [row.actor_name || row.actor_email, row.target_name || row.target_email, new Date(row.created_at).toLocaleString()].filter(Boolean).join(' · ');content.append(info);
+            const details = document.createElement('details');const summary = document.createElement('summary');summary.textContent='Action details';const copy=document.createElement('pre');copy.textContent=JSON.stringify(row.metadata||{},null,2);details.append(summary,copy);content.append(details);
           } else if (active === 'beta') {
-            const info=document.createElement('p');info.textContent=[row.primary_email,row.request_status,row.request_message].filter(Boolean).join(' · ');article.append(info);
-            if(row.request_status==='pending'){const reply=document.createElement('textarea');reply.placeholder='Response to applicant';reply.maxLength=1000;article.append(reply);
-              for(const approved of [true,false]){const review=document.createElement('button');review.type='button';review.textContent=approved?'Approve access':'Decline';review.onclick=()=>{if(!reply.value.trim()){reply.focus();return;}void action('owner_review_beta_request',{p_request_id:row.request_id,p_approve:approved,p_message:reply.value.trim()},review);};article.append(review);}
+            const info=document.createElement('p');info.textContent=[row.primary_email,row.request_status,row.request_message].filter(Boolean).join(' · ');content.append(info);
+            if(row.request_status==='pending'){const reply=document.createElement('textarea');reply.placeholder='Response to applicant';reply.setAttribute('aria-label','Response to applicant');reply.maxLength=1000;content.append(reply);
+              for(const approved of [true,false]){const review=document.createElement('button');review.type='button';review.textContent=approved?'Approve access':'Decline';review.onclick=()=>{if(!reply.value.trim()){reply.focus();return;}void action('owner_review_beta_request',{p_request_id:row.request_id,p_approve:approved,p_message:reply.value.trim()},review);};content.append(review);}
             }
           } else if (active !== 'users') {
-            const note = document.createElement('textarea'); note.rows = 2; note.placeholder = 'Staff note'; note.maxLength = 2000; note.setAttribute('aria-label','Staff note for '+title.textContent); note.value = row.staff_note || row.moderation_note || ''; article.append(note);
+            const note = document.createElement('textarea'); note.rows = 2; note.placeholder = 'Staff note'; note.maxLength = 2000; note.setAttribute('aria-label','Staff note for '+title.textContent); note.value = row.staff_note || row.moderation_note || ''; content.append(note);
             const select = document.createElement('select');select.setAttribute('aria-label','Status for '+title.textContent);
-            (active === 'requests' ? ['new','reviewing','resolved','dismissed'] : ['submitted','reviewing','resolved','dismissed']).forEach(status => { const option = document.createElement('option'); option.value = status; option.textContent = status; option.selected = status === row.status; select.append(option); }); article.append(select);
-            const save = document.createElement('button'); save.textContent = 'Save status'; save.type = 'button'; article.append(save);
-            if(active==='requests'&&role==='owner'&&row.request_type==='role_application'&&row.status!=='resolved'){const approve=document.createElement('button');approve.type='button';approve.textContent='Approve staff application';approve.onclick=()=>{if(!confirm('Approve this staff role application?'))return;void action('owner_approve_role_request',{p_request_id:row.request_id,p_note:note.value},approve);};article.append(approve);}
+            (active === 'requests' ? ['new','reviewing','resolved','dismissed'] : ['submitted','reviewing','resolved','dismissed']).forEach(status => { const option = document.createElement('option'); option.value = status; option.textContent = status; option.selected = status === row.status; select.append(option); }); content.append(select);
+            const save = document.createElement('button'); save.textContent = 'Save status'; save.type = 'button'; content.append(save);
+            if(active==='requests'&&role==='owner'&&row.request_type==='role_application'&&row.status!=='resolved'){const approve=document.createElement('button');approve.type='button';approve.textContent='Approve staff application';approve.onclick=()=>{if(!confirm('Approve this staff role application?'))return;void action('owner_approve_role_request',{p_request_id:row.request_id,p_note:note.value},approve);};content.append(approve);}
             save.onclick = () => action(active === 'requests' ? 'staff_update_request_status' : 'staff_update_report_status', active === 'requests' ? { p_request_id: row.request_id, p_status: select.value, p_note: note.value } : { p_report_id: row.report_id, p_status: select.value, p_note: note.value }, save);
           } else if (role === 'owner') {
-            const tools=document.createElement('details');tools.className='arrow-staff-account-tools';const summary=document.createElement('summary');summary.textContent='Manage account';tools.append(summary);article.append(tools);
+            const tools=document.createElement('details');tools.className='arrow-staff-account-tools';const summary=document.createElement('summary');summary.textContent='Manage account';tools.append(summary);content.append(tools);
             const inspect = document.createElement('button');inspect.type='button';inspect.textContent='Inspect account';tools.append(inspect);
             inspect.onclick=async()=>{inspect.disabled=true;try{const result=await rpc('owner_user_inspector',{p_user_id:row.id});const details=document.createElement('details');details.open=true;const summary=document.createElement('summary');summary.textContent='Account details';details.append(summary);const renderValue=(host,label,value)=>{const section=document.createElement('section');const heading=document.createElement('h4');heading.textContent=label.replaceAll('_',' ');section.append(heading);if(value&&typeof value==='object'){for(const [key,item] of Object.entries(value)){if(item&&typeof item==='object'){renderValue(section,key,item);}else{const line=document.createElement('p');line.textContent=key.replaceAll('_',' ')+': '+String(item??'—');section.append(line);}}}else{const line=document.createElement('p');line.textContent=String(value??'—');section.append(line);}host.append(section);};for(const [label,value] of Object.entries(result||{}))renderValue(details,label,value);tools.append(details);}catch(error){tools.append(Object.assign(document.createElement('p'),{textContent:error.message}));}finally{inspect.disabled=false;}};
             const ban = document.createElement('button'); ban.type = 'button'; ban.textContent = row.banned_at ? 'Restore account' : 'Suspend account'; tools.append(ban);
@@ -822,6 +853,12 @@
             const deleteAccount=document.createElement('button');deleteAccount.type='button';deleteAccount.textContent='Delete account';deleteAccount.onclick=()=>{if(prompt('Permanently delete '+title.textContent+' and their data? Type DELETE to confirm.')==='DELETE')void action('owner_delete_user',{p_user_id:row.id},deleteAccount);};tools.append(deleteAccount);
             const signOut = document.createElement('button'); signOut.type = 'button'; signOut.textContent = 'Revoke sessions'; tools.append(signOut);
             signOut.onclick = () => { if (!confirm('Sign out all sessions for ' + title.textContent + '?')) return; void action('owner_force_sign_out',{p_user_id:row.id},signOut); };
+            const groupTools=(label,nodes)=>{const group=document.createElement('fieldset');group.className='arrow-staff-tool-group';const legend=document.createElement('legend');legend.textContent=label;group.append(legend,...nodes);tools.append(group);};
+            groupTools('Account insights',[inspect]);
+            groupTools('Role & permissions',[roleSelect,changeRole]);
+            groupTools('Private owner notes',[ownerNote,addNote]);
+            const sensitive=document.createElement('details');sensitive.className='arrow-staff-sensitive';const sensitiveTitle=document.createElement('summary');sensitiveTitle.textContent='Access & account safety';sensitive.append(sensitiveTitle,ban,revokeBeta,signOut,deleteAccount);tools.append(sensitive);
+
 
           }
           host.append(article);
@@ -833,9 +870,9 @@
         if(document.querySelector('[data-arrow-staff-workspace]')) { const url=new URL(location.href);url.searchParams.set('queue',queue);history.replaceState({},'',url); }
         state.panelBody.querySelectorAll('[data-queue]').forEach(button=>button.setAttribute('aria-current',button.dataset.queue===queue?'page':'false'));
         if(queue!==active) { search.value=''; statusFilter.replaceChildren(); const options=queue==='users'?['','active','suspended']:queue==='requests'?['','new','reviewing','resolved','dismissed']:queue==='reports'?['','submitted','reviewing','resolved','dismissed']:queue==='email'?['','new','open','pending','closed']:queue==='beta'?['','pending','approved','declined']:[''];for(const value of options){const option=document.createElement('option');option.value=value;option.textContent=value||'All statuses';statusFilter.append(option);} }
-        state.panelBody.querySelector('#arrow-staff-search-label').hidden=queue==='overview';state.panelBody.querySelector('#arrow-staff-status-label').hidden=['overview','audit'].includes(queue);
-        resultCount.textContent='Loading…';refresh.disabled=true;search.disabled=true;statusFilter.disabled=true;previous.disabled=true;nextPage.disabled=true;records=[];
-        const version = ++loadVersion; offset = nextOffset; active = queue; host.textContent = 'Loading…';
+        state.panelBody.querySelector('#arrow-staff-search-label').hidden=queue==='overview';state.panelBody.querySelector('#arrow-staff-sort-label').hidden=queue==='overview';clear.hidden=true;state.panelBody.querySelector('#arrow-staff-status-label').hidden=['overview','audit'].includes(queue);
+        resultCount.textContent='Loading…';updated.textContent='';refresh.disabled=true;search.disabled=true;statusFilter.disabled=true;sort.disabled=true;previous.disabled=true;nextPage.disabled=true;records=[];
+        const version = ++loadVersion; offset = nextOffset; active = queue; host.setAttribute('aria-busy','true');host.innerHTML='<div class="arrow-staff-skeleton" aria-hidden="true"><i></i><i></i><i></i></div>'; 
         try {
           if(queue==='overview') {
             paging.hidden=true;
@@ -843,6 +880,7 @@
             if(version!==loadVersion || state.activePanel !== 'moderation')return;
             resultCount.textContent='Live account overview';
             renderOwnerOverview(host,stats,storage);
+            updated.textContent='Updated '+new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
             return;
           }
           paging.hidden=false;
@@ -850,11 +888,11 @@
           if (version !== loadVersion || state.activePanel !== 'moderation') return;
           records = result;
           previous.disabled = nextOffset === 0; nextPage.disabled = records.length < 100; pageLabel.textContent = 'Page ' + (Math.floor(nextOffset / 100) + 1);
-          if (host.isConnected) draw();
+          if (host.isConnected) { draw();updated.textContent='Updated '+new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
         } catch (error) { if (version === loadVersion && host.isConnected) { host.innerHTML = sharedDataError(error); resultCount.textContent='Could not load this section. Use Refresh to retry.'; } }
-        finally { if(version===loadVersion) { refresh.disabled=false;search.disabled=false;statusFilter.disabled=false; } }
+        finally { if(version===loadVersion) { refresh.disabled=false;search.disabled=false;statusFilter.disabled=false;sort.disabled=false;host.setAttribute('aria-busy','false'); } }
       }
-      search.oninput = draw;statusFilter.onchange=draw;refresh.onclick=()=>load(active,offset);
+      search.oninput = draw;statusFilter.onchange=draw;sort.onchange=draw;clear.onclick=()=>{search.value='';statusFilter.value='';draw();search.focus();};refresh.onclick=()=>load(active,offset);
       state.panelBody.querySelectorAll('[data-queue]').forEach(button => button.onclick = () => load(button.dataset.queue));
       const requested=new URLSearchParams(location.search).get('queue');
       const allowed=['requests','reports','email',...(role!=='moderator'?['users']:[]),...(role==='owner'?['overview','audit','beta']:[])];
@@ -2061,6 +2099,7 @@
     nextMove,
   };
 })();
+
 
 
 
