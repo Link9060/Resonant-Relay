@@ -664,8 +664,8 @@
   async function staffRole(actual = false) {
     const userId = currentArrowUserId();
     if (!userId) return 'user';
-    const rows = await arrowData('/rest/v1/profiles?id=eq.' + encodeURIComponent(userId) + '&select=role,banned_at');
-    const role = rows?.[0]?.banned_at ? 'user' : rows?.[0]?.role || 'user';
+    const result = await arrowData('/rest/v1/rpc/current_app_role',{method:'POST',body:{},readOnly:true});
+    const role = ['user','moderator','admin','owner'].includes(result) ? result : 'user';
     return actual ? role : staffPreviewRole(role);
   }
   async function setStaffPreview(role) {
