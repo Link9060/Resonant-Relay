@@ -1,5 +1,6 @@
 'use client';
 
+import { RavinDashboardWidget } from '@/components/dashboard/ravin-dashboard-widget';
 import { DashboardStudio } from '@/components/dashboard/dashboard-studio';
 import { PageLoading } from '@/components/page-loading';
 import { createTodo, setTodoCompleted } from '@/lib/actions/todos';
@@ -38,7 +39,6 @@ import {
   Plus,
   RotateCcw,
   School,
-  Send,
   Sparkles,
   Sun,
   TimerReset,
@@ -107,7 +107,7 @@ export const WIDGET_META: Record<DashboardWidgetId, { label: string; description
   countdowns: { label: 'Countdowns', description: 'Time until your next timed event.' },
   recentfiles: { label: 'Recent Files', description: 'Reserved for a future connected-files source.' },
   ravinbrief: { label: 'Daily Brief', description: 'Live task, schedule, and chat activity.' },
-  askravin: { label: 'Ask RAVIN', description: 'Open an ARROW conversation with your question ready.' },
+  askravin: { label: 'RAVIN', description: 'Ask a question, plan your day, or organize a brain dump.' },
 };
 
 function cloneWidgets(items: DashboardWidgetPreference[]) {
@@ -276,7 +276,6 @@ function LoadedDashboard({ state, setState }: { state: DashboardState; setState:
   const [quickNoteStatus, setQuickNoteStatus] = useState<string | null>(null);
   const [focusSeconds, setFocusSeconds] = useState(25 * 60);
   const [focusRunning, setFocusRunning] = useState(false);
-  const [ravinPrompt, setRavinPrompt] = useState('');
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30_000);
@@ -493,14 +492,6 @@ function submitWeatherZip(event: FormEvent) {
     document.documentElement.dataset.relayLayout = next;
   }
 
-  function submitRavin(event: FormEvent) {
-    event.preventDefault();
-    if (!ravinPrompt.trim()) return;
-    const target=(IS_BETA?'/Resonant-Relay/arrow/ravin/':'/ravin/')+'?prompt='+encodeURIComponent(ravinPrompt.trim());
-    const arrow=(window as Window & {ArrowOS?:{navigate?:(href:string,module?:string)=>void}}).ArrowOS;
-    if(arrow?.navigate)arrow.navigate(target,'relay');else window.location.assign(target);
-  }
-
   function renderWidget(widget: DashboardWidgetPreference, index: number) {
     const fit = getWidgetFit(widget);
     const { compact, micro, short, narrow, wide, roomy, listLimit } = fit;
@@ -519,7 +510,7 @@ function submitWeatherZip(event: FormEvent) {
         )}</DashboardCard>;
 
       case 'askravin':
-        return <DashboardCard widget={widget} index={index} icon={<Sparkles size={18} />} title="Ask RAVIN"><form onSubmit={submitRavin} className={`rounded-xl border border-border bg-canvas ${micro ? 'p-1' : 'p-2'}`}><div className="flex items-center gap-2"><input aria-label="Question for RAVIN" value={ravinPrompt} onChange={event=>setRavinPrompt(event.target.value)} placeholder="Ask RAVIN…" className={`min-w-0 flex-1 bg-transparent outline-none placeholder:text-ink-faint ${micro ? 'px-1 text-xs' : 'px-2 py-2 text-sm'}`} /><button type="submit" aria-label="Open question in RAVIN" disabled={!ravinPrompt.trim()} className={`grid shrink-0 place-items-center rounded-full bg-ink text-canvas disabled:opacity-35 ${micro?'h-7 w-7':'h-10 w-10'}`}><Send size={micro?13:15} /></button></div></form>{!short&&<p className="mt-3 text-xs leading-5 text-ink-faint">Continue in RAVIN with your question ready. Shared tasks, calendar, notes, and knowledge stay connected.</p>}</DashboardCard>;
+        return <DashboardCard widget={widget} index={index} icon={<Sparkles size={18} />} title="RAVIN" badge={short ? undefined : 'Your ARROW assistant'}><RavinDashboardWidget compact={short} micro={micro} /></DashboardCard>;
 
       case 'tasks': {
         const shownTasks = todayTodos.slice(0, micro ? 1 : short ? Math.min(2, listLimit) : listLimit);
