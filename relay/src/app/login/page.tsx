@@ -24,7 +24,7 @@ export default function LoginPage(){
   useEffect(()=>{
     let active=true;
     const next=new URLSearchParams(location.search).get('next');
-    if(next && !next.startsWith('//') && (IS_BETA?next.startsWith(`${BASE_PATH}/`):isAllowedArrowReturnPath(next.split(/[?#]/)[0]))){try{localStorage.setItem(IS_BETA?'relay-post-auth-next':'arrow-auth-next-v1',next);}catch{}}
+    if(next && !next.startsWith('//') && (IS_BETA?next.startsWith(`${BASE_PATH}/`):isAllowedArrowReturnPath(next.split(/[?#]/)[0] || '/'))){try{localStorage.setItem(IS_BETA?'relay-post-auth-next':'arrow-auth-next-v1',next);}catch{}}
     void fetch(`${URL}/auth/v1/settings`,{headers:{apikey:KEY},signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).then(s=>{if(active)setProviders({google:s?.external?.google===true,phone:s?.external?.phone===true});}).catch(()=>{if(active)setProviders({google:false,phone:false});});
     return()=>{active=false;};
   },[]);
