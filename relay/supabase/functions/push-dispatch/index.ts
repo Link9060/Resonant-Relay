@@ -15,44 +15,80 @@ type PushSubscriptionRow = {
   auth_key: string;
 };
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+const ALLOWED_ORIGINS = new Set([
+  'https://enterarrow.com',
+  'https://www.enterarrow.com',
+  'https://resonantrelay.org',
+  'https://www.resonantrelay.org',
+  'https://link9060.github.io',
+  'http://localhost:3000',
+]);
 
-function json(body: unknown, status = 200) {
-  return Response.json(body, { status, headers: corsHeaders });
+function cors(req: Request) {
+  const origin = req.headers.get('Origin');
+  return {
+    ...(origin && ALLOWED_ORIGINS.has(origin) ? { 'Access-Control-Allow-Origin': origin } : {}),
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-relay-dispatch-secret',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    Vary: 'Origin',
+  };
+}
+
+function json(req: Request, body: unknown, status = 200) {
+  return Response.json(body, {
+    status,
+    headers: { ...cors(req), 'Cache-Control': 'no-store' },
+  });
+}
+
+function namedKey(variable: string, fallback: string) {
+  const encoded = Deno.env.get(variable);
+  if (encoded) {
+    try {
+      const values = JSON.parse(encoded) as Record<string, string>;
+      if (values.default) return values.default;
+    } catch {}
+  }
+  return Deno.env.get(fallback) ?? '';
+}
+
+function safeEqual(left: string, right: string) {
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return difference === 0;
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(req) });
+  if (req.method !== 'POST') return json(req, { error: 'Method not allowed' }, 405);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SECRET_KEY') ?? '';
-  if (!supabaseUrl || !serviceKey) return json({ error: 'Push service is unavailable.' }, 503);
+  const serviceKey = namedKey('SUPABASE_SECRET_KEYS', 'SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SECRET_KEY') || '';
+  if (!supabaseUrl || !serviceKey) return json(req, { error: 'Push service is unavailable.' }, 503);
 
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
   const body = await req.json().catch(() => ({}));
 
   try {
     const vapid = await getVapidDetails(admin);
-    if (body.action === 'health') return json({ configured: true, publicKey: vapid.publicKey });
+    if (body.action === 'health') return json(req, { configured: true, publicKey: vapid.publicKey });
 
     if (body.action === 'test') {
       const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
-      if (!token) return json({ error: 'Sign in to send a test alert.' }, 401);
+      if (!token) return json(req, { error: 'Sign in to send a test alert.' }, 401);
 
       const { data: authData, error: authError } = await admin.auth.getUser(token);
-      if (authError || !authData.user) return json({ error: 'Your session has expired.' }, 401);
+      if (authError || !authData.user) return json(req, { error: 'Your session has expired.' }, 401);
 
       const { data: subscriptions, error: subscriptionsError } = await admin
         .from('push_subscriptions')
         .select('id,endpoint,p256dh,auth_key')
         .eq('user_id', authData.user.id);
       if (subscriptionsError) throw subscriptionsError;
-      if (!subscriptions?.length) return json({ error: 'Enable alerts on this device first.' }, 409);
+      if (!subscriptions?.length) return json(req, { error: 'Enable alerts on this device first.' }, 409);
 
       const tenSecondsAgo = new Date(Date.now() - 10_000).toISOString();
       const { data: recent, error: recentError } = await admin
@@ -64,7 +100,7 @@ Deno.serve(async (req: Request) => {
         .limit(1)
         .maybeSingle();
       if (recentError) throw recentError;
-      if (recent) return json({ error: 'Wait a few seconds before sending another test.' }, 429);
+      if (recent) return json(req, { error: 'Wait a few seconds before sending another test.' }, 429);
 
       const testPayload = {
         id: `test-${crypto.randomUUID()}`,
@@ -74,7 +110,7 @@ Deno.serve(async (req: Request) => {
       };
       const delivery = await deliverPush(admin, vapid, subscriptions as PushSubscriptionRow[], testPayload);
       if (delivery.sent === 0) {
-        return json({
+        return json(req, {
           error: delivery.failed > 0
             ? 'The device push service rejected this alert. Reload Relay, then enable device alerts again.'
             : 'No registered device accepted the alert.',
@@ -95,20 +131,38 @@ Deno.serve(async (req: Request) => {
         .select('id')
         .single();
       if (testError) throw testError;
-      return json({ ok: true, ...delivery, notificationId: testNotification.id });
+      return json(req, { ok: true, ...delivery, notificationId: testNotification.id });
+    }
+
+    const { data: deliveryConfig, error: configError } = await admin
+      .from('push_delivery_config')
+      .select('dispatch_secret')
+      .eq('id', 1)
+      .single();
+    if (configError || !deliveryConfig?.dispatch_secret) {
+      throw configError ?? new Error('Push dispatch authentication is unavailable.');
+    }
+    const suppliedSecret = req.headers.get('X-Relay-Dispatch-Secret') ?? '';
+    if (!safeEqual(suppliedSecret, deliveryConfig.dispatch_secret)) {
+      return json(req, { error: 'Unauthorized.' }, 401);
     }
 
     const notificationId = typeof body.notificationId === 'string' ? body.notificationId : null;
-    if (!notificationId) return json({ error: 'Missing notification.' }, 400);
+    if (!notificationId) return json(req, { error: 'Missing notification.' }, 400);
 
+    const claimTime = new Date().toISOString();
+    const staleClaim = new Date(Date.now() - 5 * 60_000).toISOString();
     const { data: notification, error: notificationError } = await admin
       .from('notifications')
-      .select('id,user_id,title,body,link,pushed_at')
+      .update({ push_claimed_at: claimTime })
       .eq('id', notificationId)
+      .is('pushed_at', null)
+      .or(`push_claimed_at.is.null,push_claimed_at.lt.${staleClaim}`)
+      .select('id,user_id,type,title,body,link,pushed_at')
       .maybeSingle();
 
     if (notificationError) throw notificationError;
-    if (!notification || notification.pushed_at) return json({ ok: true, sent: 0 });
+    if (!notification) return json(req, { ok: true, sent: 0 });
 
     const { data: subscriptions, error: subscriptionsError } = await admin
       .from('push_subscriptions')
@@ -119,17 +173,19 @@ Deno.serve(async (req: Request) => {
     const { sent, failed } = await deliverPush(admin, vapid, (subscriptions ?? []) as PushSubscriptionRow[], {
       id: notification.id,
       title: notification.title,
-      body: notification.body,
+      body: notification.type === 'new_message' ? 'Open Relay to read your new message.' : notification.body,
       link: notification.link ?? '/',
     });
 
     if (sent > 0) {
-      await admin.from('notifications').update({ pushed_at: new Date().toISOString() }).eq('id', notification.id).is('pushed_at', null);
+      await admin.from('notifications').update({ pushed_at: new Date().toISOString(), push_claimed_at: null }).eq('id', notification.id).eq('push_claimed_at', claimTime);
+    } else {
+      await admin.from('notifications').update({ push_claimed_at: null }).eq('id', notification.id).eq('push_claimed_at', claimTime);
     }
-    return json({ ok: true, sent, failed });
+    return json(req, { ok: true, sent, failed });
   } catch (error) {
     console.error('Push dispatch failed', error);
-    return json({ error: 'Push delivery failed.' }, 500);
+    return json(req, { error: 'Push delivery failed.' }, 500);
   }
 });
 

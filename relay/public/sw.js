@@ -1,4 +1,4 @@
-const CACHE = 'relay-shell-v7';
+const CACHE = 'relay-shell-v8';
 const SCOPE_URL = new URL(self.registration.scope);
 const BASE = SCOPE_URL.pathname.replace(/\/$/, '');
 
@@ -109,7 +109,10 @@ self.addEventListener('notificationclick', (event) => {
       }
       const pathWithSuffix = `${candidate.pathname}${candidate.search}${candidate.hash}`;
       const alreadyScoped = BASE && (candidate.pathname === BASE || candidate.pathname.startsWith(`${BASE}/`));
-      targetPath = alreadyScoped ? pathWithSuffix : appPath(pathWithSuffix);
+      const arrowCenter = /^\/(orbit|ravin|atlas|waypoint)(\/|$)/.test(candidate.pathname);
+      targetPath = arrowCenter
+        ? (BASE === '/Resonant-Relay' ? BASE + '/arrow' + pathWithSuffix : pathWithSuffix)
+        : alreadyScoped ? pathWithSuffix : appPath(pathWithSuffix);
     }
   } catch {
     targetPath = appPath('/');

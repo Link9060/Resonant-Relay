@@ -1,7 +1,7 @@
 'use client';
 
 import { markAllNotificationsRead, markNotificationRead } from '@/lib/actions/notifications';
-import { appPageUrl, normalizeAppLink } from '@/lib/config';
+import { appPageUrl, notificationPageUrl } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import type { Notification } from '@/lib/types/database';
 import { PushToggle } from '@/components/notifications/push-toggle';
@@ -67,7 +67,7 @@ export function NotificationBell({ currentUserId, initial }: { currentUserId: st
       } catch { setError('This alert could not be updated. Retry.'); return; }
     }
     setOpen(false);
-    if (notification.link) window.location.assign(appPageUrl(normalizeAppLink(notification.link)));
+    if (notification.link) window.location.assign(notificationPageUrl(notification.link));
   }
 
   async function handleMarkAllRead() {

@@ -50,6 +50,7 @@
     links: 'Links',
     appearance: 'Appearance',
     settings: 'Settings',
+    notifications: 'Notifications',
     support: 'ARROW support',
     moderation: 'ARROW staff',
   };
@@ -654,6 +655,7 @@
     if (name === 'focus') renderFocus();
     if (name === 'appearance') { renderAppearance(); updateAppearanceState(); }
     if (name === 'settings') renderSettings();
+    if (name === 'notifications') renderNotifications();
     if (name === 'support') renderSupport();
     if (name === 'moderation') renderModeration();
   }
@@ -1593,6 +1595,7 @@
       '</div>' +
       '<div class="arrow-os-settings-actions">' +
         '<a href="' + escapeAttr(resolveHref('/relay/profile/')) + '">Profile, account and recovery</a>' +
+        '<button type="button" data-open-notifications>Open shared notifications</button>' +
         '<a href="' + escapeAttr(resolveHref('/relay/profile/#notifications')) + '">Notifications and device setup</a>' +
         '<a href="' + escapeAttr(resolveHref('/relay/profile/#appearance')) + '">Relay appearance, layout and particles</a>' +
         '<a href="' + escapeAttr(resolveHref('/relay/profile/#account-data')) + '">Export account data or delete account</a>' +
@@ -1609,6 +1612,7 @@
         '<button type="button" class="is-danger" data-settings-action="reset">Reset preferences</button>' +
       '</div>';
 
+    state.panelBody.querySelector('[data-open-notifications]').onclick=()=>openPanel('notifications',state.activeModule||'orbit');
     state.panelBody.querySelector('[data-settings-action="intro"]').addEventListener('click', () => {
       const url = new URL(ORBIT_URL, location.origin);
       url.searchParams.set('intro', '1');
@@ -2019,6 +2023,7 @@
     const staffHost = document.querySelector('[data-arrow-staff-workspace]');
     if(staffHost && staffHost.dataset.staffMounted !== 'true') { staffHost.dataset.staffMounted='true'; openPanel('moderation','orbit',staffHost); }
     updateHostTheme();
+    void pollNotifications();
   }
 
   function closeSharedOverlays() {
@@ -2145,6 +2150,102 @@
   applyMotion(getMotionChoice(), false);
   restoreFocusState();
   // State is persisted on timer actions. An old background tab must not overwrite it on exit.
+
+  // Every signed-in ARROW surface observes the same durable, owner-scoped inbox.
+  let notificationBusy = false;
+  let notificationAccount = '';
+  let notificationRows = [];
+  let notificationButton = null;
+  let notificationToast = null;
+  let notificationError = '';
+  function clearNotificationUI() {
+    notificationRows = [];
+    notificationButton?.remove(); notificationButton = null;
+    notificationToast?.remove(); notificationToast = null;
+    if (state.panelEl?.dataset.panel === 'notifications') {state.panelBody?.replaceChildren();closePanel(false);}
+  }
+  function notificationHref(link) {
+    let url;try{url=new URL(link || '/relay/', location.origin);}catch{return resolveHref('/relay/');}
+    if (/^\/(chats|planner|profile|contacts|todo)(\/|$)/.test(url.pathname)) url.pathname='/relay'+url.pathname;
+    if (url.origin !== location.origin || !/^\/(relay|ravin|orbit|atlas|waypoint)(\/|$)/.test(url.pathname)) return resolveHref('/relay/');
+    if (/^\/relay\/(chats|planner)\/[^/]+\/?$/.test(url.pathname)) {
+      const [,kind,detail] = url.pathname.match(/^\/relay\/(chats|planner)\/([^/]+)\/?$/);
+      if (detail !== 'view') {url.pathname='/relay/'+kind+'/view/';url.searchParams.set('id',decodeURIComponent(detail));}
+    }
+    return resolveHref(url.pathname + url.search + url.hash);
+  }
+  async function selectNotification(row) {
+    const account = notificationAccount;
+    try {
+      await arrowData('/rest/v1/notifications?id=eq.'+encodeURIComponent(row.id)+'&user_id=eq.'+encodeURIComponent(account), {method:'PATCH',body:{read_at:new Date().toISOString()}});
+      if (readArrowSession()?.user?.id !== account) return;
+      location.assign(notificationHref(row.link));
+    } catch {notificationError='Could not open this alert. Try again.';if(state.activePanel==='notifications')renderNotifications();}
+  }
+  function renderNotifications() {
+    if (!state.panelBody) return;
+    state.panelBody.replaceChildren();
+    const setup = document.createElement('a');setup.className='arrow-os-notification-setup';setup.href=resolveHref('/relay/profile/#notifications');setup.textContent='Device notification settings';state.panelBody.append(setup);
+    if (notificationError) {const error=document.createElement('p');error.setAttribute('role','alert');error.textContent=notificationError;state.panelBody.append(error);}
+    if (!notificationRows.length) {const empty=document.createElement('p');empty.textContent='No notifications yet.';state.panelBody.append(empty);}
+    notificationRows.forEach(row=>{
+      const button=document.createElement('button');button.type='button';button.className='arrow-os-inbox-row';button.dataset.unread=String(!row.read_at);
+      const title=document.createElement('strong');title.textContent=row.title;
+      const body=document.createElement('span');body.textContent=row.body;
+      const time=document.createElement('time');time.dateTime=row.created_at;time.textContent=new Date(row.created_at).toLocaleString();
+      button.append(title,body,time);button.onclick=()=>void selectNotification(row);state.panelBody.append(button);
+    });
+  }
+  function updateNotificationButton() {
+    if (!notificationButton) {
+      notificationButton=document.createElement('button');notificationButton.type='button';notificationButton.className='arrow-os-notification-button';
+      notificationButton.onclick=()=>{openPanel('notifications',state.activeModule||'orbit');void pollNotifications();};document.body.append(notificationButton);
+    }
+    const count=notificationRows.filter(row=>!row.read_at).length;
+    notificationButton.textContent=count ? 'Notifications · '+count : 'Notifications';
+    notificationButton.setAttribute('aria-label',count ? 'Notifications, '+count+' unread' : 'Notifications');
+  }
+  function showNotificationToast(row) {
+    notificationToast?.remove();
+    const toast=document.createElement('div');toast.className='arrow-os-notification-toast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');
+    const copy=document.createElement('div');const title=document.createElement('strong');title.textContent=row.title;const body=document.createElement('span');body.textContent=row.body;copy.append(title,body);
+    const open=document.createElement('button');open.type='button';open.textContent='Open';open.onclick=()=>void selectNotification(row);
+    const dismiss=document.createElement('button');dismiss.type='button';dismiss.textContent='×';dismiss.setAttribute('aria-label','Dismiss notification');dismiss.onclick=()=>toast.remove();
+    toast.append(copy,open,dismiss);document.body.append(toast);notificationToast=toast;
+    setTimeout(()=>toast.remove(),12000);
+  }
+  async function pollNotifications() {
+    const account=readArrowSession()?.user?.id || '';
+    if(account!==notificationAccount){clearNotificationUI();notificationAccount=account;}
+    if(!account || notificationBusy || document.hidden || !state.instances.size)return;
+    notificationBusy=true;
+    try {
+      const rows=await arrowData('/rest/v1/notifications?user_id=eq.'+encodeURIComponent(account)+'&select=id,title,body,link,created_at,read_at&order=created_at.desc&limit=30');
+      if(readArrowSession()?.user?.id!==account || notificationAccount!==account || !Array.isArray(rows))return;
+      notificationRows=rows;notificationError='';
+      // Relay already has a header bell; other centers get a compact shared inbox control.
+      if(![...state.instances].some(instance=>instance.module==='relay'))updateNotificationButton();
+      const seenKey='arrow_notifications_seen_v1:'+account;
+      const seen=readJson(seenKey,[]);const ids=new Set(Array.isArray(seen)?seen:[]);
+      const fresh=rows.filter(row=>!row.read_at && !ids.has(row.id) && Date.now()-new Date(row.created_at).getTime()<86400000);
+      const viewing = row => {
+        if(!row.link?.startsWith('/ravin/') || !location.pathname.includes('/ravin/') || !document.hasFocus())return false;
+        try{const conversation=new URL(row.link,location.origin).searchParams.get('conversation_id');return Boolean(conversation) && conversation===new URL(location.href).searchParams.get('conversation_id');}catch{return false;}
+      };
+      const unseen=fresh.find(row=>!viewing(row));
+      if(unseen)showNotificationToast(unseen);
+      // Only consume displayed alerts, preserving queued alerts for later polls.
+      for(const row of fresh)if(row===unseen || viewing(row))ids.add(row.id);
+      try{localStorage.setItem(seenKey,JSON.stringify([...ids].slice(-120)));}catch{}
+      if(state.activePanel==='notifications')renderNotifications();
+    } catch {if(readArrowSession()?.user?.id!==account)return;notificationError='Notifications could not refresh. They will retry automatically.';if(state.activePanel==='notifications')renderNotifications();}
+    finally {notificationBusy=false;}
+  }
+  setInterval(()=>void pollNotifications(),10000);
+  window.addEventListener('focus',()=>void pollNotifications());
+  document.addEventListener('visibilitychange',()=>void pollNotifications());
+  window.addEventListener('storage',event=>{if(event.key===ARROW_AUTH_STORAGE_KEY)void pollNotifications();});
+
 
   const startMounting = () => {
     requestAnimationFrame(() => {
