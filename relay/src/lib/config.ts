@@ -117,3 +117,12 @@ export function normalizeAppLink(link: string) {
 export function defaultSignedInUrl() {
   return ARROW_INTEGRATION_ENABLED ? ARROW_ORBIT_URL : appPageUrl(IS_BETA ? '/space' : '/');
 }
+
+export function notificationPageUrl(link: string) {
+  const url = new URL(link, ARROW_SITE_URL);
+  if (/^\/(orbit|ravin|atlas|waypoint)(\/|$)/.test(url.pathname)) {
+    const base = IS_BETA ? `${BETA_SITE_URL}/arrow` : ARROW_SITE_URL;
+    return `${base}${url.pathname}${url.search}${url.hash}`;
+  }
+  return appPageUrl(normalizeAppLink(link));
+}
