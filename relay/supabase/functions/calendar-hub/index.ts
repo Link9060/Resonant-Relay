@@ -5,9 +5,11 @@ type Provider = 'google' | 'microsoft';
 
 const BETA_ORIGIN = 'https://link9060.github.io';
 const PRODUCTION_ORIGIN = 'https://resonantrelay.org';
+const ARROW_ORIGIN = 'https://enterarrow.com';
+const WWW_ARROW_ORIGIN = 'https://www.enterarrow.com';
 const WWW_PRODUCTION_ORIGIN = 'https://www.resonantrelay.org';
 const LOCAL_ORIGIN = 'http://localhost:3000';
-const ALLOWED_ORIGINS = new Set([BETA_ORIGIN, PRODUCTION_ORIGIN, WWW_PRODUCTION_ORIGIN, LOCAL_ORIGIN]);
+const ALLOWED_ORIGINS = new Set([BETA_ORIGIN, PRODUCTION_ORIGIN, WWW_PRODUCTION_ORIGIN, ARROW_ORIGIN, WWW_ARROW_ORIGIN, LOCAL_ORIGIN]);
 const GOOGLE_EVENT_SCOPE = 'https://www.googleapis.com/auth/calendar.events.readonly';
 const GOOGLE_CALENDAR_LIST_SCOPE = 'https://www.googleapis.com/auth/calendar.calendarlist.readonly';
 const GOOGLE_SCOPE = `openid email profile ${GOOGLE_EVENT_SCOPE} ${GOOGLE_CALENDAR_LIST_SCOPE}`;
@@ -35,7 +37,9 @@ function safeReturnOrigin(value: unknown) {
 }
 
 function appBase(origin: string) {
-  return origin === BETA_ORIGIN ? `${origin}/Resonant-Relay` : origin;
+  if (origin === BETA_ORIGIN) return `${origin}/Resonant-Relay`;
+  if (origin === ARROW_ORIGIN || origin === WWW_ARROW_ORIGIN) return `${origin}/relay`;
+  return origin;
 }
 
 function redirect(
