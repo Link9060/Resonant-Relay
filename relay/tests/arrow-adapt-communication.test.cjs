@@ -15,5 +15,6 @@ test('Relay mobile navigation is communication-first', ()=>{
   const dock=read('src/components/dock.tsx');
   const mobile=dock.split('const mobileItems:')[1]?.split('return (')[0] || '';
   assert.match(mobile, /href: '\/chats'/);
-  assert.doesNotMatch(mobile,/href: '\/', label: 'Home'/);
+  assert.match(mobile,/href: '\/', label: 'Home'/);
+  assert.doesNotMatch(mobile,/label: 'Dashboard'/);
 });
