@@ -164,6 +164,9 @@ test('Atlas map controls and mobile filters call existing graph actions',{skip:!
  }
  assert.match(js,/setAtlasFiltersOpen/);
  assert.match(js,/updateZoom\(\)/);
+ assert.match(js,/graphIdentityThemeCache/);
+ for(const id of ['bloom','haven','atelier','pulse']) assert.ok(js.includes(id+': {'),id+' canvas style');
+ assert.match(js,/arrow:accentchange/);
  assert.match(markup,/aria-expanded="false"/);
  assert.match(css,/html\.atlas-filters-open/);
  for(const id of ['bloom','haven','atelier','pulse'])assert.ok(css.includes('data-arrow-adapt="'+id+'"] .atlas-map-controls'),id);
@@ -175,6 +178,8 @@ test('RAVIN provides accessible functional identity command strip and focus mode
  for(const id of ['adaptNewChatBtn','adaptSearchBtn','adaptFocusBtn']) assert.ok(js.includes('id="'+id+'"'),id);
  assert.match(js,/aria-pressed="false"/);
  assert.match(js,/dataset\.adaptFocus/);
+ assert.match(js,/function setAdaptFocus/);
+ assert.match(js,/setAdaptFocus\(false\)/);
  assert.match(js,/toggleSidebar\(\)/);
  assert.match(js,/data-arrow-open="tasks"/);
  assert.match(js,/data-arrow-open="calendar"/);
