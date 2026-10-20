@@ -65,7 +65,12 @@ test('failed note saves keep the draft and provide a retry',async()=>{
   finally {await f.close();}
 });
 async function composerFixture(send,status=async()=>({data:[{can_send:true}],error:null})) {
-  const {MessageComposer}=component('src/components/chats/message-composer.tsx',{'@/lib/actions/chats':{sendMessage:send},'@/lib/config':{appPageUrl:path=>path},'@/lib/supabase/client':{createClient:()=>({rpc:status})}});
+  const {MessageComposer}=component('src/components/chats/message-composer.tsx',{'@/components/adapt/native-communication':{
+      useCommunicationIdentity:()=> 'core',
+      NativeMessage:({children,className,style})=>React.createElement('div',{className,style},children),
+      NativeComposer:({children})=>React.createElement(React.Fragment,null,children),
+      NativeConversationRow:({children})=>React.createElement('div',null,children),
+    },'@/lib/actions/chats':{sendMessage:send},'@/lib/config':{appPageUrl:path=>path},'@/lib/supabase/client':{createClient:()=>({rpc:status})}});
   return mount(MessageComposer,{conversationId:'conversation'});
 }
 test('failed message sends preserve drafts and release the send control',async()=>{
