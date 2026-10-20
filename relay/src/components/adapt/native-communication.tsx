@@ -81,6 +81,19 @@ export function NativeComposer({identity,children,replying=false}:{
     <div className="relay-native-composer-stage">{children}</div>
   </section>;
 }
+/** Existing moderation, mute and group actions are passed through unchanged. */
+export function NativeToolPanel({identity,children}:{
+  identity:CommunicationIdentity;children:ReactNode;
+}) {
+  if(identity==='core') return <div className="flex items-center gap-1">{children}</div>;
+  return <div className={'relay-native-tool-panel '+identity}>
+    {identity==='bloom'&&<span aria-hidden="true" className="relay-native-tools-symbol">✿</span>}
+    {identity==='haven'&&<span aria-hidden="true" className="relay-native-tools-heading">TOOLS /</span>}
+    {identity==='atelier'&&<span aria-hidden="true" className="relay-native-tools-heading">ACTIONS</span>}
+    {identity==='pulse'&&<span aria-hidden="true" className="relay-native-tools-heading">◆ CONTROL</span>}
+    <div className="relay-native-tools-actions">{children}</div>
+  </div>;
+}
 /** Non-interactive message mock with the same component as live Relay messages. */
 export function NativeMessagePreview({identity}: {identity:CommunicationIdentity}) {
   return <div className={'relay-native-message-preview preview-'+identity} aria-label={'Preview '+identity+' conversation'}>
