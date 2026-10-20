@@ -1,7 +1,6 @@
 'use client';
 
 import { AccountAccess } from '@/components/account-access';
-import { ExperienceControls } from '@/components/profile/experience-controls';
 import { LayoutControls } from '@/components/profile/layout-controls';
 import { ParticleControls } from '@/components/profile/particle-controls';
 import { PushToggle } from '@/components/notifications/push-toggle';
@@ -253,7 +252,14 @@ export default function ProfilePage() {
       <section className="mt-8 border-t border-border pt-6"><h2 className="text-sm font-medium text-ink">Privacy and terms</h2><div className="mt-3 flex gap-3 text-sm"><a href={appPageUrl('/privacy')} className="text-ink-muted underline underline-offset-4 hover:text-ink">Privacy policy</a><a href={appPageUrl('/terms')} className="text-ink-muted underline underline-offset-4 hover:text-ink">Terms</a></div></section>
 
       <AccountAccess />
-      <section id="appearance" className="mt-8 scroll-mt-24 border-t border-border pt-6"><h2 className="mb-4 text-base font-semibold text-ink">Relay appearance and layout</h2><div className="space-y-5"><ExperienceControls /><LayoutControls /><ParticleControls /></div></section>
+      <section id="appearance" className="mt-8 scroll-mt-24 border-t border-border pt-6">
+        <h2 className="mb-2 text-base font-semibold text-ink">ARROW appearance and layout</h2>
+        <p className="mb-4 text-xs leading-5 text-ink-muted">Choose Core, Bloom, Haven, Atelier, or Pulse in ARROW Appearance. Light/dark mode, colors, and motion work across every module.</p>
+        <button type="button" className="account-action mb-4" onClick={(event) => {
+          (window as Window & { ArrowOS?: { openPanel: (name: string, module: string, anchor: HTMLElement) => void } }).ArrowOS?.openPanel('appearance','relay',event.currentTarget);
+        }}>Open ARROW Appearance</button>
+        <div className="space-y-5"><LayoutControls /><ParticleControls /></div>
+      </section>
       <AccountDataControls />
       <div className="mt-8"><SignOutButton /></div>
     </div>
