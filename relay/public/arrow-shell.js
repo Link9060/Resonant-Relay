@@ -1748,6 +1748,8 @@
         '</div>' +
         '<small class="arrow-os-adapt-help">Sample only. The preview follows the light/dark selection above.</small>' +
       '</div>' +
+      '<details class="arrow-os-appearance-advanced">' +
+        '<summary>More options <span>Motion · Palettes</span></summary>' +
       '<div class="arrow-os-section">' +
         '<span class="arrow-os-section-label">MOTION</span>' +
         '<div class="arrow-os-segmented">' +
@@ -1768,7 +1770,8 @@
         '</div>' +
         '<label class="arrow-os-custom-accent">Custom color for ' + escapeHtml(capitalize(currentIdentity)) + '<input type="color" data-custom-accent value="' + escapeAttr(getCustomColor(currentIdentity)) + '" /></label>' +
         '<small class="arrow-os-adapt-help">Every identity remembers its palette and custom color.</small>' +
-      '</div>';
+      '</div>' +
+      '</details>';
 
     let previewIdentity = currentIdentity;
     let previewDark = document.documentElement.dataset.arrowTheme === 'dark';
