@@ -659,3 +659,48 @@ html[data-relay-lock-in='true'] .relay-dock-link:not([aria-current='page']) { op
 }
 :root[data-arrow-motion="reduce"][data-relay-experience] .relay-app-shell :where(button,:root[data-arrow-motion="reduce"] a),:root[data-arrow-motion="reduce"][data-relay-experience] .relay-mobile-main[data-phase]{ transform: none !important; }
 
+
+
+/* ARROW materials override legacy Relay experience surface effects.
+   Identity owns typography/radii/palettes; material modes add feel, not extra themes. */
+html[data-arrow-experience="balanced"] .relay-app-shell :is(.relay-app-header,.relay-mobile-nav,.bg-surface,.bg-surface-raised,article) {
+  backdrop-filter:none;
+  box-shadow:0 5px 20px rgb(var(--ink) / .045);
+}
+html[data-arrow-experience="quiet"] .relay-app-shell :is(.relay-app-header,.relay-mobile-nav,.bg-surface,.bg-surface-raised,article) {
+  background:rgb(var(--surface-raised))!important;
+  border-color:rgb(var(--border))!important;
+  backdrop-filter:none!important; box-shadow:none!important;
+  animation:none!important; transition:none!important;
+}
+html[data-arrow-experience="quiet"] .relay-app-shell :is(button:not(:disabled),a[href]):hover {
+  transform:none!important; box-shadow:none!important;
+}
+html[data-arrow-experience="dynamic"] .relay-app-shell {
+  background:radial-gradient(circle at 85% 0%,rgb(var(--arrow-accent-rgb,110,120,210) / .12),transparent 44%),rgb(var(--canvas));
+}
+html[data-arrow-experience="dynamic"] .relay-app-shell :is(.relay-app-header,.relay-mobile-nav,.bg-surface,.bg-surface-raised,article) {
+  border-color:rgb(var(--arrow-accent-rgb,110,120,210) / .29)!important;
+  box-shadow:0 10px 32px rgb(var(--arrow-accent-rgb,110,120,210) / .11)!important;
+}
+html[data-arrow-experience="dynamic"] .relay-app-shell :is(button:not(:disabled),a[href]) {
+  transition:transform 240ms ease,background-color 240ms ease,border-color 240ms ease;
+}
+@media(hover:hover) { html[data-arrow-experience="dynamic"] .relay-app-shell :is(button:not(:disabled),a[href]):hover { transform:translateY(-2px); } }
+html[data-arrow-experience="glass"] .relay-app-shell :is(.relay-app-header,.relay-mobile-nav,.bg-surface,.bg-surface-raised,article) {
+  background:rgb(var(--surface-raised) / .73)!important;
+  backdrop-filter:blur(27px) saturate(1.35)!important;
+  -webkit-backdrop-filter:blur(27px) saturate(1.35)!important;
+  border-color:rgb(var(--ink) / .17)!important;
+  box-shadow:0 15px 42px rgb(var(--ink) / .10),inset 0 1px rgb(var(--surface-raised) / .4)!important;
+}
+html[data-arrow-experience="glass"] .relay-app-shell {
+  background:radial-gradient(circle at 75% 0%,rgb(var(--arrow-accent-rgb,110,120,210) / .13),transparent 46%),rgb(var(--canvas));
+}
+html[data-arrow-theme="light"][data-arrow-experience="glass"] .relay-app-shell :is(.relay-app-header,.relay-mobile-nav,.bg-surface,.bg-surface-raised,article) {
+  background:rgb(255 255 255 / .79)!important;
+}
+html[data-arrow-adapt]:not([data-arrow-adapt="core"]) .relay-app-shell :is(.relay-app-header,.relay-mobile-nav,.bg-surface,.bg-surface-raised,article) {
+  border-radius:var(--arrow-identity-radius,14px);
+}
+html[data-arrow-motion="reduce"] .relay-app-shell :is(button,a,article) { transform:none!important; transition:none!important; }
