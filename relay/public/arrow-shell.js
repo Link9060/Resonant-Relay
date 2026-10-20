@@ -546,16 +546,17 @@
       if (instance.closeTimer !== null) clearTimeout(instance.closeTimer);
       instance.closeTimer = null;
       instance.hover = true;
-      // Open deliberately on click or keyboard, not on accidental pointer hover.
+      // Pointer hover previews the command tray; click/tap can still pin it.
+      if (matchMedia('(hover: hover) and (pointer: fine)').matches) setOpen(instance, true);
     });
     root.addEventListener('mouseleave', () => {
       instance.hover = false;
       instance.closeTimer = setTimeout(() => {
         instance.closeTimer = null;
         if (!instance.pinned && !state.activePanel && !instance.hover && !root.contains(document.activeElement)) setOpen(instance, false);
-      }, 180);
+      }, 260);
     });
-    root.addEventListener('focusin', () => { if (instance.pinned) setOpen(instance, true); });
+    root.addEventListener('focusin', () => setOpen(instance, true);
     root.addEventListener('focusout', () => {
       requestAnimationFrame(() => {
         if (!instance.pinned && !state.activePanel && !root.contains(document.activeElement)) {
