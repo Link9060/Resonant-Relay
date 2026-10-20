@@ -90,7 +90,7 @@ export function NativeMessagePreview({identity}: {identity:CommunicationIdentity
     </NativeMessage>
     <NativeMessage identity={identity} mine
       className="min-w-0 overflow-hidden rounded-2xl px-3 py-2 text-sm leading-5 bg-ink text-canvas">
-      <p>Nice. What's next?</p>
+      <p>{"Nice. What's next?"}</p>
     </NativeMessage>
   </div>;
 }
