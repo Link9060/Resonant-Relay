@@ -1,0 +1,213 @@
+/* ARROW Adapt III · Relay UI compositions
+   Shared functionality and routes. Core is deliberately not restyled. */
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) .relay-app-shell {
+  --relay-identity-ink:rgb(var(--ink)); --relay-identity-panel:rgb(var(--surface-raised));
+}
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) .relay-app-shell
+  :is(.bg-surface,.bg-surface-raised,.rounded-2xl,.rounded-xl,.rounded-lg) {
+  border-color:color-mix(in srgb,var(--arrow-adapt-primary) 18%,rgb(var(--border)));
+}
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) .relay-app-shell
+  :is(button,input,select,textarea,.relay-dock-link) { font-family:var(--arrow-font-body); }
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) .relay-app-shell
+  :is(.relay-app-header,.relay-desktop-dock,.relay-mobile-nav) { transition:background-color 200ms ease,border-color 200ms ease,box-shadow 200ms ease; }
+/* BLOOM: a visibly floating, softly dimensional workspace. */
+:root[data-arrow-adapt="bloom"] .relay-app-shell {
+  background:radial-gradient(ellipse at 90% 6%,color-mix(in srgb,var(--arrow-adapt-secondary) 24%,transparent),transparent 38%),
+             radial-gradient(ellipse at 7% 100%,color-mix(in srgb,var(--arrow-adapt-primary) 13%,transparent),transparent 40%),rgb(var(--canvas));
+}
+@media(min-width:768px) {
+  :root[data-arrow-adapt="bloom"] .relay-app-shell .relay-desktop-dock:not(.relay-particle-geometry-proxy) {
+    top:10px; bottom:10px; left:9px; width:222px!important; height:calc(100dvh - 20px);
+    padding:15px 12px; border:2px solid color-mix(in srgb,var(--arrow-adapt-secondary) 40%,rgb(var(--border)));
+    border-radius:27px; background:color-mix(in srgb,rgb(var(--surface)) 92%,var(--arrow-adapt-secondary));
+    box-shadow:0 14px 39px color-mix(in srgb,var(--arrow-adapt-primary) 19%,transparent);
+  }
+  :root[data-arrow-adapt="bloom"] .relay-app-shell { padding-left:242px!important; }
+  :root[data-arrow-adapt="bloom"] .relay-app-shell .relay-desktop-dock[data-dock-collapsed="true"]:not(.relay-particle-geometry-proxy) { width:61px!important; }
+  :root[data-arrow-adapt="bloom"] .relay-app-shell[data-dock-collapsed="true"] { padding-left:80px!important; }
+}
+:root[data-arrow-adapt="bloom"] .relay-app-shell .relay-dock-link {
+  border-radius:16px!important; margin-block:2px;
+}
+:root[data-arrow-adapt="bloom"] .relay-app-shell .relay-dock-link[aria-current="page"] {
+  background:color-mix(in srgb,var(--arrow-adapt-primary) 19%,rgb(var(--surface)))!important;
+  border:1px solid color-mix(in srgb,var(--arrow-adapt-secondary) 33%,transparent);
+  box-shadow:0 5px 12px color-mix(in srgb,var(--arrow-adapt-primary) 12%,transparent);
+}
+:root[data-arrow-adapt="bloom"] .relay-app-shell .relay-brand-lockup {
+  font-weight:800; letter-spacing:-.065em;
+}
+:root[data-arrow-adapt="bloom"] .relay-app-shell .relay-app-header {
+  margin:9px 10px 0; border:1px solid color-mix(in srgb,var(--arrow-adapt-secondary) 32%,rgb(var(--border)));
+  border-radius:20px!important; background:color-mix(in srgb,rgb(var(--surface)) 92%,var(--arrow-adapt-secondary));
+}
+:root[data-arrow-adapt="bloom"] .relay-app-shell .relay-mobile-main :is(.rounded-2xl,.rounded-xl) {
+  border-radius:24px!important;
+  background-image:linear-gradient(140deg,color-mix(in srgb,var(--arrow-adapt-secondary) 6%,transparent),transparent);
+}
+:root[data-arrow-adapt="bloom"] .relay-app-shell .relay-communications-hero {
+  padding:clamp(21px,3vw,40px)!important;
+  background:linear-gradient(125deg,color-mix(in srgb,var(--arrow-adapt-primary) 15%,rgb(var(--surface))),
+             color-mix(in srgb,var(--arrow-adapt-secondary) 17%,rgb(var(--surface))))!important;
+  border-radius:32px!important;
+}
+:root[data-arrow-adapt="bloom"] .relay-app-shell .relay-communications-hero h1 {
+  font-weight:850; font-size:clamp(29px,5vw,52px); letter-spacing:-.06em;
+}
+/* HAVEN: quiet physical notebook, chapter titles and natural paper cards. */
+:root[data-arrow-adapt="haven"] .relay-app-shell {
+  background:repeating-linear-gradient(0deg,transparent 0 43px,color-mix(in srgb,var(--arrow-adapt-primary) 5%,transparent) 44px),
+             rgb(var(--canvas));
+}
+:root[data-arrow-adapt="haven"] .relay-app-shell .relay-desktop-dock:not(.relay-particle-geometry-proxy) {
+  background:color-mix(in srgb,rgb(var(--surface)) 88%,var(--arrow-adapt-secondary));
+  border-right:2px solid color-mix(in srgb,var(--arrow-adapt-primary) 45%,rgb(var(--border)));
+}
+:root[data-arrow-adapt="haven"] .relay-app-shell .relay-brand-lockup {
+  font-family:var(--arrow-font-display)!important; font-size:22px; font-weight:500;
+  border-bottom:1px solid rgb(var(--border)); margin-bottom:12px;
+}
+:root[data-arrow-adapt="haven"] .relay-app-shell .relay-dock-link {
+  border-radius:4px!important; border-left:3px solid transparent; padding-block:12px;
+}
+:root[data-arrow-adapt="haven"] .relay-app-shell .relay-dock-link[aria-current="page"] {
+  border-left-color:var(--arrow-adapt-primary); background:color-mix(in srgb,var(--arrow-adapt-secondary) 15%,rgb(var(--surface)))!important;
+  font-weight:680;
+}
+:root[data-arrow-adapt="haven"] .relay-app-shell .relay-app-header {
+  border-bottom:1px solid color-mix(in srgb,var(--arrow-adapt-primary) 36%,rgb(var(--border)));
+  background:color-mix(in srgb,rgb(var(--surface)) 92%,var(--arrow-adapt-secondary));
+}
+:root[data-arrow-adapt="haven"] .relay-app-shell .relay-mobile-main :is(.rounded-2xl,.rounded-xl,.bg-surface,.bg-surface-raised) {
+  background-color:color-mix(in srgb,rgb(var(--surface)) 95%,var(--arrow-adapt-secondary));
+  box-shadow:4px 6px 0 color-mix(in srgb,var(--arrow-adapt-primary) 7%,transparent)!important;
+  border-radius:11px!important;
+}
+:root[data-arrow-adapt="haven"] .relay-app-shell .relay-communications-hero {
+  border-left:5px solid var(--arrow-adapt-primary); background:rgb(var(--surface))!important;
+}
+:root[data-arrow-adapt="haven"] .relay-app-shell :is(h1,h2,h3) {
+  font-family:var(--arrow-font-display)!important; font-weight:500;
+}
+/* ATELIER: actual horizontal editorial navigation, instead of a left rail. */
+@media(min-width:768px) {
+  :root[data-arrow-adapt="atelier"] .relay-app-shell {
+    padding-left:0!important; padding-top:76px!important;
+  }
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-desktop-dock:not(.relay-particle-geometry-proxy) {
+    position:fixed; inset:0 0 auto!important; display:flex; flex-direction:row; align-items:center; gap:20px;
+    width:100%!important; height:76px; padding:0 clamp(16px,3vw,42px)!important;
+    overflow-x:auto; overflow-y:hidden;
+    background:rgb(var(--canvas))!important; border:0; border-bottom:1px solid color-mix(in srgb,var(--arrow-adapt-primary) 45%,rgb(var(--border)));
+    border-radius:0; box-shadow:none;
+  }
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-brand-lockup {
+    flex:none; padding:0!important; margin:0 12px 0 0; font-size:21px; letter-spacing:-.045em;
+  }
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-primary-cluster {
+    flex:1 0 auto; flex-direction:row; align-items:center; gap:12px; min-width:max-content;
+  }
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-primary-slot a {
+    padding:12px 10px!important; border-radius:0!important; font-size:11px; font-weight:680;
+    text-transform:uppercase; letter-spacing:.14em; border-bottom:2px solid transparent;
+  }
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-primary-slot a[aria-current="page"] {
+    background:transparent!important; color:rgb(var(--ink)); border-color:var(--arrow-adapt-primary);
+  }
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-primary-slot a span {
+    max-width:none!important; opacity:1!important; transform:none!important;
+  }
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-desktop-dock .relay-collapse-toggle,
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-desktop-dock > ul.mt-auto { display:none; }
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-desktop-dock > div.mt-3 {
+    margin:0!important; padding:0!important; border:0!important;
+  }
+}
+:root[data-arrow-adapt="atelier"] .relay-app-shell {
+  background:rgb(var(--canvas)); 
+}
+:root[data-arrow-adapt="atelier"] .relay-app-shell .relay-app-header {
+  border-bottom:1px solid rgb(var(--border)); box-shadow:none!important; backdrop-filter:none;
+}
+:root[data-arrow-adapt="atelier"] .relay-app-shell .relay-mobile-main :is(.rounded-2xl,.rounded-xl,.rounded-lg) {
+  border-radius:2px!important; box-shadow:none!important;
+}
+:root[data-arrow-adapt="atelier"] .relay-app-shell .relay-communications-hero {
+  border-radius:0!important; background:transparent!important;
+  border:0; border-bottom:2px solid var(--arrow-adapt-primary);
+  padding:clamp(15px,3vw,38px) 0!important;
+}
+:root[data-arrow-adapt="atelier"] .relay-app-shell .relay-communications-hero h1 {
+  font-family:var(--arrow-font-display)!important; font-size:clamp(36px,6vw,70px);
+  font-weight:400!important; letter-spacing:-.065em; line-height:1.06;
+}
+:root[data-arrow-adapt="atelier"] .relay-app-shell :is(.bg-surface,.bg-surface-raised) {
+  border-color:rgb(var(--border)); box-shadow:none!important;
+}
+/* PULSE: an illuminated control rail and bold high contrast communication panels. */
+:root[data-arrow-adapt="pulse"] .relay-app-shell {
+  background:radial-gradient(ellipse at 92% 10%,color-mix(in srgb,var(--arrow-adapt-primary) 25%,transparent),transparent 44%),
+             radial-gradient(ellipse at 25% 100%,color-mix(in srgb,var(--arrow-adapt-secondary) 12%,transparent),transparent 38%),rgb(var(--canvas));
+}
+:root[data-arrow-adapt="pulse"] .relay-app-shell .relay-desktop-dock:not(.relay-particle-geometry-proxy) {
+  border-right:2px solid var(--arrow-adapt-primary);
+  background:linear-gradient(160deg,color-mix(in srgb,rgb(var(--surface)) 84%,var(--arrow-adapt-primary)),
+                            color-mix(in srgb,rgb(var(--surface)) 94%,var(--arrow-adapt-secondary)))!important;
+  box-shadow:8px 0 38px color-mix(in srgb,var(--arrow-adapt-primary) 17%,transparent);
+}
+:root[data-arrow-adapt="pulse"] .relay-app-shell .relay-brand-lockup {
+  text-transform:uppercase; font-weight:850; letter-spacing:-.04em; font-size:23px;
+}
+:root[data-arrow-adapt="pulse"] .relay-app-shell .relay-primary-slot a[aria-current="page"] {
+  border-radius:3px 17px 3px 17px!important;
+  color:rgb(var(--ink)); background:color-mix(in srgb,var(--arrow-adapt-primary) 22%,rgb(var(--surface)))!important;
+  box-shadow:inset 3px 0 var(--arrow-adapt-secondary),0 4px 16px color-mix(in srgb,var(--arrow-adapt-primary) 15%,transparent);
+  font-weight:760;
+}
+:root[data-arrow-adapt="pulse"] .relay-app-shell .relay-app-header {
+  border-bottom:2px solid color-mix(in srgb,var(--arrow-adapt-secondary) 50%,rgb(var(--border)));
+  background:color-mix(in srgb,rgb(var(--canvas)) 83%,var(--arrow-adapt-primary));
+}
+:root[data-arrow-adapt="pulse"] .relay-app-shell .relay-mobile-main :is(.rounded-2xl,.rounded-xl) {
+  border-color:color-mix(in srgb,var(--arrow-adapt-secondary) 35%,rgb(var(--border)));
+  box-shadow:0 10px 30px color-mix(in srgb,var(--arrow-adapt-primary) 11%,transparent);
+}
+:root[data-arrow-adapt="pulse"] .relay-app-shell .relay-communications-hero {
+  background:linear-gradient(135deg,color-mix(in srgb,var(--arrow-adapt-primary) 26%,rgb(var(--surface))),
+             color-mix(in srgb,var(--arrow-adapt-secondary) 13%,rgb(var(--surface))))!important;
+  border:1px solid var(--arrow-adapt-secondary);
+  border-radius:7px 29px 7px 29px!important;
+}
+:root[data-arrow-adapt="pulse"] .relay-app-shell .relay-communications-hero h1 {
+  font-size:clamp(33px,6vw,64px); text-transform:uppercase; font-weight:850; letter-spacing:-.07em;
+}
+:root[data-arrow-adapt="pulse"] .relay-app-shell .relay-dock-link:hover {
+  background:color-mix(in srgb,var(--arrow-adapt-secondary) 13%,rgb(var(--surface)));
+}
+@media(max-width:767px) {
+  :root[data-arrow-adapt="bloom"] .relay-app-shell .relay-mobile-nav {
+    left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));
+    border-radius:25px; border:1px solid color-mix(in srgb,var(--arrow-adapt-secondary) 40%,rgb(var(--border)));
+    box-shadow:0 10px 26px color-mix(in srgb,var(--arrow-adapt-primary) 20%,transparent);
+  }
+  :root[data-arrow-adapt="haven"] .relay-app-shell .relay-mobile-nav {
+    background:rgb(var(--surface)); border-top:2px solid var(--arrow-adapt-primary);
+  }
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-mobile-nav {
+    border-top:1px solid rgb(var(--ink)); box-shadow:none; backdrop-filter:none!important;
+  }
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-mobile-nav .relay-dock-link {
+    text-transform:uppercase; letter-spacing:.08em; border-radius:0!important;
+  }
+  :root[data-arrow-adapt="pulse"] .relay-app-shell .relay-mobile-nav {
+    left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));
+    border:1px solid var(--arrow-adapt-secondary); border-radius:18px 5px 18px 5px;
+    box-shadow:0 0 18px color-mix(in srgb,var(--arrow-adapt-primary) 25%,transparent);
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  :root:not([data-arrow-motion="full"])[data-arrow-adapt] .relay-app-shell :is(.relay-dock-link,.relay-communications-hero) {
+    transition:none!important;animation:none!important;
+  }
+}
