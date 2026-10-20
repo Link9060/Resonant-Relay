@@ -2095,7 +2095,7 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
   width:56px; height:56px; flex-basis:56px; border-radius:50%;
 }
 :root[data-arrow-adapt="bloom"] .arrow-os-root .arrow-os-island {
-  background:linear-gradient(140deg,color-mix(in srgb,var(--adapt-shell-primary) 23%,var(--arrow-os-surface)),color-mix(in srgb,var(--adapt-shell-secondary) 13%,var(--arrow-os-surface)));
+  background:linear-gradient(140deg,color-mix(in srgb,var(--adapt-shell-primary) 23%,var(--arrow-design-surface)),color-mix(in srgb,var(--adapt-shell-secondary) 13%,var(--arrow-design-surface)));
   border:2px solid color-mix(in srgb,var(--adapt-shell-secondary) 56%,transparent);
   box-shadow:0 9px 27px color-mix(in srgb,var(--adapt-shell-primary) 26%,transparent),inset 0 2px rgb(255 255 255 / .24);
 }
@@ -2109,7 +2109,7 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 :root[data-arrow-adapt="bloom"] .arrow-os-root .arrow-os-content {
   top:66px; width:min(400px,calc(100vw - 22px));
   padding:10px 10px 8px; border-radius:32px!important;
-  background:color-mix(in srgb,var(--arrow-os-surface) 91%,var(--adapt-shell-secondary))!important;
+  background:color-mix(in srgb,var(--arrow-design-surface) 91%,var(--adapt-shell-secondary))!important;
   border:2px solid color-mix(in srgb,var(--adapt-shell-secondary) 43%,transparent);
   box-shadow:0 24px 58px color-mix(in srgb,var(--adapt-shell-primary) 18%,transparent)!important;
 }
@@ -2122,13 +2122,13 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 :root[data-arrow-adapt="bloom"] .arrow-os-root .arrow-os-control {
   flex-direction:column; align-items:center; justify-content:center;
   min-height:76px; padding:10px 5px; text-align:center;
-  border-radius:20px; background:color-mix(in srgb,var(--adapt-shell-secondary) 13%,var(--arrow-os-surface));
+  border-radius:20px; background:color-mix(in srgb,var(--adapt-shell-secondary) 13%,var(--arrow-design-surface));
   border:1px solid color-mix(in srgb,var(--adapt-shell-secondary) 35%,transparent);
   gap:7px; font-weight:700;
 }
 :root[data-arrow-adapt="bloom"] .arrow-os-root .arrow-os-control svg { width:21px; height:21px; flex-basis:21px; }
 :root[data-arrow-adapt="bloom"] .arrow-os-root .arrow-os-tray-featured .arrow-os-control {
-  background:linear-gradient(135deg,color-mix(in srgb,var(--adapt-shell-primary) 24%,var(--arrow-os-surface)),color-mix(in srgb,var(--adapt-shell-secondary) 28%,var(--arrow-os-surface)));
+  background:linear-gradient(135deg,color-mix(in srgb,var(--adapt-shell-primary) 24%,var(--arrow-design-surface)),color-mix(in srgb,var(--adapt-shell-secondary) 28%,var(--arrow-design-surface)));
 }
 :root[data-arrow-adapt="bloom"] .arrow-os-root .arrow-os-tray-footer { border:0; margin-top:8px; }
 /* HAVEN: a paper organizer, intentional text-first rows and a bookmark rail. */
