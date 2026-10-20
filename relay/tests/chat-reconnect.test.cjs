@@ -13,6 +13,12 @@ async function fixture(recover, extraProps={}){
   const channels=[];const chain={};for(const key of ['select','eq','or','order','limit'])chain[key]=()=>chain;chain.then=resolve=>Promise.resolve({data:[],error:null}).then(resolve);const client={from:()=>chain,channel(name){const c={name,handlers:[],on(...args){c.handlers.push(args);return c;},subscribe(fn){c.status=fn;return c;}};channels.push(c);return c;},realtime:{setAuth:async()=>{}},removeChannel:async()=>{}};
   const empty=()=>null;const dependencies={
     '@/lib/chat-recovery':{recoverChat:recover},'@/lib/supabase/client':{createClient:()=>client},
+    '@/components/adapt/native-communication':{
+      useCommunicationIdentity:()=> 'core',
+      NativeMessage:({children,className,style})=>React.createElement('div',{className,style},children),
+      NativeComposer:({children})=>React.createElement(React.Fragment,null,children),
+      NativeConversationRow:({children})=>React.createElement('div',null,children),
+    },
     '@/components/chats/message-composer':{MessageComposer:empty},'@/components/user-role-badge':{UserRoleBadge:empty},'@/components/groups/leave-group-button':{LeaveGroupButton:empty},
     '@/lib/contact-colors':{contactColor:()=>'',contactDisplayName:p=>p.display_name},'@/lib/config':{appPageUrl:p=>p},'@/lib/actions/chats':{},'next/image':{default:empty},
     'lucide-react':new Proxy({},{get:()=>empty}),
