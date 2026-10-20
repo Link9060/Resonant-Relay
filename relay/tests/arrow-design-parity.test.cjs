@@ -186,3 +186,16 @@ test('RAVIN provides accessible functional identity command strip and focus mode
  assert.match(css,/data-adapt-focus="true"/);
  for(const id of ['bloom','haven','atelier','pulse'])assert.ok(css.includes('data-arrow-adapt="'+id+'"] .ravin-adapt-commandbar'),id);
 });
+
+
+test('Waypoint preserves six mobile planning tabs and changes geometry per identity',{skip:!process.env.ARROW_WAYPOINT_SOURCE},()=>{
+ const css=from('ARROW_WAYPOINT_SOURCE','src/app/globals.css');
+ const jsx=from('ARROW_WAYPOINT_SOURCE','src/components/waypoint-shell.tsx');
+ assert.match(jsx,/className="nav"/);
+ assert.match(jsx,/aria-current=\{activeTab===id/);
+ assert.match(css,/grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
+ assert.match(css,/\.nav-item span:not\(\.nav-badge\)/);
+ for(const id of ['bloom','haven','atelier','pulse']){
+  assert.ok(css.includes('data-arrow-adapt="'+id+'"] .waypoint-app .sidebar'),id+' mobile layout missing');
+ }
+});
