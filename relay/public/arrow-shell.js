@@ -398,6 +398,8 @@
     const luminance = rgb.map(v => {const c=v/255;return c<=.04045?c/12.92:((c+.055)/1.055)**2.4;}).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);
     root.style.setProperty('--arrow-accent-on', luminance > .179 ? '#101114' : '#ffffff');
     root.style.setProperty('--accent', rgb.join(' '));
+    root.style.setProperty('--accent-secondary', secondaryRgb.join(' '));
+    root.style.setProperty('--accent-contrast', luminance > .179 ? '16 17 20' : '255 255 255');
     root.style.setProperty('--rv-accent', rgb.join(' '));
     root.style.setProperty('--rv-accent-soft', rgb.join(' '));
     root.style.setProperty('--accent-color', primary);
