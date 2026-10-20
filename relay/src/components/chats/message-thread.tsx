@@ -2,6 +2,7 @@
 
 import { recoverChat } from '@/lib/chat-recovery';
 import { MessageComposer } from '@/components/chats/message-composer';
+import { NativeMessage, useCommunicationIdentity } from '@/components/adapt/native-communication';
 import { UserRoleBadge } from '@/components/user-role-badge';
 import { LeaveGroupButton } from '@/components/groups/leave-group-button';
 import { contactColor, contactDisplayName, type ContactColorKey } from '@/lib/contact-colors';
@@ -23,6 +24,7 @@ type ReportTarget = { messageId?: string; userId?: string; label: string };
 const REACTIONS = ['👍', '❤️', '😂', '‼️', '❓', '🎉'];
 
 export function MessageThread({ conversationId, title: initialTitle, isGroup, groupId, currentUserId, participantsById, preferencesById, rolesById, initialMessages, initialReactions, initialPinnedIds, initialMuted, initialHistoryCursor, initialHasOlder }: { conversationId: string; title: string; isGroup: boolean; groupId: string | null; currentUserId: string; participantsById: ProfileMap; preferencesById: PreferenceMap; rolesById: Record<string, 'admin' | 'member'>; initialMessages: Message[]; initialReactions: Reaction[]; initialPinnedIds: string[]; initialMuted: boolean; initialHistoryCursor?: {id:string;created_at:string} | null; initialHasOlder?: boolean }) {
+  const adaptIdentity = useCommunicationIdentity();
   const [title, setTitle] = useState(initialTitle);
   const [messages, updateMessages] = useState<Message[]>(initialMessages);
   const [reactions, updateReactions] = useState<Reaction[]>(initialReactions);
@@ -222,10 +224,10 @@ export function MessageThread({ conversationId, title: initialTitle, isGroup, gr
           <div className="min-w-0">
             {!isMine && startsGroup && <div className="mb-1 ml-1 flex items-center gap-1.5 text-xs font-medium"><span style={customized ? { color } : undefined}>{senderName}</span><UserRoleBadge role={sender?.role} /></div>}
             <div className={`flex items-center gap-1.5 ${isMine ? 'flex-row-reverse' : ''}`}>
-              <div className={`min-w-0 overflow-hidden rounded-2xl px-3 py-2 text-sm leading-5 ${isMine ? 'rounded-br-md bg-ink text-canvas' : customized ? 'rounded-bl-md' : 'rounded-bl-md bg-surface-raised text-ink'}`} style={!isMine && customized ? { backgroundColor: `${color}18`, color, boxShadow: `inset 0 0 0 1px ${color}35` } : undefined}>
+              <NativeMessage identity={adaptIdentity} mine={isMine} className={`min-w-0 overflow-hidden rounded-2xl px-3 py-2 text-sm leading-5 ${isMine ? 'rounded-br-md bg-ink text-canvas' : customized ? 'rounded-bl-md' : 'rounded-bl-md bg-surface-raised text-ink'}`} style={!isMine && customized ? { backgroundColor: `${color}18`, color, boxShadow: `inset 0 0 0 1px ${color}35` } : undefined}>
                 {reply && <button type="button" onClick={() => document.getElementById(`message-${reply.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })} className={`mb-2 block w-full rounded-md border-l-2 px-2 py-1.5 text-left text-[11px] ${isMine ? 'border-canvas/40 bg-canvas/10 text-canvas/75' : 'border-ink-faint bg-canvas/60 text-ink-muted'}`}><span className="block truncate">Replying to {reply.sender_id === currentUserId ? 'yourself' : participantsById[reply.sender_id]?.display_name ?? 'message'}</span><span className="block truncate opacity-80">{reply.body || 'Attachment'}</span></button>}
                 <div id={`message-${message.id}`}>{message.body && <p className="whitespace-pre-wrap break-words">{message.body}</p>}{message.attachments?.length ? <div className={message.body ? 'mt-2' : ''}><AttachmentList attachments={message.attachments} urls={attachmentUrls} isMine={isMine} /></div> : null}</div>
-              </div>
+              </NativeMessage>
               <MessageMenuButton open={openMenuId === message.id} onToggle={() => setOpenMenuId((current) => current === message.id ? null : message.id)} />
             </div>
             <div className={`mt-1 flex flex-wrap items-center gap-1 ${isMine ? 'justify-end pr-10' : 'pl-10'}`}>
