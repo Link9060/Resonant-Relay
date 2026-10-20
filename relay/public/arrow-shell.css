@@ -2509,7 +2509,8 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
    Preview is read-only until "Use this identity" is pressed. */
 .arrow-os-panel[data-panel="appearance"] {
   width:min(455px,calc(100vw - 22px))!important;
-  max-height:min(90dvh,820px)!important;
+  /* Respect the viewport-specific inline maximum set by positionPanel. */
+  max-height:min(90dvh,820px);
   overflow:hidden;
 }
 .arrow-os-panel[data-panel="appearance"] .arrow-os-panel-head {
@@ -2517,7 +2518,8 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
   padding:14px 18px 12px;
 }
 .arrow-os-panel[data-panel="appearance"] .arrow-os-panel-body {
-  max-height:calc(min(90dvh,820px) - 75px);
+  max-height:none;
+  flex:1 1 auto;
   min-height:0;
   overflow-y:auto;
   padding:15px;
