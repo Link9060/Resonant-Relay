@@ -1715,9 +1715,6 @@
       const selected=button.dataset.adaptPreviewChoice===normalized;
       button.setAttribute('aria-pressed',String(selected));
     });
-    const modeButton = lab.querySelector('[data-adapt-preview-theme]');
-    modeButton.textContent = resolvedDark ? '☀ Light preview' : '☾ Dark preview';
-    modeButton.setAttribute('aria-label',resolvedDark?'Preview light mode':'Preview dark mode');
     lab.querySelector('[data-adapt-preview-apply]').disabled = getAdaptChoice()===normalized;
     lab.querySelector('[data-adapt-preview-apply]').textContent = getAdaptChoice()===normalized ? 'Current identity' : 'Use '+capitalize(normalized);
   }
@@ -1729,14 +1726,15 @@
     const accent = getAccentChoice(currentIdentity);
     state.panelBody.innerHTML =
       '<div class="arrow-os-section">' +
-        '<span class="arrow-os-section-label">ARROW ADAPT · VISUAL IDENTITY</span>' +
-        '<div class="arrow-os-segmented arrow-os-adapt-grid">' +
-          ADAPT_CHOICES.map(([value,label]) => '<button type="button" data-adapt-choice="' + value + '">' + label + '</button>').join('') +
+        '<span class="arrow-os-section-label">APPEARANCE · ARROW-WIDE</span>' +
+        '<small class="arrow-os-adapt-help">One appearance setting applies across Orbit, Relay, RAVIN, Atlas and Waypoint.</small>' +
+        '<div class="arrow-os-segmented arrow-os-theme-choice">' +
+          ['system','light','dark'].map(value => '<button type="button" data-theme-choice="' + value + '" class="' + (theme === value ? 'is-active' : '') + '">' + capitalize(value) + '</button>').join('') +
         '</div>' +
-        '<small class="arrow-os-adapt-help">Identity changes ARROW navigation, component design, fonts and widget composition.</small>' +
       '</div>' +
       '<div class="arrow-os-section arrow-os-preview-lab" data-adapt-preview-lab>' +
-        '<span class="arrow-os-section-label">IDENTITY PREVIEW LAB · NO CHANGES UNTIL APPLIED</span>' +
+        '<span class="arrow-os-section-label">IDENTITY · PICK ONE</span>' +
+        '<small class="arrow-os-adapt-help">Preview any identity, then select Use to apply it everywhere. Your data stays the same.</small>' +
         '<div class="arrow-os-lab-controls" role="group" aria-label="Preview an ARROW identity">' +
           ADAPT_CHOICES.map(([value,label]) => '<button type="button" data-adapt-preview-choice="' + value + '">' + label + '</button>').join('') +
         '</div>' +
@@ -1746,16 +1744,9 @@
         '</div>' +
         '<div class="arrow-os-lab-stage" data-adapt-preview-stage aria-label="Sample ARROW interface preview"></div>' +
         '<div class="arrow-os-lab-actions">' +
-          '<button type="button" data-adapt-preview-theme>☾ Dark preview</button>' +
           '<button type="button" data-adapt-preview-apply>Use this identity</button>' +
         '</div>' +
-        '<small class="arrow-os-adapt-help">Sample content only. Previewing does not change your active identity or saved settings.</small>' +
-      '</div>' +
-      '<div class="arrow-os-section">' +
-        '<span class="arrow-os-section-label">THEME</span>' +
-        '<div class="arrow-os-segmented">' +
-          ['system','light','dark'].map(value => '<button type="button" data-theme-choice="' + value + '" class="' + (theme === value ? 'is-active' : '') + '">' + capitalize(value) + '</button>').join('') +
-        '</div>' +
+        '<small class="arrow-os-adapt-help">Sample only. The preview follows the light/dark selection above.</small>' +
       '</div>' +
       '<div class="arrow-os-section">' +
         '<span class="arrow-os-section-label">MOTION</span>' +
@@ -1795,18 +1786,15 @@
         renderPreviewLab(previewIdentity,previewDark,previewSurface);
       });
     });
-    state.panelBody.querySelector('[data-adapt-preview-theme]').addEventListener('click', () => {
-      previewDark=!previewDark;
-      renderPreviewLab(previewIdentity,previewDark,previewSurface);
-    });
     state.panelBody.querySelector('[data-adapt-preview-apply]').addEventListener('click', () => applyAdapt(previewIdentity,true));
     state.panelBody.querySelector('[data-custom-accent]').addEventListener('input', event => applyAccent(event.target.value, true));
-    state.panelBody.querySelectorAll('[data-adapt-choice]').forEach(button => {
-      button.addEventListener('click', () => applyAdapt(button.dataset.adaptChoice, true));
-    });
     updateAppearanceState();
     state.panelBody.querySelectorAll('[data-theme-choice]').forEach(button => {
-      button.addEventListener('click', () => applyTheme(button.dataset.themeChoice, true));
+      button.addEventListener('click', () => {
+        applyTheme(button.dataset.themeChoice, true);
+        previewDark = document.documentElement.dataset.arrowTheme === 'dark';
+        renderPreviewLab(previewIdentity,previewDark,previewSurface);
+      });
     });
     state.panelBody.querySelectorAll('[data-motion-choice]').forEach(button => {
       button.addEventListener('click', () => applyMotion(button.dataset.motionChoice, true));
