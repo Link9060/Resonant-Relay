@@ -6,6 +6,8 @@
     motion: 'arrow_os_motion_v1',
     accent: 'arrow_os_accent_v1',
     customAccent: 'arrow_os_custom_accent_v1',
+    adaptPalettes: 'arrow_os_adapt_palettes_v1',
+    adaptCustomColors: 'arrow_os_adapt_custom_colors_v1',
     experience: 'arrow_os_experience_v1',
     adapt: 'arrow_os_adapt_v1',
     focusMinutes: 'arrow_os_focus_minutes_v1',
@@ -71,6 +73,52 @@
     ['core', 'Core'], ['bloom', 'Bloom'], ['haven', 'Haven'],
     ['atelier', 'Atelier'], ['pulse', 'Pulse'],
   ];
+  // Each identity owns an independent palette. Paired swatches become gradient
+  // surfaces across the suite; Core retains its original bold accent options.
+  const ADAPT_PALETTES = {
+    core: [
+      ...ACCENTS.map(([id,label,color]) => [id,label,color,color]),
+      ['scarlet','Scarlet','#dc2626','#f97316'],
+      ['fuchsia','Fuchsia','#c026d3','#8b5cf6'],
+      ['orange','Orange','#ea580c','#facc15'],
+      ['electric','Electric blue','#2563eb','#22d3ee'],
+    ],
+    bloom: [
+      ['petal','Rosewater','#ad477f','#efbad4'],
+      ['lilac','Lilac dream','#8362ba','#d8b8ed'],
+      ['peach','Peach blossom','#ba6b58','#f5c2a5'],
+      ['periwinkle','Bluebell','#5f7bb3','#bcd5f7'],
+      ['orchid','Orchid mist','#995aa3','#ebb5e7'],
+      ['meadow','Mint bloom','#438e82','#b8e4ce'],
+    ],
+    haven: [
+      ['sage','Sage valley','#4b7764','#a9c29c'],
+      ['forest','Evergreen','#32634a','#86a884'],
+      ['clay','Terracotta','#a45e4b','#e0ad8c'],
+      ['dune','Desert sand','#93724e','#d5bf98'],
+      ['lake','Stillwater','#427f8e','#b3d8d8'],
+      ['moss','Moss & honey','#657746','#d3bd70'],
+    ],
+    atelier: [
+      ['champagne','Champagne','#94723f','#d5bd8d'],
+      ['ink','Midnight ink','#33415d','#8b9ab2'],
+      ['burgundy','Burgundy','#792f49','#caa0aa'],
+      ['espresso','Espresso','#684b3f','#c1a68f'],
+      ['copper','Copper atelier','#a56a45','#e5af80'],
+      ['graphite','Graphite','#62636f','#a7a8b5'],
+    ],
+    pulse: [
+      ['voltage','Voltage','#854dff','#00d4ff'],
+      ['hyperpop','Hyperpop','#f02c91','#8e65ff'],
+      ['laser','Laser cyan','#008dab','#8cffd4'],
+      ['afterburn','Afterburn','#ef533b','#f7b955'],
+      ['neon','Neon arcade','#667f16','#e0fa5b'],
+      ['ultraviolet','Ultraviolet','#6335d5','#e04de5'],
+    ],
+  };
+  const PALETTE_LEGACY = {
+    bloom:'rose', haven:'emerald', atelier:'amber', pulse:'pulse', core:'monochrome',
+  };
   const state = {
     instances: new Set(),
     renderVersion: 0,
@@ -262,12 +310,33 @@
     const value = readString(STORAGE.adapt, 'core');
     return ADAPT_CHOICES.some(([id]) => id === value) ? value : 'core';
   }
+  function paletteChoices(identity = getAdaptChoice()) {
+    return ADAPT_PALETTES[identity] || ADAPT_PALETTES.core;
+  }
+  function getCustomColor(identity = getAdaptChoice()) {
+    const saved = readJson(STORAGE.adaptCustomColors, {});
+    const legacy = identity === 'core' ? readString(STORAGE.customAccent, '#2f6fed') : '#8b5cf6';
+    const color = saved && typeof saved === 'object' && typeof saved[identity] === 'string' ? saved[identity] : legacy;
+    return /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : '#8b5cf6';
+  }
+  function getAccentChoice(identity = getAdaptChoice()) {
+    const options = paletteChoices(identity);
+    const stored = readJson(STORAGE.adaptPalettes, {});
+    const selection = stored && typeof stored === 'object' ? stored[identity] : null;
+    if (selection === 'custom' || options.some(([id]) => id === selection)) return selection;
+    if (identity === 'core') {
+      const legacy = readString(STORAGE.accent, 'mono');
+      if (legacy === 'custom' || options.some(([id]) => id === legacy)) return legacy;
+    }
+    return options[0][0];
+  }
   function applyAdapt(choice, persist = false) {
     const normalized = ADAPT_CHOICES.some(([id]) => id === choice) ? choice : 'core';
     if (persist) writeString(STORAGE.adapt, normalized);
     document.documentElement.dataset.arrowAdapt = normalized;
+    applyAccent(getAccentChoice(normalized), false, normalized);
     window.dispatchEvent(new CustomEvent('arrow:adaptchange', { detail: { identity: normalized } }));
-    if (state.activePanel === 'appearance') updateAppearanceState();
+    if (state.activePanel === 'appearance') renderAppearance();
   }
   function getExperienceChoice() {
     const value = readString(STORAGE.experience, 'balanced');
@@ -296,41 +365,54 @@
     if (state.activePanel === 'appearance') updateAppearanceState();
   }
 
-  function applyAccent(accent, persist = false) {
-    const allowed = new Set(ACCENTS.map(([value]) => value));
-    const normalized = allowed.has(accent) ? accent : 'mono';
-    if (persist) writeString(STORAGE.accent, normalized);
+  function applyAccent(accent, persist = false, identity = getAdaptChoice()) {
+    const options = paletteChoices(identity);
+    const hex = /^#[0-9a-f]{6}$/i.test(accent || '') ? accent.toLowerCase() : null;
+    const stored = hex ? 'custom' : (accent === 'custom' || options.some(([id]) => id === accent) ? accent : options[0][0]);
+    if (persist) {
+      if (hex) {
+        const existing = readJson(STORAGE.adaptCustomColors, {});
+        writeJson(STORAGE.adaptCustomColors, { ...(existing && typeof existing === 'object' ? existing : {}), [identity]: hex });
+        if (identity === 'core') writeString(STORAGE.customAccent, hex);
+      }
+      const selections = readJson(STORAGE.adaptPalettes, {});
+      writeJson(STORAGE.adaptPalettes, { ...(selections && typeof selections === 'object' ? selections : {}), [identity]: stored });
+      if (identity === 'core') writeString(STORAGE.accent, stored);
+    }
+    const preset = options.find(([id]) => id === stored) || options[0];
+    const primary = stored === 'custom' ? (hex || getCustomColor(identity)) : preset[2];
+    const secondary = stored === 'custom' ? primary : preset[3];
     const root = document.documentElement;
-    const custom = /^#[0-9a-f]{6}$/i.test(accent || '') ? accent.toLowerCase() : null;
-    if (custom && persist) writeString(STORAGE.customAccent, custom);
-    const selected = custom || (accent === 'custom' ? readString(STORAGE.customAccent, '#2f6fed') : null);
-    const color = selected || ACCENTS.find(([value]) => value === normalized)?.[2] || '#f3f3f4';
-    const rgb = [1,3,5].map(start => parseInt(color.slice(start,start+2),16));
-    const effective = selected ? 'custom' : normalized;
-    if (persist) writeString(STORAGE.accent, effective);
-    root.dataset.arrowAccent = effective;
-    root.style.setProperty('--arrow-accent-color', color);
+    const rgb = [1,3,5].map(start => parseInt(primary.slice(start,start+2),16));
+    const secondaryRgb = [1,3,5].map(start => parseInt(secondary.slice(start,start+2),16));
+    root.dataset.arrowAccent = identity === 'core' ? stored : 'custom';
+    root.dataset.arrowPalette = stored;
+    root.style.setProperty('--arrow-accent-color', primary);
+    root.style.setProperty('--arrow-accent-secondary-color', secondary);
+    root.style.setProperty('--arrow-adapt-primary', primary);
+    root.style.setProperty('--arrow-adapt-secondary', secondary);
+    root.style.setProperty('--arrow-adapt-gradient', 'linear-gradient(135deg,' + primary + ',' + secondary + ')');
     root.style.setProperty('--arrow-accent-rgb', rgb.join(','));
     root.style.setProperty('--arrow-accent-channels', rgb.join(' '));
+    root.style.setProperty('--arrow-accent-secondary-rgb', secondaryRgb.join(','));
     const luminance = rgb.map(v => {const c=v/255;return c<=.04045?c/12.92:((c+.055)/1.055)**2.4;}).reduce((n,v,i)=>n+v*[.2126,.7152,.0722][i],0);
     root.style.setProperty('--arrow-accent-on', luminance > .179 ? '#101114' : '#ffffff');
     root.style.setProperty('--accent', rgb.join(' '));
     root.style.setProperty('--rv-accent', rgb.join(' '));
     root.style.setProperty('--rv-accent-soft', rgb.join(' '));
-    root.style.setProperty('--accent-color', color);
+    root.style.setProperty('--accent-color', primary);
     root.style.setProperty('--accent-rgb', rgb.join(','));
-
-    const relayPalette = normalized === 'mono' ? 'monochrome' : normalized;
-    try {
-      localStorage.setItem('relay-experience-palette', relayPalette);
-    } catch {}
-
+    // Relay's historical experience styles use a named palette. Preserve
+    // their settings while adapting shared ARROW chrome to the new scheme.
+    const relayPalette = identity === 'core'
+      ? ({ mono: 'monochrome', electric: 'cobalt' }[stored] || (['custom'].includes(stored) ? 'monochrome' : stored))
+      : PALETTE_LEGACY[identity];
+    try { localStorage.setItem('relay-experience-palette', relayPalette); } catch {}
+    root.dataset.relayPalette = relayPalette;
     window.dispatchEvent(new CustomEvent('relay-experience-change'));
-    window.dispatchEvent(new CustomEvent('arrow:accentchange', { detail: { accent: normalized } }));
-
+    window.dispatchEvent(new CustomEvent('arrow:accentchange', { detail: { identity, palette:stored, primary, secondary } }));
     if (state.activePanel === 'appearance') updateAppearanceState();
   }
-
   function getMotionChoice() {
     const value = readString(STORAGE.motion, 'system');
     return ['system', 'full', 'reduce'].includes(value) ? value : 'system';
@@ -1535,7 +1617,7 @@
     if (!state.panelBody) return;
     const choices = {
       adapt: getAdaptChoice(), theme: getThemeChoice(), motion: getMotionChoice(),
-      experience: getExperienceChoice(), accent: readString(STORAGE.accent, 'mono'),
+      experience: getExperienceChoice(), accent: getAccentChoice(),
     };
     Object.entries(choices).forEach(([kind, value]) => {
       state.panelBody.querySelectorAll('[data-' + kind + '-choice]').forEach(button => {
@@ -1549,7 +1631,8 @@
   function renderAppearance() {
     const theme = getThemeChoice();
     const motion = getMotionChoice();
-    const accent = readString(STORAGE.accent, 'mono');
+    const currentIdentity = getAdaptChoice();
+    const accent = getAccentChoice(currentIdentity);
     const experience = getExperienceChoice();
 
     state.panelBody.innerHTML =
@@ -1579,15 +1662,19 @@
         '</div>' +
       '</div>' +
       '<div class="arrow-os-section">' +
-        '<span class="arrow-os-section-label">ACCENT</span>' +
-        '<div class="arrow-os-accents">' +
-          ACCENTS.map(([value,label,color]) =>
-            '<button type="button" data-accent-choice="' + value + '" class="' + (accent === value ? 'is-active' : '') + '">' +
-              '<i style="--swatch:' + color + '"></i><span>' + label + '</span>' +
+        '<span class="arrow-os-section-label">COLOR PALETTE · ' + escapeHtml(currentIdentity.toUpperCase()) + '</span>' +
+        '<div class="arrow-os-accents arrow-os-palette-grid">' +
+          paletteChoices(currentIdentity).map(([value,label,primary,secondary]) =>
+            '<button type="button" data-accent-choice="' + value + '" aria-label="' + escapeAttr(label) + '" class="' + (accent === value ? 'is-active' : '') + '">' +
+              '<i style="--swatch:' + primary + ';--swatch-secondary:' + secondary + '"></i><span>' + escapeHtml(label) + '</span>' +
             '</button>'
           ).join('') +
+          '<button type="button" data-accent-choice="custom" class="arrow-os-custom-choice' + (accent === 'custom' ? ' is-active' : '') + '">' +
+            '<i style="--swatch:' + getCustomColor(currentIdentity) + ';--swatch-secondary:' + getCustomColor(currentIdentity) + '"></i><span>Custom</span>' +
+          '</button>' +
         '</div>' +
-        '<label class="arrow-os-custom-accent">Custom color<input type="color" data-custom-accent value="' + escapeAttr(readString(STORAGE.customAccent, '#2f6fed')) + '" /></label>' +
+        '<label class="arrow-os-custom-accent">Custom color for ' + escapeHtml(capitalize(currentIdentity)) + '<input type="color" data-custom-accent value="' + escapeAttr(getCustomColor(currentIdentity)) + '" /></label>' +
+        '<small class="arrow-os-adapt-help">Every identity remembers its own palette. Custom colors work in Balanced, Quiet, Dynamic, and Glass.</small>' +
       '</div>';
 
     state.panelBody.querySelector('[data-custom-accent]').addEventListener('input', event => applyAccent(event.target.value, true));
@@ -1668,7 +1755,6 @@
       applyMotion('system', false);
       applyExperienceChoice('balanced', false);
       applyAdapt('core', false);
-      applyAccent('mono', false);
       stopFocusTimer(false);
       state.focusRemaining = 25 * 60;
       state.focusUpdatedAt = 0;
@@ -1709,7 +1795,6 @@
       applyMotion(getMotionChoice(), false);
       applyExperienceChoice(getExperienceChoice(), false);
       applyAdapt(getAdaptChoice(), false);
-      applyAccent(readString(STORAGE.accent, 'mono'), false);
       stopFocusTimer(false);
       restoreFocusState();
       renderSettings();
@@ -2150,8 +2235,9 @@
     if (event.key === STORAGE.motion) applyMotion(getMotionChoice(), false);
     if (event.key === STORAGE.experience) applyExperienceChoice(getExperienceChoice(), false);
     if (event.key === STORAGE.adapt) applyAdapt(getAdaptChoice(), false);
-    if (event.key === STORAGE.customAccent) applyAccent(readString(STORAGE.accent, 'mono'), false);
-    if (event.key === STORAGE.accent) applyAccent(readString(STORAGE.accent, 'mono'), false);
+    if (event.key === STORAGE.adaptPalettes || event.key === STORAGE.adaptCustomColors) applyAccent(getAccentChoice(), false);
+    if (event.key === STORAGE.customAccent) applyAccent(getAccentChoice(), false);
+    if (event.key === STORAGE.accent) applyAccent(getAccentChoice(), false);
     if (event.key === STORAGE.focusState || event.key === STORAGE.focusMinutes) {
       stopFocusTimer(false);
       restoreFocusState();
@@ -2172,12 +2258,8 @@
     attributeFilter: ['class', 'data-theme', 'data-arrow-theme'],
   });
 
-  document.documentElement.dataset.arrowAccent = readString(STORAGE.accent, 'mono');
-  if (readString(STORAGE.experience, '')) applyExperienceChoice(getExperienceChoice(), false);
-  if (readString(STORAGE.accent, '')) applyAccent(readString(STORAGE.accent, 'mono'), false);
   applyTheme(getThemeChoice(), false);
   applyExperienceChoice(getExperienceChoice(), false);
-  applyAccent(readString(STORAGE.accent, 'mono'), false);
   applyAdapt(getAdaptChoice(), false);
   applyMotion(getMotionChoice(), false);
   restoreFocusState();

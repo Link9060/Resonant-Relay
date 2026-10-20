@@ -28,10 +28,11 @@ function withTimeout<T>(promise: PromiseLike<T>, label: string, ms = CHAT_LOAD_T
   });
 }
 
-export default function ChatsPage() {
+export default function ChatsPage({ home = false }: { home?: boolean }) {
   const [state, setState] = useState<any>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [homeFilter, setHomeFilter] = useState<'all' | 'pinned' | 'groups'>('all');
   const [results, setResults] = useState<any[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -263,6 +264,13 @@ export default function ChatsPage() {
     }
   }
 
+  const homeConversations = useMemo(() => {
+    const all = state?.conversations ?? [];
+    if (homeFilter === 'groups') return all.filter((conversation: any) => conversation.type === 'group');
+    if (homeFilter === 'pinned') return all.filter((conversation: any) => Boolean(state?.preferenceByConversation?.[conversation.id]?.pinned_at));
+    return all;
+  }, [homeFilter, state]);
+
   const shownResults = useMemo(() => {
     const visibleIds = new Set<string>((state?.conversations ?? []).map((conversation: any) => conversation.id));
     return results
@@ -275,7 +283,7 @@ export default function ChatsPage() {
   if (!state && loadError) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-6 md:px-6 md:py-7">
-        <PageHeader title="Chats" subtitle="Messages, files, replies, and everything you pinned." />
+        <PageHeader title={home ? 'Relay' : 'Chats'} subtitle="Messages, contacts, and conversations." />
         <div className="mt-6 rounded-xl border border-border bg-surface p-5">
           <p className="text-sm font-medium text-ink">Chats could not load.</p>
           <p className="mt-1 text-xs leading-5 text-ink-faint">{loadError}</p>
@@ -287,7 +295,18 @@ export default function ChatsPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 md:px-6 md:py-7">
-      <PageHeader title="Chats" subtitle="Messages, files, replies, and everything you pinned." action={<NewChatDialog contacts={state.contacts} />} />
+      {home ? (
+        <section className="relay-communications-hero rounded-2xl border border-border bg-surface p-5 sm:p-7">
+          <span className="text-[10px] font-semibold uppercase tracking-[.2em] text-ink-faint">ARROW / COMMUNICATIONS</span>
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-ink">Stay connected.</h1>
+          <p className="mt-2 max-w-lg text-sm leading-6 text-ink-muted">Your conversations, people, and shared plans. Your customizable dashboard now lives in Orbit.</p>
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <NewChatDialog contacts={state.contacts} />
+            <a href={appPageUrl('/contacts')} className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-xs font-semibold text-ink hover:bg-surface-raised">Contacts ↗</a>
+            <a href={appPageUrl('/chats')} className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-xs font-semibold text-ink hover:bg-surface-raised">Full inbox ↗</a>
+          </div>
+        </section>
+      ) : <PageHeader title="Chats" subtitle="Messages, files, replies, and everything you pinned." action={<NewChatDialog contacts={state.contacts} />} />}
 
       {loadError && (
         <div className="mt-4 rounded-md border border-border bg-surface px-3 py-2 text-xs text-ink-muted">
@@ -306,6 +325,22 @@ export default function ChatsPage() {
 
       {searchError && <div className="mt-3 rounded-md border border-border px-3 py-2 text-xs text-ink-muted">{searchError}</div>}
 
+      {home && !results && (
+        <section className="mt-6" aria-label="Conversations">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-lg font-semibold text-ink">Conversations</h2>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Filter conversations">
+              {(['all', 'pinned', 'groups'] as const).map((filter) => (
+                <button key={filter} type="button" aria-pressed={homeFilter === filter}
+                  onClick={() => setHomeFilter(filter)}
+                  className={`rounded-full border px-3 py-2 text-xs font-medium transition-colors ${homeFilter === filter ? 'border-ink bg-ink text-canvas' : 'border-border bg-surface text-ink-muted hover:bg-surface-raised'}`}>
+                  {filter === 'all' ? 'All' : filter === 'pinned' ? 'Pinned' : 'Groups'}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
       {results ? (
         <section className="mt-5">
           <div className="mb-2 flex items-center justify-between">
@@ -334,7 +369,7 @@ export default function ChatsPage() {
       ) : (
         <div className="mt-4">
           <ConversationList
-            conversations={state.conversations}
+            conversations={home ? homeConversations : state.conversations}
             currentUserId={state.userId}
             previewByConversation={state.previews}
             preferencesById={state.preferencesById}
