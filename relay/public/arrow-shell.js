@@ -556,7 +556,7 @@
         if (!instance.pinned && !state.activePanel && !instance.hover && !root.contains(document.activeElement)) setOpen(instance, false);
       }, 260);
     });
-    root.addEventListener('focusin', () => setOpen(instance, true);
+    root.addEventListener('focusin', () => setOpen(instance, true));
     root.addEventListener('focusout', () => {
       requestAnimationFrame(() => {
         if (!instance.pinned && !state.activePanel && !root.contains(document.activeElement)) {
