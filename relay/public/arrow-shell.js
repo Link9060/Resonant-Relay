@@ -7,6 +7,7 @@
     accent: 'arrow_os_accent_v1',
     customAccent: 'arrow_os_custom_accent_v1',
     experience: 'arrow_os_experience_v1',
+    adapt: 'arrow_os_adapt_v1',
     focusMinutes: 'arrow_os_focus_minutes_v1',
     focusState: 'arrow_os_focus_state_v1',
   };
@@ -65,6 +66,11 @@
     ['amber', 'Amber', '#d97706'],
   ];
 
+  // Adapt is independent of the existing ARROW motion and palette settings.
+  const ADAPT_CHOICES = [
+    ['core', 'Core'], ['bloom', 'Bloom'], ['haven', 'Haven'],
+    ['atelier', 'Atelier'], ['pulse', 'Pulse'],
+  ];
   const state = {
     instances: new Set(),
     renderVersion: 0,
@@ -252,6 +258,17 @@
     if (state.activePanel === 'appearance') updateAppearanceState();
   }
 
+  function getAdaptChoice() {
+    const value = readString(STORAGE.adapt, 'core');
+    return ADAPT_CHOICES.some(([id]) => id === value) ? value : 'core';
+  }
+  function applyAdapt(choice, persist = false) {
+    const normalized = ADAPT_CHOICES.some(([id]) => id === choice) ? choice : 'core';
+    if (persist) writeString(STORAGE.adapt, normalized);
+    document.documentElement.dataset.arrowAdapt = normalized;
+    window.dispatchEvent(new CustomEvent('arrow:adaptchange', { detail: { identity: normalized } }));
+    if (state.activePanel === 'appearance') updateAppearanceState();
+  }
   function getExperienceChoice() {
     const value = readString(STORAGE.experience, 'balanced');
     return ['balanced', 'quiet', 'dynamic', 'glass'].includes(value) ? value : 'balanced';
@@ -1517,7 +1534,7 @@
   function updateAppearanceState() {
     if (!state.panelBody) return;
     const choices = {
-      theme: getThemeChoice(), motion: getMotionChoice(),
+      adapt: getAdaptChoice(), theme: getThemeChoice(), motion: getMotionChoice(),
       experience: getExperienceChoice(), accent: readString(STORAGE.accent, 'mono'),
     };
     Object.entries(choices).forEach(([kind, value]) => {
@@ -1536,6 +1553,13 @@
     const experience = getExperienceChoice();
 
     state.panelBody.innerHTML =
+      '<div class="arrow-os-section">' +
+        '<span class="arrow-os-section-label">ARROW ADAPT · VISUAL IDENTITY</span>' +
+        '<div class="arrow-os-segmented arrow-os-adapt-grid">' +
+          ADAPT_CHOICES.map(([value,label]) => '<button type="button" data-adapt-choice="' + value + '">' + label + '</button>').join('') +
+        '</div>' +
+        '<small class="arrow-os-adapt-help">Core retains the original ARROW appearance. Additional module styles are rolling out in beta.</small>' +
+      '</div>' +
       '<div class="arrow-os-section">' +
         '<span class="arrow-os-section-label">EXPERIENCE</span>' +
         '<div class="arrow-os-segmented arrow-os-experience-grid">' +
@@ -1567,6 +1591,10 @@
       '</div>';
 
     state.panelBody.querySelector('[data-custom-accent]').addEventListener('input', event => applyAccent(event.target.value, true));
+    state.panelBody.querySelectorAll('[data-adapt-choice]').forEach(button => {
+      button.addEventListener('click', () => applyAdapt(button.dataset.adaptChoice, true));
+    });
+    updateAppearanceState();
     state.panelBody.querySelectorAll('[data-experience-choice]').forEach(button => {
       button.addEventListener('click', () => applyExperienceChoice(button.dataset.experienceChoice, true));
     });
@@ -1639,6 +1667,7 @@
       applyTheme('system', false);
       applyMotion('system', false);
       applyExperienceChoice('balanced', false);
+      applyAdapt('core', false);
       applyAccent('mono', false);
       stopFocusTimer(false);
       state.focusRemaining = 25 * 60;
@@ -1679,6 +1708,7 @@
       applyTheme(getThemeChoice(), false);
       applyMotion(getMotionChoice(), false);
       applyExperienceChoice(getExperienceChoice(), false);
+      applyAdapt(getAdaptChoice(), false);
       applyAccent(readString(STORAGE.accent, 'mono'), false);
       stopFocusTimer(false);
       restoreFocusState();
@@ -2119,6 +2149,7 @@
     if (event.key === STORAGE.theme) applyTheme(getThemeChoice(), false);
     if (event.key === STORAGE.motion) applyMotion(getMotionChoice(), false);
     if (event.key === STORAGE.experience) applyExperienceChoice(getExperienceChoice(), false);
+    if (event.key === STORAGE.adapt) applyAdapt(getAdaptChoice(), false);
     if (event.key === STORAGE.customAccent) applyAccent(readString(STORAGE.accent, 'mono'), false);
     if (event.key === STORAGE.accent) applyAccent(readString(STORAGE.accent, 'mono'), false);
     if (event.key === STORAGE.focusState || event.key === STORAGE.focusMinutes) {
@@ -2147,6 +2178,7 @@
   applyTheme(getThemeChoice(), false);
   applyExperienceChoice(getExperienceChoice(), false);
   applyAccent(readString(STORAGE.accent, 'mono'), false);
+  applyAdapt(getAdaptChoice(), false);
   applyMotion(getMotionChoice(), false);
   restoreFocusState();
   // State is persisted on timer actions. An old background tab must not overwrite it on exit.
@@ -2286,6 +2318,8 @@
     applyMotion,
     applyAccent,
     applyExperienceChoice,
+    applyAdapt,
+    getAdaptChoice,
     launchToOrbit,
     resolveHref,
     previewPlan,

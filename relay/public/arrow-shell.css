@@ -1719,3 +1719,17 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 .arrow-os-notification-toast{position:fixed;right:20px;bottom:128px;z-index:2147482500;display:flex;align-items:center;gap:12px;max-width:min(430px,calc(100vw - 40px));padding:16px;border:1px solid rgb(var(--ui-fg)/.18);border-radius:16px;background:rgb(var(--ui-surface));color:rgb(var(--ui-fg));box-shadow:0 12px 44px #0003;font:13px/1.5 system-ui}
 .arrow-os-notification-toast div{min-width:0;flex:1}.arrow-os-notification-toast strong,.arrow-os-notification-toast span{display:block;overflow-wrap:anywhere}.arrow-os-notification-toast span{font-size:12px;opacity:.7;margin-top:3px}.arrow-os-notification-toast button{border:1px solid currentColor;border-radius:8px;background:transparent;color:inherit;padding:6px 10px;cursor:pointer}.arrow-os-notification-toast button:focus-visible,.arrow-os-notification-button:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 .arrow-os-inbox-row{display:grid;gap:5px;width:100%;padding:14px;text-align:left;background:transparent;color:inherit;border:0;border-bottom:1px solid currentColor;cursor:pointer;font:13px/1.5 system-ui}.arrow-os-inbox-row span{font-size:12px;opacity:.75}.arrow-os-inbox-row time{font-size:10px;opacity:.55}.arrow-os-inbox-row[data-unread=true]{background:rgb(var(--ui-fg)/.06)}.arrow-os-notification-setup{display:block;padding:12px;color:inherit;font:12px system-ui}
+
+
+/* Adapt beta: never alter Core's original visual identity. */
+.arrow-os-adapt-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
+.arrow-os-adapt-grid button { min-width:0; font-size:11px; }
+.arrow-os-adapt-help { display:block; margin-top:8px; line-height:1.5; opacity:.7; }
+:root[data-arrow-adapt="bloom"] .arrow-os-island,
+:root[data-arrow-adapt="bloom"] .arrow-os-panel { border-color:#e6bed9; border-radius:24px; box-shadow:0 10px 38px #9f598d1b; }
+:root[data-arrow-adapt="haven"] .arrow-os-island,
+:root[data-arrow-adapt="haven"] .arrow-os-panel { border-color:#88a38c; border-radius:14px; }
+:root[data-arrow-adapt="atelier"] .arrow-os-island,
+:root[data-arrow-adapt="atelier"] .arrow-os-panel { border-radius:4px; }
+:root[data-arrow-adapt="pulse"] .arrow-os-island,
+:root[data-arrow-adapt="pulse"] .arrow-os-panel { border-color:#a58bd6; box-shadow:0 12px 42px #7c3aed24; }
