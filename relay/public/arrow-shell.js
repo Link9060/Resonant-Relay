@@ -1748,29 +1748,36 @@
         '</div>' +
         '<small class="arrow-os-adapt-help">Sample only. The preview follows the light/dark selection above.</small>' +
       '</div>' +
+      '<section class="arrow-os-section arrow-os-color-section" aria-label="Customize colors">' +
+        '<div class="arrow-os-color-head">' +
+          '<span class="arrow-os-section-label">COLORS · ' + escapeHtml(currentIdentity.toUpperCase()) + '</span>' +
+          '<small>Saved separately for each identity</small>' +
+        '</div>' +
+        '<div class="arrow-os-accents arrow-os-palette-grid" role="group" aria-label="Color palettes for ' + escapeAttr(capitalize(currentIdentity)) + '">' +
+          paletteChoices(currentIdentity).map(([value,label,primary,secondary]) =>
+            '<button type="button" data-accent-choice="' + value + '" aria-pressed="' + (accent === value) + '" title="' + escapeAttr(label) + '" aria-label="Use ' + escapeAttr(label) + ' palette" class="' + (accent === value ? 'is-active' : '') + '">' +
+              '<i aria-hidden="true" style="--swatch:' + primary + ';--swatch-secondary:' + secondary + '"></i><span>' + escapeHtml(label) + '</span>' +
+            '</button>'
+          ).join('') +
+          '<button type="button" data-accent-choice="custom" aria-pressed="' + (accent === 'custom') + '" aria-label="Use custom color" class="arrow-os-custom-choice' + (accent === 'custom' ? ' is-active' : '') + '">' +
+            '<i aria-hidden="true" style="--swatch:' + getCustomColor(currentIdentity) + ';--swatch-secondary:' + getCustomColor(currentIdentity) + '"></i><span>Custom</span>' +
+          '</button>' +
+        '</div>' +
+        '<div class="arrow-os-color-custom-row">' +
+          '<label class="arrow-os-custom-accent" for="arrow-os-custom-color-picker">Custom color<input id="arrow-os-custom-color-picker" type="color" data-custom-accent value="' + escapeAttr(getCustomColor(currentIdentity)) + '" /></label>' +
+          '<label class="arrow-os-hex-label" for="arrow-os-custom-hex">HEX<input id="arrow-os-custom-hex" data-custom-hex type="text" inputmode="text" autocomplete="off" spellcheck="false" maxlength="7" value="' + escapeAttr(getCustomColor(currentIdentity)) + '" aria-describedby="arrow-os-hex-help" /></label>' +
+        '</div>' +
+        '<small class="arrow-os-adapt-help" id="arrow-os-hex-help">Choose a preset or enter a six-digit color, such as #8b5cf6. Changes apply across ARROW immediately.</small>' +
+      '</section>' +
       '<details class="arrow-os-appearance-advanced">' +
-        '<summary>More options <span>Motion · Palettes</span></summary>' +
+        '<summary>More options <span>Motion</span></summary>' +
       '<div class="arrow-os-section">' +
         '<span class="arrow-os-section-label">MOTION</span>' +
         '<div class="arrow-os-segmented">' +
           [['system','System'],['full','Full'],['reduce','Reduced']].map(([value,label]) => '<button type="button" data-motion-choice="' + value + '" class="' + (motion === value ? 'is-active' : '') + '">' + label + '</button>').join('') +
         '</div>' +
       '</div>' +
-      '<div class="arrow-os-section">' +
-        '<span class="arrow-os-section-label">COLOR PALETTE · ' + escapeHtml(currentIdentity.toUpperCase()) + '</span>' +
-        '<div class="arrow-os-accents arrow-os-palette-grid">' +
-          paletteChoices(currentIdentity).map(([value,label,primary,secondary]) =>
-            '<button type="button" data-accent-choice="' + value + '" aria-label="' + escapeAttr(label) + '" class="' + (accent === value ? 'is-active' : '') + '">' +
-              '<i style="--swatch:' + primary + ';--swatch-secondary:' + secondary + '"></i><span>' + escapeHtml(label) + '</span>' +
-            '</button>'
-          ).join('') +
-          '<button type="button" data-accent-choice="custom" class="arrow-os-custom-choice' + (accent === 'custom' ? ' is-active' : '') + '">' +
-            '<i style="--swatch:' + getCustomColor(currentIdentity) + ';--swatch-secondary:' + getCustomColor(currentIdentity) + '"></i><span>Custom</span>' +
-          '</button>' +
-        '</div>' +
-        '<label class="arrow-os-custom-accent">Custom color for ' + escapeHtml(capitalize(currentIdentity)) + '<input type="color" data-custom-accent value="' + escapeAttr(getCustomColor(currentIdentity)) + '" /></label>' +
-        '<small class="arrow-os-adapt-help">Every identity remembers its palette and custom color.</small>' +
-      '</div>' +
+
       '</details>';
 
     let previewIdentity = currentIdentity;
@@ -1790,7 +1797,30 @@
       });
     });
     state.panelBody.querySelector('[data-adapt-preview-apply]').addEventListener('click', () => applyAdapt(previewIdentity,true));
-    state.panelBody.querySelector('[data-custom-accent]').addEventListener('input', event => applyAccent(event.target.value, true));
+    const picker = state.panelBody.querySelector('[data-custom-accent]');
+    const hexField = state.panelBody.querySelector('[data-custom-hex]');
+    const refreshAccentPreview = () => {
+      const stage = state.panelBody?.querySelector('[data-adapt-preview-stage]');
+      if (!stage) return;
+      renderPreviewLab(previewIdentity, stage.dataset.previewTheme === 'dark', previewSurface);
+    };
+    picker.addEventListener('input', event => {
+      applyAccent(event.target.value, true);
+      refreshAccentPreview();
+    });
+    hexField.addEventListener('change', event => {
+      let value = String(event.target.value || '').trim();
+      if (/^[a-f0-9]{6}$/i.test(value)) value = '#'+value;
+      if (/^#[0-9a-f]{6}$/i.test(value)) {
+        applyAccent(value, true);
+        refreshAccentPreview();
+      } else {
+        event.target.value = getCustomColor();
+        event.target.setAttribute('aria-invalid','true');
+        return;
+      }
+      event.target.removeAttribute('aria-invalid');
+    });
     updateAppearanceState();
     state.panelBody.querySelectorAll('[data-theme-choice]').forEach(button => {
       button.addEventListener('click', () => {
@@ -1805,6 +1835,7 @@
     state.panelBody.querySelectorAll('[data-accent-choice]').forEach(button => {
       button.addEventListener('click', () => {
         applyAccent(button.dataset.accentChoice, true);
+        refreshAccentPreview();
       });
     });
   }
