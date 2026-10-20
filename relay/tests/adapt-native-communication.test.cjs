@@ -35,6 +35,13 @@ test('native composer structures are different while preserving children',()=>{
  assert.match(html[3],/CORRESPONDENCE/);
  assert.match(html[4],/TRANSMISSION READY/);
 });
+test('native tool panels keep all original action elements across identities',()=>{
+ const html=identities.map(identity=>renderToStaticMarkup(React.createElement(native.NativeToolPanel,{identity},
+  React.createElement('button',{'aria-label':'Mute conversation'},'Mute'))));
+ assert.equal(new Set(html).size,5);
+ html.forEach(x=>assert.match(x,/aria-label="Mute conversation"/));
+ assert.doesNotMatch(html[0],/relay-native-tool-panel/);
+});
 test('five conversation rows retain the same controls',()=>{
  const html=identities.map(identity=>renderToStaticMarkup(React.createElement(native.NativeConversationRow,{identity},
   React.createElement('button',{'aria-label':'Open chat'},'A conversation'))));
