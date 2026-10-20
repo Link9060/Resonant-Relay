@@ -2508,8 +2508,8 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
    Compact sections, one identity chooser and one real light/dark control.
    Preview is read-only until "Use this identity" is pressed. */
 .arrow-os-panel[data-panel="appearance"] {
-  width:min(455px,calc(100vw - 22px))!important;
-  /* Respect the viewport-specific inline maximum set by positionPanel. */
+  max-width:calc(100vw - 22px);
+  /* Respect the viewport-specific inline width and height set by positionPanel. */
   max-height:min(90dvh,820px);
   overflow:hidden;
 }
@@ -2612,7 +2612,7 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
   border-radius:0!important;
 }
 @media(max-width:470px) {
-  .arrow-os-panel[data-panel="appearance"] {width:calc(100vw - 14px)!important;}
+  .arrow-os-panel[data-panel="appearance"] {max-width:calc(100vw - 14px);}
   .arrow-os-panel[data-panel="appearance"] .arrow-os-panel-body {padding:10px;gap:10px;}
   .arrow-os-panel[data-panel="appearance"] .arrow-os-lab-controls button {font-size:9px;}
 }
