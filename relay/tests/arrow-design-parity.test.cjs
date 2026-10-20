@@ -88,3 +88,51 @@ test('Relay surfaces use four distinct material modes and respect typography',()
  for(const id of ['balanced','quiet','dynamic','glass']) assert.ok(css.includes('data-arrow-experience="'+id+'"'),id);
  assert.match(css,/\.relay-communications-hero/);
 });
+
+
+// ARROW Adapt III regression coverage: each identity changes interface composition,
+// not merely fonts and palette tokens. Core must stay as the unchanged baseline.
+test('shared dock changes control geometry and grouping for every non-Core identity',()=>{
+ const css=read(path.join(root,'public/arrow-shell.css'));
+ for(const id of ['bloom','haven','atelier','pulse']) {
+  assert.ok(css.includes('data-arrow-adapt="'+id+'"] .arrow-os-root'),id+' dock missing');
+ }
+ assert.match(css,/data-arrow-adapt="bloom".*arrow-os-control/);
+ assert.match(css,/data-arrow-adapt="haven".*arrow-os-tray-section/);
+ assert.match(css,/data-arrow-adapt="atelier".*arrow-os-tray-grid/);
+ assert.match(css,/data-arrow-adapt="pulse".*arrow-os-tray-featured/);
+ assert.match(css,/prefers-reduced-motion/);
+});
+test('Relay switches actual desktop navigation architecture in Atelier',()=>{
+ const css=read(path.join(root,'src/app/adapt-identities.css'));
+ const rootLayout=read(path.join(root,'src/app/layout.tsx'));
+ assert.match(rootLayout,/import '\.\/adapt-identities\.css'/);
+ for(const id of ['bloom','haven','atelier','pulse'])assert.ok(css.includes('data-arrow-adapt="'+id+'"'),id);
+ assert.match(css,/data-arrow-adapt="atelier".*relay-primary-cluster/);
+ assert.match(css,/grid-template-columns/);
+ assert.match(css,/padding-top:76px/);
+ assert.match(css,/relay-mobile-nav/);
+});
+test('Orbit has distinct home hero markup for four identities',{skip:!process.env.ARROW_ORBIT_SOURCE},()=>{
+ const jsx=from('ARROW_ORBIT_SOURCE','src/components/orbit-dashboard.tsx');
+ const css=from('ARROW_ORBIT_SOURCE','src/app/adapt.css');
+ for(const id of ['bloom','haven','atelier','pulse']){
+  assert.ok(jsx.includes('adapt-intro-'+id),id+' missing masthead');
+  assert.ok(css.includes('data-orbit-adapt="'+id+'"'),id+' missing screen layout');
+ }
+ assert.match(css,/adapt-view-switch/);
+ assert.match(jsx,/OrbitWidgetStudio/);
+});
+for(const [moduleName,env,path,features] of [
+ ['Waypoint','ARROW_WAYPOINT_SOURCE','src/app/globals.css',['.waypoint-app .sidebar','.waypoint-app .nav-item','.waypoint-app .topbar']],
+ ['Atlas','ARROW_ATLAS_SOURCE','apps/explorer/styles.css',['.app-shell .sidebar','.app-shell .topbar','.app-shell .inspector']],
+ ['RAVIN','ARROW_RAVIN_SOURCE','ravin/public/arrow-ravin.css',['.ravin-sidebar','.ravin-main','.ravin-composer']]
+]) {
+ test(moduleName+' changes navigation and content composition with Adapt',{skip:!process.env[env]},()=>{
+  const css=from(env,path);
+  assert.match(css,/ARROW Adapt III/);
+  for(const id of ['bloom','haven','atelier','pulse'])assert.ok(css.includes('data-arrow-adapt="'+id+'"'),moduleName+' '+id);
+  for(const feature of features)assert.ok(css.includes(feature),moduleName+' feature '+feature);
+  assert.match(css,/prefers-reduced-motion/);
+ });
+}
