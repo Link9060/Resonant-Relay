@@ -1,7 +1,7 @@
 'use client';
 
 import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
-import { APP_TITLE, appPageUrl, appPathname, BASE_PATH } from '@/lib/config';
+import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, IS_BETA, ARROW_SITE_URL } from '@/lib/config';
 import { cn } from '@/lib/utils';
 import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, TimerReset, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -125,6 +125,28 @@ export function Dock({
       </nav>
 
       <WhatsNew onboardingCompletedAt={onboardingCompletedAt} />
+
+      {/* Adapt's mobile hub is shared navigation, not a duplicate app implementation.
+          Native details keeps the menu keyboard/touch accessible without scripting. */}
+      <details className="relay-adapt-mobile-hub md:hidden">
+        <summary aria-label="Open ARROW module shortcuts">
+          <span className="relay-adapt-hub-symbol" aria-hidden="true">✦</span>
+          <span className="relay-adapt-hub-copy">ARROW</span>
+        </summary>
+        <nav className="relay-adapt-hub-menu" aria-label="Explore ARROW modules">
+          <span className="relay-adapt-hub-title">YOUR WORKSPACE</span>
+          {([
+            ['Orbit', 'orbit', '◉'],
+            ['RAVIN', 'ravin', '✦'],
+            ['Atlas', 'atlas', '◇'],
+            ['Waypoint', 'waypoint', '⌁'],
+          ] as const).map(([label, destination, symbol]) => (
+            <a key={destination} href={IS_BETA ? `${BASE_PATH}/arrow/${destination}/` : `${ARROW_SITE_URL}/${destination}/`}>
+              <span aria-hidden="true">{symbol}</span><strong>{label}</strong><span aria-hidden="true">↗</span>
+            </a>
+          ))}
+        </nav>
+      </details>
 
       <nav
         aria-label="Relay Mobile"
