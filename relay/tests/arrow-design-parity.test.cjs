@@ -9,7 +9,7 @@ const from=(key,p)=>{assert.ok(process.env[key],key+' missing');return read(path
 test('ARROW command dock markup parses and preserves panel actions',()=>{
  const js=read(path.join(root,'public/arrow-shell.js'));
  assert.doesNotThrow(()=>new Function(js));
- for(const text of ['arrow-os-tray-header','arrow-os-tray-featured','arrow-os-tray-section','arrow-os-tray-footer','arrow-os-trigger','controlButton(\\'appearance\\'','controlButton(\\'settings\\'','controlButton(\\'notes\\'','controlButton(\\'tasks\\'','controlButton(\\'calendar\\''])assert.ok(js.includes(text),text);
+ for(const text of ['arrow-os-tray-header','arrow-os-tray-featured','arrow-os-tray-section','arrow-os-tray-footer','arrow-os-trigger',"controlButton('appearance'","controlButton('settings'","controlButton('notes'","controlButton('tasks'","controlButton('calendar'"]) assert.ok(js.includes(text),text);
  assert.match(js,/setOpen\(instance, false\)/);
  assert.match(js,/instance\.content\.inert = !open/);
 });
