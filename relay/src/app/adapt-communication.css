@@ -203,3 +203,33 @@
   animation:none!important;transition:none!important;
  }
 }
+
+
+/* Native tool panels keep mute, reports and group permissions unchanged. */
+.relay-native-tool-panel {display:flex;align-items:center;gap:8px;min-width:0;}
+.relay-native-tools-actions {display:flex;align-items:center;gap:3px;}
+.relay-native-tools-heading {font-size:9px;font-weight:750;letter-spacing:.13em;white-space:nowrap;}
+.relay-native-tool-panel.bloom {
+  padding:4px 6px;border:1px solid color-mix(in srgb,var(--arrow-adapt-secondary) 40%,rgb(var(--border)));
+  border-radius:999px;background:color-mix(in srgb,rgb(var(--surface)) 91%,var(--arrow-adapt-secondary));
+}
+.relay-native-tool-panel.bloom .relay-native-tools-symbol {color:var(--arrow-adapt-primary);font-size:15px;}
+.relay-native-tool-panel.bloom button {border-radius:999px;}
+.relay-native-tool-panel.haven {padding:4px 7px;border-left:2px solid var(--arrow-adapt-primary);}
+.relay-native-tool-panel.haven .relay-native-tools-heading {font-family:var(--arrow-font-display);font-weight:500;letter-spacing:.03em;}
+.relay-native-tool-panel.haven button {border-radius:3px;}
+.relay-native-tool-panel.atelier {padding:5px 0;border-bottom:1px solid rgb(var(--border));}
+.relay-native-tool-panel.atelier .relay-native-tools-heading {letter-spacing:.18em;}
+.relay-native-tool-panel.atelier button {border-radius:0;}
+.relay-native-tool-panel.pulse {
+  padding:4px 7px;border:1px solid var(--arrow-adapt-secondary);
+  border-radius:3px 13px 3px 13px;
+  background:color-mix(in srgb,rgb(var(--surface)) 87%,var(--arrow-adapt-primary));
+}
+.relay-native-tool-panel.pulse .relay-native-tools-heading {color:var(--arrow-adapt-secondary);}
+.relay-native-tool-panel.pulse button {border-radius:3px 9px 3px 9px;}
+@media(max-width:480px) {
+ .relay-native-tool-panel .relay-native-tools-heading,.relay-native-tool-panel .relay-native-tools-symbol {display:none;}
+ .relay-native-tool-panel {gap:0;}
+ .relay-native-tools-actions {gap:0;}
+}
