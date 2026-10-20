@@ -1640,6 +1640,66 @@
     });
   }
 
+
+  // Preview Lab has local state only. Browsing identities must NEVER write a
+  // preference, switch the active module, or alter account data.
+  function renderIdentityPreview(identity) {
+    const safe = ADAPT_CHOICES.some(([id]) => id === identity) ? identity : 'core';
+    const nav = {
+      core:'<span>◈  Orbit</span><span>▦  Tasks</span><span>✦  RAVIN</span>',
+      bloom:'<span>✿  Home</span><span>♡  Tasks</span><span>✦  RAVIN</span>',
+      haven:'<span>Home /</span><span>Notes /</span><span>Plans /</span>',
+      atelier:'<span>01. HOME</span><span>02. NOTES</span><span>03. AI</span>',
+      pulse:'<span>01 HOME</span><span>02 OPS</span><span>03 AI</span>',
+    }[safe];
+    const header = {
+      core:'ARROW // COMMAND',
+      bloom:'Your happy place ✿',
+      haven:'A place to return to.',
+      atelier:'On the things ahead.',
+      pulse:'YOUR WORLD. YOUR RULES.',
+    }[safe];
+    const titles = {
+      core:['TASKS','RAVIN'],
+      bloom:['Little wins','Your AI companion'],
+      haven:['Today’s notes','A thought from RAVIN'],
+      atelier:['Priorities','Correspondence'],
+      pulse:['TASK STATUS','AI ACTIVE'],
+    }[safe];
+    return '<div class="arrow-os-lab-nav">' + nav + '</div>' +
+      '<div class="arrow-os-lab-content">' +
+        '<div class="arrow-os-lab-masthead"><small>ARROW / ' + safe.toUpperCase() + '</small><strong>' + header + '</strong></div>' +
+        '<div class="arrow-os-lab-samples">' +
+          '<div class="arrow-os-lab-sample"><span aria-hidden="true">✓</span><small>' + titles[0] + '</small><strong>04</strong></div>' +
+          '<div class="arrow-os-lab-sample"><span aria-hidden="true">✦</span><small>' + titles[1] + '</small><strong>Ready</strong></div>' +
+        '</div>' +
+        '<div class="arrow-os-lab-message"><span aria-hidden="true">◉</span> The same workspace, a different experience.</div>' +
+      '</div>';
+  }
+  function renderPreviewLab(choice, resolvedDark) {
+    const lab = state.panelBody?.querySelector('[data-adapt-preview-lab]');
+    if (!lab) return;
+    const normalized = ADAPT_CHOICES.some(([id]) => id === choice) ? choice : 'core';
+    const preset = paletteChoices(normalized).find(([id]) => id === getAccentChoice(normalized)) || paletteChoices(normalized)[0];
+    const color = getAccentChoice(normalized) === 'custom' ? getCustomColor(normalized) : preset[2];
+    const secondary = getAccentChoice(normalized) === 'custom' ? color : preset[3];
+    const stage = lab.querySelector('[data-adapt-preview-stage]');
+    stage.dataset.previewIdentity = normalized;
+    stage.dataset.previewTheme = resolvedDark ? 'dark' : 'light';
+    stage.style.setProperty('--lab-accent',color);
+    stage.style.setProperty('--lab-secondary',secondary);
+    stage.innerHTML = renderIdentityPreview(normalized);
+    lab.querySelectorAll('[data-adapt-preview-choice]').forEach(button => {
+      const selected=button.dataset.adaptPreviewChoice===normalized;
+      button.setAttribute('aria-pressed',String(selected));
+    });
+    const modeButton = lab.querySelector('[data-adapt-preview-theme]');
+    modeButton.textContent = resolvedDark ? '☀ Light preview' : '☾ Dark preview';
+    modeButton.setAttribute('aria-label',resolvedDark?'Preview light mode':'Preview dark mode');
+    lab.querySelector('[data-adapt-preview-apply]').disabled = getAdaptChoice()===normalized;
+    lab.querySelector('[data-adapt-preview-apply]').textContent = getAdaptChoice()===normalized ? 'Current identity' : 'Use '+capitalize(normalized);
+  }
+
   function renderAppearance() {
     const theme = getThemeChoice();
     const motion = getMotionChoice();
@@ -1651,7 +1711,19 @@
         '<div class="arrow-os-segmented arrow-os-adapt-grid">' +
           ADAPT_CHOICES.map(([value,label]) => '<button type="button" data-adapt-choice="' + value + '">' + label + '</button>').join('') +
         '</div>' +
-        '<small class="arrow-os-adapt-help">Core retains the original ARROW appearance. Additional module styles are rolling out in beta.</small>' +
+        '<small class="arrow-os-adapt-help">Identity changes ARROW navigation, component design, fonts and widget composition.</small>' +
+      '</div>' +
+      '<div class="arrow-os-section arrow-os-preview-lab" data-adapt-preview-lab>' +
+        '<span class="arrow-os-section-label">IDENTITY PREVIEW LAB · NO CHANGES UNTIL APPLIED</span>' +
+        '<div class="arrow-os-lab-controls" role="group" aria-label="Preview an ARROW identity">' +
+          ADAPT_CHOICES.map(([value,label]) => '<button type="button" data-adapt-preview-choice="' + value + '">' + label + '</button>').join('') +
+        '</div>' +
+        '<div class="arrow-os-lab-stage" data-adapt-preview-stage aria-label="Sample ARROW interface preview"></div>' +
+        '<div class="arrow-os-lab-actions">' +
+          '<button type="button" data-adapt-preview-theme>☾ Dark preview</button>' +
+          '<button type="button" data-adapt-preview-apply>Use this identity</button>' +
+        '</div>' +
+        '<small class="arrow-os-adapt-help">Sample content only. Previewing does not change your active identity or saved settings.</small>' +
       '</div>' +
       '<div class="arrow-os-section">' +
         '<span class="arrow-os-section-label">THEME</span>' +
@@ -1681,6 +1753,20 @@
         '<small class="arrow-os-adapt-help">Every identity remembers its palette and custom color.</small>' +
       '</div>';
 
+    let previewIdentity = currentIdentity;
+    let previewDark = document.documentElement.dataset.arrowTheme === 'dark';
+    renderPreviewLab(previewIdentity,previewDark);
+    state.panelBody.querySelectorAll('[data-adapt-preview-choice]').forEach(button => {
+      button.addEventListener('click', () => {
+        previewIdentity=button.dataset.adaptPreviewChoice;
+        renderPreviewLab(previewIdentity,previewDark);
+      });
+    });
+    state.panelBody.querySelector('[data-adapt-preview-theme]').addEventListener('click', () => {
+      previewDark=!previewDark;
+      renderPreviewLab(previewIdentity,previewDark);
+    });
+    state.panelBody.querySelector('[data-adapt-preview-apply]').addEventListener('click', () => applyAdapt(previewIdentity,true));
     state.panelBody.querySelector('[data-custom-accent]').addEventListener('input', event => applyAccent(event.target.value, true));
     state.panelBody.querySelectorAll('[data-adapt-choice]').forEach(button => {
       button.addEventListener('click', () => applyAdapt(button.dataset.adaptChoice, true));
