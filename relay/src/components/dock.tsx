@@ -20,7 +20,6 @@ const FULL_DESKTOP_DOCK_ITEMS = [
 ] as const;
 
 const RELAY_DESKTOP_DOCK_ITEMS = [
-  { href: '/', label: 'Home', mobileLabel: 'Home', icon: House },
   { href: '/chats', label: 'Chats', icon: MessageCircle },
   { href: '/contacts', label: 'Contacts', icon: Users },
   { href: '/planner', label: 'Plans', mobileLabel: 'Plans', icon: SquareCheck },
@@ -46,11 +45,11 @@ export function Dock({
   const currentPath = appPathname(pathname);
   const canOpenStaff = role !== 'user';
   const mobileItems: Array<{ href: string; label: string; mobileLabel?: string; icon: LucideIcon }> = [
-    { href: '/', label: 'Home', mobileLabel: 'Home', icon: House },
     { href: '/chats', label: 'Chats', icon: MessageCircle },
+    { href: '/contacts', label: 'Contacts', icon: Users },
     { href: '/planner', label: 'Plans', icon: SquareCheck },
     { href: '/schedule', label: 'Schedule', icon: CalendarClock },
-    { href: '/contacts', label: 'Contacts', icon: Users },
+    { href: '/profile', label: 'Profile', icon: Settings },
   ];
 
   return (

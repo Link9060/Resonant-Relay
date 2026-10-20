@@ -1,3 +1,1 @@
-'use client';
-
-export { default } from '@/components/dashboard/dashboard-page';
+export { default } from '@/app/(app)/chats/page';
