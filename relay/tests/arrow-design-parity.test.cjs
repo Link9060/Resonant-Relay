@@ -136,3 +136,48 @@ for(const [moduleName,env,path,features] of [
   assert.match(css,/prefers-reduced-motion/);
  });
 }
+
+
+/* Adapt IV · Interaction guarantees. No new module data model required. */
+test('Relay keeps legacy mobile routes and adds identity-specific ARROW module launcher',()=>{
+ const jsx=read(path.join(root,'src/components/dock.tsx'));
+ const css=read(path.join(root,'src/app/adapt-identities.css'));
+ for(const selector of ['relay-mobile-nav','relay-adapt-mobile-hub','relay-adapt-hub-menu']) {
+  assert.ok(jsx.includes(selector),selector+' missing from navigation');
+  assert.ok(css.includes(selector),selector+' missing from identity design');
+ }
+ for(const center of ['orbit','ravin','atlas','waypoint']) assert.ok(jsx.includes("'"+center+"'"),center);
+ assert.match(jsx,/<details className="relay-adapt-mobile-hub/);
+ assert.match(jsx,/<summary aria-label="Open ARROW module shortcuts"/);
+ assert.match(css,/data-arrow-adapt="atelier".*relay-adapt-hub-menu/);
+ assert.match(css,/data-arrow-adapt="bloom".*relay-adapt-mobile-hub/);
+ assert.match(css,/data-arrow-adapt="pulse".*relay-mobile-nav/);
+});
+test('Atlas map controls and mobile filters call existing graph actions',{skip:!process.env.ARROW_ATLAS_SOURCE},()=>{
+ const markup=from('ARROW_ATLAS_SOURCE','apps/explorer/index.html');
+ const js=from('ARROW_ATLAS_SOURCE','apps/explorer/app.js');
+ const css=from('ARROW_ATLAS_SOURCE','apps/explorer/styles.css');
+ assert.doesNotThrow(()=>new Function(js));
+ for(const id of ['atlasMobileFilters','atlasSidebar','atlasMobileScrim','atlasMapFit','atlasMapMinus','atlasMapPlus','atlasMapZoomLabel']){
+  assert.ok(markup.includes('id="'+id+'"'),id+' missing markup');
+  assert.ok(js.includes("'#"+id+"'"),id+' missing wiring');
+ }
+ assert.match(js,/setAtlasFiltersOpen/);
+ assert.match(js,/updateZoom\(\)/);
+ assert.match(markup,/aria-expanded="false"/);
+ assert.match(css,/html\.atlas-filters-open/);
+ for(const id of ['bloom','haven','atelier','pulse'])assert.ok(css.includes('data-arrow-adapt="'+id+'"] .atlas-map-controls'),id);
+});
+test('RAVIN provides accessible functional identity command strip and focus mode',{skip:!process.env.ARROW_RAVIN_SOURCE},()=>{
+ const js=from('ARROW_RAVIN_SOURCE','ravin/public/ravin-shell.js');
+ const css=from('ARROW_RAVIN_SOURCE','ravin/public/arrow-ravin.css');
+ assert.doesNotThrow(()=>new Function(js));
+ for(const id of ['adaptNewChatBtn','adaptSearchBtn','adaptFocusBtn']) assert.ok(js.includes('id="'+id+'"'),id);
+ assert.match(js,/aria-pressed="false"/);
+ assert.match(js,/dataset\.adaptFocus/);
+ assert.match(js,/toggleSidebar\(\)/);
+ assert.match(js,/data-arrow-open="tasks"/);
+ assert.match(js,/data-arrow-open="calendar"/);
+ assert.match(css,/data-adapt-focus="true"/);
+ for(const id of ['bloom','haven','atelier','pulse'])assert.ok(css.includes('data-arrow-adapt="'+id+'"] .ravin-adapt-commandbar'),id);
+});
