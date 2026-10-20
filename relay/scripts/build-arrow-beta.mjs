@@ -34,6 +34,10 @@ run(process.execPath,['--test','tests/account-safety.test.cjs','tests/daily-plan
 run(process.execPath,['--test','tests/waypoint-workflow.test.cjs'],relay,{ARROW_WAYPOINT_SOURCE:waypoint});
 const atlas=source('Resonant-Field');run(process.execPath,['--test','tests/account-safety.test.mjs'],atlas);cpSync(path.join(atlas,'apps/explorer'),path.join(output,'arrow','atlas'),{recursive:true});
 const ravin=source('Project-R.A.V.I.N.-1.1');run(process.execPath,['--test','tests/arrow-account-safety.test.cjs'],ravin);run(process.execPath,['--test','tests/ravin-layout.test.cjs'],relay,{ARROW_RAVIN_SOURCE:ravin});cpSync(path.join(ravin,'ravin/public'),path.join(output,'arrow','ravin'),{recursive:true});
+run(process.execPath,['--test','tests/arrow-design-parity.test.cjs'],relay,{
+ ARROW_ORBIT_SOURCE:orbit,ARROW_WAYPOINT_SOURCE:waypoint,
+ ARROW_ATLAS_SOURCE:atlas,ARROW_RAVIN_SOURCE:ravin,
+});
 const common=path.join(output,'arrow');
 for(const name of ['arrow-shell.js','arrow-shell.css'])cpSync(path.join(relay,'public',name),path.join(common,name));
 cpSync(path.join(relay,'public/arrow-beta-guard.js'),path.join(common,'arrow-beta-guard.js'));
