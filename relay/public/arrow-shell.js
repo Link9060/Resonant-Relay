@@ -1750,16 +1750,6 @@
         '<div class="arrow-os-lab-controls" role="group" aria-label="Preview an ARROW identity">' +
           ADAPT_CHOICES.map(([value,label]) => '<button type="button" data-adapt-preview-choice="' + value + '">' + label + '</button>').join('') +
         '</div>' +
-        '<div class="arrow-os-lab-surface-switch" role="group" aria-label="Preview surface">' +
-          '<button type="button" data-adapt-preview-surface="home" aria-pressed="true">Home</button>' +
-          '<button type="button" data-adapt-preview-surface="conversation">Messaging</button>' +
-        '</div>' +
-        '<div class="arrow-os-lab-stage" data-adapt-preview-stage aria-label="Sample ARROW interface preview"></div>' +
-        '<div class="arrow-os-lab-actions">' +
-          '<button type="button" data-adapt-preview-apply>Use this identity</button>' +
-        '</div>' +
-        '<small class="arrow-os-adapt-help">Sample only. The preview follows the light/dark selection above.</small>' +
-      '</div>' +
       '<section class="arrow-os-section arrow-os-color-section" aria-label="Customize colors">' +
         '<div class="arrow-os-color-head">' +
           '<span class="arrow-os-section-label">COLORS · ' + escapeHtml(currentIdentity.toUpperCase()) + '</span>' +
@@ -1779,8 +1769,18 @@
           '<label class="arrow-os-custom-accent" for="arrow-os-custom-color-picker">Custom color<input id="arrow-os-custom-color-picker" type="color" data-custom-accent value="' + escapeAttr(getCustomColor(currentIdentity)) + '" /></label>' +
           '<label class="arrow-os-hex-label" for="arrow-os-custom-hex">HEX<input id="arrow-os-custom-hex" data-custom-hex type="text" inputmode="text" autocomplete="off" spellcheck="false" maxlength="7" value="' + escapeAttr(getCustomColor(currentIdentity)) + '" aria-describedby="arrow-os-hex-help" /></label>' +
         '</div>' +
-        '<small class="arrow-os-adapt-help" id="arrow-os-hex-help">Choose a preset or enter a six-digit color, such as #8b5cf6. Changes apply across ARROW immediately.</small>' +
+        '<small class="arrow-os-adapt-help" id="arrow-os-hex-help">Colors apply to the active identity shown above. Choose Use to switch identities before customizing another. Changes apply across ARROW immediately.</small>' +
       '</section>' +
+        '<div class="arrow-os-lab-surface-switch" role="group" aria-label="Preview surface">' +
+          '<button type="button" data-adapt-preview-surface="home" aria-pressed="true">Home</button>' +
+          '<button type="button" data-adapt-preview-surface="conversation">Messaging</button>' +
+        '</div>' +
+        '<div class="arrow-os-lab-stage" data-adapt-preview-stage aria-label="Sample ARROW interface preview"></div>' +
+        '<div class="arrow-os-lab-actions">' +
+          '<button type="button" data-adapt-preview-apply>Use this identity</button>' +
+        '</div>' +
+        '<small class="arrow-os-adapt-help">Sample only. The preview follows the light/dark selection above.</small>' +
+      '</div>' +
       '<details class="arrow-os-appearance-advanced">' +
         '<summary>More options <span>Motion</span></summary>' +
       '<div class="arrow-os-section">' +
