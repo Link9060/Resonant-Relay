@@ -1936,3 +1936,121 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 @media(forced-colors:active) {
   :root[data-arrow-theme] :is(.waypoint-app,.app-shell,#ravinApp,.orbit-app,.relay-app-shell) :is(button,a,input,textarea,select):focus-visible { outline-color:Highlight; }
 }
+
+
+/* Adapt 2.1: identity defines typography and shape; experience defines material/motion.
+   Never allow Quiet/Dynamic/Glass to overwrite the chosen identity's font family. */
+:root {
+  --arrow-font-body:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --arrow-font-display:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --arrow-font-tracking:-.02em;
+  --arrow-identity-radius:14px;
+}
+:root[data-arrow-adapt="core"] {
+  --arrow-font-body:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --arrow-font-display:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+:root[data-arrow-adapt="bloom"] {
+  --arrow-font-body:"Avenir Next","Trebuchet MS",ui-rounded,system-ui,sans-serif;
+  --arrow-font-display:"Avenir Next","Trebuchet MS",ui-rounded,system-ui,sans-serif;
+  --arrow-font-tracking:-.032em;
+  --arrow-identity-radius:24px;
+}
+:root[data-arrow-adapt="haven"] {
+  --arrow-font-body:Optima,"Avenir Next","Segoe UI",sans-serif;
+  --arrow-font-display:"Palatino Linotype","Book Antiqua",Palatino,Georgia,serif;
+  --arrow-font-tracking:-.025em;
+  --arrow-identity-radius:17px;
+}
+:root[data-arrow-adapt="atelier"] {
+  --arrow-font-body:"Helvetica Neue","Avenir Next",Arial,sans-serif;
+  --arrow-font-display:Georgia,"Iowan Old Style","Times New Roman",serif;
+  --arrow-font-tracking:-.04em;
+  --arrow-identity-radius:5px;
+}
+:root[data-arrow-adapt="pulse"] {
+  --arrow-font-body:"Trebuchet MS","Avenir Next",ui-sans-serif,sans-serif;
+  --arrow-font-display:"Arial Rounded MT Bold","Trebuchet MS",ui-rounded,system-ui,sans-serif;
+  --arrow-font-tracking:-.035em;
+  --arrow-identity-radius:19px;
+}
+/* Keep Core's current module typography as it is. Adapt identities are opt-in. */
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) {
+  --font-body:var(--arrow-font-body);
+  --font-display:var(--arrow-font-display);
+}
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"])
+  :is(.relay-app-shell,.waypoint-app,.orbit-app,.app-shell,#ravinApp,.arrow-os-root,.arrow-os-panel) {
+  font-family:var(--arrow-font-body)!important;
+}
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"])
+  :is(.relay-app-shell,.waypoint-app,.orbit-app,.app-shell,#ravinApp,.arrow-os-root,.arrow-os-panel)
+  :is(button,input,select,textarea,label,summary,p,span,small,li,td,th,nav,blockquote) {
+  font-family:var(--arrow-font-body)!important;
+}
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"])
+  :is(.relay-app-shell,.waypoint-app,.orbit-app,.app-shell,#ravinApp,.arrow-os-root,.arrow-os-panel)
+  :is(h1,h2,h3,h4,.font-display,.suite-name,.product-name,.ravin-header-title strong,.arrow-os-tray-header strong,.brand-row strong,.orbit-core-label) {
+  font-family:var(--arrow-font-display)!important;
+  letter-spacing:var(--arrow-font-tracking);
+}
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"])
+  :is(.relay-app-shell,.waypoint-app,.orbit-app,.app-shell,#ravinApp,.arrow-os-root,.arrow-os-panel)
+  :is(pre,code,kbd,samp,.font-mono) {
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace!important;
+  letter-spacing:normal;
+}
+/* Command dock hover bridge covers the entire tray width, not just the launcher. */
+.arrow-os-root[data-open="true"]::after {
+  right:0; top:42px; width:min(418px,calc(100vw - 24px)); height:20px;
+  pointer-events:auto;
+}
+@media(max-width:680px) {
+  .arrow-os-root[data-open="true"]::after { width:min(348px,calc(100vw - 20px)); top:40px; height:18px; }
+}
+/* Experience mode primitives. Identity owns the accent and font; mode owns material. */
+:root[data-arrow-experience="balanced"] {
+  --arrow-mode-blur:0px; --arrow-mode-alpha:.97; --arrow-mode-lift:0px;
+  --arrow-mode-ring:0px; --arrow-mode-speed:180ms;
+}
+:root[data-arrow-experience="quiet"] {
+  --arrow-mode-blur:0px; --arrow-mode-alpha:1; --arrow-mode-lift:0px;
+  --arrow-mode-ring:0px; --arrow-mode-speed:0ms;
+}
+:root[data-arrow-experience="dynamic"] {
+  --arrow-mode-blur:6px; --arrow-mode-alpha:.96; --arrow-mode-lift:-2px;
+  --arrow-mode-ring:1px; --arrow-mode-speed:260ms;
+}
+:root[data-arrow-experience="glass"] {
+  --arrow-mode-blur:30px; --arrow-mode-alpha:.72; --arrow-mode-lift:0px;
+  --arrow-mode-ring:1px; --arrow-mode-speed:230ms;
+}
+:root[data-arrow-experience="quiet"] :is(.arrow-os-island,.arrow-os-content,.arrow-os-panel) {
+  backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+  box-shadow:none!important; background:rgb(var(--arrow-os-bg))!important;
+  border-color:rgb(var(--arrow-os-fg) / .21)!important;
+}
+:root[data-arrow-experience="dynamic"] :is(.arrow-os-island,.arrow-os-content,.arrow-os-panel) {
+  border-color:rgb(var(--arrow-accent-rgb,120,140,190) / .45)!important;
+  box-shadow:0 15px 44px rgb(var(--arrow-accent-rgb,120,140,190) / .16)!important;
+}
+:root[data-arrow-experience="dynamic"] .arrow-os-tray-featured .arrow-os-control {
+  background:linear-gradient(130deg,rgb(var(--arrow-accent-rgb,120,140,190) / .15),rgb(var(--arrow-os-fg) / .03));
+}
+:root[data-arrow-experience="glass"] :is(.arrow-os-island,.arrow-os-content,.arrow-os-panel) {
+  background:rgb(var(--arrow-os-bg) / .72)!important;
+  backdrop-filter:blur(30px) saturate(1.35)!important;
+  -webkit-backdrop-filter:blur(30px) saturate(1.35)!important;
+  border-color:rgb(var(--arrow-os-fg) / .27)!important;
+  box-shadow:0 20px 54px #0003,inset 0 1px rgb(var(--arrow-os-fg) / .20)!important;
+}
+:root[data-arrow-experience="glass"] .arrow-os-control {
+  background:rgb(var(--arrow-os-fg) / .07);
+  border-color:rgb(var(--arrow-os-fg) / .18);
+}
+:root[data-arrow-experience="balanced"] .arrow-os-content { background:rgb(var(--arrow-os-bg) / .985); }
+:root[data-arrow-experience="quiet"] :is(.arrow-os-root,.arrow-os-panel) * {
+  animation:none!important; transition:none!important;
+}
+:root[data-arrow-motion="reduce"] { --arrow-mode-speed:0ms; }
+@media(prefers-reduced-motion:reduce) { :root:not([data-arrow-motion="full"]) { --arrow-mode-speed:0ms; } }
