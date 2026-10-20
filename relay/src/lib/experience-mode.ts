@@ -115,7 +115,10 @@ export function readExperience() {
 
 export function applyExperience(experience: RelayExperience, palette: RelayPalette, intensity: number, lockIn = false) {
   const root = document.documentElement;
-  root.dataset.relayExperience = experience;
+  // ARROW Adapt identities now own the entire surface language. Retired
+  // Relay experience choices remain readable for migration, but must not
+  // override the selected identity's navigation or layout.
+  root.dataset.relayExperience = DEFAULT_EXPERIENCE;
   root.dataset.relayPalette = palette;
   root.dataset.relayLockIn = String(lockIn);
   root.style.setProperty('--relay-experience-intensity', String(Math.max(0, Math.min(100, intensity)) / 100));
