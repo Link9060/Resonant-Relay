@@ -2374,6 +2374,19 @@
   window.addEventListener('storage',event=>{if(event.key===ARROW_AUTH_STORAGE_KEY)void pollNotifications();});
 
 
+  // Escape works even when focus is on the page rather than inside the tray.
+  // Use one document handler, not one listener per center instance.
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || state.activePanel) return;
+    const openInstance = [...state.instances].find(instance => instance.root.dataset.open === 'true');
+    if (!openInstance) return;
+    event.preventDefault();
+    openInstance.pinned = false;
+    openInstance.root.dataset.pinned = 'false';
+    setOpen(openInstance, false);
+    openInstance.trigger.focus({ preventScroll:true });
+  });
+
   const startMounting = () => {
     requestAnimationFrame(() => {
       mountAll();
