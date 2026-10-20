@@ -109,7 +109,7 @@ test('Relay switches actual desktop navigation architecture in Atelier',()=>{
  assert.match(rootLayout,/import '\.\/adapt-identities\.css'/);
  for(const id of ['bloom','haven','atelier','pulse'])assert.ok(css.includes('data-arrow-adapt="'+id+'"'),id);
  assert.match(css,/data-arrow-adapt="atelier".*relay-primary-cluster/);
- assert.match(css,/grid-template-columns/);
+ assert.match(css,/flex-direction:row/);
  assert.match(css,/padding-top:76px/);
  assert.match(css,/relay-mobile-nav/);
 });
