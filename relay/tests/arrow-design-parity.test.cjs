@@ -199,3 +199,33 @@ test('Waypoint preserves six mobile planning tabs and changes geometry per ident
   assert.ok(css.includes('data-arrow-adapt="'+id+'"] .waypoint-app .sidebar'),id+' mobile layout missing');
  }
 });
+
+
+test('Adapt V Appearance preview never changes account settings until user applies',()=>{
+ const shell=read(path.join(root,'public/arrow-shell.js'));
+ const css=read(path.join(root,'public/arrow-shell.css'));
+ assert.match(shell,/function renderIdentityPreview/);
+ assert.match(shell,/function renderPreviewLab/);
+ assert.match(shell,/data-adapt-preview-stage/);
+ assert.match(shell,/data-adapt-preview-choice/);
+ assert.match(shell,/data-adapt-preview-theme/);
+ assert.match(shell,/data-adapt-preview-apply/);
+ assert.match(shell,/Previewing does not change your active identity/);
+ assert.match(shell,/addEventListener\('click', \(\) => applyAdapt\(previewIdentity,true\)\)/);
+ assert.match(css,/data-preview-identity="bloom"/);
+ assert.match(css,/data-preview-identity="haven"/);
+ assert.match(css,/data-preview-identity="atelier"/);
+ assert.match(css,/data-preview-identity="pulse"/);
+ assert.match(css,/data-preview-theme="dark"/);
+ assert.doesNotThrow(()=>new Function(shell));
+});
+test('Core widgets are preserved while non-Core identities use native component composition',{skip:!process.env.ARROW_ORBIT_SOURCE},()=>{
+ const studio=from('ARROW_ORBIT_SOURCE','src/components/orbit-widget-studio.tsx');
+ const native=from('ARROW_ORBIT_SOURCE','src/components/adapt-native-ui.tsx');
+ assert.match(studio,/NativeWidgetFrame/);
+ assert.match(studio,/NativeGalleryRow/);
+ assert.match(native,/switch\(identity\)/);
+ assert.match(native,/default:return <div className="adapt-widget-top"/);
+ for(const id of ['bloom','haven','atelier','pulse']) assert.ok(native.includes("case '"+id+"'"),id+' missing composition');
+ assert.match(native,/MutationObserver/);
+});
