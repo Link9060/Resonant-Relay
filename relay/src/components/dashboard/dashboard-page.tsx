@@ -603,6 +603,13 @@ function submitWeatherZip(event: FormEvent) {
         <div className="flex items-end gap-4 sm:text-right"><div><p className="font-display text-3xl font-medium tabular-nums text-ink">{now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</p><p className="mt-1 text-xs uppercase tracking-[0.16em] text-ink-faint">Your day at a glance</p></div><button type="button" onClick={beginCustomize} className="hidden min-h-10 items-center gap-2 rounded-lg border border-border bg-surface-raised px-3 text-sm font-medium text-ink transition hover:bg-surface md:inline-flex"><LayoutDashboard size={15} />Customize dashboard</button></div>
       </header>
 
+      <aside className="mb-5 rounded-xl border border-border bg-surface p-4 text-sm text-ink">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div><p className="font-semibold">Your main dashboard has moved to Orbit</p><p className="mt-1 text-ink-muted">Relay's existing widgets remain available here during the account-data migration.</p></div>
+          <a href="https://link9060.github.io/Resonant-Orbit/?view=dashboard" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-ink px-4 py-2 font-semibold text-canvas">Open Orbit dashboard <ArrowRight size={15}/></a>
+        </div>
+      </aside>
+
       {dashboardGrid}
 
       {editingDashboard && isDesktop && (
