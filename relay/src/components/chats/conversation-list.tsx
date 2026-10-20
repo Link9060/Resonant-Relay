@@ -1,6 +1,7 @@
 'use client';
 
 import { appPageUrl, staticDetailPath } from '@/lib/config';
+import { NativeConversationRow, useCommunicationIdentity } from '@/components/adapt/native-communication';
 import { contactColor, contactDisplayName, type ContactColorKey } from '@/lib/contact-colors';
 import { deleteConversationForMe } from '@/lib/actions/conversation-delete';
 import { setConversationPreferences } from '@/lib/actions/chats';
@@ -33,6 +34,7 @@ export function ConversationList({
   conversationPreferences: Record<string, { muted: boolean; pinned_at: string | null }>;
   onDeleted?: (conversationId: string) => void;
 }) {
+  const identity = useCommunicationIdentity();
   const [settings, setSettings] = useState(conversationPreferences);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -81,7 +83,7 @@ export function ConversationList({
 
         return (
           <li key={conversation.id} className="relative">
-            <div className="flex items-center gap-2 px-3 py-3 hover:bg-surface">
+            <NativeConversationRow identity={identity}>
               <a href={appPageUrl(staticDetailPath('chats', conversation.id))} className="flex min-w-0 flex-1 items-center gap-3">
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium ${conversation.type === 'group' ? 'bg-surface-raised text-ink' : ''}`} style={conversation.type === 'direct' ? { color: contactColor(preference?.color_key), backgroundColor: `${contactColor(preference?.color_key)}1f` } : undefined}>
                   {initial}
@@ -96,7 +98,7 @@ export function ConversationList({
                 <button type="button" onClick={() => void togglePinned()} aria-label={preferenceState.pinned_at ? `Unpin ${title}` : `Pin ${title}`} className="flex h-8 w-8 items-center justify-center rounded-md text-ink-faint hover:bg-surface-raised hover:text-ink">{preferenceState.pinned_at ? <PinOff size={14} /> : <Pin size={14} />}</button>
                 <button type="button" onClick={() => setOpenMenuId((current) => current === conversation.id ? null : conversation.id)} aria-expanded={openMenuId === conversation.id} aria-label={`More options for ${title}`} className="flex h-8 w-8 items-center justify-center rounded-md text-ink-faint hover:bg-surface-raised hover:text-ink"><MoreHorizontal size={15} /></button>
               </div>
-            </div>
+            </NativeConversationRow>
 
             {openMenuId === conversation.id && (
               <>
