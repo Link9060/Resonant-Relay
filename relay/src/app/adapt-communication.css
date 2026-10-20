@@ -1,0 +1,205 @@
+/* Adapt V: identity-native communication. Only non-Core React structures are
+   styled. All message actions, sending and accessibility stay in Relay. */
+.relay-native-bubble {position:relative;min-width:0;max-width:100%;}
+.relay-native-bubble .relay-native-message-content {position:relative;min-width:0;}
+.relay-native-conversation-row {position:relative;min-width:0;}
+.relay-native-row-main {display:flex;align-items:center;gap:8px;min-width:0;width:100%;}
+.relay-native-composer {position:relative;width:100%;min-width:0;}
+.relay-native-composer-stage {min-width:0;}
+.relay-native-composer-mast {display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:.1em;}
+.relay-native-message-preview {display:flex;flex-direction:column;align-items:stretch;gap:10px;max-width:410px;margin-inline:auto;}
+.relay-native-message-preview > :first-child {align-self:flex-start;max-width:84%;}
+.relay-native-message-preview > :last-child {align-self:flex-end;max-width:84%;}
+/* BLOOM: conversation as an illustrated soft card exchange */
+:root[data-arrow-adapt="bloom"] .relay-native-bubble.bloom {filter:drop-shadow(0 6px 10px color-mix(in srgb,var(--arrow-adapt-primary) 8%,transparent));}
+:root[data-arrow-adapt="bloom"] .relay-native-bubble.bloom .relay-native-message-content {
+  border-radius:24px 24px 24px 8px!important;
+  background:color-mix(in srgb,rgb(var(--surface-raised)) 87%,var(--arrow-adapt-secondary))!important;
+  color:rgb(var(--ink))!important;
+  border:1px solid color-mix(in srgb,var(--arrow-adapt-secondary) 42%,rgb(var(--border)));
+  padding:13px 17px;
+}
+:root[data-arrow-adapt="bloom"] .relay-native-bubble.bloom.mine .relay-native-message-content {
+  border-radius:24px 24px 8px 24px!important;
+  background:color-mix(in srgb,rgb(var(--surface-raised)) 66%,var(--arrow-adapt-primary))!important;
+}
+:root[data-arrow-adapt="bloom"] .relay-native-bubble-flower {
+  position:absolute;top:-7px;right:-7px;font-size:17px;z-index:1;
+  color:var(--arrow-adapt-primary);
+}
+:root[data-arrow-adapt="bloom"] .relay-native-conversation-row.bloom {
+  margin:7px 5px;padding:13px 13px 13px 25px;
+  border:1px solid color-mix(in srgb,var(--arrow-adapt-secondary) 36%,rgb(var(--border)));
+  border-radius:22px;background:color-mix(in srgb,rgb(var(--surface)) 90%,var(--arrow-adapt-secondary));
+  box-shadow:0 5px 18px color-mix(in srgb,var(--arrow-adapt-primary) 8%,transparent);
+}
+:root[data-arrow-adapt="bloom"] .relay-native-conversation-row.bloom .native-row-bloom-dot {
+  position:absolute;top:13px;left:7px;font-size:13px;color:var(--arrow-adapt-primary);
+}
+:root[data-arrow-adapt="bloom"] .relay-native-composer.bloom {
+  padding:7px 12px 13px;
+  background:color-mix(in srgb,rgb(var(--surface)) 88%,var(--arrow-adapt-secondary));
+  border-top:1px solid color-mix(in srgb,var(--arrow-adapt-secondary) 44%,rgb(var(--border)));
+}
+:root[data-arrow-adapt="bloom"] .relay-native-composer.bloom .relay-native-composer-mast {
+  padding:3px 9px 8px;font-family:var(--arrow-font-display);font-size:13px;
+  color:var(--arrow-adapt-primary);letter-spacing:0;font-weight:750;
+}
+:root[data-arrow-adapt="bloom"] .relay-native-composer.bloom .relay-native-composer-stage > div {
+  border:1px solid color-mix(in srgb,var(--arrow-adapt-secondary) 42%,rgb(var(--border)));
+  border-radius:25px;background:rgb(var(--surface));padding:10px;
+}
+:root[data-arrow-adapt="bloom"] .relay-native-composer.bloom input:not([type="file"]) {border-radius:999px!important;}
+:root[data-arrow-adapt="bloom"] .relay-native-composer.bloom button {border-radius:999px!important;}
+/* HAVEN: paper correspondences, folios, personal journal */
+:root[data-arrow-adapt="haven"] .relay-native-bubble.haven {
+  border-left:3px solid var(--arrow-adapt-primary);
+  padding:7px 7px 4px 14px;
+  background:color-mix(in srgb,rgb(var(--surface)) 91%,var(--arrow-adapt-secondary));
+  border-radius:2px 9px 9px 2px;
+  box-shadow:4px 5px 0 color-mix(in srgb,var(--arrow-adapt-primary) 7%,transparent);
+}
+:root[data-arrow-adapt="haven"] .relay-native-bubble.haven.mine {border-left-color:var(--arrow-adapt-secondary);}
+:root[data-arrow-adapt="haven"] .relay-native-bubble.haven .relay-native-bubble-folio {
+  display:block;font-size:9px;font-weight:700;letter-spacing:.14em;color:rgb(var(--ink-muted));padding:1px 4px;
+}
+:root[data-arrow-adapt="haven"] .relay-native-bubble.haven .relay-native-message-content {
+  background:transparent!important;color:rgb(var(--ink))!important;
+  border-radius:0!important;padding:8px 4px 10px;
+}
+:root[data-arrow-adapt="haven"] .relay-native-conversation-row.haven {
+  padding:15px 12px 15px 20px;border-bottom:1px solid rgb(var(--border));
+  background:color-mix(in srgb,rgb(var(--surface)) 95%,var(--arrow-adapt-secondary));
+}
+:root[data-arrow-adapt="haven"] .relay-native-conversation-row.haven .native-row-haven-rule {
+  position:absolute;inset:5px auto 5px 7px;width:3px;background:var(--arrow-adapt-primary);opacity:.65;
+}
+:root[data-arrow-adapt="haven"] .relay-native-composer.haven {
+  padding:12px clamp(12px,3vw,28px);
+  background:color-mix(in srgb,rgb(var(--surface)) 94%,var(--arrow-adapt-secondary));
+  border-top:2px solid color-mix(in srgb,var(--arrow-adapt-primary) 30%,rgb(var(--border)));
+}
+:root[data-arrow-adapt="haven"] .relay-native-composer.haven .relay-native-composer-mast {
+  font-family:var(--arrow-font-display);font-size:15px;font-weight:500;letter-spacing:0;padding:3px 0 9px;
+}
+:root[data-arrow-adapt="haven"] .relay-native-composer.haven .relay-native-composer-stage > div {
+  padding:6px 0 0;border:0;background:transparent;
+}
+:root[data-arrow-adapt="haven"] .relay-native-composer.haven input:not([type="file"]) {
+  border-radius:5px!important;background:rgb(var(--canvas));border-bottom:2px solid var(--arrow-adapt-primary);
+}
+:root[data-arrow-adapt="haven"] .relay-native-composer.haven button {border-radius:8px;}
+/* ATELIER: literary conversation with editorial index rather than bubbles */
+:root[data-arrow-adapt="atelier"] .relay-native-bubble.atelier {
+  display:grid;grid-template-columns:32px minmax(0,1fr);gap:9px;
+  border-top:1px solid rgb(var(--border));padding:12px 0 7px;background:transparent;
+  max-width:100%;min-width:0;
+}
+:root[data-arrow-adapt="atelier"] .relay-native-bubble.atelier.mine {border-top:1px solid var(--arrow-adapt-primary);}
+:root[data-arrow-adapt="atelier"] .relay-native-bubble-issue {
+  font:400 21px/1.2 var(--arrow-font-display,Georgia,serif);color:rgb(var(--ink-muted));
+}
+:root[data-arrow-adapt="atelier"] .relay-native-bubble.atelier .relay-native-message-content {
+  padding:0!important;border:0!important;border-radius:0!important;
+  background:transparent!important;color:rgb(var(--ink))!important;
+  font-family:var(--arrow-font-body);font-size:15px;line-height:1.8;
+  box-shadow:none!important;
+}
+:root[data-arrow-adapt="atelier"] .relay-native-conversation-row.atelier {
+  padding:18px 7px 18px 25px;border-bottom:1px solid rgb(var(--border));
+  background:transparent;
+}
+:root[data-arrow-adapt="atelier"] .native-row-atelier-arrow {
+  position:absolute;left:4px;top:21px;color:var(--arrow-adapt-primary);
+}
+:root[data-arrow-adapt="atelier"] .relay-native-conversation-row.atelier p.font-medium {
+  font-family:var(--arrow-font-display);font-size:17px;font-weight:400;
+}
+:root[data-arrow-adapt="atelier"] .relay-native-composer.atelier {
+  padding:22px clamp(14px,4vw,36px);
+  background:rgb(var(--canvas));border-top:1px solid rgb(var(--ink));
+}
+:root[data-arrow-adapt="atelier"] .relay-native-composer.atelier .relay-native-composer-mast {
+  justify-content:space-between;letter-spacing:.2em;padding-bottom:14px;
+}
+:root[data-arrow-adapt="atelier"] .relay-native-composer.atelier .relay-native-composer-stage > div {
+  padding:0;background:transparent;border:0;
+}
+:root[data-arrow-adapt="atelier"] .relay-native-composer.atelier input:not([type="file"]) {
+  border:0!important;border-bottom:1px solid var(--arrow-adapt-primary)!important;
+  border-radius:0!important;background:transparent!important;
+}
+:root[data-arrow-adapt="atelier"] .relay-native-composer.atelier button,
+:root[data-arrow-adapt="atelier"] .relay-native-composer.atelier label {
+  border-radius:0!important;
+}
+/* PULSE: telemetry panels and high contrast transmission pad */
+:root[data-arrow-adapt="pulse"] .relay-native-bubble.pulse {
+  padding:0;overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--arrow-adapt-primary) 55%,rgb(var(--border)));
+  border-radius:5px 19px 5px 19px;
+  background:color-mix(in srgb,rgb(var(--surface)) 88%,var(--arrow-adapt-primary));
+  box-shadow:0 8px 22px color-mix(in srgb,var(--arrow-adapt-primary) 12%,transparent);
+}
+:root[data-arrow-adapt="pulse"] .relay-native-bubble.pulse.mine {
+  border-color:var(--arrow-adapt-secondary);
+}
+:root[data-arrow-adapt="pulse"] .relay-native-bubble-telemetry {
+  display:flex;align-items:center;gap:6px;padding:5px 11px;
+  font-size:8px;font-weight:850;letter-spacing:.14em;
+  border-bottom:1px solid color-mix(in srgb,var(--arrow-adapt-primary) 30%,rgb(var(--border)));
+  color:var(--arrow-adapt-primary);text-transform:uppercase;
+}
+:root[data-arrow-adapt="pulse"] .relay-native-bubble-telemetry i {
+  width:6px;height:6px;border-radius:50%;background:var(--arrow-adapt-secondary);
+  box-shadow:0 0 8px var(--arrow-adapt-secondary);
+}
+:root[data-arrow-adapt="pulse"] .relay-native-bubble.pulse .relay-native-message-content {
+  background:transparent!important;color:rgb(var(--ink))!important;
+  border-radius:0!important;padding:11px 13px;
+}
+:root[data-arrow-adapt="pulse"] .relay-native-conversation-row.pulse {
+  margin:5px 0;padding:14px 12px 14px 25px;
+  border:1px solid color-mix(in srgb,var(--arrow-adapt-primary) 39%,rgb(var(--border)));
+  background:color-mix(in srgb,rgb(var(--surface)) 90%,var(--arrow-adapt-primary));
+  border-radius:4px 17px 4px 17px;
+}
+:root[data-arrow-adapt="pulse"] .native-row-pulse-beacon {
+  position:absolute;left:8px;top:17px;color:var(--arrow-adapt-secondary);font-size:10px;
+}
+:root[data-arrow-adapt="pulse"] .relay-native-composer.pulse {
+  border-top:2px solid var(--arrow-adapt-secondary);
+  padding:9px 14px 15px;
+  background:linear-gradient(145deg,color-mix(in srgb,rgb(var(--surface)) 88%,var(--arrow-adapt-primary)),
+    rgb(var(--surface)));
+}
+:root[data-arrow-adapt="pulse"] .relay-native-composer.pulse .relay-native-composer-mast {
+  color:var(--arrow-adapt-secondary);font-weight:850;text-transform:uppercase;
+  font-size:10px;padding:5px 0 11px;
+}
+:root[data-arrow-adapt="pulse"] .relay-native-composer-light {
+  display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--arrow-adapt-secondary);box-shadow:0 0 10px var(--arrow-adapt-secondary);
+}
+:root[data-arrow-adapt="pulse"] .relay-native-composer.pulse .relay-native-composer-stage > div {
+  border:1px solid var(--arrow-adapt-primary);border-radius:5px 15px 5px 15px;
+  background:color-mix(in srgb,rgb(var(--surface)) 91%,var(--arrow-adapt-primary));
+  padding:10px;
+}
+:root[data-arrow-adapt="pulse"] .relay-native-composer.pulse input:not([type="file"]) {
+  border:1px solid color-mix(in srgb,var(--arrow-adapt-secondary) 48%,rgb(var(--border)));
+  border-radius:4px 11px 4px 11px!important;
+}
+:root[data-arrow-adapt="pulse"] .relay-native-composer.pulse button {
+  border-radius:3px 12px 3px 12px!important;
+}
+@media(max-width:640px) {
+ .relay-native-conversation-row {margin-inline:0!important;}
+ :root[data-arrow-adapt="atelier"] .relay-native-bubble.atelier {grid-template-columns:25px minmax(0,1fr);gap:6px;}
+ .relay-native-composer-mast {font-size:9px;}
+}
+@media(prefers-reduced-motion:reduce) {
+ :root:not([data-arrow-motion="full"]) :is(.relay-native-bubble,.relay-native-conversation-row,.relay-native-composer) * {
+  animation:none!important;transition:none!important;
+ }
+}
