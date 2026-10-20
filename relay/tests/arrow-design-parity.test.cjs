@@ -17,28 +17,28 @@ test('ARROW command dock keeps narrow-screen and accessible contrast styles',()=
  const css=read(path.join(root,'public/arrow-shell.css'));
  for(const token of ['arrow-os-tray-grid','arrow-os-trigger-label','max-width:680px','prefers-reduced-motion','forced-colors:active','data-host-theme="light"','data-host-theme="dark"'])assert.ok(css.includes(token),token);
 });
-test('Orbit offers light and dark for all five identities',()=>{
+test('Orbit offers light and dark for all five identities',{skip:!process.env.ARROW_ORBIT_SOURCE},()=>{
  const css=from('ARROW_ORBIT_SOURCE','src/app/adapt.css');
  for(const id of ['core','bloom','haven','atelier','pulse'])assert.ok(css.includes('data-orbit-adapt="'+id+'"'),id);
  assert.match(css,/:root\[data-arrow-theme="light"\]/);
  assert.match(css,/:root\[data-arrow-theme="dark"\]/);
  assert.match(css,/adapt-view-switch/);
 });
-test('Waypoint light and dark share ARROW surface and text tokens',()=>{
+test('Waypoint light and dark share ARROW surface and text tokens',{skip:!process.env.ARROW_WAYPOINT_SOURCE},()=>{
  const css=from('ARROW_WAYPOINT_SOURCE','src/app/globals.css');
  assert.match(css,/:root\[data-arrow-theme="light"\]/);
  assert.match(css,/:root\[data-arrow-theme="dark"\]/);
  assert.match(css,/--arrow-accent-color/);
  assert.match(css,/capture-editor/);
 });
-test('Atlas light and dark use global ARROW theme and preserve graph data',()=>{
+test('Atlas light and dark use global ARROW theme and preserve graph data',{skip:!process.env.ARROW_ATLAS_SOURCE},()=>{
  const css=from('ARROW_ATLAS_SOURCE','apps/explorer/styles.css');
  assert.match(css,/:root\[data-arrow-theme="light"\]/);
  assert.match(css,/:root\[data-arrow-theme="dark"\]/);
  assert.match(css,/--canvas/);
  assert.match(css,/node-dialog/);
 });
-test('RAVIN respects ARROW light/dark, contrast and custom accent',()=>{
+test('RAVIN respects ARROW light/dark, contrast and custom accent',{skip:!process.env.ARROW_RAVIN_SOURCE},()=>{
  const css=from('ARROW_RAVIN_SOURCE','ravin/public/arrow-ravin.css');
  assert.match(css,/data-arrow-ravin="true"\]\[data-arrow-theme="light"\]/);
  assert.match(css,/data-arrow-ravin="true"\]\[data-arrow-theme="dark"\]/);
