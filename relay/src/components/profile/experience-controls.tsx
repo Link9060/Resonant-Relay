@@ -101,6 +101,7 @@ export function ExperienceControls() {
         {IS_BETA && <span className="shrink-0 rounded-full border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-[.12em] text-ink-muted">Beta</span>}
       </div>
 
+      <p className="mt-4 text-[10px] font-semibold uppercase tracking-[.14em] text-ink-muted">1 / CHOOSE THEME</p>
       <div className="mt-4 grid auto-rows-fr gap-2 sm:grid-cols-2">
         {experiences.map((option) => (
           <button
@@ -124,27 +125,12 @@ export function ExperienceControls() {
       </div>
 
       <div className="mt-5 border-t border-border pt-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="text-xs font-medium text-ink-muted">Color palette</div>
-          <span className="text-[9px] font-semibold uppercase tracking-[.12em] text-ink-faint">{palettes.length} options</span>
-        </div>
-        <p className="mt-1 text-[11px] leading-4 text-ink-faint">Most modes use color as an accent. Vivid uses lighter and darker shades of your selected primary color across panels, borders, controls and particles.</p>
-
-        <div className="mt-3">
-          <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[.14em] text-ink-faint">Single colors</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {renderPaletteOptions(singlePalettes)}
-          </div>
-        </div>
-
-        <div className="mt-3">
-          <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[.14em] text-ink-faint">Two-color palettes</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {renderPaletteOptions(duoPalettes)}
-          </div>
+        <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-ink-muted">2 / PREVIEW &amp; FINALIZE</p>
+        <div className="mt-3 rounded-lg border border-border bg-canvas p-3" role="status">
+          <strong className="block text-sm text-ink">{experiences.find((item) => item.id === experience)?.name ?? 'Flow'} preview</strong>
+          <p className="mt-1 text-xs text-ink-muted">The selected experience applies as you choose it. Adjust intensity and Lock-In below before customizing colors.</p>
         </div>
       </div>
-
       <label className="mt-5 block border-t border-border pt-4">
         <span className="flex justify-between text-xs font-medium text-ink-muted"><span>Visual intensity</span><span>{intensity}%</span></span>
         <input className="relay-experience-intensity mt-3 w-full" style={{ '--particle-fill': `${intensity}%` } as CSSProperties} type="range" min="0" max="100" value={intensity} onChange={(event) => update(experience, palette, Number(event.target.value))} />
@@ -179,6 +165,29 @@ export function ExperienceControls() {
         </button>
         <p className="mt-2 text-center text-[11px] leading-4 text-ink-faint">Light and dark mode are controlled separately.</p>
       </div>
+      <div className="mt-5 border-t border-border pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-xs font-medium text-ink-muted">3 / COLOR CUSTOMIZATION</div>
+          <span className="text-[9px] font-semibold uppercase tracking-[.12em] text-ink-faint">{palettes.length} options</span>
+        </div>
+        <p className="mt-1 text-[11px] leading-4 text-ink-faint">Most modes use color as an accent. Vivid uses lighter and darker shades of your selected primary color across panels, borders, controls and particles.</p>
+
+        <div className="mt-3">
+          <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[.14em] text-ink-faint">Single colors</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {renderPaletteOptions(singlePalettes)}
+          </div>
+        </div>
+
+        <div className="mt-3">
+          <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[.14em] text-ink-faint">Two-color palettes</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {renderPaletteOptions(duoPalettes)}
+          </div>
+        </div>
+      </div>
+
+
     </div>
   );
 }
