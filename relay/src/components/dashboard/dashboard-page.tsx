@@ -606,7 +606,7 @@ function submitWeatherZip(event: FormEvent) {
       <aside className="mb-5 rounded-xl border border-border bg-surface p-4 text-sm text-ink">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><p className="font-semibold">Your main dashboard has moved to Orbit</p><p className="mt-1 text-ink-muted">Existing Relay widgets remain available here during the account-data migration.</p></div>
-          <a href="https://link9060.github.io/Resonant-Orbit/?view=dashboard" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-ink px-4 py-2 font-semibold text-canvas">Open Orbit dashboard <ArrowRight size={15}/></a>
+          <a href={`https://link9060.github.io/Resonant-Orbit/?view=dashboard&relayLayout=${encodeURIComponent(widgets.filter(widget => widget.visible).map(widget => widget.id).join(','))}`} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-ink px-4 py-2 font-semibold text-canvas">Open Orbit dashboard <ArrowRight size={15}/></a>
         </div>
       </aside>
 
