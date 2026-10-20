@@ -499,27 +499,30 @@
     root.dataset.open = 'false';
     root.dataset.pinned = 'false';
     root.innerHTML =
-      '<div class="arrow-os-island" role="navigation" aria-label="ARROW system controls">' +
-        '<div class="arrow-os-content" aria-hidden="true">' +
-          '<span class="arrow-os-module">' + module.toUpperCase() + '</span>' +
-          '<button type="button" class="arrow-os-control arrow-os-orbit" aria-label="Orbit" title="Orbit">' + icon('orbit') + '<span>Orbit</span></button>' +
-          controlButton('ravin', 'RAVIN') +
-          '<span class="arrow-os-divider" aria-hidden="true"></span>' +
-          controlButton('notes', 'Notes') +
-          controlButton('tasks', 'Tasks') +
-          controlButton('focus', 'Focus') +
-          controlButton('calendar', 'Calendar') +
-          controlButton('links', 'Links') +
-          '<span class="arrow-os-divider" aria-hidden="true"></span>' +
-          controlButton('appearance', 'Appearance') +
-          controlButton('settings', 'Settings') +
-          controlButton('support', 'Support') + CHANNEL_LINK +
-          '<span class="arrow-os-divider" aria-hidden="true"></span>' +
-          '<span class="arrow-os-name" aria-hidden="true">ARROW</span>' +
-        '</div>' +
-        '<button type="button" class="arrow-os-trigger" aria-label="Open ARROW controls" aria-expanded="false" title="ARROW">' +
-          '<span class="arrow-os-mark" aria-hidden="true"></span>' +
+      '<div class="arrow-os-island" aria-label="ARROW controls">' +
+        '<button type="button" class="arrow-os-trigger" aria-label="Open ARROW controls" aria-expanded="false" title="ARROW controls">' +
+          '<span class="arrow-os-trigger-symbol" aria-hidden="true"><span class="arrow-os-mark"></span></span>' +
+          '<span class="arrow-os-trigger-label">ARROW</span>' +
+          '<span class="arrow-os-trigger-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
         '</button>' +
+        '<nav class="arrow-os-content" aria-label="ARROW quick controls" aria-hidden="true">' +
+          '<header class="arrow-os-tray-header"><div><span class="arrow-os-tray-kicker">SYSTEM CONTROL</span><strong>ARROW<span class="arrow-os-tray-dot">.</span></strong></div>' +
+            '<span class="arrow-os-tray-module">' + module.toUpperCase() + '</span></header>' +
+          '<div class="arrow-os-tray-section"><span class="arrow-os-tray-section-label">EXPLORE</span><div class="arrow-os-tray-grid arrow-os-tray-featured">' +
+            '<button type="button" class="arrow-os-control arrow-os-orbit" aria-label="Orbit" title="Orbit">' + icon('orbit') + '<span>Orbit</span></button>' +
+            controlButton('ravin', 'RAVIN') +
+          '</div></div>' +
+          '<div class="arrow-os-tray-section"><span class="arrow-os-tray-section-label">WORKSPACE</span><div class="arrow-os-tray-grid">' +
+            controlButton('notes', 'Notes') + controlButton('tasks', 'Tasks') +
+            controlButton('calendar', 'Calendar') + controlButton('focus', 'Focus') +
+            controlButton('links', 'Links') +
+          '</div></div>' +
+          '<div class="arrow-os-tray-section"><span class="arrow-os-tray-section-label">PERSONALIZE</span><div class="arrow-os-tray-grid">' +
+            controlButton('appearance', 'Appearance') + controlButton('settings', 'Settings') +
+            controlButton('support', 'Support') +
+          '</div></div>' +
+          '<footer class="arrow-os-tray-footer"><span>RESONANT ASSIST <i aria-hidden="true"></i> CONNECTED</span>' + CHANNEL_LINK + '</footer>' +
+        '</nav>' +
       '</div>';
 
     mount.replaceChildren(root);
@@ -543,7 +546,7 @@
       if (instance.closeTimer !== null) clearTimeout(instance.closeTimer);
       instance.closeTimer = null;
       instance.hover = true;
-      setOpen(instance, true);
+      // Open deliberately on click or keyboard, not on accidental pointer hover.
     });
     root.addEventListener('mouseleave', () => {
       instance.hover = false;
@@ -552,7 +555,7 @@
         if (!instance.pinned && !state.activePanel && !instance.hover && !root.contains(document.activeElement)) setOpen(instance, false);
       }, 180);
     });
-    root.addEventListener('focusin', () => setOpen(instance, true));
+    root.addEventListener('focusin', () => { if (instance.pinned) setOpen(instance, true); });
     root.addEventListener('focusout', () => {
       requestAnimationFrame(() => {
         if (!instance.pinned && !state.activePanel && !root.contains(document.activeElement)) {
@@ -561,6 +564,14 @@
       });
     });
 
+    root.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || root.dataset.open !== 'true') return;
+      event.preventDefault();
+      instance.pinned = false;
+      root.dataset.pinned = 'false';
+      setOpen(instance, false);
+      instance.trigger.focus({ preventScroll:true });
+    });
     instance.trigger.addEventListener('click', () => {
       if (state.activePanel) {
         closePanel(false);
