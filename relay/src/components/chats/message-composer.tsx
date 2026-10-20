@@ -1,6 +1,7 @@
 'use client';
 
 import { sendMessage, type SentMessage } from '@/lib/actions/chats';
+import { NativeComposer, useCommunicationIdentity } from '@/components/adapt/native-communication';
 import { appPageUrl } from '@/lib/config';
 import { createClient } from '@/lib/supabase/client';
 import { CornerUpLeft, Paperclip, Send, UserPlus, X } from 'lucide-react';
@@ -18,6 +19,7 @@ type MessageComposerProps = {
 };
 
 export function MessageComposer({ conversationId, onTypingChange, replyTo, replyToId, onCancelReply, onSent }: MessageComposerProps) {
+  const identity = useCommunicationIdentity();
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -122,6 +124,7 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, reply
   }
 
   return (
+    <NativeComposer identity={identity} replying={Boolean(replyTo)}>
     <div className="border-t border-border bg-surface px-3 py-3 sm:px-4">
       {replyTo && <div className="mb-2 flex items-center gap-2 rounded-md border-l-2 border-accent bg-surface px-3 py-2"><CornerUpLeft size={14} className="shrink-0 text-ink-faint" /><div className="min-w-0 flex-1"><p className="text-xs font-medium text-ink-muted">Replying to {replyTo.label}</p><p className="truncate text-xs text-ink-faint">{replyTo.body || 'Attachment'}</p></div><button type="button" onClick={onCancelReply} aria-label="Cancel reply" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-faint hover:bg-canvas hover:text-ink"><X size={14} /></button></div>}
       {error && <p className="mb-2 text-xs text-red-500">{error}</p>}
@@ -158,6 +161,7 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, reply
         </button>
       </div>
     </div>
+    </NativeComposer>
   );
 }
 
