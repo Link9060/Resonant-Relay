@@ -25,8 +25,10 @@ test('Relay loads the shared ARROW shell assets in public and beta', () => {
 });
 
 
-test('Relay profile restores experience, layout, particle and account controls', () => {
+test('Relay profile retains account, layout and particle controls without redundant experience picker', () => {
   const profile = fs.readFileSync('src/app/(app)/profile/page.tsx', 'utf8');
   assert.doesNotMatch(profile, /Replay startup animation/);
-  for (const control of ['ParticleControls', 'LayoutControls', 'ExperienceControls', 'AccountAccess']) assert.ok(profile.includes('<' + control));
+  assert.doesNotMatch(profile, /<ExperienceControls/);
+  for (const control of ['ParticleControls', 'LayoutControls', 'AccountAccess']) assert.ok(profile.includes('<' + control));
+  assert.match(profile, /Open ARROW Appearance/);
 });
