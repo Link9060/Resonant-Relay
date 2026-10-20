@@ -17,6 +17,7 @@ async function fixture(recover, extraProps={}){
       useCommunicationIdentity:()=> 'core',
       NativeMessage:({children,className,style})=>React.createElement('div',{className,style},children),
       NativeComposer:({children})=>React.createElement(React.Fragment,null,children),
+      NativeToolPanel:({children})=>React.createElement('div',null,children),
       NativeConversationRow:({children})=>React.createElement('div',null,children),
     },
     '@/components/chats/message-composer':{MessageComposer:empty},'@/components/user-role-badge':{UserRoleBadge:empty},'@/components/groups/leave-group-button':{LeaveGroupButton:empty},
