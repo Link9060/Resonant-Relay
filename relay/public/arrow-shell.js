@@ -338,14 +338,12 @@
     window.dispatchEvent(new CustomEvent('arrow:adaptchange', { detail: { identity: normalized } }));
     if (state.activePanel === 'appearance') renderAppearance();
   }
-  function getExperienceChoice() {
-    const value = readString(STORAGE.experience, 'balanced');
-    return ['balanced', 'quiet', 'dynamic', 'glass'].includes(value) ? value : 'balanced';
-  }
+  // Experience modes have been retired. Keep the old API for cross-module
+  // compatibility, but consistently render the neutral baseline everywhere.
+  function getExperienceChoice() { return 'balanced'; }
 
-  function applyExperienceChoice(choice, persist = false) {
-    if (persist) writeString(STORAGE.experience, choice);
-    const normalized = ['balanced', 'quiet', 'dynamic', 'glass'].includes(choice) ? choice : 'balanced';
+  function applyExperienceChoice(_choice, _persist = false) {
+    const normalized = 'balanced';
     document.documentElement.dataset.arrowExperience = normalized;
 
     const relayMap = {
@@ -1640,15 +1638,6 @@
         button.setAttribute('aria-pressed', String(selected));
       });
     });
-    const description = state.panelBody.querySelector('[data-experience-description]');
-    if (description) {
-      description.textContent = {
-        balanced:'Balanced: classic surfaces, clear spacing and restrained motion.',
-        quiet:'Quiet: flat, calm surfaces with almost no motion or decoration.',
-        dynamic:'Dynamic: vibrant accent highlights, layered gradients and responsive movement.',
-        glass:'Glass: translucent panels, luminous edges and soft depth.'
-      }[choices.experience] || '';
-    }
   }
 
   function renderAppearance() {
@@ -1656,8 +1645,6 @@
     const motion = getMotionChoice();
     const currentIdentity = getAdaptChoice();
     const accent = getAccentChoice(currentIdentity);
-    const experience = getExperienceChoice();
-
     state.panelBody.innerHTML =
       '<div class="arrow-os-section">' +
         '<span class="arrow-os-section-label">ARROW ADAPT · VISUAL IDENTITY</span>' +
@@ -1665,14 +1652,6 @@
           ADAPT_CHOICES.map(([value,label]) => '<button type="button" data-adapt-choice="' + value + '">' + label + '</button>').join('') +
         '</div>' +
         '<small class="arrow-os-adapt-help">Core retains the original ARROW appearance. Additional module styles are rolling out in beta.</small>' +
-      '</div>' +
-      '<div class="arrow-os-section">' +
-        '<span class="arrow-os-section-label">EXPERIENCE</span>' +
-        '<div class="arrow-os-segmented arrow-os-experience-grid">' +
-          [['balanced','Balanced'],['quiet','Quiet'],['dynamic','Dynamic'],['glass','Glass']].map(([value,label]) => '<button type="button" data-experience-choice="' + value + '" class="' + (experience === value ? 'is-active' : '') + '">' + label + '</button>').join('') +
-        '</div>' +
-        '<small class="arrow-os-adapt-help" data-experience-description aria-live="polite"></small>' +
-        '<small class="arrow-os-adapt-help">Experience controls surfaces and movement. Identity controls colors, fonts and shape across ARROW.</small>' +
       '</div>' +
       '<div class="arrow-os-section">' +
         '<span class="arrow-os-section-label">THEME</span>' +
@@ -1699,7 +1678,7 @@
           '</button>' +
         '</div>' +
         '<label class="arrow-os-custom-accent">Custom color for ' + escapeHtml(capitalize(currentIdentity)) + '<input type="color" data-custom-accent value="' + escapeAttr(getCustomColor(currentIdentity)) + '" /></label>' +
-        '<small class="arrow-os-adapt-help">Every identity remembers its own palette. Custom colors work in Balanced, Quiet, Dynamic, and Glass.</small>' +
+        '<small class="arrow-os-adapt-help">Every identity remembers its palette and custom color.</small>' +
       '</div>';
 
     state.panelBody.querySelector('[data-custom-accent]').addEventListener('input', event => applyAccent(event.target.value, true));
@@ -1707,9 +1686,6 @@
       button.addEventListener('click', () => applyAdapt(button.dataset.adaptChoice, true));
     });
     updateAppearanceState();
-    state.panelBody.querySelectorAll('[data-experience-choice]').forEach(button => {
-      button.addEventListener('click', () => applyExperienceChoice(button.dataset.experienceChoice, true));
-    });
     state.panelBody.querySelectorAll('[data-theme-choice]').forEach(button => {
       button.addEventListener('click', () => applyTheme(button.dataset.themeChoice, true));
     });
