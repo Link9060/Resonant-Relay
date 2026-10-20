@@ -1640,6 +1640,15 @@
         button.setAttribute('aria-pressed', String(selected));
       });
     });
+    const description = state.panelBody.querySelector('[data-experience-description]');
+    if (description) {
+      description.textContent = {
+        balanced:'Balanced: classic surfaces, clear spacing and restrained motion.',
+        quiet:'Quiet: flat, calm surfaces with almost no motion or decoration.',
+        dynamic:'Dynamic: vibrant accent highlights, layered gradients and responsive movement.',
+        glass:'Glass: translucent panels, luminous edges and soft depth.'
+      }[choices.experience] || '';
+    }
   }
 
   function renderAppearance() {
@@ -1662,6 +1671,8 @@
         '<div class="arrow-os-segmented arrow-os-experience-grid">' +
           [['balanced','Balanced'],['quiet','Quiet'],['dynamic','Dynamic'],['glass','Glass']].map(([value,label]) => '<button type="button" data-experience-choice="' + value + '" class="' + (experience === value ? 'is-active' : '') + '">' + label + '</button>').join('') +
         '</div>' +
+        '<small class="arrow-os-adapt-help" data-experience-description aria-live="polite"></small>' +
+        '<small class="arrow-os-adapt-help">Experience controls surfaces and movement. Identity controls colors, fonts and shape across ARROW.</small>' +
       '</div>' +
       '<div class="arrow-os-section">' +
         '<span class="arrow-os-section-label">THEME</span>' +
