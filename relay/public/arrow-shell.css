@@ -1888,3 +1888,51 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
   .arrow-os-root :is(.arrow-os-island,.arrow-os-content,.arrow-os-control) { border:1px solid CanvasText!important; background:Canvas!important; color:CanvasText!important; }
   .arrow-os-root .arrow-os-control:focus-visible { outline:2px solid Highlight!important; }
 }
+
+
+/* A single ARROW design vocabulary used by every shipped center. */
+:root[data-arrow-theme="light"] {
+  --arrow-design-bg:#f5f7fa; --arrow-design-surface:#fff;
+  --arrow-design-surface-alt:#edf1f6; --arrow-design-fg:#1a2331;
+  --arrow-design-muted:#586577; --arrow-design-line:#dbe1e9;
+  --arrow-design-shadow:0 12px 36px #1d2b3d0a;
+}
+:root[data-arrow-theme="dark"] {
+  --arrow-design-bg:#080a0e; --arrow-design-surface:#141820;
+  --arrow-design-surface-alt:#1d2430; --arrow-design-fg:#f5f7fa;
+  --arrow-design-muted:#b0bcca; --arrow-design-line:#353e4e;
+  --arrow-design-shadow:0 14px 44px #0003;
+}
+:root { --arrow-design-radius:14px; --arrow-design-motion:210ms; }
+:root[data-arrow-adapt="bloom"] { --arrow-design-radius:24px; }
+:root[data-arrow-adapt="haven"] { --arrow-design-radius:17px; }
+:root[data-arrow-adapt="atelier"] { --arrow-design-radius:5px; }
+:root[data-arrow-adapt="pulse"] { --arrow-design-radius:19px; }
+:root[data-arrow-experience="quiet"] { --arrow-design-motion:0ms; }
+:root[data-arrow-motion="reduce"] { --arrow-design-motion:0ms; }
+/* Shared typography, legible focus, consistent minimum touch targets. */
+:root[data-arrow-theme] :is(.waypoint-app,.app-shell,#ravinApp,.orbit-app,.relay-app-shell) {
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+:root[data-arrow-theme] :is(.waypoint-app,.app-shell,#ravinApp,.orbit-app,.relay-app-shell) :is(button,a,input,textarea,select):focus-visible {
+  outline:2px solid var(--arrow-accent-color,#6b86ad);
+  outline-offset:3px;
+}
+:root[data-arrow-theme] :is(.waypoint-app,.app-shell,#ravinApp,.orbit-app,.relay-app-shell) :is(input,textarea,select) {
+  color-scheme:inherit;
+}
+:root[data-arrow-theme] :is(.waypoint-app,.app-shell,#ravinApp,.orbit-app,.relay-app-shell) :is(button,[role="button"]) {
+  -webkit-tap-highlight-color:transparent;
+}
+@media(max-width:680px) {
+  :root[data-arrow-theme] :is(.waypoint-app,.app-shell,#ravinApp,.orbit-app,.relay-app-shell) :is(input,textarea,select) {
+    font-size:max(16px,1em);
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  :root:not([data-arrow-motion="full"]) { --arrow-design-motion:0ms; }
+}
+@media(forced-colors:active) {
+  :root[data-arrow-theme] :is(.waypoint-app,.app-shell,#ravinApp,.orbit-app,.relay-app-shell) :is(button,a,input,textarea,select):focus-visible { outline-color:Highlight; }
+}
