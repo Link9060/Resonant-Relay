@@ -98,7 +98,7 @@
   :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-desktop-dock:not(.relay-particle-geometry-proxy) {
     position:fixed; inset:0 0 auto!important; display:flex; flex-direction:row; align-items:center; gap:20px;
     width:100%!important; height:76px; padding:0 clamp(16px,3vw,42px)!important;
-    overflow-x:auto; overflow-y:hidden;
+    z-index:90!important; overflow-x:auto; overflow-y:hidden;
     background:rgb(var(--canvas))!important; border:0; border-bottom:1px solid color-mix(in srgb,var(--arrow-adapt-primary) 45%,rgb(var(--border)));
     border-radius:0; box-shadow:none;
   }
@@ -115,7 +115,7 @@
   :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-primary-slot a[aria-current="page"] {
     background:transparent!important; color:rgb(var(--ink)); border-color:var(--arrow-adapt-primary);
   }
-  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-primary-slot a span {
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-desktop-dock[data-dock-collapsed="false"] .relay-primary-slot a span {
     max-width:none!important; opacity:1!important; transform:none!important;
   }
   :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-desktop-dock .relay-collapse-toggle,
