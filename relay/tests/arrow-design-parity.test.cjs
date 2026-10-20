@@ -265,3 +265,26 @@ test('RAVIN command controls use a true three-row grid for identity layouts',{sk
  assert.match(css,/\.ravin-workspace/);
  assert.match(css,/\.ravin-composer-zone/);
 });
+
+
+test('Appearance restores first-class identity color palettes and HEX customization',()=>{
+ const js=read(path.join(root,'public/arrow-shell.js'));
+ const css=read(path.join(root,'public/arrow-shell.css'));
+ assert.match(js,/arrow-os-color-section/);
+ assert.match(js,/data-custom-accent/);
+ assert.match(js,/data-custom-hex/);
+ assert.match(js,/arrow_os_adapt/);
+ assert.match(js,/getCustomColor\(currentIdentity\)/);
+ assert.match(js,/applyAccent\(event\.target\.value, true\)/);
+ assert.match(js,/function refreshAccentPreview|const refreshAccentPreview/);
+ assert.match(js,/data-adapt-preview-choice/);
+ assert.match(js,/data-adapt-preview-apply/);
+ assert.match(js,/More options <span>Motion<\/span>/);
+ const colorPos=js.indexOf('<section class="arrow-os-section arrow-os-color-section"');
+ const motionPos=js.indexOf('<details class="arrow-os-appearance-advanced">');
+ assert.ok(colorPos>0 && motionPos>colorPos,'color palette must stay visible before collapsed motion settings');
+ assert.match(css,/\.arrow-os-color-custom-row/);
+ assert.match(css,/data-custom-hex/);
+ assert.match(css,/\.arrow-os-palette-grid/);
+ assert.doesNotThrow(()=>new Function(js));
+});
