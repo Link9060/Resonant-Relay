@@ -69,6 +69,7 @@ async function composerFixture(send,status=async()=>({data:[{can_send:true}],err
       useCommunicationIdentity:()=> 'core',
       NativeMessage:({children,className,style})=>React.createElement('div',{className,style},children),
       NativeComposer:({children})=>React.createElement(React.Fragment,null,children),
+      NativeToolPanel:({children})=>React.createElement('div',null,children),
       NativeConversationRow:({children})=>React.createElement('div',null,children),
     },'@/lib/actions/chats':{sendMessage:send},'@/lib/config':{appPageUrl:path=>path},'@/lib/supabase/client':{createClient:()=>({rpc:status})}});
   return mount(MessageComposer,{conversationId:'conversation'});
