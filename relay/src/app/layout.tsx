@@ -14,6 +14,7 @@ import './desktop-layouts.css';
 import './still-minimal.css';
 import './global-shortcuts.css';
 import './startup-safety.css';
+import './adapt-identities.css';
 import { ExperienceProvider } from '@/components/experience-provider';
 import { LayoutProvider } from '@/components/layout-provider';
 import { UiSoundEffects } from '@/components/ui-sound-effects';
