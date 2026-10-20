@@ -45,3 +45,46 @@ test('RAVIN respects ARROW light/dark, contrast and custom accent',{skip:!proces
  assert.match(css,/--rv-text/);
  assert.match(css,/--arrow-accent-on/);
 });
+
+
+test('all five identities define independent body and display type families',()=>{
+ const css=read(path.join(root,'public/arrow-shell.css'));
+ for(const id of ['core','bloom','haven','atelier','pulse']) assert.ok(css.includes('data-arrow-adapt="'+id+'"'),id);
+ for(const token of ['--arrow-font-body','--arrow-font-display','--arrow-identity-radius','font-family:var(--arrow-font-body)','font-family:var(--arrow-font-display)']) assert.ok(css.includes(token),token);
+ assert.match(css,/body :is\(h1,h2,h3,h4,h5,h6\)/);
+ assert.match(css,/body :is\(code,pre,kbd,samp/);
+});
+test('hover previews on desktop while click and Escape remain usable',()=>{
+ const js=read(path.join(root,'public/arrow-shell.js'));
+ const css=read(path.join(root,'public/arrow-shell.css'));
+ assert.match(js,/matchMedia\('\(hover: hover\) and \(pointer: fine\)'\)\.matches/);
+ assert.match(js,/instance\.closeTimer = setTimeout/);
+ assert.match(js,/instance\.trigger\.addEventListener\('click'/);
+ assert.match(js,/openInstance\.trigger\.focus/);
+ assert.match(css,/\.arrow-os-root\[data-open="true"\]::after/);
+});
+test('Balanced, Quiet, Dynamic and Glass remain distinct across the shared shell',()=>{
+ const css=read(path.join(root,'public/arrow-shell.css'));
+ for(const id of ['balanced','quiet','dynamic','glass'])assert.ok(css.includes('data-arrow-experience="'+id+'"'),id);
+ assert.match(css,/--arrow-mode-blur/);
+ assert.match(css,/--arrow-mode-alpha/);
+ assert.match(css,/data-arrow-experience="glass".*arrow-os-control/);
+});
+for(const [title,env,file,selectors] of [
+ ['Orbit','ARROW_ORBIT_SOURCE','src/app/adapt.css',['adapt-widget','adapt-dashboard']],
+ ['Waypoint','ARROW_WAYPOINT_SOURCE','src/app/globals.css',['waypoint-app','planning-editor']],
+ ['Atlas','ARROW_ATLAS_SOURCE','apps/explorer/styles.css',['app-shell','node-dialog']],
+ ['RAVIN','ARROW_RAVIN_SOURCE','ravin/public/arrow-ravin.css',['ravin-composer','ravin-sidebar']]
+]){
+ test(title+' keeps each material mode independent of its identity',{skip:!process.env[env]},()=>{
+  const css=from(env,file);
+  for(const id of ['balanced','quiet','dynamic','glass']) assert.ok(css.includes('data-arrow-experience="'+id+'"'),title+' missing '+id);
+  for(const needle of selectors) assert.ok(css.includes(needle),title+' missing '+needle);
+  assert.match(css,/data-arrow-motion="reduce"/);
+ });
+}
+test('Relay surfaces use four distinct material modes and respect typography',()=>{
+ const css=read(path.join(root,'src/app/experience.css'));
+ for(const id of ['balanced','quiet','dynamic','glass']) assert.ok(css.includes('data-arrow-experience="'+id+'"'),id);
+ assert.match(css,/\.relay-communications-hero/);
+});
