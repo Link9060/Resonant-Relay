@@ -28,7 +28,7 @@ function compile(repo,center,key){
   cpSync(path.join(dir,'out'),path.join(output,'arrow',center),{recursive:true});return dir;
 }
 const orbit=compile('Resonant-Orbit','orbit','NEXT_PUBLIC_ORBIT_BASE_PATH');
-run(process.execPath,['--test','tests/arrow-shell.test.cjs','tests/entertainment.test.cjs','tests/auth-gate.test.cjs','tests/orbit-refinement.test.cjs','tests/orbit-adapt.test.cjs','tests/module-routing.test.cjs'],orbit,{ARROW_SHELL_SOURCE:path.join(relay,'public/arrow-shell.js')});
+run(process.execPath,['--test','tests/arrow-shell.test.cjs','tests/entertainment.test.cjs','tests/auth-gate.test.cjs','tests/orbit-refinement.test.cjs','tests/orbit-adapt.test.cjs','tests/orbit-widget-grid.test.cjs','tests/module-routing.test.cjs'],orbit,{ARROW_SHELL_SOURCE:path.join(relay,'public/arrow-shell.js')});
 const waypoint=compile('Resonant-Waypoint','waypoint','NEXT_PUBLIC_WAYPOINT_BASE_PATH');
 run(process.execPath,['--test','tests/account-safety.test.cjs','tests/daily-plan.test.cjs'],waypoint);
 run(process.execPath,['--test','tests/waypoint-workflow.test.cjs'],relay,{ARROW_WAYPOINT_SOURCE:waypoint});
