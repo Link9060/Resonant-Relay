@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Lora:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
 :root {
   --ui-fg: 23 28 38;
   --ui-surface: 255 255 255;
@@ -1951,26 +1953,26 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
   --arrow-font-display:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 :root[data-arrow-adapt="bloom"] {
-  --arrow-font-body:"Avenir Next","Trebuchet MS",ui-rounded,system-ui,sans-serif;
-  --arrow-font-display:"Avenir Next","Trebuchet MS",ui-rounded,system-ui,sans-serif;
+  --arrow-font-body:"Nunito","Avenir Next","Trebuchet MS",ui-rounded,system-ui,sans-serif;
+  --arrow-font-display:"Nunito","Avenir Next","Trebuchet MS",ui-rounded,system-ui,sans-serif;
   --arrow-font-tracking:-.032em;
   --arrow-identity-radius:24px;
 }
 :root[data-arrow-adapt="haven"] {
-  --arrow-font-body:Optima,"Avenir Next","Segoe UI",sans-serif;
-  --arrow-font-display:"Palatino Linotype","Book Antiqua",Palatino,Georgia,serif;
+  --arrow-font-body:"DM Sans",Optima,"Segoe UI",sans-serif;
+  --arrow-font-display:"Lora","Palatino Linotype",Palatino,Georgia,serif;
   --arrow-font-tracking:-.025em;
   --arrow-identity-radius:17px;
 }
 :root[data-arrow-adapt="atelier"] {
-  --arrow-font-body:"Helvetica Neue","Avenir Next",Arial,sans-serif;
-  --arrow-font-display:Georgia,"Iowan Old Style","Times New Roman",serif;
+  --arrow-font-body:"DM Sans","Helvetica Neue",Arial,sans-serif;
+  --arrow-font-display:"Playfair Display",Georgia,"Times New Roman",serif;
   --arrow-font-tracking:-.04em;
   --arrow-identity-radius:5px;
 }
 :root[data-arrow-adapt="pulse"] {
-  --arrow-font-body:"Trebuchet MS","Avenir Next",ui-sans-serif,sans-serif;
-  --arrow-font-display:"Arial Rounded MT Bold","Trebuchet MS",ui-rounded,system-ui,sans-serif;
+  --arrow-font-body:"Space Grotesk","Trebuchet MS",ui-sans-serif,sans-serif;
+  --arrow-font-display:"Space Grotesk","Arial Rounded MT Bold",ui-rounded,system-ui,sans-serif;
   --arrow-font-tracking:-.035em;
   --arrow-identity-radius:19px;
 }
