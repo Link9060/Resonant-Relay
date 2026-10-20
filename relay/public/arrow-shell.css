@@ -2502,3 +2502,115 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 .arrow-os-lab-stage[data-preview-identity="pulse"] .arrow-os-lab-chat {border-radius:3px 12px 3px 12px;border-color:var(--lab-accent);background:color-mix(in srgb,var(--lab-panel) 90%,var(--lab-accent));}
 .arrow-os-lab-stage[data-preview-identity="pulse"] .arrow-os-lab-chat.outgoing {border-color:var(--lab-secondary);}
 .arrow-os-lab-stage[data-preview-identity="pulse"] .arrow-os-lab-composer {border-radius:3px 13px 3px 13px;border-color:var(--lab-accent);}
+
+
+/* Adapt V.1 · One Appearance control center.
+   Compact sections, one identity chooser and one real light/dark control.
+   Preview is read-only until "Use this identity" is pressed. */
+.arrow-os-panel[data-panel="appearance"] {
+  width:min(455px,calc(100vw - 22px))!important;
+  max-height:min(90dvh,820px)!important;
+  overflow:hidden;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-panel-head {
+  position:relative;z-index:1;
+  padding:14px 18px 12px;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-panel-body {
+  max-height:calc(min(90dvh,820px) - 75px);
+  min-height:0;
+  overflow-y:auto;
+  padding:15px;
+  display:grid;
+  gap:12px;
+  scrollbar-gutter:stable;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-section {
+  margin:0!important;
+  padding:13px!important;
+  border-radius:13px!important;
+  display:grid;gap:10px;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-section-label {
+  display:block;
+  font-size:10px!important;
+  letter-spacing:.11em!important;
+  line-height:1.35;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-adapt-help {
+  font-size:11px;
+  line-height:1.5;
+  margin:0!important;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-theme-choice {
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-theme-choice button {
+  width:100%;min-height:42px;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-preview-lab {
+  gap:10px;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-lab-controls {
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  overflow:visible;
+  gap:5px;
+  padding:0;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-lab-controls button {
+  min-width:0;padding:8px 2px;
+  font-size:10px;
+  min-height:40px;
+  border-radius:9px;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-lab-stage {
+  min-height:195px;
+  max-height:220px;
+  overflow:hidden;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-lab-content {
+  padding:11px;
+  gap:9px;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-lab-sample {
+  min-height:69px;
+  padding:8px;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-lab-masthead strong {
+  font-size:16px;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-lab-actions {
+  display:grid;grid-template-columns:1fr;
+  margin:0;
+}
+.arrow-os-panel[data-panel="appearance"] [data-adapt-preview-apply] {
+  width:100%;min-height:44px;
+  border-radius:10px;
+}
+.arrow-os-appearance-advanced {
+  border:1px solid var(--arrow-design-line);
+  border-radius:13px;
+  background:color-mix(in srgb,var(--arrow-design-surface) 95%,transparent);
+  overflow:hidden;
+}
+.arrow-os-appearance-advanced > summary {
+  list-style:none;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;min-height:44px;padding:12px 14px;cursor:pointer;
+  font-size:12px;font-weight:700;
+}
+.arrow-os-appearance-advanced > summary::-webkit-details-marker {display:none;}
+.arrow-os-appearance-advanced > summary::after {content:"⌄";font-size:16px;}
+.arrow-os-appearance-advanced[open] > summary::after {content:"⌃";}
+.arrow-os-appearance-advanced > summary > span {
+  font-size:10px;font-weight:500;color:var(--arrow-design-muted);
+}
+.arrow-os-appearance-advanced > .arrow-os-section {
+  border:0;border-top:1px solid var(--arrow-design-line);
+  border-radius:0!important;
+}
+@media(max-width:470px) {
+  .arrow-os-panel[data-panel="appearance"] {width:calc(100vw - 14px)!important;}
+  .arrow-os-panel[data-panel="appearance"] .arrow-os-panel-body {padding:10px;gap:10px;}
+  .arrow-os-panel[data-panel="appearance"] .arrow-os-lab-controls button {font-size:9px;}
+}
