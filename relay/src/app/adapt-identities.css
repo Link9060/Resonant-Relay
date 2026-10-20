@@ -211,3 +211,153 @@
     transition:none!important;animation:none!important;
   }
 }
+
+
+/* Adapt IV mobile hub: access Orbit, RAVIN, Atlas and Waypoint from Relay without
+   changing current mobile routes. Works with pointer, touch and keyboard. */
+.relay-adapt-mobile-hub { display:none; }
+@media(max-width:767px) {
+  :root[data-arrow-adapt]:not([data-arrow-adapt="core"]) .relay-app-shell .relay-adapt-mobile-hub {
+    display:block;position:fixed;z-index:44;
+    right:max(16px,env(safe-area-inset-right));bottom:calc(91px + env(safe-area-inset-bottom));
+    font-family:var(--arrow-font-body);
+  }
+  .relay-adapt-mobile-hub > summary {
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    min-width:52px;min-height:52px;padding:9px 15px;
+    border:1px solid rgb(var(--border));border-radius:15px;
+    background:rgb(var(--surface));color:rgb(var(--ink));cursor:pointer;
+    list-style:none;box-shadow:0 8px 26px #0002;
+  }
+  .relay-adapt-mobile-hub > summary::-webkit-details-marker { display:none; }
+  .relay-adapt-mobile-hub > summary:focus-visible {
+    outline:2px solid var(--arrow-accent-color);outline-offset:3px;
+  }
+  .relay-adapt-mobile-hub[open] > summary {
+    border-color:var(--arrow-adapt-primary);background:color-mix(in srgb,rgb(var(--surface)) 89%,var(--arrow-adapt-secondary));
+  }
+  .relay-adapt-hub-symbol {font-size:20px;line-height:1;}
+  .relay-adapt-hub-copy {font-size:11px;font-weight:820;letter-spacing:.09em;}
+  .relay-adapt-hub-menu {
+    position:absolute;right:0;bottom:calc(100% + 10px);
+    display:grid;gap:6px;width:min(285px,calc(100vw - 25px));
+    padding:16px;border:1px solid rgb(var(--border));border-radius:17px;
+    background:rgb(var(--surface));color:rgb(var(--ink));box-shadow:0 18px 56px #0004;
+    max-height:60dvh;overflow:auto;
+  }
+  .relay-adapt-hub-title {font-size:9px;font-weight:780;letter-spacing:.17em;color:rgb(var(--ink-muted));margin:0 5px 7px;}
+  .relay-adapt-hub-menu a {
+    display:flex;align-items:center;gap:12px;
+    min-height:46px;padding:11px 12px; color:inherit;text-decoration:none;
+    border:1px solid rgb(var(--border));border-radius:10px;
+    font-size:13px;background:rgb(var(--surface-raised));
+  }
+  .relay-adapt-hub-menu a span:first-child {
+    width:27px;height:27px;display:grid;place-items:center;flex:none;
+    font-size:17px;color:var(--arrow-adapt-primary);
+  }
+  .relay-adapt-hub-menu a span:last-child {margin-left:auto;color:rgb(var(--ink-muted));}
+  .relay-adapt-hub-menu a:focus-visible {outline:2px solid var(--arrow-adapt-primary);outline-offset:2px;}
+  .relay-adapt-hub-menu a:hover {background:color-mix(in srgb,var(--arrow-adapt-primary) 11%,rgb(var(--surface)));}
+  /* Bloom: suspended tab dock and bubble stack for app shortcuts. */
+  :root[data-arrow-adapt="bloom"] .relay-app-shell .relay-mobile-nav {
+    padding:4px 7px;margin:0;border-radius:28px!important;
+    background:color-mix(in srgb,rgb(var(--surface)) 91%,var(--arrow-adapt-secondary))!important;
+  }
+  :root[data-arrow-adapt="bloom"] .relay-app-shell .relay-mobile-nav .relay-dock-link {
+    border-radius:22px!important;gap:3px;min-height:59px;
+  }
+  :root[data-arrow-adapt="bloom"] .relay-app-shell .relay-mobile-nav .relay-dock-link[aria-current="page"] {
+    background:color-mix(in srgb,var(--arrow-adapt-primary) 23%,rgb(var(--surface)))!important;
+  }
+  :root[data-arrow-adapt="bloom"] .relay-adapt-mobile-hub > summary {
+    border-radius:50%;min-width:59px;height:59px;padding:9px;
+    background:var(--arrow-adapt-gradient);color:var(--arrow-accent-on,#fff);
+    border:2px solid var(--arrow-adapt-secondary);
+  }
+  :root[data-arrow-adapt="bloom"] .relay-adapt-hub-copy {display:none;}
+  :root[data-arrow-adapt="bloom"] .relay-adapt-hub-menu,
+  :root[data-arrow-adapt="bloom"] .relay-adapt-hub-menu a {
+    border-radius:25px;background:color-mix(in srgb,rgb(var(--surface)) 93%,var(--arrow-adapt-secondary));
+  }
+  /* Haven: compact journal tabs and a bookmark-like ARROW switch. */
+  :root[data-arrow-adapt="haven"] .relay-app-shell .relay-mobile-nav {
+    padding-top:5px;box-shadow:0 -7px 20px color-mix(in srgb,var(--arrow-adapt-primary) 7%,transparent);
+  }
+  :root[data-arrow-adapt="haven"] .relay-app-shell .relay-mobile-nav .relay-dock-link {
+    border-radius:3px!important;border-top:2px solid transparent;min-height:62px;
+  }
+  :root[data-arrow-adapt="haven"] .relay-app-shell .relay-mobile-nav .relay-dock-link[aria-current="page"] {
+    border-top-color:var(--arrow-adapt-primary);
+    background:color-mix(in srgb,var(--arrow-adapt-secondary) 14%,rgb(var(--surface)))!important;
+  }
+  :root[data-arrow-adapt="haven"] .relay-adapt-mobile-hub > summary {
+    background:color-mix(in srgb,rgb(var(--surface)) 92%,var(--arrow-adapt-secondary));
+    border-left:5px solid var(--arrow-adapt-primary);border-radius:5px 12px 12px 5px;
+    box-shadow:5px 5px 0 color-mix(in srgb,var(--arrow-adapt-primary) 14%,transparent);
+  }
+  :root[data-arrow-adapt="haven"] .relay-adapt-hub-menu {
+    border-radius:9px;border-left:5px solid var(--arrow-adapt-primary);
+    background:color-mix(in srgb,rgb(var(--surface)) 93%,var(--arrow-adapt-secondary));
+  }
+  :root[data-arrow-adapt="haven"] .relay-adapt-hub-menu a {
+    background:transparent;border:0;border-bottom:1px solid rgb(var(--border));border-radius:0;
+  }
+  /* Atelier: typography-led index links, black and white. */
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-mobile-nav {
+    padding:6px 0 0;background:rgb(var(--canvas))!important;backdrop-filter:none;
+  }
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-mobile-nav .relay-dock-link {
+    border-radius:0!important;min-height:62px;
+    font-size:9px;font-weight:760;gap:6px;
+  }
+  :root[data-arrow-adapt="atelier"] .relay-app-shell .relay-mobile-nav .relay-dock-link[aria-current="page"] {
+    border-top:2px solid var(--arrow-adapt-primary);background:transparent!important;
+  }
+  :root[data-arrow-adapt="atelier"] .relay-adapt-mobile-hub > summary {
+    background:rgb(var(--canvas));border:1px solid rgb(var(--ink));border-radius:0;box-shadow:none;
+  }
+  :root[data-arrow-adapt="atelier"] .relay-adapt-hub-menu,
+  :root[data-arrow-adapt="atelier"] .relay-adapt-hub-menu a {
+    border-radius:0;background:rgb(var(--canvas));box-shadow:none;
+  }
+  :root[data-arrow-adapt="atelier"] .relay-adapt-hub-title {letter-spacing:.27em;}
+  :root[data-arrow-adapt="atelier"] .relay-adapt-hub-menu a {
+    border:0;border-bottom:1px solid rgb(var(--border));
+    font-size:12px;letter-spacing:.11em;text-transform:uppercase;
+  }
+  /* Pulse: aggressive high-contrast rail and launch pad. */
+  :root[data-arrow-adapt="pulse"] .relay-app-shell .relay-mobile-nav {
+    padding:6px;gap:3px;background:linear-gradient(120deg,color-mix(in srgb,rgb(var(--surface)) 80%,var(--arrow-adapt-primary)),
+      rgb(var(--surface)))!important;
+  }
+  :root[data-arrow-adapt="pulse"] .relay-app-shell .relay-mobile-nav .relay-dock-link {
+    border-radius:2px 12px 2px 12px!important;min-height:58px;
+    font-weight:820;letter-spacing:.035em;
+  }
+  :root[data-arrow-adapt="pulse"] .relay-app-shell .relay-mobile-nav .relay-dock-link[aria-current="page"] {
+    border:1px solid var(--arrow-adapt-secondary);
+    background:color-mix(in srgb,var(--arrow-adapt-primary) 28%,rgb(var(--surface)))!important;
+  }
+  :root[data-arrow-adapt="pulse"] .relay-adapt-mobile-hub > summary {
+    border:2px solid var(--arrow-adapt-secondary);
+    background:var(--arrow-adapt-gradient);color:var(--arrow-accent-on,#fff);
+    border-radius:4px 17px 4px 17px;font-weight:850;
+    box-shadow:0 0 25px color-mix(in srgb,var(--arrow-adapt-primary) 26%,transparent);
+  }
+  :root[data-arrow-adapt="pulse"] .relay-adapt-hub-menu {
+    border-radius:4px 22px 4px 22px;
+    border-color:var(--arrow-adapt-secondary);
+    background:color-mix(in srgb,rgb(var(--surface)) 84%,var(--arrow-adapt-primary));
+  }
+  :root[data-arrow-adapt="pulse"] .relay-adapt-hub-menu a {
+    border-radius:4px 12px 4px 12px;
+    font-weight:760;text-transform:uppercase;
+    border-color:color-mix(in srgb,var(--arrow-adapt-primary) 36%,rgb(var(--border)));
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  :root:not([data-arrow-motion="full"]) .relay-adapt-mobile-hub * {
+    animation:none!important;transition:none!important;
+  }
+}
