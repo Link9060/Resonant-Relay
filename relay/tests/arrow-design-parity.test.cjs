@@ -208,9 +208,12 @@ test('Adapt V Appearance preview never changes account settings until user appli
  assert.match(shell,/function renderPreviewLab/);
  assert.match(shell,/data-adapt-preview-stage/);
  assert.match(shell,/data-adapt-preview-choice/);
- assert.match(shell,/data-adapt-preview-theme/);
+ assert.doesNotMatch(shell,/data-adapt-preview-theme/);
+ assert.doesNotMatch(shell,/data-adapt-choice=/);
+ assert.match(shell,/data-theme-choice/);
+ assert.match(shell,/arrow-os-appearance-advanced/);
  assert.match(shell,/data-adapt-preview-apply/);
- assert.match(shell,/Previewing does not change your active identity/);
+ assert.match(shell,/Sample only. The preview follows/);
  assert.match(shell,/addEventListener\('click', \(\) => applyAdapt\(previewIdentity,true\)\)/);
  assert.match(css,/data-preview-identity="bloom"/);
  assert.match(css,/data-preview-identity="haven"/);
@@ -228,4 +231,37 @@ test('Core widgets are preserved while non-Core identities use native component 
  assert.match(native,/default:return <div className="adapt-widget-top"/);
  for(const id of ['bloom','haven','atelier','pulse']) assert.ok(native.includes("case '"+id+"'"),id+' missing composition');
  assert.match(native,/MutationObserver/);
+});
+
+
+test('Appearance has one identity chooser and one global theme control',()=>{
+ const js=read(path.join(root,'public/arrow-shell.js'));
+ const css=read(path.join(root,'public/arrow-shell.css'));
+ assert.match(js,/data-adapt-preview-choice/);
+ assert.match(js,/data-adapt-preview-apply/);
+ assert.doesNotMatch(js,/data-adapt-choice="/);
+ assert.doesNotMatch(js,/data-adapt-preview-theme/);
+ assert.match(js,/applyTheme\(button\.dataset\.themeChoice, true\)/);
+ assert.match(css,/\.arrow-os-panel\[data-panel="appearance"\]/);
+ assert.match(css,/\.arrow-os-appearance-advanced/);
+ assert.doesNotThrow(()=>new Function(js));
+});
+test('Orbit immersive world follows identities and light dark',{skip:!process.env.ARROW_ORBIT_SOURCE},()=>{
+ const css=from('ARROW_ORBIT_SOURCE','src/app/adapt.css');
+ const tsx=from('ARROW_ORBIT_SOURCE','src/components/orbit-adapt.tsx');
+ assert.match(css,/Adapt V\.1: native identities now extend into the IMMERSIVE Orbit world/);
+ for(const name of ['bloom','haven','atelier','pulse']){
+  assert.ok(css.includes('data-orbit-adapt="'+name+'"]'),name+' world composition');
+ }
+ assert.match(css,/data-arrow-theme="light".*orbit-app/);
+ assert.match(css,/world-canvas/);
+ assert.match(css,/orbit-command-panel/);
+ assert.match(tsx,/data-orbit-adapt=\{theme\}/);
+});
+test('RAVIN command controls use a true three-row grid for identity layouts',{skip:!process.env.ARROW_RAVIN_SOURCE},()=>{
+ const css=from('ARROW_RAVIN_SOURCE','ravin/public/ravin-waypoint.css');
+ assert.match(css,/grid-template-rows:auto auto minmax\(0,1fr\)!important/);
+ assert.match(css,/\.ravin-adapt-commandbar/);
+ assert.match(css,/\.ravin-workspace/);
+ assert.match(css,/\.ravin-composer-zone/);
 });
