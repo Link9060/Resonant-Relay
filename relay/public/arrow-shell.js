@@ -1643,7 +1643,7 @@
 
   // Preview Lab has local state only. Browsing identities must NEVER write a
   // preference, switch the active module, or alter account data.
-  function renderIdentityPreview(identity) {
+  function renderIdentityPreview(identity, surface = 'home') {
     const safe = ADAPT_CHOICES.some(([id]) => id === identity) ? identity : 'core';
     const nav = {
       core:'<span>◈  Orbit</span><span>▦  Tasks</span><span>✦  RAVIN</span>',
@@ -1666,6 +1666,24 @@
       atelier:['Priorities','Correspondence'],
       pulse:['TASK STATUS','AI ACTIVE'],
     }[safe];
+    if (surface === 'conversation') {
+      const role = {
+        core:'SYSTEM / RAVIN',
+        bloom:'✿ From RAVIN',
+        haven:'FROM A FRIEND',
+        atelier:'II. CORRESPONDENCE',
+        pulse:'◆ SIGNAL RECEIVED',
+      }[safe];
+      return '<div class="arrow-os-lab-nav">' + nav + '</div>' +
+        '<div class="arrow-os-lab-content arrow-os-lab-conversation">' +
+          '<div class="arrow-os-lab-masthead"><small>ARROW / RELAY + RAVIN</small><strong>Conversation</strong></div>' +
+          '<div class="arrow-os-lab-chat-rows">' +
+            '<div class="arrow-os-lab-chat incoming"><small>' + role + '</small><span>The same conversations. A new interface.</span></div>' +
+            '<div class="arrow-os-lab-chat outgoing"><small>YOU</small><span>Show me what we can build next.</span></div>' +
+          '</div>' +
+          '<div class="arrow-os-lab-composer"><span>Write a message...</span><strong aria-hidden="true">↗</strong></div>' +
+        '</div>';
+    }
     return '<div class="arrow-os-lab-nav">' + nav + '</div>' +
       '<div class="arrow-os-lab-content">' +
         '<div class="arrow-os-lab-masthead"><small>ARROW / ' + safe.toUpperCase() + '</small><strong>' + header + '</strong></div>' +
@@ -1676,7 +1694,7 @@
         '<div class="arrow-os-lab-message"><span aria-hidden="true">◉</span> The same workspace, a different experience.</div>' +
       '</div>';
   }
-  function renderPreviewLab(choice, resolvedDark) {
+  function renderPreviewLab(choice, resolvedDark, surface = 'home') {
     const lab = state.panelBody?.querySelector('[data-adapt-preview-lab]');
     if (!lab) return;
     const normalized = ADAPT_CHOICES.some(([id]) => id === choice) ? choice : 'core';
@@ -1688,7 +1706,11 @@
     stage.dataset.previewTheme = resolvedDark ? 'dark' : 'light';
     stage.style.setProperty('--lab-accent',color);
     stage.style.setProperty('--lab-secondary',secondary);
-    stage.innerHTML = renderIdentityPreview(normalized);
+    stage.dataset.previewSurface = surface;
+    stage.innerHTML = renderIdentityPreview(normalized,surface);
+    lab.querySelectorAll('[data-adapt-preview-surface]').forEach(button => {
+      button.setAttribute('aria-pressed',String(button.dataset.adaptPreviewSurface===surface));
+    });
     lab.querySelectorAll('[data-adapt-preview-choice]').forEach(button => {
       const selected=button.dataset.adaptPreviewChoice===normalized;
       button.setAttribute('aria-pressed',String(selected));
@@ -1717,6 +1739,10 @@
         '<span class="arrow-os-section-label">IDENTITY PREVIEW LAB · NO CHANGES UNTIL APPLIED</span>' +
         '<div class="arrow-os-lab-controls" role="group" aria-label="Preview an ARROW identity">' +
           ADAPT_CHOICES.map(([value,label]) => '<button type="button" data-adapt-preview-choice="' + value + '">' + label + '</button>').join('') +
+        '</div>' +
+        '<div class="arrow-os-lab-surface-switch" role="group" aria-label="Preview surface">' +
+          '<button type="button" data-adapt-preview-surface="home" aria-pressed="true">Home</button>' +
+          '<button type="button" data-adapt-preview-surface="conversation">Messaging</button>' +
         '</div>' +
         '<div class="arrow-os-lab-stage" data-adapt-preview-stage aria-label="Sample ARROW interface preview"></div>' +
         '<div class="arrow-os-lab-actions">' +
@@ -1755,16 +1781,23 @@
 
     let previewIdentity = currentIdentity;
     let previewDark = document.documentElement.dataset.arrowTheme === 'dark';
-    renderPreviewLab(previewIdentity,previewDark);
+    let previewSurface = 'home';
+    renderPreviewLab(previewIdentity,previewDark,previewSurface);
+    state.panelBody.querySelectorAll('[data-adapt-preview-surface]').forEach(button => {
+      button.addEventListener('click', () => {
+        previewSurface=button.dataset.adaptPreviewSurface;
+        renderPreviewLab(previewIdentity,previewDark,previewSurface);
+      });
+    });
     state.panelBody.querySelectorAll('[data-adapt-preview-choice]').forEach(button => {
       button.addEventListener('click', () => {
         previewIdentity=button.dataset.adaptPreviewChoice;
-        renderPreviewLab(previewIdentity,previewDark);
+        renderPreviewLab(previewIdentity,previewDark,previewSurface);
       });
     });
     state.panelBody.querySelector('[data-adapt-preview-theme]').addEventListener('click', () => {
       previewDark=!previewDark;
-      renderPreviewLab(previewIdentity,previewDark);
+      renderPreviewLab(previewIdentity,previewDark,previewSurface);
     });
     state.panelBody.querySelector('[data-adapt-preview-apply]').addEventListener('click', () => applyAdapt(previewIdentity,true));
     state.panelBody.querySelector('[data-custom-accent]').addEventListener('input', event => applyAccent(event.target.value, true));
