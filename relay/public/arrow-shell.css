@@ -2054,3 +2054,27 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 }
 :root[data-arrow-motion="reduce"] { --arrow-mode-speed:0ms; }
 @media(prefers-reduced-motion:reduce) { :root:not([data-arrow-motion="full"]) { --arrow-mode-speed:0ms; } }
+
+
+/* Identity typography reaches auth screens, settings, overlays and text outside module shells. */
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) body,
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) body :is(button,input,textarea,select,label,summary,strong,b) {
+  font-family:var(--arrow-font-body)!important;
+}
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) body :is(h1,h2,h3,h4,h5,h6),
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) body :is(h1,h2,h3,h4,h5,h6) :is(strong,b),
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) body :is(.font-display,.suite-name,.product-name,.ravin-brand-copy strong,.arrow-os-tray-header strong) {
+  font-family:var(--arrow-font-display)!important;
+  letter-spacing:var(--arrow-font-tracking);
+}
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) body :is(code,pre,kbd,samp,.font-mono) {
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace!important;
+  letter-spacing:normal!important;
+}
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) :is(.arrow-os-panel,.arrow-os-content,.panel,.hero-panel,.command-info-card,.dashboard-card) {
+  border-radius:var(--arrow-identity-radius,14px)!important;
+}
+:root[data-arrow-adapt="bloom"] .arrow-os-content { --arrow-identity-radius:24px; }
+:root[data-arrow-adapt="haven"] .arrow-os-content { --arrow-identity-radius:17px; }
+:root[data-arrow-adapt="atelier"] .arrow-os-content { --arrow-identity-radius:5px; }
+:root[data-arrow-adapt="pulse"] .arrow-os-content { --arrow-identity-radius:19px; }
