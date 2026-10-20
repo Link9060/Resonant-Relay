@@ -1638,6 +1638,18 @@
         button.setAttribute('aria-pressed', String(selected));
       });
     });
+    // Keep the custom HEX value, native color picker and custom palette swatch
+    // synchronized after any palette switch or color edit.
+    const activeColor = getCustomColor();
+    const hex = state.panelBody.querySelector('[data-custom-hex]');
+    const picker = state.panelBody.querySelector('[data-custom-accent]');
+    const swatch = state.panelBody.querySelector('[data-accent-choice="custom"] i');
+    if (hex && document.activeElement !== hex) hex.value = activeColor;
+    if (picker && picker.value !== activeColor) picker.value = activeColor;
+    if (swatch) {
+      swatch.style.setProperty('--swatch', activeColor);
+      swatch.style.setProperty('--swatch-secondary', activeColor);
+    }
   }
 
 
