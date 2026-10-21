@@ -682,7 +682,7 @@
     const offsetLeft = viewport?.offsetLeft || 0;
     const offsetTop = viewport?.offsetTop || 0;
     const margin = 12;
-    const width = Math.max(0, Math.min(panel.dataset?.panel === 'appearance' ? 540 : 430, availableWidth - margin * 2));
+    const width = Math.max(0, Math.min(['appearance', 'settings'].includes(panel.dataset?.panel) ? 540 : 430, availableWidth - margin * 2));
     const left = Math.max(offsetLeft + margin, Math.min((rect?.right || offsetLeft + availableWidth - margin) - width, offsetLeft + availableWidth - width - margin));
     const top = Math.max(offsetTop + margin, Math.min((rect?.bottom || offsetTop + 50) + 8, offsetTop + availableHeight - Math.min(240, availableHeight - margin * 2) - margin));
     panel.style.left = left + 'px';
@@ -1857,33 +1857,69 @@
   function renderSettings() {
     const asArray = value => Array.isArray(value) ? value : [];
     const links = asArray(readJson(STORAGE.links, []));
+    const identity = capitalize(getAdaptChoice());
+    const resolvedTheme = resolveTheme(getThemeChoice());
 
     state.panelBody.innerHTML =
-      '<div class="arrow-os-settings-card">' +
-        '<span>Preferences on this device</span>' +
-        '<strong>' + links.length + ' saved links · ' + escapeHtml(getThemeChoice()) + ' theme · ' + escapeHtml(getMotionChoice()) + ' motion</strong>' +
-        '<small>Appearance, links and focus settings are shared across ARROW tabs on this device. Tasks, notes, calendar and plans are saved to your account.</small>' +
-      '</div>' +
-      '<div class="arrow-os-settings-actions">' +
-        '<a href="' + escapeAttr(resolveHref('/relay/profile/')) + '">Profile, account and recovery</a>' +
-        '<button type="button" data-open-notifications>Open shared notifications</button>' +
-        '<a href="' + escapeAttr(resolveHref('/relay/profile/#notifications')) + '">Notifications and device setup</a>' +
-        '<a href="' + escapeAttr(resolveHref('/relay/profile/#appearance')) + '">Relay appearance, layout and particles</a>' +
-        '<a href="' + escapeAttr(resolveHref('/relay/profile/#account-data')) + '">Export account data or delete account</a>' +
-        '<a href="' + escapeAttr(resolveHref('/relay/privacy/')) + '">ARROW privacy policy</a>' +
-        '<a href="' + escapeAttr(resolveHref('/relay/terms/')) + '">Terms of use</a>' +
-        '<a href="' + escapeAttr(resolveHref('/relay/help/')) + '">Setup guide and help</a>' +
-        '<a data-arrow-channel href="https://link9060.github.io/Resonant-Relay/beta-access/">Request Beta access</a>' +
-        '<a data-arrow-channel href="https://link9060.github.io/Resonant-Relay/">Open Beta site</a>' +
-        '<a data-arrow-channel href="https://enterarrow.com/">'+(BETA_BASE?'Back to public ARROW':'Public ARROW site')+'</a>' +
-        '<button type="button" data-settings-action="intro">Replay Orbit intro</button>' +
-        '<button type="button" data-settings-action="export">Export preferences</button>' +
-        '<label class="arrow-os-import">Import preferences<input type="file" accept="application/json" data-settings-action="import" /></label>' +
-        (SIGNOUT_URL ? '<button type="button" class="is-danger" data-settings-action="signout">Sign out of ARROW</button>' : '') +
-        '<button type="button" class="is-danger" data-settings-action="reset">Reset preferences</button>' +
+      '<div class="arrow-os-settings-layout">' +
+        '<header class="arrow-os-settings-intro">' +
+          '<span class="arrow-os-section-label">ARROW / PREFERENCES</span>' +
+          '<h3>Make ARROW yours.</h3>' +
+          '<p>Your system, account, privacy and accessibility controls in one place.</p>' +
+          '<div class="arrow-os-settings-summary"><span>' + escapeHtml(identity) + '</span><span>' + capitalize(resolvedTheme) + ' mode</span><span>' + links.length + ' saved links</span></div>' +
+        '</header>' +
+        '<nav class="arrow-os-settings-quick" aria-label="Common settings">' +
+          '<button type="button" data-settings-open-appearance><strong>Appearance</strong><small>Theme, preview and colors</small><i aria-hidden="true">↗</i></button>' +
+          '<button type="button" data-open-notifications><strong>Notifications</strong><small>Alerts and recent activity</small><i aria-hidden="true">↗</i></button>' +
+        '</nav>' +
+        '<section class="arrow-os-settings-group" aria-labelledby="arrow-settings-account">' +
+          '<h3 id="arrow-settings-account">Account & device</h3>' +
+          '<p>Your account, devices and how ARROW behaves.</p>' +
+          '<div class="arrow-os-settings-actions">' +
+            '<a href="' + escapeAttr(resolveHref('/relay/profile/')) + '">Profile, account and recovery <span aria-hidden="true">↗</span></a>' +
+            '<a href="' + escapeAttr(resolveHref('/relay/profile/#notifications')) + '">Notifications and device setup <span aria-hidden="true">↗</span></a>' +
+            '<a href="' + escapeAttr(resolveHref('/relay/profile/#appearance')) + '">Relay layout and particles <span aria-hidden="true">↗</span></a>' +
+            (SIGNOUT_URL ? '<button type="button" class="is-danger" data-settings-action="signout">Sign out of ARROW</button>' : '') +
+          '</div>' +
+        '</section>' +
+        '<section class="arrow-os-settings-group" aria-labelledby="arrow-settings-tools">' +
+          '<h3 id="arrow-settings-tools">Workspace</h3>' +
+          '<p>Manage useful links, focus, and your Orbit welcome.</p>' +
+          '<div class="arrow-os-settings-actions">' +
+            '<button type="button" data-settings-open-links>Saved links and shortcuts <span aria-hidden="true">↗</span></button>' +
+            '<button type="button" data-settings-open-focus>Focus timer and preferences <span aria-hidden="true">↗</span></button>' +
+            '<button type="button" data-settings-action="intro">Replay Orbit intro <span aria-hidden="true">↗</span></button>' +
+          '</div>' +
+        '</section>' +
+        '<details class="arrow-os-settings-more">' +
+          '<summary>Privacy, data & advanced <span aria-hidden="true">⌄</span></summary>' +
+          '<div class="arrow-os-settings-more-body">' +
+            '<p>Preferences are stored on this device. Shared account data remains in your account.</p>' +
+            '<div class="arrow-os-settings-actions">' +
+              '<a href="' + escapeAttr(resolveHref('/relay/profile/#account-data')) + '">Export or delete account data <span aria-hidden="true">↗</span></a>' +
+              '<a href="' + escapeAttr(resolveHref('/relay/privacy/')) + '">ARROW privacy policy <span aria-hidden="true">↗</span></a>' +
+              '<a href="' + escapeAttr(resolveHref('/relay/terms/')) + '">Terms of use <span aria-hidden="true">↗</span></a>' +
+              '<button type="button" data-settings-action="export">Export device preferences</button>' +
+              '<label class="arrow-os-import">Import device preferences<input type="file" accept="application/json" data-settings-action="import" /></label>' +
+              '<button type="button" class="is-danger" data-settings-action="reset">Reset device preferences</button>' +
+            '</div>' +
+          '</div>' +
+        '</details>' +
+        '<details class="arrow-os-settings-more">' +
+          '<summary>Help & releases <span aria-hidden="true">⌄</span></summary>' +
+          '<div class="arrow-os-settings-more-body arrow-os-settings-actions">' +
+            '<a href="' + escapeAttr(resolveHref('/relay/help/')) + '">Setup guide and help <span aria-hidden="true">↗</span></a>' +
+            '<a data-arrow-channel href="https://link9060.github.io/Resonant-Relay/beta-access/">Request Beta access <span aria-hidden="true">↗</span></a>' +
+            '<a data-arrow-channel href="https://link9060.github.io/Resonant-Relay/">Open Beta site <span aria-hidden="true">↗</span></a>' +
+            '<a data-arrow-channel href="https://enterarrow.com/">' + (BETA_BASE ? 'Back to public ARROW' : 'Public ARROW site') + ' <span aria-hidden="true">↗</span></a>' +
+          '</div>' +
+        '</details>' +
       '</div>';
 
     state.panelBody.querySelector('[data-open-notifications]').onclick=()=>openPanel('notifications',state.activeModule||'orbit');
+    state.panelBody.querySelector('[data-settings-open-appearance]').onclick=()=>openPanel('appearance',state.activeModule||'orbit');
+    state.panelBody.querySelector('[data-settings-open-links]').onclick=()=>openPanel('links',state.activeModule||'orbit');
+    state.panelBody.querySelector('[data-settings-open-focus]').onclick=()=>openPanel('focus',state.activeModule||'orbit');
     state.panelBody.querySelector('[data-settings-action="intro"]').addEventListener('click', () => {
       const url = new URL(ORBIT_URL, location.origin);
       url.searchParams.set('intro', '1');
