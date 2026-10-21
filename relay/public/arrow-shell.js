@@ -1865,7 +1865,7 @@
         '<header class="arrow-os-settings-intro">' +
           '<span class="arrow-os-section-label">ARROW / PREFERENCES</span>' +
           '<h3>Make ARROW yours.</h3>' +
-          '<p>Your system, account, privacy and accessibility controls in one place.</p>' +
+          '<p>Preferences on this device include appearance, links and focus. Tasks, notes, calendar and plans are saved to your account.</p>' +
           '<div class="arrow-os-settings-summary"><span>' + escapeHtml(identity) + '</span><span>' + capitalize(resolvedTheme) + ' mode</span><span>' + links.length + ' saved links</span></div>' +
         '</header>' +
         '<nav class="arrow-os-settings-quick" aria-label="Common settings">' +
