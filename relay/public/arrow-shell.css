@@ -2703,3 +2703,99 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 @media(prefers-reduced-motion:reduce) {
  .arrow-os-panel[data-panel="appearance"] .arrow-os-color-section button {transition:none!important;}
 }
+
+/* ARROW Beta October 21: appearance is a clear three-stage journey.
+   Prevent the color editor from interrupting the identity preview. */
+.arrow-os-panel[data-panel="appearance"] .arrow-os-panel-body {
+  display:flex;flex-direction:column;align-items:stretch;gap:13px;
+  padding:14px 15px 18px;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-panel-body > .arrow-os-section { flex:none; min-width:0; }
+.arrow-os-panel[data-panel="appearance"] .arrow-os-preview-lab { order:2; }
+.arrow-os-panel[data-panel="appearance"] .arrow-os-color-section { order:3; }
+.arrow-os-panel[data-panel="appearance"] .arrow-os-appearance-advanced { order:4; flex:none; }
+.arrow-os-panel[data-panel="appearance"] .arrow-os-preview-lab .arrow-os-lab-stage {
+  background:var(--lab-bg); min-height:202px;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-color-section {
+  margin-top:3px!important; border-top:2px solid var(--arrow-design-line)!important;
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-panel-head {
+  flex:0 0 auto; border-bottom:1px solid var(--arrow-design-line); background:var(--arrow-design-surface);
+}
+.arrow-os-panel[data-panel="appearance"] .arrow-os-section-label { font-weight:760; }
+.arrow-os-panel[data-panel="appearance"] .arrow-os-adapt-help { max-width:65ch; }
+
+/* Bloom compact sidebar must collapse the real rail and its layout gutter.
+   The existing bottom rail toggle still expands it by user choice. */
+@media (min-width:768px) {
+  :root[data-arrow-adapt="bloom"] .relay-app-shell[data-dock-collapsed="true"] {padding-left:4rem!important;}
+  :root[data-arrow-adapt="bloom"] .relay-app-shell[data-dock-collapsed="true"] .relay-desktop-dock:not(.relay-particle-geometry-proxy) {
+    width:4rem!important; min-width:4rem!important; max-width:4rem!important;
+    padding-inline:.5rem!important; overflow-x:hidden;
+  }
+  :root[data-arrow-adapt="bloom"] .relay-app-shell[data-dock-collapsed="true"] .relay-dock-link {
+    justify-content:center!important; padding-inline:0!important; gap:0!important;
+  }
+  :root[data-arrow-adapt="bloom"] .relay-app-shell[data-dock-collapsed="true"] .relay-brand-lockup { justify-content:center!important; padding-inline:0!important; }
+  :root[data-arrow-adapt="bloom"] .relay-app-shell[data-dock-collapsed="true"] :is(.relay-dock-link,.relay-brand-lockup)>span:last-child {
+    max-width:0!important; width:0!important; opacity:0!important; overflow:hidden!important;
+  }
+  :root[data-arrow-adapt="bloom"] .relay-particle-geometry-proxy[data-dock-collapsed="true"] {width:4rem!important;}
+  :root[data-arrow-adapt="bloom"] .beta-experience:has(.relay-app-shell[data-dock-collapsed="true"]) { --beta-rail:64px; }
+}
+
+/* Explicit light-mode contrast and paper surfaces. Alpha blended glass made
+   cards, form fields, and borders disappear against the light canvas. */
+:root[data-arrow-theme="light"] {
+  --canvas:255 255 255; --surface:247 249 251; --surface-raised:255 255 255;
+  --ink:24 34 45; --ink-muted:76 88 101; --ink-faint:99 111 124; --border:203 212 221;
+  color-scheme:light;
+}
+:root[data-arrow-theme="light"] .beta-experience .relay-mobile-main {
+  background:#fff!important; color:rgb(var(--ink));
+  border-color:#d2dbe2!important;
+}
+:root[data-arrow-theme="light"] .beta-experience .relay-desktop-dock:not(.relay-particle-geometry-proxy) {
+  background:#f7fafb!important; border-color:#d2dbe2!important;
+}
+:root[data-arrow-theme="light"] .beta-experience .relay-app-header {
+  background:#fff!important; border-color:#d2dbe2!important;
+}
+:root[data-arrow-theme="light"] .relay-app-shell :is(.bg-surface,.bg-surface-raised,.bg-canvas) { color:rgb(var(--ink)); }
+:root[data-arrow-theme="light"] .relay-app-shell :is(input,textarea,select) {
+  color:rgb(var(--ink)); caret-color:rgb(var(--ink));
+}
+:root[data-arrow-theme="light"] .relay-app-shell :is(input,textarea)::placeholder {
+  color:#6b7887!important; opacity:1;
+}
+:root[data-arrow-theme="light"] .relay-app-shell .relay-dock-link {color:#4b5967;}
+:root[data-arrow-theme="light"] .relay-app-shell .relay-dock-link[aria-current="page"] {
+  background:#e3efec!important; color:#285c53!important; border-color:#c7dcd5!important;
+}
+:root[data-arrow-theme="light"] .arrow-os-panel,
+:root[data-arrow-theme="light"] .arrow-os-panel[data-panel="appearance"] {
+  --arrow-design-fg:#182b36; --arrow-design-muted:#485d6a;
+  --arrow-design-line:#c4d1d7; --arrow-design-surface:#fff;
+  --arrow-os-bg:255 255 255; --arrow-os-fg:24 37 47;
+  color:#182b36; background:#fff!important;
+}
+:root[data-arrow-theme="light"] .arrow-os-panel .arrow-os-section,
+:root[data-arrow-theme="light"] .arrow-os-panel .arrow-os-color-section {
+  color:#182b36;
+}
+:root[data-arrow-theme="light"] .arrow-os-panel :is(input,textarea,select) {
+  background:#fff; color:#182b36; border-color:#b9c9d1;
+}
+:root[data-arrow-theme="light"] .arrow-os-panel .arrow-os-adapt-help,
+:root[data-arrow-theme="light"] .arrow-os-panel .arrow-os-color-head small {
+  color:#536774;
+}
+/* Atelier gets genuine solid panels in both modes, not nearly-transparent cards. */
+:root[data-arrow-adapt="atelier"] .arrow-os-panel :is(.arrow-os-section,.arrow-os-color-section,.arrow-os-lab-stage) {
+  backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+  background:var(--arrow-design-surface)!important;
+}
+@media(max-width:650px) {
+  .arrow-os-panel[data-panel="appearance"] .arrow-os-panel-body { padding:10px;gap:10px; }
+}
