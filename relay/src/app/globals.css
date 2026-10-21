@@ -1077,3 +1077,40 @@ html[data-arrow-identity="atelier"] .relay-motion-dashboard-card { box-shadow:no
 html[data-arrow-theme="light"]:not(.dark) .relay-app-shell :is(.bg-surface,.bg-surface-raised) { color:rgb(var(--ink)); }
 html[data-arrow-theme="light"][data-arrow-identity="atelier"]:not(.dark) .relay-app-shell :is(.bg-surface,.bg-surface-raised,.bg-canvas,.relay-motion-dashboard-card) { background:#fffefa !important; color:#1c1c1c; border-color:#cbc6bb; }
 html[data-arrow-identity="atelier"].dark .relay-app-shell :is(.bg-surface,.bg-surface-raised,.bg-canvas,.relay-motion-dashboard-card) { background:#212124 !important; color:#f4f2ec; border-color:#5a595c; }
+
+/* Adapt Bloom: truly compact rail, with no unused 15rem gutter. */
+@media (min-width: 768px) {
+  html[data-arrow-identity="bloom"] .relay-app-shell[data-dock-collapsed="true"] {
+    padding-left: 4rem !important;
+  }
+  html[data-arrow-identity="bloom"] .relay-app-shell[data-dock-collapsed="true"] .relay-desktop-dock:not(.relay-particle-geometry-proxy) {
+    width: 4rem !important;
+    min-width: 4rem !important;
+    max-width: 4rem !important;
+    padding-left: .5rem !important;
+    padding-right: .5rem !important;
+    overflow-x: hidden;
+  }
+  html[data-arrow-identity="bloom"] .relay-app-shell[data-dock-collapsed="true"] .relay-dock-link {
+    justify-content: center !important;
+    gap: 0 !important;
+    padding-inline: 0 !important;
+  }
+  html[data-arrow-identity="bloom"] .relay-app-shell[data-dock-collapsed="true"] .relay-brand-lockup {
+    justify-content: center !important;
+    padding-inline: 0 !important;
+  }
+  html[data-arrow-identity="bloom"] .relay-app-shell[data-dock-collapsed="true"] :is(.relay-dock-link,.relay-brand-lockup) > span:last-child {
+    max-width: 0 !important;
+    width: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+  }
+  html[data-arrow-identity="bloom"] .relay-particle-geometry-proxy[data-dock-collapsed="true"] {
+    width: 4rem !important;
+  }
+  html[data-arrow-identity="bloom"] .beta-experience:has(.relay-app-shell[data-dock-collapsed="true"]) {
+    --beta-rail: 64px;
+  }
+}
+/* Never apply the desktop rail override to the mobile bottom bar. */
