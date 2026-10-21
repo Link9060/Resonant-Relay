@@ -2876,3 +2876,16 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
   .arrow-os-settings-quick small { font-size:10px; }
   .arrow-os-settings-intro,.arrow-os-settings-group { padding:12px; }
 }
+
+/* Owner preview must not sit on top of Orbit's bottom destination rail. */
+@media(min-width:768px) {
+  body:has(.orbit-app) .arrow-role-preview {
+    bottom:108px;
+    max-width:min(480px,calc(100vw - 40px));
+  }
+}
+@media(max-width:767px) {
+  body:has(.orbit-app) .arrow-role-preview {
+    bottom:max(92px,calc(env(safe-area-inset-bottom) + 92px));
+  }
+}
