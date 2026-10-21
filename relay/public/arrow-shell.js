@@ -682,7 +682,7 @@
     const offsetLeft = viewport?.offsetLeft || 0;
     const offsetTop = viewport?.offsetTop || 0;
     const margin = 12;
-    const width = Math.max(0, Math.min(430, availableWidth - margin * 2));
+    const width = Math.max(0, Math.min(panel.dataset.panel === 'appearance' ? 540 : 430, availableWidth - margin * 2));
     const left = Math.max(offsetLeft + margin, Math.min((rect?.right || offsetLeft + availableWidth - margin) - width, offsetLeft + availableWidth - width - margin));
     const top = Math.max(offsetTop + margin, Math.min((rect?.bottom || offsetTop + 50) + 8, offsetTop + availableHeight - Math.min(240, availableHeight - margin * 2) - margin));
     panel.style.left = left + 'px';
@@ -709,6 +709,7 @@
     positionPanel(state.panelAnchor || anchor || document.querySelector('.arrow-os-trigger'));
     updateHostTheme();
     renderPanel(name);
+    state.panelBody.scrollTop = 0;
 
     state.instances.forEach(instance => {
       instance.pinned = false;
@@ -718,7 +719,7 @@
     });
 
     requestAnimationFrame(() => {
-      panel.querySelector('input, textarea, button:not(.arrow-os-panel-close), a[href]')?.focus({ preventScroll: true });
+      (name === 'appearance' ? panel.querySelector('[data-theme-choice].is-active') : panel.querySelector('input, textarea, button:not(.arrow-os-panel-close), a[href]'))?.focus({ preventScroll: true });
     });
   }
 
@@ -1738,21 +1739,32 @@
     const accent = getAccentChoice(currentIdentity);
     state.panelBody.innerHTML =
       '<div class="arrow-os-section">' +
-        '<span class="arrow-os-section-label">APPEARANCE · ARROW-WIDE</span>' +
+        '<span class="arrow-os-section-label">1 / LIGHT & DARK MODE</span>' +
         '<small class="arrow-os-adapt-help">One appearance setting applies across Orbit, Relay, RAVIN, Atlas and Waypoint.</small>' +
         '<div class="arrow-os-segmented arrow-os-theme-choice">' +
           ['system','light','dark'].map(value => '<button type="button" data-theme-choice="' + value + '" class="' + (theme === value ? 'is-active' : '') + '">' + capitalize(value) + '</button>').join('') +
         '</div>' +
       '</div>' +
       '<div class="arrow-os-section arrow-os-preview-lab" data-adapt-preview-lab>' +
-        '<span class="arrow-os-section-label">IDENTITY · PICK ONE</span>' +
+        '<span class="arrow-os-section-label">2 / IDENTITY & LIVE PREVIEW</span>' +
         '<small class="arrow-os-adapt-help">Preview any identity, then select Use to apply it everywhere. Your data stays the same.</small>' +
         '<div class="arrow-os-lab-controls" role="group" aria-label="Preview an ARROW identity">' +
           ADAPT_CHOICES.map(([value,label]) => '<button type="button" data-adapt-preview-choice="' + value + '">' + label + '</button>').join('') +
         '</div>' +
+
+        '<div class="arrow-os-lab-surface-switch" role="group" aria-label="Preview surface">' +
+          '<button type="button" data-adapt-preview-surface="home" aria-pressed="true">Home</button>' +
+          '<button type="button" data-adapt-preview-surface="conversation">Messaging</button>' +
+        '</div>' +
+        '<div class="arrow-os-lab-stage" data-adapt-preview-stage aria-label="Sample ARROW interface preview"></div>' +
+        '<div class="arrow-os-lab-actions">' +
+          '<button type="button" data-adapt-preview-apply>Use this identity</button>' +
+        '</div>' +
+        '<small class="arrow-os-adapt-help">Sample only. The preview follows the light/dark selection above.</small>' +
+      '</div>' +
       '<section class="arrow-os-section arrow-os-color-section" aria-label="Customize colors">' +
         '<div class="arrow-os-color-head">' +
-          '<span class="arrow-os-section-label">COLORS · ' + escapeHtml(currentIdentity.toUpperCase()) + '</span>' +
+          '<span class="arrow-os-section-label">3 / OPTIONAL COLORS · ' + escapeHtml(currentIdentity.toUpperCase()) + '</span>' +
           '<small>Saved separately for each identity</small>' +
         '</div>' +
         '<div class="arrow-os-accents arrow-os-palette-grid" role="group" aria-label="Color palettes for ' + escapeAttr(capitalize(currentIdentity)) + '">' +
@@ -1771,16 +1783,6 @@
         '</div>' +
         '<small class="arrow-os-adapt-help" id="arrow-os-hex-help">Colors apply to the active identity shown above. Choose Use to switch identities before customizing another. Changes apply across ARROW immediately.</small>' +
       '</section>' +
-        '<div class="arrow-os-lab-surface-switch" role="group" aria-label="Preview surface">' +
-          '<button type="button" data-adapt-preview-surface="home" aria-pressed="true">Home</button>' +
-          '<button type="button" data-adapt-preview-surface="conversation">Messaging</button>' +
-        '</div>' +
-        '<div class="arrow-os-lab-stage" data-adapt-preview-stage aria-label="Sample ARROW interface preview"></div>' +
-        '<div class="arrow-os-lab-actions">' +
-          '<button type="button" data-adapt-preview-apply>Use this identity</button>' +
-        '</div>' +
-        '<small class="arrow-os-adapt-help">Sample only. The preview follows the light/dark selection above.</small>' +
-      '</div>' +
       '<details class="arrow-os-appearance-advanced">' +
         '<summary>More options <span>Motion</span></summary>' +
       '<div class="arrow-os-section">' +
