@@ -70,6 +70,33 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [previewRole, setPreviewRoleState] = useState<AppRole>('user');
   const dockCollapsed = useSyncExternalStore(subscribeDockCollapsed, getDockCollapsedSnapshot, getServerDockCollapsedSnapshot);
 
+  // Bloom's rounded icon rail is compact by default. The existing expand button
+  // continues to work, so users can manually open it when they need labels.
+  useEffect(() => {
+    let previousIdentity = '';
+    const syncBloomDock = () => {
+      let identity = document.documentElement.dataset.arrowIdentity || '';
+      if (!identity) {
+        try { identity = window.localStorage.getItem('arrow_adapt_identity_v1') || 'core'; }
+        catch { identity = 'core'; }
+      }
+      if (identity === previousIdentity) return;
+      previousIdentity = identity;
+      if (identity !== 'bloom') return;
+      try {
+        window.localStorage.setItem(DOCK_COLLAPSED_KEY, '1');
+        window.dispatchEvent(new Event(DOCK_COLLAPSED_EVENT));
+      } catch { /* Private-mode storage may be unavailable. */ }
+    };
+    syncBloomDock();
+    window.addEventListener('arrow:identitychange', syncBloomDock);
+    window.addEventListener('storage', syncBloomDock);
+    return () => {
+      window.removeEventListener('arrow:identitychange', syncBloomDock);
+      window.removeEventListener('storage', syncBloomDock);
+    };
+  }, []);
+
   useEffect(() => {
     let active = true;
     const supabase = createClient() as any;
