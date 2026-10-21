@@ -58,3 +58,26 @@ test('Bloom beta sidebar collapses to an icon rail without a full-width gutter',
   assert.ok(styles.includes('data-arrow-adapt="bloom"] .relay-app-shell[data-dock-collapsed="true"]'));
   assert.match(styles, /padding-left:4rem!important/);
 });
+
+test('shared ARROW Settings groups common actions, account, workspace, privacy and help', () => {
+  const shell = fs.readFileSync('public/arrow-shell.js', 'utf8');
+  const start = shell.indexOf('function renderSettings()');
+  const end = shell.indexOf('function exportData()', start);
+  assert.ok(start > 0 && end > start);
+  const settings = shell.slice(start, end);
+  for (const label of ['Make ARROW yours.', 'Account & device', 'Workspace', 'Privacy, data & advanced', 'Help & releases']) {
+    assert.ok(settings.includes(label), 'Missing Settings section: ' + label);
+  }
+  for (const action of ['data-settings-open-appearance', 'data-open-notifications', 'data-settings-open-links',
+    'data-settings-open-focus', 'data-settings-action="export"', 'data-settings-action="import"',
+    'data-settings-action="reset"', 'data-settings-action="signout"']) {
+    assert.ok(settings.includes(action), 'Missing Settings action: ' + action);
+  }
+  assert.match(settings, /arrow-os-settings-more/);
+  assert.ok(settings.indexOf('Account & device') < settings.indexOf('Privacy, data & advanced'));
+});
+
+test('integrated Orbit release pins the corrected light-mode world', () => {
+  const pins = JSON.parse(fs.readFileSync('scripts/arrow-beta-centers.json', 'utf8'));
+  assert.equal(pins['Resonant-Orbit'], 'f68b683150f427fa7855f3ea0b7fc8390944ae2a');
+});
