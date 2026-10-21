@@ -32,3 +32,29 @@ test('Relay profile retains account, layout and particle controls without redund
   for (const control of ['ParticleControls', 'LayoutControls', 'AccountAccess']) assert.ok(profile.includes('<' + control));
   assert.match(profile, /Open ARROW Appearance/);
 });
+
+test('ARROW beta Appearance follows theme, preview/apply, then optional color', () => {
+  const shell = fs.readFileSync('public/arrow-shell.js', 'utf8');
+  const start = shell.indexOf('function renderAppearance()');
+  const end = shell.indexOf('function renderSettings()', start);
+  assert.ok(start > 0 && end > start, 'shared beta appearance renderer exists');
+  const renderer = shell.slice(start, end);
+  const theme = renderer.indexOf('arrow-os-theme-choice');
+  const preview = renderer.indexOf('data-adapt-preview-stage');
+  const apply = renderer.indexOf('data-adapt-preview-apply');
+  const color = renderer.indexOf('arrow-os-color-section');
+  assert.ok(theme > 0 && theme < preview, 'theme precedes the preview');
+  assert.ok(preview < apply && apply < color, 'apply precedes optional color controls');
+  assert.match(renderer, /data-custom-hex/, 'custom HEX control remains available');
+  assert.match(shell, /state\.panelBody\.scrollTop = 0/, 'reopening appearance begins at the top');
+});
+
+test('Bloom beta sidebar collapses to an icon rail without a full-width gutter', () => {
+  const shellLayout = fs.readFileSync('src/app/(app)/layout.tsx', 'utf8');
+  const styles = fs.readFileSync('public/arrow-shell.css', 'utf8');
+  assert.match(shellLayout, /arrow:adaptchange/);
+  assert.match(shellLayout, /arrow_os_adapt_v1/);
+  assert.match(shellLayout, /DOCK_COLLAPSED_KEY, '1'/);
+  assert.match(styles, /data-arrow-adapt="bloom"[\\s\\S]*?data-dock-collapsed="true"/);
+  assert.match(styles, /padding-left:4rem!important/);
+});
