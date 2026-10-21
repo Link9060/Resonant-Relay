@@ -72,6 +72,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [previewRole, setPreviewRoleState] = useState<AppRole>('user');
   const dockCollapsed = useSyncExternalStore(subscribeDockCollapsed, getDockCollapsedSnapshot, getServerDockCollapsedSnapshot);
 
+  // ARROW Bloom starts in the compact icon rail, preserving the manual Expand control.
+  useEffect(() => {
+    let lastIdentity = '';
+    const syncDockForIdentity = () => {
+      let identity = document.documentElement.dataset.arrowAdapt || '';
+      if (!identity) {
+        try { identity = window.localStorage.getItem('arrow_os_adapt_v1') || 'core'; }
+        catch { identity = 'core'; }
+      }
+      if (identity === lastIdentity) return;
+      lastIdentity = identity;
+      if (identity !== 'bloom') return;
+      try {
+        window.localStorage.setItem(DOCK_COLLAPSED_KEY, '1');
+        window.dispatchEvent(new Event(DOCK_COLLAPSED_EVENT));
+      } catch { /* Storage may be unavailable. */ }
+    };
+    syncDockForIdentity();
+    window.addEventListener('arrow:adaptchange', syncDockForIdentity);
+    window.addEventListener('storage', syncDockForIdentity);
+    return () => {
+      window.removeEventListener('arrow:adaptchange', syncDockForIdentity);
+      window.removeEventListener('storage', syncDockForIdentity);
+    };
+  }, []);
+
   useEffect(() => {
     let active = true;
     const supabase = createClient() as any;
