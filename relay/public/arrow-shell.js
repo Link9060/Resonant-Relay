@@ -682,7 +682,7 @@
     const offsetLeft = viewport?.offsetLeft || 0;
     const offsetTop = viewport?.offsetTop || 0;
     const margin = 12;
-    const width = Math.max(0, Math.min(panel.dataset.panel === 'appearance' ? 540 : 430, availableWidth - margin * 2));
+    const width = Math.max(0, Math.min(panel.dataset?.panel === 'appearance' ? 540 : 430, availableWidth - margin * 2));
     const left = Math.max(offsetLeft + margin, Math.min((rect?.right || offsetLeft + availableWidth - margin) - width, offsetLeft + availableWidth - width - margin));
     const top = Math.max(offsetTop + margin, Math.min((rect?.bottom || offsetTop + 50) + 8, offsetTop + availableHeight - Math.min(240, availableHeight - margin * 2) - margin));
     panel.style.left = left + 'px';
@@ -709,7 +709,7 @@
     positionPanel(state.panelAnchor || anchor || document.querySelector('.arrow-os-trigger'));
     updateHostTheme();
     renderPanel(name);
-    state.panelBody.scrollTop = 0;
+    if (state.panelBody) state.panelBody.scrollTop = 0;
 
     state.instances.forEach(instance => {
       instance.pinned = false;
