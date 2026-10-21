@@ -55,6 +55,6 @@ test('Bloom beta sidebar collapses to an icon rail without a full-width gutter',
   assert.match(shellLayout, /arrow:adaptchange/);
   assert.match(shellLayout, /arrow_os_adapt_v1/);
   assert.match(shellLayout, /DOCK_COLLAPSED_KEY, '1'/);
-  assert.match(styles, /data-arrow-adapt="bloom"[\\s\\S]*?data-dock-collapsed="true"/);
+  assert.ok(styles.includes('data-arrow-adapt="bloom"] .relay-app-shell[data-dock-collapsed="true"]'));
   assert.match(styles, /padding-left:4rem!important/);
 });
