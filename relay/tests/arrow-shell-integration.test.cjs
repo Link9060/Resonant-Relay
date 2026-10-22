@@ -79,5 +79,5 @@ test('shared ARROW Settings groups common actions, account, workspace, privacy a
 
 test('integrated Orbit release pins the corrected light-mode world', () => {
   const pins = JSON.parse(fs.readFileSync('scripts/arrow-beta-centers.json', 'utf8'));
-  assert.equal(pins['Resonant-Orbit'], 'f68b683150f427fa7855f3ea0b7fc8390944ae2a');
+  assert.equal(pins['Resonant-Orbit'], '7eef207b6a1a130b6ea3936c4ec9254d29c4c7e9');
 });
