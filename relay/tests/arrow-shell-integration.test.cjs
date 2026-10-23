@@ -82,3 +82,15 @@ test('integrated Orbit release pins the corrected light-mode world', () => {
   assert.match(pins['Resonant-Orbit'], /^[0-9a-f]{40}$/, 'Orbit must be pinned to a full commit SHA');
   assert.notEqual(pins['Resonant-Orbit'], 'f68b683150f427fa7855f3ea0b7fc8390944ae2a', 'do not ship the old invisible-dots revision');
 });
+
+test('light mode keeps the beta black-hole event horizon dark', () => {
+  const styles = fs.readFileSync('public/arrow-shell.css', 'utf8');
+  const start = styles.indexOf('/* Massive cinematic black-hole return');
+  const end = styles.indexOf('/* Orbit -> center', start);
+  assert.ok(start > 0 && end > start, 'black-hole transition styles are present');
+  const blackHole = styles.slice(start, end);
+  assert.match(blackHole, /\.arrow-os-blackhole-core\s*\{[^}]*background:\s*#000;/s);
+  assert.match(blackHole, /100%\s*\{\s*background:\s*#000;\s*\}/);
+  assert.match(blackHole, /\.arrow-os-gravity-vignette\s*\{[^}]*#000 100%/s);
+  assert.doesNotMatch(blackHole, /var\(--ui-surface\)/, 'light theme must not whiten the event horizon');
+});
