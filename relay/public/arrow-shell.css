@@ -2891,3 +2891,26 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
     bottom:max(92px,calc(env(safe-area-inset-bottom) + 92px));
   }
 }
+
+/* ARROW beta palette foundation: backgrounds, not just buttons, react to each
+   non-Core identity's chosen color. Shared neutral material avoids the
+   fixed cream/pink/green surfaces clashing with custom burgundy, blue, etc. */
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"])[data-arrow-theme="light"] {
+  --arrow-design-bg:color-mix(in srgb,var(--arrow-adapt-primary,#72849b) 10%,#f8fafb);
+  --arrow-design-surface:color-mix(in srgb,var(--arrow-adapt-primary,#72849b) 4%,#fff);
+  --arrow-design-surface-alt:color-mix(in srgb,var(--arrow-adapt-primary,#72849b) 7%,#f2f5f8);
+  --arrow-design-line:color-mix(in srgb,var(--arrow-adapt-primary,#72849b) 24%,#dce2e8);
+}
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"])[data-arrow-theme="dark"] {
+  --arrow-design-bg:color-mix(in srgb,var(--arrow-adapt-primary,#72849b) 10%,#111318);
+  --arrow-design-surface:color-mix(in srgb,var(--arrow-adapt-primary,#72849b) 11%,#22262d);
+  --arrow-design-surface-alt:color-mix(in srgb,var(--arrow-adapt-primary,#72849b) 13%,#292f37);
+  --arrow-design-line:color-mix(in srgb,var(--arrow-adapt-primary,#72849b) 25%,#424852);
+}
+:root[data-arrow-adapt]:not([data-arrow-adapt="core"]) .beta-experience {
+  background-color:var(--arrow-design-bg)!important;
+  transition:background-color 220ms ease;
+}
+:root[data-arrow-motion="reduce"][data-arrow-adapt] .beta-experience {
+  transition:none!important;
+}
