@@ -113,13 +113,14 @@ test('Relay switches actual desktop navigation architecture in Atelier',()=>{
  assert.match(css,/padding-top:76px/);
  assert.match(css,/relay-mobile-nav/);
 });
-test('Orbit has distinct home hero markup for four identities',{skip:!process.env.ARROW_ORBIT_SOURCE},()=>{
+test('Orbit uses a single clear Dashboard heading while preserving distinct identity layouts',{skip:!process.env.ARROW_ORBIT_SOURCE},()=>{
  const jsx=from('ARROW_ORBIT_SOURCE','src/components/orbit-dashboard.tsx');
  const css=from('ARROW_ORBIT_SOURCE','src/app/adapt.css');
  for(const id of ['bloom','haven','atelier','pulse']){
-  assert.ok(jsx.includes('adapt-intro-'+id),id+' missing masthead');
   assert.ok(css.includes('data-orbit-adapt="'+id+'"'),id+' missing screen layout');
  }
+ assert.match(jsx,/<h1>Dashboard<\/h1>/);
+ assert.doesNotMatch(jsx,/className="adapt-identity-intro"/);
  assert.match(css,/adapt-view-switch/);
  assert.match(jsx,/OrbitWidgetStudio/);
 });
