@@ -777,6 +777,8 @@ html.dark, :root[data-theme="dark"], :root[data-arrow-theme="dark"] {
   }
 }
 
+/* Keep the event horizon and collapse backdrop genuinely black in every theme.
+   --ui-surface becomes white in light mode and must never color the singularity. */
 /* Massive cinematic black-hole return ---------------------------------- */
 
 .arrow-os-blackhole-departure {
@@ -789,7 +791,7 @@ html.dark, :root[data-theme="dark"], :root[data-arrow-theme="dark"] {
   inset: -12%;
   z-index: 1;
   background:
-    radial-gradient(circle at center, transparent 0 23%, rgba(0,0,0,.08) 38%, rgba(0,0,0,.62) 68%, rgb(var(--ui-surface) / 1) 100%);
+    radial-gradient(circle at center, transparent 0 23%, rgba(0,0,0,.08) 38%, rgba(0,0,0,.62) 68%, #000 100%);
   opacity: 0;
   animation: arrow-os-gravity-vignette 1380ms ease both;
 }
@@ -918,7 +920,7 @@ html.dark, :root[data-theme="dark"], :root[data-arrow-theme="dark"] {
   margin-left: calc(min(20vw,238px) / -2);
   margin-top: calc(min(20vw,238px) / -2);
   border-radius: 50%;
-  background: rgb(var(--ui-surface) / 1);
+  background: #000;
   box-shadow:
     0 0 0 2px rgba(255,255,255,.26),
     0 0 22px 8px rgba(255,255,255,.22),
@@ -935,7 +937,7 @@ html.dark, :root[data-theme="dark"], :root[data-arrow-theme="dark"] {
   0%,28% { background: rgba(0,0,0,0); }
   58% { background: rgba(0,0,0,.12); }
   82% { background: rgba(0,0,0,.78); }
-  100% { background: rgb(var(--ui-surface) / 1); }
+  100% { background: #000; }
 }
 
 @keyframes arrow-os-gravity-vignette {
