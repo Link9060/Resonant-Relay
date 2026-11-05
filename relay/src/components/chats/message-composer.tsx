@@ -67,6 +67,48 @@ export function MessageComposer({ conversationId, onTypingChange, replyTo, reply
     stopTypingTimer.current = setTimeout(() => onTypingChange?.(false), 2200);
   }
 
+  useEffect(() => {
+    // Only the active, writable conversation can capture un-focused typing.
+    // Other text fields, editor surfaces, dialogs and OS/browser shortcuts win.
+    if (canSend !== true || isPending) return;
+
+    const onGlobalKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.isComposing ||
+          event.ctrlKey || event.metaKey || event.altKey ||
+          event.key.length !== 1) return;
+
+      const input = inputRef.current;
+      if (!input || input.disabled || !input.isConnected) return;
+
+      const target = event.target;
+      if (target instanceof Element && target.closest(
+        'input,textarea,select,[contenteditable=""],[contenteditable="true"],' +
+        '[role="textbox"],[role="searchbox"],[role="combobox"]'
+      )) return;
+      if (target instanceof HTMLElement && target.isContentEditable) return;
+
+      // Don't type into a conversation while a modal is being used.
+      if (document.querySelector('dialog[open],[role="dialog"][aria-modal="true"],' +
+        '[role="alertdialog"],[aria-modal="true"]')) return;
+
+      // Space activates a focused button or link for keyboard accessibility.
+      if (event.key === ' ' && target instanceof Element &&
+          target.closest('button,a[href],[role="button"],summary')) return;
+
+      if (value.length >= MAX_MESSAGE_LENGTH) return;
+
+      event.preventDefault();
+      const nextValue = value + event.key;
+      input.focus({ preventScroll: true });
+      input.setSelectionRange(input.value.length, input.value.length);
+      setValue(nextValue);
+      signalTyping(nextValue);
+    };
+
+    window.addEventListener('keydown', onGlobalKeyDown, true);
+    return () => window.removeEventListener('keydown', onGlobalKeyDown, true);
+  }, [canSend, isPending, value, onTypingChange]);
+
   function handleSend() {
     if (canSend === false) return;
     const body = value.trim();
