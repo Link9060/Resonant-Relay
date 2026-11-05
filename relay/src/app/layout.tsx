@@ -11,7 +11,6 @@ import './vivid-single-hue.css';
 import './experience-layout-safety.css';
 import './desktop-layouts.css';
 import './still-minimal.css';
-import './global-shortcuts.css';
 import './dashboard-editor.css';
 import './dashboard-widgets.css';
 import './startup-safety.css';
