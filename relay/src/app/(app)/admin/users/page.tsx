@@ -175,12 +175,12 @@ export default function StaffUsersPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-7 md:px-6 md:py-8">
+    <div className="mx-auto w-full min-w-0 max-w-6xl px-3 py-5 sm:px-4 md:px-6 md:py-7">
       <StaffControlHeader role={role} active="users" />
       {error && <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm text-ink">{error}</div>}
 
-      <div className="mt-6 grid min-h-[560px] gap-4 lg:grid-cols-[minmax(300px,.72fr)_minmax(0,1.28fr)]">
-        <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+      <div className="mt-5 grid min-w-0 gap-4 xl:grid-cols-[minmax(260px,.72fr)_minmax(0,1.28fr)]">
+        <section className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface">
           <div className="border-b border-border p-4">
             <div className="text-sm font-semibold text-ink">Account directory</div>
             <div className="mt-1 text-xs text-ink-muted">{users.length} Relay accounts · {betaTesters.length} approved Beta testers.</div>
@@ -207,7 +207,7 @@ export default function StaffUsersPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
+        <section className="min-w-0 overflow-hidden rounded-xl border border-border bg-surface p-4 sm:p-5">
           {!selected ? (
             <div className="flex min-h-80 items-center justify-center text-sm text-ink-muted">Select an account to inspect.</div>
           ) : (
