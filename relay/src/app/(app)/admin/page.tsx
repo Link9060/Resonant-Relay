@@ -149,7 +149,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-7 md:px-6 md:py-8">
+    <div className="mx-auto w-full min-w-0 max-w-6xl px-3 py-5 sm:px-4 md:px-6 md:py-7">
       <StaffControlHeader role={role} active="overview" />
       {error && <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm text-ink">{error}</div>}
       <OverviewSection role={role} stats={stats} users={users} reports={reports} auditLog={auditLog} openReports={openReports} />
@@ -209,7 +209,7 @@ function OverviewSection({
         ))}
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+      <div className="mt-5 grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(270px,.75fr)]">
         <div className="rounded-2xl border border-border bg-surface p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
