@@ -23,10 +23,10 @@ export function StaffControlHeader({ role, active }: { role: StaffRole; active: 
 
   return (
     <>
-      <section className="relative overflow-hidden rounded-2xl border border-border bg-surface p-5 sm:p-6">
+      <section className="relative w-full min-w-0 overflow-hidden rounded-xl border border-border bg-surface p-4 sm:p-5">
         {IS_BETA ? <InteractiveGrid /> : <div className="pointer-events-none absolute inset-0 opacity-[0.035] [background-image:linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] [background-size:28px_28px]" />}
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <div className="relative flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0 flex-1">
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-canvas px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink">
                 <span aria-hidden="true">{roleCopy.mark}</span>
@@ -47,8 +47,8 @@ export function StaffControlHeader({ role, active }: { role: StaffRole; active: 
             </p>
           </div>
 
-          <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-            <div className="rounded-xl border border-border bg-canvas/80 px-4 py-3 text-left sm:text-right">
+          <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center lg:flex-col lg:items-end">
+            <div className="min-w-0 rounded-lg border border-border bg-canvas/80 px-3 py-2 text-left lg:text-right">
               <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Access level</div>
               <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-ink sm:justify-end">
                 <ShieldCheck size={15} />
@@ -68,7 +68,7 @@ export function StaffControlHeader({ role, active }: { role: StaffRole; active: 
         </div>
       </section>
 
-      <nav aria-label="Control Center" className="mt-4 overflow-x-auto rounded-xl border border-border bg-surface p-1.5">
+      <nav aria-label="Control Center" className="mt-3 w-full max-w-full overflow-x-auto rounded-lg border border-border bg-surface p-1.5">
         <div className="flex min-w-max gap-1">
           {visibleItems.map((item) => {
             const Icon = item.icon;
