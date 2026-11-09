@@ -1114,3 +1114,50 @@ html[data-arrow-identity="atelier"].dark .relay-app-shell :is(.bg-surface,.bg-su
   }
 }
 /* Never apply the desktop rail override to the mobile bottom bar. */
+
+
+/* ARROW appearance is the canonical cross-module light/dark setting. In
+   transient navigation and hydration states the legacy .dark class can lag
+   behind data-arrow-theme; these semantic tokens prevent mixed-mode surfaces. */
+html[data-arrow-theme="light"] {
+  --canvas:255 255 255;
+  --surface:250 250 250;
+  --surface-raised:255 255 255;
+  --ink:17 17 17;
+  --ink-muted:91 91 98;
+  --ink-faint:112 112 122;
+  --border:218 218 223;
+  --accent:37 99 235;
+  color-scheme:light;
+}
+html[data-arrow-theme="dark"] {
+  --canvas:10 10 11;
+  --surface:18 18 20;
+  --surface-raised:26 26 29;
+  --ink:245 245 246;
+  --ink-muted:174 174 184;
+  --ink-faint:127 127 136;
+  --border:55 55 60;
+  --accent:96 165 250;
+  color-scheme:dark;
+}
+html[data-arrow-theme="light"][data-arrow-identity="atelier"] .relay-app-shell :is(.bg-surface,.bg-surface-raised,.bg-canvas,.relay-motion-dashboard-card) {
+  background:#fffefa !important;
+  background-image:none !important;
+  color:#1c1c1c;
+  border-color:#cbc6bb;
+}
+html[data-arrow-theme="dark"][data-arrow-identity="atelier"] .relay-app-shell :is(.bg-surface,.bg-surface-raised,.bg-canvas,.relay-motion-dashboard-card) {
+  background:#212124 !important;
+  background-image:none !important;
+  color:#f4f2ec;
+  border-color:#5a595c;
+}
+html[data-arrow-theme="light"] .relay-popover,
+html[data-arrow-theme="light"] .relay-experience-popover {
+  color-scheme:light;
+}
+html[data-arrow-theme="dark"] .relay-popover,
+html[data-arrow-theme="dark"] .relay-experience-popover {
+  color-scheme:dark;
+}
