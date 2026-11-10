@@ -2914,3 +2914,63 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 :root[data-arrow-motion="reduce"][data-arrow-adapt] .beta-experience {
   transition:none!important;
 }
+
+
+/* ARROW Beta owner workspace: restrained desktop dimensions, full-bleed mobile.
+   This is the integrated beta shell, not the standalone Relay admin page. */
+@media (min-width:761px) {
+  .arrow-os-panel.arrow-staff-page {
+    position:fixed !important;
+    inset:auto !important;
+    top:50% !important;
+    left:50% !important;
+    right:auto !important;
+    bottom:auto !important;
+    transform:translate(-50%,-50%) !important;
+    width:min(1160px,calc(100vw - 40px)) !important;
+    height:min(840px,calc(100dvh - 40px)) !important;
+    max-height:calc(100dvh - 40px) !important;
+    border:1px solid var(--arrow-panel-border) !important;
+    border-radius:18px !important;
+    box-shadow:0 28px 100px #0005 !important;
+    overflow:hidden;
+  }
+  .arrow-staff-workspace { grid-template-columns:220px minmax(0,1fr); }
+  .arrow-staff-nav { padding:20px 12px; }
+  .arrow-staff-content { padding:22px clamp(20px,3vw,40px) 28px; }
+  .arrow-staff-content > * { max-width:1040px; }
+  .arrow-staff-welcome { padding:20px 22px; margin-bottom:22px; }
+  .arrow-staff-welcome h2 { font-size:clamp(22px,2.5vw,29px); }
+  .arrow-staff-metric { padding:14px; }
+  .arrow-staff-page .arrow-staff-metric dd { margin-top:7px; font-size:clamp(22px,2vw,28px); }
+  .arrow-staff-page .arrow-staff-metrics { grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:9px; }
+  .arrow-staff-page .arrow-os-support-row { padding:16px; }
+  .arrow-staff-page .arrow-staff-review > summary { min-height:64px; padding:13px 15px; }
+  .arrow-staff-page .arrow-staff-record-body { padding:16px; }
+}
+@media(max-width:760px) {
+  .arrow-os-panel.arrow-staff-page {
+    position:fixed!important; inset:0!important; transform:none!important;
+    width:100vw!important; height:100dvh!important; max-height:100dvh!important;
+    border:0!important; border-radius:0!important;
+  }
+  .arrow-staff-content,.arrow-staff-workspace,.arrow-staff-workspace>* { min-width:0; max-width:100%; }
+  .arrow-staff-page .arrow-staff-account-tools[open] { grid-template-columns:minmax(0,1fr); }
+  .arrow-staff-page .arrow-staff-account-tools[open]>:is(summary,textarea,details) { grid-column:1; }
+  .arrow-staff-page .arrow-staff-inspector-tabs { width:100%; max-width:100%; overflow-x:auto; }
+  .arrow-staff-page .arrow-staff-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .arrow-staff-page .arrow-staff-metric { min-width:0; padding:12px; }
+  .arrow-staff-page .arrow-staff-metric dd { font-size:22px; overflow-wrap:anywhere; }
+}
+@media(max-width:350px) {
+  .arrow-staff-page .arrow-staff-metrics { grid-template-columns:minmax(0,1fr); }
+}
+/* One constrained dropdown system across Adapt presets and compact panels. */
+.arrow-os-panel :is(select,input,[role="combobox"]) {
+  box-sizing:border-box; min-width:0; max-width:100%;
+}
+.arrow-os-panel :is(.arrow-os-palette-grid,.arrow-os-adapt-grid,.arrow-os-lab-controls,.arrow-os-color-section) {
+  min-width:0; max-width:100%;
+}
+.arrow-os-panel :is(.arrow-os-palette-grid,.arrow-os-adapt-grid) > * { min-width:0; overflow-wrap:anywhere; }
+.arrow-os-panel :is(button,select,input,textarea):focus-visible { outline-offset:2px; }
