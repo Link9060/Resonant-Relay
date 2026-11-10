@@ -51,6 +51,8 @@ jobs:
       - name: Motion regression tests
         run: npm run test:motion
 
+      - name: Verify integrated ARROW beta source and pinned modules
+        run: npm run beta:target
       - name: Build integrated ARROW beta site
         run: node scripts/build-arrow-beta.mjs
 
