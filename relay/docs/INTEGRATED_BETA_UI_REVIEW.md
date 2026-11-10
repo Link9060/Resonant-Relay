@@ -51,7 +51,7 @@ Last prepared: November 10, 2026. **These changes are on review branches only an
 | F: Popovers | Partially addressed | Relay beta appearance/settings and staff forms clamped inside narrow viewport | Real mobile browser still needed |
 | G: Orbit mini-menu | Implemented | Three primary actions and collapsible secondary workspace tools; Connections under Settings | Review discoverability |
 | H: Bloom | Implemented, visual QA pending | Reduced Orbit/Waypoint ornaments, shadows, visual density | Check mobile/desktop |
-| I: Weather | Implemented, functional browser/API QA pending | Existing ZIP lookup now opens keyboard-accessible forecast with current conditions, next 12 hours and seven days | Verify real API and failure states; city-name search and geolocation not added |
+| I: Weather | Implemented, functional browser/API QA pending | ZIP or city lookup, optional browser location request (rounded coordinates), hourly/7-day keyboard-accessible forecast | Verify real API, location denial, and offline/error states |
 | J: Waypoint | Implemented, visual QA pending | Responsive section layouts, typography and accessible navigation without removing active planning functions | Review all six tabs and saved data |
 
 ## Review branch and CI relationships
@@ -61,6 +61,6 @@ Last prepared: November 10, 2026. **These changes are on review branches only an
 - Embedded Waypoint PR: https://github.com/Link9060/Resonant-Waypoint/pull/9 (same pinned beta baseline).
 - Run `npm run beta:target` in Relay to print and verify current module pins and prevent mis-targeted PRs.
 - The integrated `beta-package` job builds Orbit + Waypoint + Atlas + RAVIN at those exact pins and tests shared routing.
-- Orbit Chromium browser regression tests for access and quick locations pass. Waypoint's strict dependency audit passes after upgrading Next.js to **16.4.6** with an npm-generated package lockfile.
+- Orbit Chromium browser regression tests for access, quick locations, dashboard keyboard safety and location-editor keyboard safety run on the pinned branch. Waypoint's strict dependency audit passes after upgrading Next.js to **16.4.6** with an npm-generated package lockfile.
 - No merges to the live `beta` branch without explicit owner approval.
 
