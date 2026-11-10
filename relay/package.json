@@ -8,7 +8,8 @@
     "start": "npx serve@14.2.4 out -l $PORT",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:motion": "node --test tests/*.test.cjs"
+    "test:motion": "node --test tests/*.test.cjs",
+    "beta:target": "node scripts/describe-arrow-beta-target.mjs --verify"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.0",
