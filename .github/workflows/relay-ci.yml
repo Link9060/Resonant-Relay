@@ -51,4 +51,6 @@ jobs:
           cache: npm
           cache-dependency-path: relay/package-lock.json
       - run: npm ci
+      - name: Verify integrated ARROW beta target and module pins
+        run: npm run beta:target
       - run: node scripts/build-arrow-beta.mjs
