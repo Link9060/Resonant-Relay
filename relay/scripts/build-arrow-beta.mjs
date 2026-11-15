@@ -80,7 +80,7 @@ function versionHtml(dir){for(const entry of readdirSync(dir,{withFileTypes:true
   }
 }}
 versionHtml(output);
-writeFileSync(path.join(common,'version.json'),JSON.stringify({centers:manifest,shell:createHash('sha256').update(readFileSync(path.join(common,'arrow-shell.js'))).digest('hex').slice(0,12)},null,2));
+writeFileSync(path.join(common,'version.json'),JSON.stringify({centers:manifest,shell:createHash('sha256').update(readFileSync(path.join(common,'arrow-shell.js'))).digest('hex').slice(0,12),shellCss:createHash('sha256').update(readFileSync(path.join(common,'arrow-shell.css'))).digest('hex').slice(0,12)},null,2));
 writeFileSync(path.join(output,'.nojekyll'),'');
 run(process.execPath,['scripts/validate-arrow-beta-assets.mjs'],relay);
 
