@@ -8,7 +8,7 @@ const postcss=require('postcss');
 
 const source=readFileSync(path.join(__dirname,'../public/arrow-shell.css'),'utf8');
 const stylesheet=postcss.parse(source);
-const mobile=stylesheet.nodes.filter(node=>node.type==='atrule' && node.name==='media' && node.params.includes('max-width: 680px')).at(-1);
+const mobile=stylesheet.nodes.find(node=>node.type==='atrule' && node.name==='media' && node.params.includes('max-width: 680px') && node.nodes?.some(rule=>rule.type==='rule' && rule.selector==='.orbit-app .orbit-shortcuts'));
 assert.ok(mobile,'Expected dedicated mobile Orbit media query');
 
 function declarations(selector){

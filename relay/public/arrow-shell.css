@@ -3115,3 +3115,75 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
     display: none;
   }
 }
+
+
+/* ARROW mobile onboarding: keep the sphere visible as background artwork while
+   the welcome/Enter Orbit action owns the foreground. Interactive world routes
+   return unchanged once onboarding completes (intro-command). */
+@media (max-width: 680px) {
+  .orbit-app .world-shell:is(.intro-intro, .intro-collapsing) :is(
+    .destination-layer,
+    .orbit-core-label,
+    .craft-orbit,
+    .orbit-links,
+    .world-inspector,
+    .orbit-shortcuts,
+    .orbit-location-tools,
+    .orbit-extra-location,
+    .orbit-command-toggle,
+    .stage-footer
+  ) {
+    display: none !important;
+  }
+
+  /* A compact, readable welcome stack above the visual centerpiece. */
+  .orbit-app .world-shell.intro-intro .orbit-left-zone,
+  .orbit-app .world-shell.intro-collapsing .orbit-left-zone {
+    top: 105px;
+    left: max(16px, env(safe-area-inset-left));
+    right: max(16px, env(safe-area-inset-right));
+    width: auto;
+    max-height: calc(100dvh - 130px);
+    z-index: 45;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .orbit-app .world-shell.intro-intro .orbit-intro-card,
+  .orbit-app .world-shell.intro-collapsing .orbit-intro-card {
+    max-width: 340px;
+    margin-inline: auto;
+    text-align: center;
+  }
+  .orbit-app .world-shell.intro-intro .orbit-intro-card h1,
+  .orbit-app .world-shell.intro-collapsing .orbit-intro-card h1 {
+    max-width: 100%;
+    line-height: 1.12;
+    font-size: clamp(27px, 7vw, 34px);
+  }
+  .orbit-app .world-shell.intro-intro .stage-description,
+  .orbit-app .world-shell.intro-collapsing .stage-description {
+    max-width: 320px;
+    margin: 12px auto 0;
+    line-height: 1.5;
+    font-size: 12px;
+  }
+  .orbit-app .world-shell.intro-intro .orbit-intro-enter {
+    min-height: 48px;
+    margin-top: 16px;
+    padding-inline: 16px;
+    font-size: 14px;
+    touch-action: manipulation;
+  }
+  .orbit-app .world-shell.intro-intro .orbit-intro-enter span:last-child {
+    width: 22px;
+    height: 22px;
+    font-size: 13px;
+  }
+
+  /* Owner-only tools should never sit on top of the first-run message. */
+  body:has(.orbit-app .world-shell:is(.intro-intro,.intro-collapsing)) .arrow-role-preview,
+  body:has(.orbit-app .world-shell:is(.intro-intro,.intro-collapsing)) .arrow-os-notification-button {
+    display: none !important;
+  }
+}
