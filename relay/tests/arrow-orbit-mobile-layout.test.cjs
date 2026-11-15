@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /* ARROW Beta: regression checks for the Orbit mobile overlap repair. */
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
