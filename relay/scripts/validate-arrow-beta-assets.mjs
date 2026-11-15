@@ -1,6 +1,7 @@
 import {existsSync,readFileSync,readdirSync,statSync} from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 const root=path.resolve('out'),prefix='/Resonant-Relay';
 let checked=0,pages=0,imports=0;
 function walk(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(dir,entry.name)):[path.join(dir,entry.name)]);}
@@ -27,5 +28,13 @@ for(const file of walk(root)){
   }
 }
 assert.ok(existsSync(path.join(root,'help/index.html')),'Missing notification/account setup guide');
-assert.ok(existsSync(path.join(root,'arrow/version.json')),'Missing beta center manifest');
+const versionPath=path.join(root,'arrow/version.json');
+assert.ok(existsSync(versionPath),'Missing beta center manifest');
+const version=JSON.parse(readFileSync(versionPath,'utf8'));
+const expected=JSON.parse(readFileSync(path.resolve('scripts/arrow-beta-centers.json'),'utf8'));
+assert.deepEqual(version.centers,expected,'Packaged center SHAs do not match the exact integration pins');
+const shellPath=path.join(root,'arrow/arrow-shell.js');
+assert.ok(existsSync(shellPath),'Missing packaged ARROW shell');
+const shellHash=createHash('sha256').update(readFileSync(shellPath)).digest('hex').slice(0,12);
+assert.equal(version.shell,shellHash,'Packaged shell checksum does not match version.json');
 console.log(`Verified ${checked} boot assets on ${pages} exported pages and ${imports} imported module dependencies.`);
