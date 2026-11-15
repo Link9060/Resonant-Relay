@@ -616,6 +616,11 @@
     const moreTools = root.querySelector('.arrow-os-more-tools');
     moreTools.addEventListener('click', () => {
       const expanded = root.dataset.mobileExpanded !== 'true';
+      // A focused secondary control becomes display:none when collapsed.
+      // Move focus back to the toggle before hiding it to avoid losing keyboard position.
+      if (!expanded && document.activeElement?.matches('.arrow-os-control[data-arrow-optional="true"]') && root.contains(document.activeElement)) {
+        moreTools.focus({ preventScroll: true });
+      }
       root.dataset.mobileExpanded = String(expanded);
       moreTools.setAttribute('aria-expanded', String(expanded));
       moreTools.setAttribute('aria-label', expanded ? 'Show fewer ARROW tools' : 'Show more ARROW tools');
