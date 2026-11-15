@@ -19,6 +19,8 @@
 
 | ARSI-008 | Mobile secondary-tool collapse retains keyboard focus | IMPLEMENTED IN SI REVIEW; CI/KEYBOARD QA PENDING | In a 390px viewport, open **More tools**, focus a secondary control using keyboard, and trigger collapse via the toggle; focus should return to **Fewer tools / More tools** rather than vanish into a hidden control. Check desktop keyboard order and screen reader labels. Source commit `772171f468278ba4118ce2a77cbf2601dded310c`; no beta deployment authorized. |
 
+| ARSI-009 | iPhone Orbit mobile overlay collision (user screenshot, 2026-11-14) | REPRO EVIDENCE: SCREENSHOT; CODE FIX PENDING | On a narrow iPhone viewport at the actual integrated beta URL, inspect ARROW/Orbit/Dashboard header, Atlas/To Do/RAVIN/Relay shortcuts, Command and Quick locations overlays, central sphere, View as Owner selector and Notifications button. Screenshot shows controls overlapping and a tall nearly empty overlay obscuring the sphere. Identify which elements belong to the deployed beta versus unmerged pinned Orbit in PR #114; reproduce at 375/390px with real iOS Safari and Chromium before CSS edits. Do not treat PR #114 screenshots as evidence this deployed screen is fixed. Verify keyboard focus, role gates, and safe-area insets after any patch. |
+
 These are **review priorities**, not claims these defects persist after PR #114. Audit first, avoid duplicating changes already in the existing PR.
 
 ## Changes log
@@ -29,6 +31,8 @@ These are **review priorities**, not claims these defects persist after PR #114.
 - 2026-11-14: Mobile-only release [PR #117](https://github.com/Link9060/Resonant-Relay/pull/117) merged to `beta` at `2d5401b22f3b0fe2d306769f65c7714e05ee219e`; the [GitHub Pages integrated beta deployment](https://github.com/Link9060/Resonant-Relay/actions/runs/43661970274) succeeded. **Do not re-release or duplicate this mobile change.** When rebasing SI against updated `beta`, preserve #114's independent unapproved fixes but deduplicate this shipped JS/CSS patch. Manual phone appearance/interaction QA remains outstanding.
 
 - 2026-11-14: ARSI-008: patched focus management on the isolated SI branch. Code-level evidence: optional controls use `display:none!important` when collapsed, while the toggle previously changed visibility without first restoring focus. Added a focus return before collapse for a focused optional button. This is a small follow-up to the already-deployed ARSI-007 and **has not been merged or deployed**. Integrated CI and actual keyboard/browser QA still need verification.
+
+- 2026-11-14: ARSI-009: user-provided iPhone screenshot at 8:25 shows overlapping Orbit controls and an unusually tall mostly empty panel. This is visual evidence, not a verified DOM root cause. PR #114 already contains significant Orbit layout changes and is still an unmerged draft, so no duplicate CSS patch was attempted. PR #116 remains stacked and draft. A mobile browser reproduction and deployed-versus-reviewed commit comparison are required before implementing a narrowly scoped fix. No browser test or integrated build executed during this documentation-only iteration.
 
 ## Owner approval
 
