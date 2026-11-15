@@ -17,6 +17,8 @@
 | ARSI-006 | Integrated build checks and safe final preview | PENDING VERIFICATION | Run or inspect exact pinned integrated packaging, typecheck/lint/tests, make no claim of deployment without evidence |
 | ARSI-007 | Mobile Command Dock clarity and touch targets | RELEASED TO BETA VIA PR #117; PHONE QA PENDING | At widths 320, 375, 390, 680px open ARROW tray: Orbit/RAVIN/Notes/Tasks/Calendar/Appearance/Settings visible; Focus/Links/Support hidden until **More tools**; tap to reveal/hide and verify panels open; resize to desktop and verify all controls remain available; check keyboard focus, Escape and scroll at 200% zoom. Verify all five Adapt identities, including Bloom and Pulse. Code: JS commit `2db4b0aff28987e9270834ad2a68e28f9fda8805`, CSS commit `6c2966737b56c172bd138d0a1e88e7af08cf651e`. |
 
+| ARSI-008 | Mobile secondary-tool collapse retains keyboard focus | IMPLEMENTED IN SI REVIEW; CI/KEYBOARD QA PENDING | In a 390px viewport, open **More tools**, focus a secondary control using keyboard, and trigger collapse via the toggle; focus should return to **Fewer tools / More tools** rather than vanish into a hidden control. Check desktop keyboard order and screen reader labels. Source commit `772171f468278ba4118ce2a77cbf2601dded310c`; no beta deployment authorized. |
+
 These are **review priorities**, not claims these defects persist after PR #114. Audit first, avoid duplicating changes already in the existing PR.
 
 ## Changes log
@@ -25,6 +27,8 @@ These are **review priorities**, not claims these defects persist after PR #114.
 - 2026-11-14: Mobile-first command dock update committed. The **More tools** button toggles secondary Focus, Links and Support controls only at narrow widths; smaller header, tighter spacing and 44px minimum toggle and footer link touch targets. Existing panel event handlers and role gates remain intact. Changes have **not** been live-deployed; browser QA is pending. GitHub CI for head commit may still be running; verify final job result before approval.
 
 - 2026-11-14: Mobile-only release [PR #117](https://github.com/Link9060/Resonant-Relay/pull/117) merged to `beta` at `2d5401b22f3b0fe2d306769f65c7714e05ee219e`; the [GitHub Pages integrated beta deployment](https://github.com/Link9060/Resonant-Relay/actions/runs/43661970274) succeeded. **Do not re-release or duplicate this mobile change.** When rebasing SI against updated `beta`, preserve #114's independent unapproved fixes but deduplicate this shipped JS/CSS patch. Manual phone appearance/interaction QA remains outstanding.
+
+- 2026-11-14: ARSI-008: patched focus management on the isolated SI branch. Code-level evidence: optional controls use `display:none!important` when collapsed, while the toggle previously changed visibility without first restoring focus. Added a focus return before collapse for a focused optional button. This is a small follow-up to the already-deployed ARSI-007 and **has not been merged or deployed**. Integrated CI and actual keyboard/browser QA still need verification.
 
 ## Owner approval
 
