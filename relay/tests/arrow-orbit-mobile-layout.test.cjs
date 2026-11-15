@@ -12,7 +12,7 @@ assert.ok(mobile,'Expected dedicated mobile Orbit media query');
 
 function declarations(selector){
  const found=[];
- mobile.walkRules(rule=>{if(rule.selector===selector){const props={};rule.walkDecls(d=>{props[d.prop]=d.value;});found.push(props);}});
+ mobile.walkRules(rule=>{if(rule.selector===selector){const props={};rule.walkDecls(d=>{props[d.prop]=d.value+(d.important?' !important':'');});found.push(props);}});
  assert.ok(found.length,'Missing expected mobile selector: '+selector);
  return found.at(-1);
 }
