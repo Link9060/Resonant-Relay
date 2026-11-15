@@ -12,7 +12,7 @@ assert.ok(mobile,'missing mobile welcome styles');
 
 function ruleFor(selectorPart){
  let result;
- mobile.walkRules(rule=>{if(rule.selector.includes(selectorPart))result=rule;});
+ mobile.walkRules(rule=>{if(!result && rule.selector.includes(selectorPart))result=rule;});
  assert.ok(result,'missing '+selectorPart);
  return result;
 }
