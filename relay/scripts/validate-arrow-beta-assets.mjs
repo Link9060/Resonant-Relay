@@ -37,4 +37,8 @@ const shellPath=path.join(root,'arrow/arrow-shell.js');
 assert.ok(existsSync(shellPath),'Missing packaged ARROW shell');
 const shellHash=createHash('sha256').update(readFileSync(shellPath)).digest('hex').slice(0,12);
 assert.equal(version.shell,shellHash,'Packaged shell checksum does not match version.json');
+const cssPath=path.join(root,'arrow/arrow-shell.css');
+assert.ok(existsSync(cssPath),'Missing packaged ARROW shell CSS');
+const cssHash=createHash('sha256').update(readFileSync(cssPath)).digest('hex').slice(0,12);
+assert.equal(version.shellCss,cssHash,'Packaged shell CSS checksum does not match version.json');
 console.log(`Verified ${checked} boot assets on ${pages} exported pages and ${imports} imported module dependencies.`);
