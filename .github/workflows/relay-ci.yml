@@ -75,3 +75,24 @@ jobs:
           fi
           cp "$backup" "$css"
           node scripts/validate-arrow-beta-assets.mjs
+      - name: Verify JS integrity rejects tampering
+        shell: bash
+        run: |
+          set -euo pipefail
+          js=out/arrow/arrow-shell.js
+          backup=$(mktemp)
+          log=$(mktemp)
+          cp "$js" "$backup"
+          trap 'cp "$backup" "$js"; rm -f "$backup" "$log"' EXIT
+          printf '\n/* integrity-negative-test */\n' >> "$js"
+          if node scripts/validate-arrow-beta-assets.mjs >"$log" 2>&1; then
+            echo "ERROR: modified JS passed package validation"
+            exit 1
+          fi
+          if ! grep -q 'Packaged shell checksum does not match version.json' "$log"; then
+            cat "$log"
+            echo "ERROR: validator failed for an unexpected reason"
+            exit 1
+          fi
+          cp "$backup" "$js"
+          node scripts/validate-arrow-beta-assets.mjs
