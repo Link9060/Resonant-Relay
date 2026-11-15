@@ -35,7 +35,7 @@ jobs:
 
 
   beta-package:
-    if: github.event.pull_request.base.ref == 'beta'
+    if: github.event_name == 'pull_request' && (github.base_ref == 'beta' || (github.base_ref == 'review/integrated-arrow-beta-ui-20261110' && github.head_ref == 'improve/arrow-integrated-beta'))
     runs-on: ubuntu-latest
     defaults:
       run:
