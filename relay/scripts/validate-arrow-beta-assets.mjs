@@ -25,9 +25,9 @@ for(const file of walk(root)){
       const uncommented=html.replace(/<!--[\s\S]*?-->/g,'');
       const scripts=[...uncommented.matchAll(/<script\b[^>]*>/gi)];
       assert.ok(scripts.some(([tag])=>{
-        const src=tag.match(/\bsrc\s*=\s*(["'])([^"']+)\1/i);
+        const src=tag.match(/(?:^|\s)src\s*=\s*(["'])([^"']+)\1/i);
         if(!src)return false;
-        const type=tag.match(/\btype\s*=\s*(["'])([^"']+)\1/i)?.[2]?.trim().toLowerCase();
+        const type=tag.match(/(?:^|\s)type\s*=\s*(["'])([^"']+)\1/i)?.[2]?.trim().toLowerCase();
         // Data blocks (for example application/json) do not execute as scripts.
         if(type&&!['module','text/javascript','application/javascript'].includes(type))return false;
         const url=new URL(src[2],base);
