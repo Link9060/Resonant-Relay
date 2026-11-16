@@ -96,3 +96,24 @@ jobs:
           fi
           cp "$backup" "$js"
           node scripts/validate-arrow-beta-assets.mjs
+      - name: Verify center pin integrity rejects tampering
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest=out/arrow/version.json
+          backup=$(mktemp)
+          log=$(mktemp)
+          cp "$manifest" "$backup"
+          trap 'cp "$backup" "$manifest"; rm -f "$backup" "$log"' EXIT
+          node -e 'const fs=require("fs");const p=process.argv[1];const v=JSON.parse(fs.readFileSync(p,"utf8"));v.centers["Resonant-Orbit"]="0000000000000000000000000000000000000000";fs.writeFileSync(p,JSON.stringify(v,null,2))' "$manifest"
+          if node scripts/validate-arrow-beta-assets.mjs >"$log" 2>&1; then
+            echo "ERROR: modified center pin passed package validation"
+            exit 1
+          fi
+          if ! grep -q 'Packaged center SHAs do not match the exact integration pins' "$log"; then
+            cat "$log"
+            echo "ERROR: validator failed for an unexpected reason"
+            exit 1
+          fi
+          cp "$backup" "$manifest"
+          node scripts/validate-arrow-beta-assets.mjs
