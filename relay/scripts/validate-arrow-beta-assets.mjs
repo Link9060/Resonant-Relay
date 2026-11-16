@@ -20,7 +20,14 @@ for(const file of walk(root)){
     pages++;
     const html=readFileSync(file,'utf8');
     for(const tag of html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)=["']([^"']+)["'][^>]*>/g))if(localAsset(tag[1],base))checked++;
-    if(/^arrow\/(?:orbit|waypoint|atlas|ravin)\/index\.html$/.test(relative))assert.match(html,/arrow-beta-guard\.js/,'Center entry is missing its beta gate: '+relative);
+    if(/^arrow\/(?:orbit|waypoint|atlas|ravin)\/index\.html$/.test(relative)){
+      // A comment or inline string mentioning the guard is not an executable gate.
+      const scripts=[...html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)];
+      assert.ok(scripts.some(match=>{
+        const url=new URL(match[1],base);
+        return url.origin==='https://link9060.github.io'&&url.pathname===prefix+'/arrow/arrow-beta-guard.js';
+      }),'Center entry is missing its executable beta gate: '+relative);
+    }
   }
   if(file.endsWith('.js')){
     const source=readFileSync(file,'utf8');
