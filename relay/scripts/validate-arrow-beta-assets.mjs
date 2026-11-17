@@ -32,7 +32,7 @@ for(const file of walk(root)){
         if(type&&!['module','text/javascript','application/javascript'].includes(type))return false;
         const url=new URL(src[2],base);
         return url.origin==='https://link9060.github.io'&&url.pathname===prefix+'/arrow/arrow-beta-guard.js';
-      }),'Center page is missing its executable beta gate: '+relative);
+      }),'Center entry is missing its executable beta gate: '+relative);
     }
   }
   if(file.endsWith('.js')){
