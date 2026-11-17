@@ -145,3 +145,36 @@ jobs:
           fi
           cp "$backup" "$page"
           node scripts/validate-arrow-beta-assets.mjs
+      - name: Verify nested center routes reject missing beta guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          page=$(find out/arrow/orbit out/arrow/waypoint out/arrow/atlas out/arrow/ravin -type f -name '*.html' ! -name index.html -print -quit)
+          if [[ -z "$page" ]]; then
+            echo "ERROR: no nested center HTML route available for guard regression test"
+            exit 1
+          fi
+          backup=$(mktemp)
+          log=$(mktemp)
+          cp "$page" "$backup"
+          trap 'cp "$backup" "$page"; rm -f "$backup" "$log"' EXIT
+          node - "$page" <<'NODE'
+          const fs = require('node:fs');
+          const page = process.argv[2];
+          const html = fs.readFileSync(page, 'utf8');
+          const guard = /<script\b[^>]*\ssrc=["'][^"']*\/arrow-beta-guard\.js[^"']*["'][^>]*><\/script>/i;
+          if (!guard.test(html)) throw new Error('Expected nested executable beta guard missing: ' + page);
+          fs.writeFileSync(page, html.replace(guard, ''));
+          NODE
+          if node scripts/validate-arrow-beta-assets.mjs >"$log" 2>&1; then
+            echo "ERROR: nested route without beta guard passed validation: $page"
+            exit 1
+          fi
+          relative=${page#out/}
+          if ! grep -Fq "Center entry is missing its executable beta gate: $relative" "$log"; then
+            cat "$log"
+            echo "ERROR: validator failed for an unexpected reason"
+            exit 1
+          fi
+          cp "$backup" "$page"
+          node scripts/validate-arrow-beta-assets.mjs
