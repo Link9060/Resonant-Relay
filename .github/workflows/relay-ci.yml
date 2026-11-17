@@ -149,7 +149,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          page=$(find out/arrow/orbit out/arrow/waypoint out/arrow/atlas out/arrow/ravin -type f -name '*.html' ! -name index.html -print -quit)
+          page=''
+          while IFS= read -r candidate; do
+            case "$candidate" in
+              out/arrow/orbit/index.html|out/arrow/waypoint/index.html|out/arrow/atlas/index.html|out/arrow/ravin/index.html) ;;
+              *) page="$candidate"; break ;;
+            esac
+          done < <(find out/arrow/orbit out/arrow/waypoint out/arrow/atlas out/arrow/ravin -type f -name '*.html' | sort)
           if [[ -z "$page" ]]; then
             echo "ERROR: no nested center HTML route available for guard regression test"
             exit 1
