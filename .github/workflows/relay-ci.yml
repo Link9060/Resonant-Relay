@@ -158,9 +158,9 @@ jobs:
           const fs = require('node:fs');
           const page = process.argv[2];
           const html = fs.readFileSync(page, 'utf8');
-          const guard = /<script\\b[^>]*\\bsrc=["'][^"']*\\/arrow-beta-guard\\.js[^"']*["'][^>]*><\\/script>/i;
+          const guard = /<script\b[^>]*\bsrc=["'][^"']*\/arrow-beta-guard\.js[^"']*["'][^>]*><\/script>/i;
           if (!guard.test(html)) throw new Error('Expected integrated beta guard missing');
-          fs.writeFileSync(page, html.replace(guard, tag => tag.replace(/<script\\b/i, '<script nomodule')));
+          fs.writeFileSync(page, html.replace(guard, tag => tag.replace(/<script\b/i, '<script nomodule')));
           NODE
           if node scripts/validate-arrow-beta-assets.mjs >"$log" 2>&1; then
             echo "ERROR: nomodule guard passed validation"
