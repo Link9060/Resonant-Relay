@@ -30,6 +30,8 @@ for(const file of walk(root)){
         const type=tag.match(/(?:^|\s)type\s*=\s*(["'])([^"']+)\1/i)?.[2]?.trim().toLowerCase();
         // Data blocks (for example application/json) do not execute as scripts.
         if(type&&!['module','text/javascript','application/javascript'].includes(type))return false;
+        // A classic script marked nomodule is skipped by modern browsers.
+        if(/(?:^|\s)nomodule(?:\s|=|>)/i.test(tag)&&type!=='module')return false;
         const url=new URL(src[2],base);
         return url.origin==='https://link9060.github.io'&&url.pathname===prefix+'/arrow/arrow-beta-guard.js';
       }),'Center entry is missing its executable beta gate: '+relative);
