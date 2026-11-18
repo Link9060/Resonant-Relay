@@ -6,9 +6,9 @@
 
 - Canonical integration/deployment owner: `Link9060/Resonant-Relay` branch `beta`
 - Actual beta URL: https://link9060.github.io/Resonant-Relay/arrow/orbit/
-- Active unmerged canonical integration review: [PR #114](https://github.com/Link9060/Resonant-Relay/pull/114), branch `review/integrated-arrow-beta-ui-20261110`, **targeting** `beta`.
-- This improvement branch: `improve/arrow-integrated-beta` starts from that review branch's already-improved code, not from a standalone `main`. Its stacked DRAFT PR must initially target the review branch to avoid sneaking into beta.
-- After #114 is *approved and actually merged* into `beta`, inspect ancestry and retarget/rebase the improvement PR to `beta` only after verifying there are no duplicate/conflicting changes. Do not merge or deploy automatically.
+- **Historical integration:** [PR #114](https://github.com/Link9060/Resonant-Relay/pull/114) was merged into `beta` on 2026-11-18. Its old review branch is no longer the current deployment baseline.
+- This improvement branch: `improve/arrow-integrated-beta` originated from that historical review branch. [Draft PR #116](https://github.com/Link9060/Resonant-Relay/pull/116) remains unapproved; its historical base must not be treated as the current beta. Do not merge or retarget it without a reviewed reconciliation.
+- **Post-merge gate (active):** compare current `beta` to the SI branch, identify already-shipped changes, and reconcile SI-only changes in review. As of 2026-11-18, beta pins Orbit `b0f1b51fcb11b7453af2adeb11b2ce78a7496c9e`, a three-commit descendant of SI's `595ea61f9b1f45a50b7360aeb0d9f5ac1b40f87b`; Waypoint pins match. SI is diverged and MUST NOT be merged or retargeted as-is. Verify exact-beta deployment and package tests, preserve shipped changes, and request explicit approval of the new diff before any integration.
 - Mandatory branch-local instructions: root `AGENTS.md`, `relay/docs/INTEGRATED_BETA_UI_REVIEW.md`, pinned integration manifest `relay/scripts/arrow-beta-centers.json`, packaging script `relay/scripts/build-arrow-beta.mjs`, and cross-branch source-of-truth [issue #115](https://github.com/Link9060/Resonant-Relay/issues/115).
 
 **WARNING: Wrong targets for the integrated beta**
@@ -31,7 +31,7 @@ Choose small, objectively testable batches. Prefer reproducing with an actual te
 ## Git/automation guardrails
 
 - Own only the isolated `improve/arrow-integrated-beta` branch and explicitly prefixed work branches. Do not edit `beta`, `main`, the existing #114 branch or its PR directly.
-- Keep one ongoing **draft** stacked pull request targeting `review/integrated-arrow-beta-ui-20261110` for these changes, never auto-merge.
+- Keep [PR #116](https://github.com/Link9060/Resonant-Relay/pull/116) **draft** and unmerged. Its old stacked base is historical; propose retargeting to `beta` only after a reviewed conflict-aware reconciliation, never automatically.
 - On each scheduled run, inspect latest integration PR #114, manifest, branch history, relevant issue/PR comments and tests. Coordinate on overlap; do not undo other fixes, repeat work or replace pin commits blindly.
 - Verify with repository lint/typecheck/build and targeted browser/Playwright tests when available. Verify integrated `npm run beta:target` and `node scripts/build-arrow-beta.mjs` with appropriate dependencies and actual module pins. If tools, network, credentials or compute prevent tests, record limitations rather than claim success.
 - No production/beta deployment; no release merge, account/security configuration changes, spending, paid services, posts, personal-data experiments, or external customer actions without informed user approval. No bypasses for age/service terms or access controls.
