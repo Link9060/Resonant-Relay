@@ -35,7 +35,7 @@ jobs:
 
 
   beta-package:
-    if: github.event.pull_request.base.ref == 'beta'
+    if: github.event_name == 'pull_request' && (github.base_ref == 'beta' || (github.base_ref == 'review/integrated-arrow-beta-ui-20261110' && github.head_ref == 'improve/arrow-integrated-beta'))
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -54,3 +54,161 @@ jobs:
       - name: Verify integrated ARROW beta target and module pins
         run: npm run beta:target
       - run: node scripts/build-arrow-beta.mjs
+      - name: Verify CSS integrity rejects tampering
+        shell: bash
+        run: |
+          set -euo pipefail
+          css=out/arrow/arrow-shell.css
+          backup=$(mktemp)
+          log=$(mktemp)
+          cp "$css" "$backup"
+          trap 'cp "$backup" "$css"; rm -f "$backup" "$log"' EXIT
+          printf '\n/* integrity-negative-test */\n' >> "$css"
+          if node scripts/validate-arrow-beta-assets.mjs >"$log" 2>&1; then
+            echo "ERROR: modified CSS passed package validation"
+            exit 1
+          fi
+          if ! grep -q 'Packaged shell CSS checksum does not match version.json' "$log"; then
+            cat "$log"
+            echo "ERROR: validator failed for an unexpected reason"
+            exit 1
+          fi
+          cp "$backup" "$css"
+          node scripts/validate-arrow-beta-assets.mjs
+      - name: Verify JS integrity rejects tampering
+        shell: bash
+        run: |
+          set -euo pipefail
+          js=out/arrow/arrow-shell.js
+          backup=$(mktemp)
+          log=$(mktemp)
+          cp "$js" "$backup"
+          trap 'cp "$backup" "$js"; rm -f "$backup" "$log"' EXIT
+          printf '\n/* integrity-negative-test */\n' >> "$js"
+          if node scripts/validate-arrow-beta-assets.mjs >"$log" 2>&1; then
+            echo "ERROR: modified JS passed package validation"
+            exit 1
+          fi
+          if ! grep -q 'Packaged shell checksum does not match version.json' "$log"; then
+            cat "$log"
+            echo "ERROR: validator failed for an unexpected reason"
+            exit 1
+          fi
+          cp "$backup" "$js"
+          node scripts/validate-arrow-beta-assets.mjs
+      - name: Verify center pin integrity rejects tampering
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest=out/arrow/version.json
+          backup=$(mktemp)
+          log=$(mktemp)
+          cp "$manifest" "$backup"
+          trap 'cp "$backup" "$manifest"; rm -f "$backup" "$log"' EXIT
+          node -e 'const fs=require("fs");const p=process.argv[1];const v=JSON.parse(fs.readFileSync(p,"utf8"));v.centers["Resonant-Orbit"]="0000000000000000000000000000000000000000";fs.writeFileSync(p,JSON.stringify(v,null,2))' "$manifest"
+          if node scripts/validate-arrow-beta-assets.mjs >"$log" 2>&1; then
+            echo "ERROR: modified center pin passed package validation"
+            exit 1
+          fi
+          if ! grep -q 'Packaged center SHAs do not match the exact integration pins' "$log"; then
+            cat "$log"
+            echo "ERROR: validator failed for an unexpected reason"
+            exit 1
+          fi
+          cp "$backup" "$manifest"
+          node scripts/validate-arrow-beta-assets.mjs
+      - name: Verify guard validation rejects inert script tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          page=out/arrow/orbit/index.html
+          backup=$(mktemp)
+          log=$(mktemp)
+          cp "$page" "$backup"
+          trap 'cp "$backup" "$page"; rm -f "$backup" "$log"' EXIT
+          node - "$page" <<'NODE'
+          const fs = require('node:fs');
+          const page = process.argv[2];
+          const html = fs.readFileSync(page, 'utf8');
+          const guard = /<script\b[^>]*\bsrc=["'][^"']*\/arrow-beta-guard\.js[^"']*["'][^>]*><\/script>/i;
+          if (!guard.test(html)) throw new Error('Expected integrated executable guard tag missing');
+          fs.writeFileSync(page, html.replace(guard, tag => tag.replace(/<script\b/i, '<script type="application/json"')));
+          NODE
+          if node scripts/validate-arrow-beta-assets.mjs >"$log" 2>&1; then
+            echo "ERROR: inert guard script passed validation"
+            exit 1
+          fi
+          if ! grep -q 'Center entry is missing its executable beta gate: arrow/orbit/index.html' "$log"; then
+            cat "$log"
+            echo "ERROR: validator failed for an unexpected reason"
+            exit 1
+          fi
+          cp "$backup" "$page"
+          node scripts/validate-arrow-beta-assets.mjs
+      - name: Verify modern browsers cannot skip a nomodule beta guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          page=out/arrow/orbit/index.html
+          backup=$(mktemp)
+          log=$(mktemp)
+          cp "$page" "$backup"
+          trap 'cp "$backup" "$page"; rm -f "$backup" "$log"' EXIT
+          node - "$page" <<'NODE'
+          const fs = require('node:fs');
+          const page = process.argv[2];
+          const html = fs.readFileSync(page, 'utf8');
+          const guard = /<script\b[^>]*\bsrc=["'][^"']*\/arrow-beta-guard\.js[^"']*["'][^>]*><\/script>/i;
+          if (!guard.test(html)) throw new Error('Expected integrated beta guard missing');
+          fs.writeFileSync(page, html.replace(guard, tag => tag.replace(/<script\b/i, '<script nomodule')));
+          NODE
+          if node scripts/validate-arrow-beta-assets.mjs >"$log" 2>&1; then
+            echo "ERROR: nomodule guard passed validation"
+            exit 1
+          fi
+          if ! grep -q 'Center entry is missing its executable beta gate: arrow/orbit/index.html' "$log"; then
+            cat "$log"
+            echo "ERROR: validator failed for an unexpected reason"
+            exit 1
+          fi
+          cp "$backup" "$page"
+          node scripts/validate-arrow-beta-assets.mjs
+      - name: Verify nested center routes reject missing beta guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          page=''
+          while IFS= read -r candidate; do
+            case "$candidate" in
+              out/arrow/orbit/index.html|out/arrow/waypoint/index.html|out/arrow/atlas/index.html|out/arrow/ravin/index.html) ;;
+              *) page="$candidate"; break ;;
+            esac
+          done < <(find out/arrow/orbit out/arrow/waypoint out/arrow/atlas out/arrow/ravin -type f -name '*.html' | sort)
+          if [[ -z "$page" ]]; then
+            echo "ERROR: no nested center HTML route available for guard regression test"
+            exit 1
+          fi
+          backup=$(mktemp)
+          log=$(mktemp)
+          cp "$page" "$backup"
+          trap 'cp "$backup" "$page"; rm -f "$backup" "$log"' EXIT
+          node - "$page" <<'NODE'
+          const fs = require('node:fs');
+          const page = process.argv[2];
+          const html = fs.readFileSync(page, 'utf8');
+          const guard = /<script\b[^>]*\ssrc=["'][^"']*\/arrow-beta-guard\.js[^"']*["'][^>]*><\/script>/i;
+          if (!guard.test(html)) throw new Error('Expected nested executable beta guard missing: ' + page);
+          fs.writeFileSync(page, html.replace(guard, ''));
+          NODE
+          if node scripts/validate-arrow-beta-assets.mjs >"$log" 2>&1; then
+            echo "ERROR: nested route without beta guard passed validation: $page"
+            exit 1
+          fi
+          relative=${page#out/}
+          if ! grep -Fq "Center entry is missing its executable beta gate: $relative" "$log"; then
+            cat "$log"
+            echo "ERROR: validator failed for an unexpected reason"
+            exit 1
+          fi
+          cp "$backup" "$page"
+          node scripts/validate-arrow-beta-assets.mjs

@@ -2974,3 +2974,59 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 }
 .arrow-os-panel :is(.arrow-os-palette-grid,.arrow-os-adapt-grid) > * { min-width:0; overflow-wrap:anywhere; }
 .arrow-os-panel :is(button,select,input,textarea):focus-visible { outline-offset:2px; }
+
+
+/* ARROW SI · Compact touch-first Command Dock, without removing access to tools.
+   Focus, Links and Support are expanded by the "More tools" button on small screens. */
+.arrow-os-root .arrow-os-more-tools { display:none; }
+@media (max-width:680px) {
+  .arrow-os-root .arrow-os-content {
+    max-height:calc(100dvh - 76px);
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .arrow-os-root .arrow-os-tray-header { padding:12px 14px 10px; }
+  .arrow-os-root .arrow-os-tray-header strong { font-size:22px; }
+  .arrow-os-root .arrow-os-tray-kicker,
+  .arrow-os-root .arrow-os-tray-module { display:none; }
+  .arrow-os-root .arrow-os-tray-section { padding:10px 12px 3px; }
+  .arrow-os-root .arrow-os-tray-section-label { padding:0 3px 7px; }
+  .arrow-os-root .arrow-os-tray-grid { gap:7px; }
+  .arrow-os-root .arrow-os-control {
+    min-height:48px;
+    padding:9px 10px;
+    font-size:13px;
+  }
+  .arrow-os-root .arrow-os-tray-featured .arrow-os-control { min-height:52px; }
+  .arrow-os-root:not([data-mobile-expanded="true"]) .arrow-os-control[data-arrow-optional="true"] {
+    display:none!important;
+  }
+  .arrow-os-root .arrow-os-more-tools {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    min-height:44px;
+    width:calc(100% - 24px);
+    margin:9px 12px 0;
+    padding:9px 12px;
+    border:1px solid rgb(var(--arrow-os-fg) / .15);
+    border-radius:11px;
+    background:rgb(var(--arrow-os-fg) / .035);
+    color:rgb(var(--arrow-os-fg) / .84);
+    font:inherit;
+    font-size:13px;
+    font-weight:640;
+    cursor:pointer;
+  }
+  .arrow-os-root .arrow-os-more-tools[aria-expanded="true"] {
+    border-color:color-mix(in srgb,var(--arrow-accent-color,#b4bfd1) 48%,transparent);
+    background:rgb(var(--arrow-os-fg) / .08);
+  }
+  .arrow-os-root .arrow-os-more-tools:focus-visible {
+    outline:2px solid var(--arrow-accent-color,#b4bfd1);
+    outline-offset:2px;
+  }
+  .arrow-os-root .arrow-os-tray-footer { margin-top:7px; padding:9px 12px 12px; }
+  .arrow-os-root .arrow-os-tray-footer>span { display:none; }
+  .arrow-os-root .arrow-os-tray-footer .arrow-os-channel-link { min-height:44px; }
+}

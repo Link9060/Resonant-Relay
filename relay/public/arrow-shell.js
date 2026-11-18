@@ -496,6 +496,7 @@
     root.dataset.module = module;
     root.dataset.open = 'false';
     root.dataset.pinned = 'false';
+    root.dataset.mobileExpanded = 'false';
     root.innerHTML =
       '<div class="arrow-os-island" aria-label="ARROW controls">' +
         '<button type="button" class="arrow-os-trigger" aria-label="Open ARROW controls" aria-expanded="false" title="ARROW controls">' +
@@ -512,12 +513,13 @@
           '</div></div>' +
           '<div class="arrow-os-tray-section"><span class="arrow-os-tray-section-label">WORKSPACE</span><div class="arrow-os-tray-grid">' +
             controlButton('notes', 'Notes') + controlButton('tasks', 'Tasks') +
-            controlButton('calendar', 'Calendar') + controlButton('focus', 'Focus') +
-            controlButton('links', 'Links') +
+            controlButton('calendar', 'Calendar') + controlButton('focus', 'Focus', 'data-arrow-optional="true"') +
+            controlButton('links', 'Links', 'data-arrow-optional="true"') +
           '</div></div>' +
+          '<button type="button" class="arrow-os-more-tools" aria-expanded="false" aria-label="Show more ARROW tools"><span>More tools</span><span aria-hidden="true">⌄</span></button>' +
           '<div class="arrow-os-tray-section"><span class="arrow-os-tray-section-label">PERSONALIZE</span><div class="arrow-os-tray-grid">' +
             controlButton('appearance', 'Appearance') + controlButton('settings', 'Settings') +
-            controlButton('support', 'Support') +
+            controlButton('support', 'Support', 'data-arrow-optional="true"') +
           '</div></div>' +
           '<footer class="arrow-os-tray-footer"><span>RESONANT ASSIST <i aria-hidden="true"></i> CONNECTED</span>' + CHANNEL_LINK + '</footer>' +
         '</nav>' +
@@ -609,6 +611,20 @@
         return;
       }
       launchToOrbit(module, orbitButton, instance.orbitAccess);
+    });
+
+    const moreTools = root.querySelector('.arrow-os-more-tools');
+    moreTools.addEventListener('click', () => {
+      const expanded = root.dataset.mobileExpanded !== 'true';
+      // A focused secondary control becomes display:none when collapsed.
+      // Move focus back to the toggle before hiding it to avoid losing keyboard position.
+      if (!expanded && document.activeElement?.matches('.arrow-os-control[data-arrow-optional="true"]') && root.contains(document.activeElement)) {
+        moreTools.focus({ preventScroll: true });
+      }
+      root.dataset.mobileExpanded = String(expanded);
+      moreTools.setAttribute('aria-expanded', String(expanded));
+      moreTools.setAttribute('aria-label', expanded ? 'Show fewer ARROW tools' : 'Show more ARROW tools');
+      moreTools.querySelector('span').textContent = expanded ? 'Fewer tools' : 'More tools';
     });
 
     root.querySelectorAll('[data-arrow-panel]').forEach(button => {

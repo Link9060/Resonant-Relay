@@ -33,6 +33,7 @@ console.log('Standalone repository main-branch changes do NOT update the beta.')
 console.log('To preview a module fix, pin its exact review-branch commit in this manifest.');
 console.log('No deployment occurs until the Relay beta branch is explicitly merged/pushed.');
 if(process.argv.includes('--verify')) {
-  if(base && base !== 'beta') throw new Error('Integrated ARROW Beta PR must target Relay beta, not '+base);
+  const stackedReview = base === 'review/integrated-arrow-beta-ui-20261110' && branch === 'improve/arrow-integrated-beta';
+  if(base && base !== 'beta' && !stackedReview) throw new Error('Integrated ARROW Beta PR must target Relay beta or the approved stacked SI review pair, not '+base);
   if(branch === 'main') throw new Error('Refusing to validate an integrated ARROW beta change on Relay main.');
 }

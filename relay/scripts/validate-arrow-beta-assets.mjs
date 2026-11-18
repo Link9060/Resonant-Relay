@@ -1,6 +1,7 @@
 import {existsSync,readFileSync,readdirSync,statSync} from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 const root=path.resolve('out'),prefix='/Resonant-Relay';
 let checked=0,pages=0,imports=0;
 function walk(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(dir,entry.name)):[path.join(dir,entry.name)]);}
@@ -19,7 +20,22 @@ for(const file of walk(root)){
     pages++;
     const html=readFileSync(file,'utf8');
     for(const tag of html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)=["']([^"']+)["'][^>]*>/g))if(localAsset(tag[1],base))checked++;
-    if(/^arrow\/(?:orbit|waypoint|atlas|ravin)\/index\.html$/.test(relative))assert.match(html,/arrow-beta-guard\.js/,'Center entry is missing its beta gate: '+relative);
+    if(/^arrow\/(?:orbit|waypoint|atlas|ravin)\/.*\.html$/.test(relative)){
+      // A comment or inline string mentioning the guard is not an executable gate.
+      const uncommented=html.replace(/<!--[\s\S]*?-->/g,'');
+      const scripts=[...uncommented.matchAll(/<script\b[^>]*>/gi)];
+      assert.ok(scripts.some(([tag])=>{
+        const src=tag.match(/(?:^|\s)src\s*=\s*(["'])([^"']+)\1/i);
+        if(!src)return false;
+        const type=tag.match(/(?:^|\s)type\s*=\s*(["'])([^"']+)\1/i)?.[2]?.trim().toLowerCase();
+        // Data blocks (for example application/json) do not execute as scripts.
+        if(type&&!['module','text/javascript','application/javascript'].includes(type))return false;
+        // A classic script marked nomodule is skipped by modern browsers.
+        if(/(?:^|\s)nomodule(?:\s|=|>)/i.test(tag)&&type!=='module')return false;
+        const url=new URL(src[2],base);
+        return url.origin==='https://link9060.github.io'&&url.pathname===prefix+'/arrow/arrow-beta-guard.js';
+      }),'Center entry is missing its executable beta gate: '+relative);
+    }
   }
   if(file.endsWith('.js')){
     const source=readFileSync(file,'utf8');
@@ -27,5 +43,17 @@ for(const file of walk(root)){
   }
 }
 assert.ok(existsSync(path.join(root,'help/index.html')),'Missing notification/account setup guide');
-assert.ok(existsSync(path.join(root,'arrow/version.json')),'Missing beta center manifest');
+const versionPath=path.join(root,'arrow/version.json');
+assert.ok(existsSync(versionPath),'Missing beta center manifest');
+const version=JSON.parse(readFileSync(versionPath,'utf8'));
+const expected=JSON.parse(readFileSync(path.resolve('scripts/arrow-beta-centers.json'),'utf8'));
+assert.deepEqual(version.centers,expected,'Packaged center SHAs do not match the exact integration pins');
+const shellPath=path.join(root,'arrow/arrow-shell.js');
+assert.ok(existsSync(shellPath),'Missing packaged ARROW shell');
+const shellHash=createHash('sha256').update(readFileSync(shellPath)).digest('hex').slice(0,12);
+assert.equal(version.shell,shellHash,'Packaged shell checksum does not match version.json');
+const cssPath=path.join(root,'arrow/arrow-shell.css');
+assert.ok(existsSync(cssPath),'Missing packaged ARROW shell CSS');
+const cssHash=createHash('sha256').update(readFileSync(cssPath)).digest('hex').slice(0,12);
+assert.equal(version.shellCss,cssHash,'Packaged shell CSS checksum does not match version.json');
 console.log(`Verified ${checked} boot assets on ${pages} exported pages and ${imports} imported module dependencies.`);
