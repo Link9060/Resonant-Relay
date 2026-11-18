@@ -1072,3 +1072,47 @@ html.arrow-orbit-is-launching body {
     display: none;
   }
 }
+
+
+/* Integrated ARROW Beta: semantic foreground and surface tokens follow the
+   canonical ARROW theme. Historical .dark may briefly lag during hydration. */
+html[data-arrow-theme="light"] {
+  --canvas:255 255 255;
+  --surface:248 250 252;
+  --surface-raised:255 255 255;
+  --ink:22 32 43;
+  --ink-muted:80 91 103;
+  --ink-faint:111 121 133;
+  --border:206 216 226;
+  color-scheme:light;
+}
+html[data-arrow-theme="dark"] {
+  --canvas:10 12 16;
+  --surface:18 21 27;
+  --surface-raised:25 29 36;
+  --ink:243 245 248;
+  --ink-muted:178 187 198;
+  --ink-faint:142 152 166;
+  --border:63 70 83;
+  color-scheme:dark;
+}
+html[data-arrow-theme="light"] .relay-app-shell :is(.bg-surface,.bg-surface-raised,.bg-canvas) {
+  color:rgb(var(--ink));
+  border-color:rgb(var(--border));
+}
+html[data-arrow-theme="dark"] .relay-app-shell :is(.bg-surface,.bg-surface-raised,.bg-canvas) {
+  color:rgb(var(--ink));
+  border-color:rgb(var(--border));
+}
+html[data-arrow-theme="light"][data-arrow-adapt="atelier"] .relay-app-shell :is(.bg-surface,.bg-surface-raised,.bg-canvas) {
+  background:rgb(var(--surface-raised))!important;
+}
+html[data-arrow-theme="dark"][data-arrow-adapt="atelier"] .relay-app-shell :is(.bg-surface,.bg-surface-raised,.bg-canvas) {
+  background:rgb(var(--surface-raised))!important;
+}
+html[data-arrow-theme="light"] .relay-app-shell :is(input,textarea,select) {
+  color:rgb(var(--ink)); caret-color:rgb(var(--ink));
+}
+html[data-arrow-theme="dark"] .relay-app-shell :is(input,textarea,select) {
+  color:rgb(var(--ink)); caret-color:rgb(var(--ink));
+}

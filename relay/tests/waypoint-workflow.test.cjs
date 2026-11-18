@@ -33,7 +33,7 @@ test('draft restores, tab URLs follow navigation, and history cannot reapply sav
  const f=await mount('shell','Unfinished fixture Capture');try{
  assert.equal(f.dom.window.document.querySelector('textarea').value,'Unfinished fixture Capture');
  await f.click('Review');assert.equal(new URL(f.dom.window.location.href).searchParams.get('tab'),'review');await f.click('Open reasoning');
- assert.match(f.dom.window.document.body.textContent,/Saved fixture reasoning/);assert.equal(f.dom.window.document.querySelector('textarea').readOnly,true);assert.equal(f.button('Find my direction').disabled,true);assert.equal(f.dom.window.document.body.textContent.includes('Apply selected'),false);
+ assert.match(f.dom.window.document.body.textContent,/Saved fixture reasoning/);assert.equal(f.dom.window.document.querySelector('textarea').readOnly,true);assert.equal(f.button('Organize with RAVIN').disabled,true);assert.equal(f.dom.window.document.body.textContent.includes('Apply selected'),false);
  await f.click('Return to unfinished Capture');assert.equal(f.dom.window.document.querySelector('textarea').value,'Unfinished fixture Capture');
  }finally{await f.close();}
 });
