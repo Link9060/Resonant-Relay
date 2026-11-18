@@ -2974,3 +2974,276 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 }
 .arrow-os-panel :is(.arrow-os-palette-grid,.arrow-os-adapt-grid) > * { min-width:0; overflow-wrap:anywhere; }
 .arrow-os-panel :is(button,select,input,textarea):focus-visible { outline-offset:2px; }
+
+/* ARROW SI · Compact touch-first Command Dock, without removing access to tools.
+   Focus, Links and Support are expanded by the "More tools" button on small screens. */
+.arrow-os-root .arrow-os-more-tools { display:none; }
+@media (max-width:680px) {
+  .arrow-os-root .arrow-os-content {
+    max-height:calc(100dvh - 76px);
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .arrow-os-root .arrow-os-tray-header { padding:12px 14px 10px; }
+  .arrow-os-root .arrow-os-tray-header strong { font-size:22px; }
+  .arrow-os-root .arrow-os-tray-kicker,
+  .arrow-os-root .arrow-os-tray-module { display:none; }
+  .arrow-os-root .arrow-os-tray-section { padding:10px 12px 3px; }
+  .arrow-os-root .arrow-os-tray-section-label { padding:0 3px 7px; }
+  .arrow-os-root .arrow-os-tray-grid { gap:7px; }
+  .arrow-os-root .arrow-os-control {
+    min-height:48px;
+    padding:9px 10px;
+    font-size:13px;
+  }
+  .arrow-os-root .arrow-os-tray-featured .arrow-os-control { min-height:52px; }
+  .arrow-os-root:not([data-mobile-expanded="true"]) .arrow-os-control[data-arrow-optional="true"] {
+    display:none!important;
+  }
+  .arrow-os-root .arrow-os-more-tools {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    min-height:44px;
+    width:calc(100% - 24px);
+    margin:9px 12px 0;
+    padding:9px 12px;
+    border:1px solid rgb(var(--arrow-os-fg) / .15);
+    border-radius:11px;
+    background:rgb(var(--arrow-os-fg) / .035);
+    color:rgb(var(--arrow-os-fg) / .84);
+    font:inherit;
+    font-size:13px;
+    font-weight:640;
+    cursor:pointer;
+  }
+  .arrow-os-root .arrow-os-more-tools[aria-expanded="true"] {
+    border-color:color-mix(in srgb,var(--arrow-accent-color,#b4bfd1) 48%,transparent);
+    background:rgb(var(--arrow-os-fg) / .08);
+  }
+  .arrow-os-root .arrow-os-more-tools:focus-visible {
+    outline:2px solid var(--arrow-accent-color,#b4bfd1);
+    outline-offset:2px;
+  }
+  .arrow-os-root .arrow-os-tray-footer { margin-top:7px; padding:9px 12px 12px; }
+  .arrow-os-root .arrow-os-tray-footer>span { display:none; }
+  .arrow-os-root .arrow-os-tray-footer .arrow-os-channel-link { min-height:44px; }
+}
+
+
+/* ARROW Beta mobile Orbit: isolate the actual embedded Orbit layout.
+   The pinned Orbit stylesheet sets BOTH top and bottom on .orbit-shortcuts at
+   phone widths. That stretches a small quick-route strip into a tall panel.
+   Keep this narrowly scoped to the integrated Orbit UI. */
+@media (max-width: 680px) {
+  .orbit-app .orbit-header {
+    gap: 6px;
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+  }
+  .orbit-app .suite-lockup {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 0 9px;
+    gap: 6px;
+  }
+  .orbit-app .suite-name,
+  .orbit-app .suite-divider { display: none; }
+  .orbit-app .product-name { font-size: 11px; letter-spacing: .06em; }
+  .orbit-app .orbit-header-right {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: calc(100vw - 110px);
+    gap: 5px;
+  }
+  .orbit-app .adapt-view-switch { min-width: 0; max-width: 100%; }
+  .orbit-app .adapt-view-switch button { min-height: 40px; }
+
+  /* Two compact actions share their own line below the Orbit/Dashboard bar. */
+  .orbit-app .orbit-command-toggle {
+    top: calc(76px + env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    z-index: 50;
+    min-height: 44px;
+  }
+  .orbit-app .orbit-location-tools {
+    top: calc(76px + env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    bottom: auto;
+    left: auto;
+    transform: none;
+    z-index: 50;
+    max-width: min(178px, 46vw);
+    text-align: right;
+  }
+  .orbit-app .orbit-location-tools > button {
+    max-width: 100%;
+    min-height: 44px;
+    white-space: normal;
+    line-height: 1.25;
+  }
+  .orbit-app .orbit-location-editor {
+    top: calc(134px + env(safe-area-inset-top));
+    right: 12px;
+    max-height: calc(100dvh - 165px - env(safe-area-inset-top));
+  }
+
+  /* CRITICAL: resetting bottom removes the screen-height shortcut rectangle. */
+  .orbit-app .orbit-shortcuts {
+    top: calc(148px + env(safe-area-inset-top)) !important;
+    bottom: auto !important;
+    left: 50%;
+    right: auto;
+    height: max-content !important;
+    min-height: 0;
+    max-height: none;
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    margin: 0;
+    transform: translateX(-50%);
+    flex: 0 0 auto;
+    align-self: flex-start;
+    overflow: visible;
+  }
+  .orbit-app .orbit-shortcuts-list {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 3px;
+  }
+  .orbit-app .orbit-shortcut { min-height: 44px; }
+  .orbit-app .world-shell:not(.travel-idle) .orbit-shortcuts,
+  .orbit-app .world-shell.incoming-active .orbit-shortcuts {
+    transform: translateX(-50%) translateY(-6px);
+  }
+
+  /* During the welcome sequence, show the introduction and Enter Orbit,
+     not command/navigation overlays that obscure its text and button. */
+  .orbit-app .world-shell.intro-intro .orbit-shortcuts,
+  .orbit-app .world-shell.intro-collapsing .orbit-shortcuts,
+  .orbit-app .world-shell.intro-intro .orbit-command-toggle,
+  .orbit-app .world-shell.intro-intro .orbit-location-tools,
+  .orbit-app .world-shell.command-expanded .orbit-shortcuts {
+    display: none !important;
+  }
+  .orbit-app .world-shell.intro-intro .orbit-left-zone {
+    max-height: calc(100dvh - 116px - env(safe-area-inset-top));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Three separate vertical levels prevent owner/testing, controls, and
+     notification actions from sitting on top of one another. */
+  .orbit-app .world-inspector:not(.has-selection) {
+    left: max(12px, env(safe-area-inset-left));
+    right: auto;
+    bottom: calc(148px + env(safe-area-inset-bottom));
+    width: max-content;
+    max-width: calc(100vw - 24px);
+  }
+  .orbit-app .world-inspector.has-selection {
+    left: 12px;
+    right: 12px;
+    bottom: calc(156px + env(safe-area-inset-bottom));
+    width: auto;
+    max-height: min(38dvh, 320px);
+    overflow-y: auto;
+  }
+  body:has(.orbit-app) .arrow-role-preview {
+    bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    left: max(10px, env(safe-area-inset-left));
+    transform: none;
+    max-width: calc(100vw - 20px);
+    width: max-content;
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  body:has(.orbit-app) .arrow-role-preview select { min-height: 44px; }
+  body:has(.orbit-app) .arrow-os-notification-button {
+    bottom: calc(86px + env(safe-area-inset-bottom));
+    right: max(12px, env(safe-area-inset-right));
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+  body:has(.orbit-app) .arrow-os-notification-toast {
+    bottom: calc(140px + env(safe-area-inset-bottom));
+    right: 12px;
+    max-width: calc(100vw - 24px);
+  }
+  body:has(.orbit-app .world-shell.intro-intro) .arrow-role-preview,
+  body:has(.orbit-app .world-shell.intro-intro) .arrow-os-notification-button {
+    display: none;
+  }
+}
+
+
+/* ARROW mobile onboarding: keep the sphere visible as background artwork while
+   the welcome/Enter Orbit action owns the foreground. Interactive world routes
+   return unchanged once onboarding completes (intro-command). */
+@media (max-width: 680px) {
+  .orbit-app .world-shell:is(.intro-intro, .intro-collapsing) :is(
+    .destination-layer,
+    .orbit-core-label,
+    .craft-orbit,
+    .orbit-links,
+    .world-inspector,
+    .orbit-shortcuts,
+    .orbit-location-tools,
+    .orbit-extra-location,
+    .orbit-command-toggle,
+    .stage-footer
+  ) {
+    display: none !important;
+  }
+
+  /* A compact, readable welcome stack above the visual centerpiece. */
+  .orbit-app .world-shell.intro-intro .orbit-left-zone,
+  .orbit-app .world-shell.intro-collapsing .orbit-left-zone {
+    top: 105px;
+    left: max(16px, env(safe-area-inset-left));
+    right: max(16px, env(safe-area-inset-right));
+    width: auto;
+    max-height: calc(100dvh - 130px);
+    z-index: 45;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .orbit-app .world-shell.intro-intro .orbit-intro-card,
+  .orbit-app .world-shell.intro-collapsing .orbit-intro-card {
+    max-width: 340px;
+    margin-inline: auto;
+    text-align: center;
+  }
+  .orbit-app .world-shell.intro-intro .orbit-intro-card h1,
+  .orbit-app .world-shell.intro-collapsing .orbit-intro-card h1 {
+    max-width: 100%;
+    line-height: 1.12;
+    font-size: clamp(27px, 7vw, 34px);
+  }
+  .orbit-app .world-shell.intro-intro .stage-description,
+  .orbit-app .world-shell.intro-collapsing .stage-description {
+    max-width: 320px;
+    margin: 12px auto 0;
+    line-height: 1.5;
+    font-size: 12px;
+  }
+  .orbit-app .world-shell.intro-intro .orbit-intro-enter {
+    min-height: 48px;
+    margin-top: 16px;
+    padding-inline: 16px;
+    font-size: 14px;
+    touch-action: manipulation;
+  }
+  .orbit-app .world-shell.intro-intro .orbit-intro-enter span:last-child {
+    width: 22px;
+    height: 22px;
+    font-size: 13px;
+  }
+
+  /* Owner-only tools should never sit on top of the first-run message. */
+  body:has(.orbit-app .world-shell:is(.intro-intro,.intro-collapsing)) .arrow-role-preview,
+  body:has(.orbit-app .world-shell:is(.intro-intro,.intro-collapsing)) .arrow-os-notification-button {
+    display: none !important;
+  }
+}
