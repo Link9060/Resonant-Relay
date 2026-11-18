@@ -39,7 +39,7 @@ Treat `Link9060/Resonant-Orbit/pull/6`, `Link9060/Resonant-Waypoint/pull/8`, and
 
 ## Review implementation status
 
-Last prepared: November 10, 2026. **These changes are on review branches only and have not been merged or deployed.**
+Originally prepared: November 10, 2026. **Historical implementation matrix:** PR #114 merged into `beta` on November 18, 2026. The rows below describe review-branch implementation and historical test evidence, not independently verified current live behavior. The post-merge beta pins Orbit `b0f1b51fcb11b7453af2adeb11b2ce78a7496c9e` and Waypoint `9fa96ab4a8c8537018e2e3983e9f6fdc0283f53f`. PR #116 remains unapproved and divergent; do not interpret this table as approval or deployment of its changes.
 
 | ID | Status | Beta review implementation | QA |
 | --- | --- | --- | --- |
@@ -56,13 +56,13 @@ Last prepared: November 10, 2026. **These changes are on review branches only an
 
 ## Review branch and CI relationships
 
-- Correct integration PR: https://github.com/Link9060/Resonant-Relay/pull/114 (target `beta`).
+- Historical integration PR: https://github.com/Link9060/Resonant-Relay/pull/114 (merged into `beta` November 18, 2026). Independent SI review PR #116 remains unmerged.
 - Embedded Orbit PR: https://github.com/Link9060/Resonant-Orbit/pull/7 (pinned baseline `beta-foundation-polish-20261023`).
 - Embedded Waypoint PR: https://github.com/Link9060/Resonant-Waypoint/pull/9 (same pinned beta baseline).
 - Run `npm run beta:target` in Relay to print and verify current module pins and prevent mis-targeted PRs.
 - The integrated `beta-package` job builds Orbit + Waypoint + Atlas + RAVIN at those exact pins and tests shared routing.
 - Orbit Chromium browser regression tests for access, quick locations, dashboard keyboard safety and location-editor keyboard safety run on the pinned branch. Waypoint's strict dependency audit passes after upgrading Next.js to **16.4.6** with an npm-generated package lockfile.
-- No merges to the live `beta` branch without explicit owner approval.
+- No **further** merges to live `beta` without explicit owner approval of the exact new diff.
 
 
 ## Visual QA and durable source-of-truth issue
@@ -71,4 +71,4 @@ Last prepared: November 10, 2026. **These changes are on review branches only an
 - Verified narrow Orbit header stays within viewport and Orbit/Dashboard button labels are not clipped in the covered test cases.
 - Screenshots exposed poor contrast on disabled buttons. The paired action backgrounds and 4.5:1 test were added after visual inspection; this verifies one class of controls, **not every element** or all custom-accent combinations.
 - Future AI source-of-truth issue, visible regardless of branch: https://github.com/Link9060/Resonant-Relay/issues/115.
-- Integrated beta live URL remains unchanged until the user approves merging PR #114 into Relay `beta` and a successful deployment follows.
+- Historical pre-merge gate is superseded: PR #114 has merged. Confirm the specific beta deployment run and current live browser behavior separately; do not assume PR #116's changes are live.
