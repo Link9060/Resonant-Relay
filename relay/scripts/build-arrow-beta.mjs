@@ -16,7 +16,12 @@ const shellRevision=createHash('sha256').update(readFileSync(path.join(relay,'pu
 run('npm',['run','build'],relay,{NEXT_PUBLIC_ARROW_SHELL_REVISION:shellRevision});
 rmSync(work,{recursive:true,force:true});mkdirSync(work,{recursive:true});
 function source(repo){
-  if(process.env.ARROW_BETA_LOCAL_ROOT)return path.join(process.env.ARROW_BETA_LOCAL_ROOT,repo);
+  if(process.env.ARROW_BETA_LOCAL_ROOT){
+    const dir=path.join(process.env.ARROW_BETA_LOCAL_ROOT,repo);
+    const actual=execFileSync('git',['rev-parse','HEAD'],{cwd:dir,encoding:'utf8'}).trim();
+    if(actual!==manifest[repo])throw new Error('Local ARROW beta source pin mismatch for '+repo+': expected '+manifest[repo]+', got '+actual);
+    return dir;
+  }
   const dir=path.join(work,repo);run('git',['init',dir],relay);run('git',['remote','add','origin','https://github.com/Link9060/'+repo+'.git'],dir);
   run('git',['fetch','--depth=1','origin',manifest[repo]],dir);run('git',['checkout','--detach','FETCH_HEAD'],dir);return dir;
 }
