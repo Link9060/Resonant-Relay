@@ -31,9 +31,16 @@ function source(repo){
 function compile(repo,center,key){
   const dir=source(repo);if(!process.env.ARROW_BETA_LOCAL_ROOT)run('npm',existsSync(path.join(dir,'package-lock.json'))?['ci']:['install','--no-audit','--no-fund'],dir);
   const layout=path.join(dir,'src/app/layout.tsx');
-  if(existsSync(layout))writeFileSync(layout,reviseShellReferences(readFileSync(layout,'utf8'),shellRevision));
-  run('npm',['run','build'],dir,{[key]:base+'/'+center,NEXT_PUBLIC_ARROW_SHELL_BASE:base});
-  cpSync(path.join(dir,'out'),path.join(output,'arrow',center),{recursive:true});return dir;
+  const originalLayout=existsSync(layout)?readFileSync(layout):null;
+  try{
+    if(originalLayout!==null)writeFileSync(layout,reviseShellReferences(originalLayout.toString('utf8'),shellRevision));
+    run('npm',['run','build'],dir,{[key]:base+'/'+center,NEXT_PUBLIC_ARROW_SHELL_BASE:base});
+    cpSync(path.join(dir,'out'),path.join(output,'arrow',center),{recursive:true});
+  }finally{
+    // Local pinned checkouts are inputs, not build artifacts. Restore even when the build fails.
+    if(process.env.ARROW_BETA_LOCAL_ROOT&&originalLayout!==null)writeFileSync(layout,originalLayout);
+  }
+  return dir;
 }
 const orbit=compile('Resonant-Orbit','orbit','NEXT_PUBLIC_ORBIT_BASE_PATH');
 run(process.execPath,['--test','tests/arrow-shell.test.cjs','tests/entertainment.test.cjs','tests/auth-gate.test.cjs','tests/orbit-refinement.test.cjs','tests/orbit-adapt.test.cjs','tests/orbit-widget-grid.test.cjs','tests/adapt-native.test.cjs','tests/module-routing.test.cjs'],orbit,{ARROW_SHELL_SOURCE:path.join(relay,'public/arrow-shell.js')});
