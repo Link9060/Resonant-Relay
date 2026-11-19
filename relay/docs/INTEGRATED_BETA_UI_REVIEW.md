@@ -72,3 +72,13 @@ Last prepared: November 10, 2026. **These changes are on review branches only an
 - Screenshots exposed poor contrast on disabled buttons. The paired action backgrounds and 4.5:1 test were added after visual inspection; this verifies one class of controls, **not every element** or all custom-accent combinations.
 - Future AI source-of-truth issue, visible regardless of branch: https://github.com/Link9060/Resonant-Relay/issues/115.
 - Integrated beta live URL remains unchanged until the user approves merging PR #114 into Relay `beta` and a successful deployment follows.
+
+## Waypoint text reduction review — November 19, 2026
+
+- Source baseline: integrated beta-pinned Waypoint `9fa96ab4a8c8537018e2e3983e9f6fdc0283f53f`.
+- Waypoint review: https://github.com/Link9060/Resonant-Waypoint/pull/10
+- Proposed pin: `9766ee953c9c48b9fbdefb59295807723fa5abbe`.
+- Across Today, Capture, Plans, Calendar, Direction and Review: remove decorative uppercase labels, repeated page intros, motivational copy, empty-state filler and duplicate content, retaining real actions, important errors, dates, account state and confirmation steps.
+- Shorten week-scheduling instructions, preserve the Capture selection-and-approval flow, and adjust CSS after removing large decorative sections.
+- Integration review branch only. Do not call this live or deploy without explicit approval.
+- **QA pending:** Next static build/type checks, integrated beta packaging, account-backed workflows, theme contrast, and mobile/desktop browser screenshots.
