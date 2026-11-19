@@ -20,6 +20,9 @@ function source(repo){
     const dir=path.join(process.env.ARROW_BETA_LOCAL_ROOT,repo);
     const actual=execFileSync('git',['rev-parse','HEAD'],{cwd:dir,encoding:'utf8'}).trim();
     if(actual!==manifest[repo])throw new Error('Local ARROW beta source pin mismatch for '+repo+': expected '+manifest[repo]+', got '+actual);
+    // HEAD alone does not prove the checkout matches the pinned commit: tracked files may be edited.
+    const dirty=execFileSync('git',['status','--porcelain','--untracked-files=no'],{cwd:dir,encoding:'utf8'}).trim();
+    if(dirty)throw new Error('Local ARROW beta source has modified tracked files for '+repo+'; use a clean checkout of '+manifest[repo]);
     return dir;
   }
   const dir=path.join(work,repo);run('git',['init',dir],relay);run('git',['remote','add','origin','https://github.com/Link9060/'+repo+'.git'],dir);
