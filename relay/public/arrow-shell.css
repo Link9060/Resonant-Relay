@@ -3247,3 +3247,207 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
     display: none !important;
   }
 }
+
+
+/* Professional ARROW staff workspace: the content body owns the remaining
+   viewport height. Legacy 640px quick-panel caps must never clip a full page. */
+.arrow-os-panel.arrow-staff-page > .arrow-os-panel-body {
+  max-height:none!important;
+  min-height:0!important;
+  height:auto!important;
+  flex:1 1 auto!important;
+  overflow:hidden!important;
+  padding:0!important;
+}
+.arrow-os-panel.arrow-staff-page .arrow-staff-workspace {
+  min-height:0;
+  height:100%;
+  overflow:hidden;
+}
+.arrow-os-panel.arrow-staff-page .arrow-staff-content {
+  min-height:0;
+  min-width:0;
+  height:100%;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding-bottom:64px;
+}
+.arrow-os-panel.arrow-staff-page .arrow-staff-nav {
+  min-height:0;
+  overflow-y:auto;
+}
+.arrow-staff-page .arrow-staff-welcome {
+  background:var(--arrow-panel-soft);
+  border-radius:14px;
+}
+.arrow-staff-page .arrow-staff-welcome p { max-width:55ch; }
+@media (min-width:761px) {
+  .arrow-os-panel.arrow-staff-page {
+    display:flex!important;
+    flex-direction:column!important;
+  }
+  .arrow-os-panel.arrow-staff-page[hidden] { display:none!important; }
+}
+@media (max-width:760px) {
+  .arrow-os-panel.arrow-staff-page .arrow-staff-workspace {
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto minmax(0,1fr);
+  }
+  .arrow-os-panel.arrow-staff-page .arrow-staff-nav { overflow-x:auto;overflow-y:hidden; }
+}
+@media (prefers-reduced-motion:no-preference) {
+  .arrow-os-panel.arrow-staff-page[data-open="true"]:not([data-exiting="true"]) {
+    animation:staff-drawer-enter .48s cubic-bezier(.2,.8,.18,1) both;
+  }
+  .arrow-os-panel.arrow-staff-page[data-exiting="true"] {
+    animation:staff-drawer-exit .32s cubic-bezier(.55,0,.7,.2) both;
+  }
+  @keyframes staff-drawer-enter {
+    from { opacity:.48; translate:-22px 0; clip-path:inset(0 0 0 14% round 18px); }
+    to { opacity:1; translate:0 0; clip-path:inset(0 round 18px); }
+  }
+  @keyframes staff-drawer-exit {
+    to { opacity:0; translate:-25px 0; clip-path:inset(0 0 0 24% round 18px); }
+  }
+}
+:root[data-arrow-motion="reduce"] .arrow-os-panel.arrow-staff-page { animation:none!important; }
+
+
+/* RAVIN quick chat: quiet floating utility, rather than another large modal. */
+.arrow-quick-ravin {
+  --rq-fg:#f5f5f7; --rq-muted:#a7adb8; --rq-bg:#151619; --rq-line:#393b42;
+  box-sizing:border-box!important; position:fixed!important; z-index:2147483010!important;
+  display:flex; flex-direction:column; overflow:visible; min-width:0; min-height:0;
+  border:1px solid var(--rq-line); border-radius:17px; background:var(--rq-bg);color:var(--rq-fg);
+  box-shadow:0 25px 100px #0008,0 3px 18px #0004;
+  font:14px/1.5 Inter,ui-sans-serif,system-ui,sans-serif;
+  contain:layout style;
+  transition:box-shadow .3s ease,border-radius .4s ease;
+}
+.arrow-quick-ravin[hidden] {display:none!important;}
+:root[data-arrow-theme="light"] .arrow-quick-ravin {
+  --rq-fg:#15181d;--rq-muted:#515867;--rq-bg:#fcfcfd;--rq-line:#d2d6dc;
+  box-shadow:0 26px 90px #151b2836;
+}
+.arrow-quick-ravin * {box-sizing:border-box;}
+.arrow-quick-ravin :is(button,a,textarea) {font:inherit;color:inherit;}
+.arrow-quick-ravin :is(button,a):focus-visible,.arrow-quick-ravin textarea:focus-visible {
+  outline:2px solid var(--arrow-accent-color,#b6b9c0);outline-offset:2px;
+}
+.arrow-quick-head {
+  flex:0 0 56px; min-height:56px; display:flex;align-items:center;gap:11px;
+  padding:9px 12px 9px 16px;border-bottom:1px solid var(--rq-line);
+  cursor:grab;touch-action:none;user-select:none;
+  border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0;
+}
+.arrow-quick-ravin.moving .arrow-quick-head {cursor:grabbing;}
+.arrow-quick-head strong {font-size:13px;letter-spacing:.035em;font-weight:700;flex:1;}
+.arrow-quick-mark {display:grid;place-items:center;width:27px;height:27px;border:1px solid var(--rq-line);border-radius:9px;}
+.arrow-quick-actions {display:flex;align-items:center;gap:3px;}
+.arrow-quick-actions :is(button,a) {
+  appearance:none;display:grid;place-items:center;min-width:33px;height:34px;
+  padding:0 8px;border:0;border-radius:8px;background:none;text-decoration:none;
+  font-size:17px;cursor:pointer;white-space:nowrap;
+}
+.arrow-quick-actions [data-layout] {font-size:11px;letter-spacing:0;min-width:62px;}
+.arrow-quick-actions :is(button,a):hover {background:color-mix(in srgb,var(--rq-fg) 9%,transparent);}
+.arrow-quick-messages {
+  flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  display:flex;flex-direction:column;gap:12px;padding:20px 16px;
+  scrollbar-width:thin;
+}
+.arrow-quick-message {
+  white-space:pre-wrap;overflow-wrap:anywhere;max-width:92%;
+  border-radius:13px;padding:11px 13px;line-height:1.5;font-size:13px;
+}
+.arrow-quick-message.user {align-self:flex-end;background:color-mix(in srgb,var(--rq-fg) 13%,transparent);}
+.arrow-quick-message.assistant {align-self:flex-start;background:color-mix(in srgb,var(--rq-fg) 5%,transparent);}
+.arrow-quick-compose {flex:0 0 auto;padding:10px 12px 12px;border-top:1px solid var(--rq-line);}
+.arrow-quick-input {
+  width:100%;min-height:55px;max-height:140px;padding:11px 12px;resize:vertical;
+  background:color-mix(in srgb,var(--rq-fg) 5%,transparent);
+  border:1px solid var(--rq-line);border-radius:10px;outline:0;font-size:13px;
+}
+.arrow-quick-input::placeholder {color:var(--rq-muted);}
+.arrow-quick-compose>div {display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;}
+.arrow-quick-status {font-size:11px;color:var(--rq-muted);min-width:0;}
+.arrow-quick-send {
+  border:1px solid var(--rq-line);border-radius:8px;background:color-mix(in srgb,var(--rq-fg) 10%,transparent);
+  padding:8px 13px;min-height:35px;cursor:pointer;font-weight:650;
+}
+.arrow-quick-send:hover {background:color-mix(in srgb,var(--rq-fg) 17%,transparent);}
+.arrow-quick-send:disabled {opacity:.4;cursor:default;}
+.arrow-quick-docks button {
+  appearance:none;position:absolute;z-index:5;background:var(--rq-muted);
+  opacity:.53;border:0;border-radius:9px;cursor:pointer;transition:opacity .2s ease,background .2s ease,scale .2s ease;
+}
+.arrow-quick-docks button:hover,.arrow-quick-docks button[aria-pressed="true"] {
+  opacity:1;background:var(--arrow-accent-color,#e6e6e6);scale:1.2;
+}
+.arrow-quick-docks [data-dock="top"] {width:40px;height:5px;top:-4px;left:calc(50% - 20px);}
+.arrow-quick-docks [data-dock="bottom"] {width:40px;height:5px;bottom:-4px;left:calc(50% - 20px);}
+.arrow-quick-docks [data-dock="left"] {height:40px;width:5px;left:-4px;top:calc(50% - 20px);}
+.arrow-quick-docks [data-dock="right"] {height:40px;width:5px;right:-4px;top:calc(50% - 20px);}
+.arrow-quick-resizers i {position:absolute;z-index:4;touch-action:none;}
+.arrow-quick-resizers [data-resize="n"],.arrow-quick-resizers [data-resize="s"] {height:8px;left:12px;right:12px;cursor:ns-resize;}
+.arrow-quick-resizers [data-resize="n"] {top:-4px;}
+.arrow-quick-resizers [data-resize="s"] {bottom:-4px;}
+.arrow-quick-resizers [data-resize="w"],.arrow-quick-resizers [data-resize="e"] {width:8px;top:12px;bottom:12px;cursor:ew-resize;}
+.arrow-quick-resizers [data-resize="w"] {left:-4px;}
+.arrow-quick-resizers [data-resize="e"] {right:-4px;}
+.arrow-quick-resizers :is([data-resize="nw"],[data-resize="se"]) {width:17px;height:17px;cursor:nwse-resize;}
+.arrow-quick-resizers :is([data-resize="ne"],[data-resize="sw"]) {width:17px;height:17px;cursor:nesw-resize;}
+.arrow-quick-resizers [data-resize="nw"] {top:-7px;left:-7px;}
+.arrow-quick-resizers [data-resize="ne"] {top:-7px;right:-7px;}
+.arrow-quick-resizers [data-resize="se"] {bottom:-7px;right:-7px;}
+.arrow-quick-resizers [data-resize="sw"] {bottom:-7px;left:-7px;}
+.arrow-quick-ravin[data-docked]:not([data-docked="none"]) {border-radius:0;box-shadow:0 0 60px #0005;}
+.arrow-quick-wave {position:fixed;pointer-events:none;z-index:2147483008;opacity:0;}
+.arrow-quick-wave[data-side="left"],.arrow-quick-wave[data-side="right"] {
+  top:0;height:100vh;width:90px;border-radius:50%;
+  background:radial-gradient(ellipse at center,color-mix(in srgb,var(--arrow-accent-color,#e4e4e4) 16%,transparent),transparent 70%);
+}
+.arrow-quick-wave[data-side="left"] {left:0;}
+.arrow-quick-wave[data-side="right"] {right:0;}
+.arrow-quick-wave[data-side="top"],.arrow-quick-wave[data-side="bottom"] {
+  left:0;width:100vw;height:80px;background:radial-gradient(ellipse at center,#ffffff1c,transparent 70%);
+}
+.arrow-quick-wave[data-side="top"] {top:0;}
+.arrow-quick-wave[data-side="bottom"] {bottom:0;}
+.arrow-quick-wave {animation:arrow-dock-wave .72s cubic-bezier(.2,.8,.25,1) both;}
+@keyframes arrow-dock-wave {0%{opacity:0;scale:.65;}35%{opacity:1;}100%{opacity:0;scale:3;}}
+/* Push makes room; Overlay lets content remain underneath the docked assistant. */
+:root[data-ravin-layout="push"][data-ravin-docked="right"] :is(.orbit-app,.waypoint-app,.beta-experience) {
+  width:calc(100% - var(--ravin-dock-width,420px))!important;
+}
+:root[data-ravin-layout="push"][data-ravin-docked="left"] :is(.orbit-app,.waypoint-app,.beta-experience) {
+  width:calc(100% - var(--ravin-dock-width,420px))!important;margin-left:var(--ravin-dock-width,420px)!important;
+}
+:root[data-ravin-layout="push"][data-ravin-docked="top"] :is(.orbit-app,.waypoint-app,.beta-experience) {
+  padding-top:var(--ravin-dock-height,320px)!important;
+}
+:root[data-ravin-layout="push"][data-ravin-docked="bottom"] :is(.orbit-app,.waypoint-app,.beta-experience) {
+  padding-bottom:var(--ravin-dock-height,320px)!important;
+}
+@media(max-width:660px) {
+  .arrow-quick-ravin:not([data-docked="none"]) {max-width:100vw;max-height:100dvh;}
+  .arrow-quick-ravin .arrow-quick-head {padding:8px;}
+  .arrow-quick-ravin .arrow-quick-messages {padding:14px 10px;}
+  .arrow-quick-ravin .arrow-quick-actions [data-layout] {min-width:48px;}
+}
+@media(prefers-reduced-motion:reduce) {.arrow-quick-wave{display:none!important;}.arrow-quick-docks button{transition:none!important;}}
+:root[data-arrow-motion="reduce"] .arrow-quick-wave {display:none!important;}
+
+
+/* The workspace yields to a dock instead of jumping out of the way. */
+:root:not([data-arrow-motion="reduce"]) :is(.orbit-app,.waypoint-app,.beta-experience) {
+  transition:width 460ms cubic-bezier(.22,.8,.2,1),margin-left 460ms cubic-bezier(.22,.8,.2,1),
+    padding-top 460ms cubic-bezier(.22,.8,.2,1),padding-bottom 460ms cubic-bezier(.22,.8,.2,1);
+}
+@media(prefers-reduced-motion:reduce) {
+  :root:not([data-arrow-motion="full"]) :is(.orbit-app,.waypoint-app,.beta-experience) {
+    transition:none!important;
+  }
+}
