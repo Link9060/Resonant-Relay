@@ -2,7 +2,6 @@
 (() => {
   'use strict';
   if (window.ArrowQuickRavin) return;
-  const api='https://ravin-hyeq.onrender.com/api/chat';
   const S={el:null,owner:null,module:'orbit',conversation:null,busy:false,dock:null,push:false,
     float:{x:Math.max(12,innerWidth-500),y:Math.max(12,innerHeight-590),w:440,h:520},saved:null,gesture:null};
   const q=s=>S.el?.querySelector(s);
@@ -36,7 +35,7 @@
     document.body.appendChild(wave);wave.addEventListener('animationend',()=>wave.remove(),{once:true});
     setTimeout(()=>wave.remove(),950);
     const page=document.querySelector('.orbit-app,.waypoint-app,.beta-experience');
-    if(S.push&&page?.animate){
+    if(page?.animate){
       const dx=side==='left'?10:side==='right'?-10:0,dy=side==='top'?8:side==='bottom'?-8:0;
       page.animate([{transform:'translate(0,0)'},{transform:'translate('+dx+'px,'+dy+'px)',offset:.28},{transform:'translate(0,0)'}],{duration:580,easing:'ease-out'});
     }
@@ -53,6 +52,7 @@
   }
   function reset(){
     if(S.busy)return;
+    if(S.owner)try{sessionStorage.removeItem('arrow_quick_ravin:'+S.owner);}catch{}
     S.conversation=null;q('.arrow-quick-messages').replaceChildren();
     q('.arrow-quick-status').textContent='';
     message('assistant','How can I help?');
@@ -104,6 +104,7 @@
           }else if(event==='done'){
             if(!responseEl.textContent)responseEl.textContent=data.reply||'';
             S.conversation=data.conversation_id||S.conversation;
+            if(S.owner && S.conversation)try{sessionStorage.setItem('arrow_quick_ravin:'+S.owner,S.conversation);}catch{}
             done=true;
           }else if(event==='error'){
             throw Error(data.message||'RAVIN could not respond.');
@@ -130,7 +131,7 @@
     e.preventDefault();
     if(S.dock){
       const rect=S.el.getBoundingClientRect();
-      S.float={x:rect.left,y:rect.top,w:Math.min(rect.width,Math.max(300,innerWidth-24)),h:Math.min(rect.height,Math.max(320,innerHeight-24))};
+      S.float=S.saved?{...S.saved}:{x:Math.max(12,Math.min(rect.left,innerWidth-452)),y:Math.max(12,Math.min(rect.top,innerHeight-532)),w:Math.min(440,Math.max(300,innerWidth-24)),h:Math.min(520,Math.max(320,innerHeight-24))};
       S.dock=null;S.saved=null;apply();
     }
     S.gesture={id:e.pointerId,edge,x:e.clientX,y:e.clientY,last:e.clientX,lastY:e.clientY,rect:{...S.float}};
@@ -195,7 +196,7 @@
   }
   function open(module='orbit',prompt=''){
     ensure();const id=window.ArrowOS?.getSession?.()?.user?.id||null;
-    if(id!==S.owner){S.owner=id;if(!S.busy)reset();}
+    if(id!==S.owner){S.owner=id;if(!S.busy){reset();if(id)try{S.conversation=sessionStorage.getItem('arrow_quick_ravin:'+id)||null;}catch{}}}
     S.module=module;S.el.hidden=false;
     q('[data-full]').href=window.ArrowOS?.resolveHref?.('/ravin/')||'/ravin/';
     apply();animateAttach('float');if(prompt)q('.arrow-quick-input').value=prompt;q('.arrow-quick-input').focus({preventScroll:true});
