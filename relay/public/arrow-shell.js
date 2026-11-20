@@ -2662,7 +2662,7 @@
 
   let quickRavinLoad=null;
   function openQuickRavin(module='orbit') {
-    if(!BETA_BASE){openPanel('ravin',module);return;}
+    if(!(BETA_BASE || ON_ENTERARROW)){openPanel('ravin',module);return;}
     if(window.ArrowQuickRavin?.open){window.ArrowQuickRavin.open(module);return;}
     if(!quickRavinLoad)quickRavinLoad=new Promise((resolve,reject)=>{
       const script=document.createElement('script');
