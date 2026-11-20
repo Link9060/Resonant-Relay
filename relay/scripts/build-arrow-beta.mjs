@@ -39,7 +39,7 @@ run(process.execPath,['--test','tests/arrow-design-parity.test.cjs'],relay,{
  ARROW_ATLAS_SOURCE:atlas,ARROW_RAVIN_SOURCE:ravin,
 });
 const common=path.join(output,'arrow');
-for(const name of ['arrow-shell.js','arrow-shell.css','arrow-quick-ravin.js'])cpSync(path.join(relay,'public',name),path.join(common,name));
+for(const name of ['arrow-shell.js','arrow-shell.css','arrow-quick-ravin.js','arrow-whats-new.js','arrow-release-log.json'])cpSync(path.join(relay,'public',name),path.join(common,name));
 cpSync(path.join(relay,'public/arrow-beta-guard.js'),path.join(common,'arrow-beta-guard.js'));
 cpSync(path.join(ravin,'ravin/src/nextMove.js'),path.join(common,'next-move.js'));
 cpSync(path.join(ravin,'ravin/src/autoPlanner.js'),path.join(common,'autoPlanner.js'));
@@ -53,9 +53,25 @@ function patchHtml(dir){for(const entry of readdirSync(dir,{withFileTypes:true})
   let html=readFileSync(file,'utf8').replace(/(["'])\/arrow-shell\.(js|css)(\?[^"']*)?\1/g,(_m,quote,ext)=>quote+base+'/arrow-shell.'+ext+'?v=review-20261006'+quote);
   html=html.replace(/<script[^>]*src=["']\/arrow-auth-guard\.js[^"']*["'][^>]*><\/script>/g,'');
   html=html.replace(/<link[^>]*href=["']\/arrow-auth-guard\.js[^"']*["'][^>]*>/g,'');
-  html=html.replace(/<head>/i,'<head><script src="'+base+'/arrow-beta-guard.js?v=review-20261006"></script>');writeFileSync(file,html);
+  html=html.replace(/<head>/i,'<head><script src="'+base+'/arrow-beta-guard.js?v=review-20261006"></script><script defer src="'+base+'/arrow-whats-new.js"></script>');writeFileSync(file,html);
 }}}
 patchHtml(common);
+// Relay root routes share the same update announcement as Orbit, Waypoint,
+// Atlas and RAVIN. Do not inject an additional authentication guard.
+function injectWhatsNew(dir) {
+ for(const entry of readdirSync(dir,{withFileTypes:true})){
+  const file=path.join(dir,entry.name);
+  if(entry.isDirectory())injectWhatsNew(file);
+  else if(entry.name.endsWith('.html')){
+   let html=readFileSync(file,'utf8');
+   if(!html.includes('arrow-whats-new.js')) {
+     html=html.replace(/<\/head>/i,'<script defer src="'+base+'/arrow-whats-new.js"></script></head>');
+     writeFileSync(file,html);
+   }
+  }
+ }
+}
+injectWhatsNew(output);
 const betaPrefix='/Resonant-Relay';
 // Use content revisions so fresh markup cannot retain obsolete center stylesheets.
 function versionHtml(dir){for(const entry of readdirSync(dir,{withFileTypes:true})){

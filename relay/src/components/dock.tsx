@@ -1,9 +1,8 @@
 'use client';
 
-import { WhatsNew, OPEN_WHATS_NEW_EVENT } from '@/components/whats-new';
 import { APP_TITLE, appPageUrl, appPathname, BASE_PATH, IS_BETA, ARROW_SITE_URL } from '@/lib/config';
 import { cn } from '@/lib/utils';
-import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, History, House, Link2, ListTodo, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, TimerReset, Users, type LucideIcon } from 'lucide-react';
+import { CalendarClock, CalendarDays, ChevronLeft, ChevronRight, House, Link2, ListTodo, MessageCircle, NotebookPen, Settings, Shield, ShieldCheck, SquareCheck, TimerReset, Users, type LucideIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 const FULL_DESKTOP_DOCK_ITEMS = [
@@ -35,7 +34,6 @@ export function Dock({
   role = 'user',
   collapsed = false,
   onCollapsedChange,
-  onboardingCompletedAt,
 }: {
   role?: AppRole;
   collapsed?: boolean;
@@ -97,19 +95,6 @@ export function Dock({
         <div className="mt-3 border-t border-border pt-3">
           <button
             type="button"
-            onClick={() => window.dispatchEvent(new Event(OPEN_WHATS_NEW_EVENT))}
-            className={cn(
-              'relay-dock-link flex w-full items-center overflow-hidden rounded-md py-2 text-sm text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink',
-              collapsed ? 'justify-center px-0' : 'gap-3 px-3'
-            )}
-            aria-label="What’s New"
-            title={collapsed ? 'What’s New' : undefined}
-          >
-            <History size={18} className="shrink-0" />
-            <span className={cn('whitespace-nowrap transition-[opacity,max-width,transform] duration-200', collapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-32 translate-x-0 opacity-100')} aria-hidden={collapsed}>What&apos;s New</span>
-          </button>
-          <button
-            type="button"
             onClick={() => onCollapsedChange?.(!collapsed)}
             className={cn(
               'relay-collapse-toggle relay-dock-link flex w-full items-center overflow-hidden rounded-md py-2 text-sm text-ink-muted transition-colors hover:bg-surface-raised hover:text-ink',
@@ -124,7 +109,6 @@ export function Dock({
         </div>
       </nav>
 
-      <WhatsNew onboardingCompletedAt={onboardingCompletedAt} />
 
       {/* Adapt's mobile hub is shared navigation, not a duplicate app implementation.
           Native details keeps the menu keyboard/touch accessible without scripting. */}
