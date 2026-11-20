@@ -22,6 +22,9 @@ test('the public ARROW launcher opens Quick RAVIN instead of the obsolete RAVIN 
   assert.match(shell,/if\s*\(name === 'ravin' && \(BETA_BASE \|\| ON_ENTERARROW\)\)/);
   assert.match(shell,/if\s*\(!\(BETA_BASE \|\| ON_ENTERARROW\)\)\s*\{openPanel\('ravin',module\);return;\}/);
   assert.match(shell,/script\.src=\(BETA_BASE\|\|''\)\+'\/arrow-quick-ravin\.js'/);
+  assert.match(shell,/function openQuickRavin\(module='orbit', prompt=''\)/);
+  assert.match(shell,/ArrowQuickRavin\.open\(module,prompt\)/);
+  assert.match(shell,/ArrowQuickRavin\?\.open\(module,prompt\)/);
   assert.match(quick,/publicGateway\?'\/ravin\/api\/v2\/chat\/stream'/);
   assert.match(quick,/https:\/\/ravin-hyeq\.onrender\.com\/api\/v2\/chat\/stream/);
 });
