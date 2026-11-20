@@ -1,0 +1,313 @@
+{
+  "schemaVersion": 1,
+  "current": {
+    "id": "arrow-workspace-nov-2026",
+    "version": "2026.11",
+    "status": "Public release",
+    "publishedAt": "2026-11-20T15:00:00Z",
+    "title": "ARROW · Workspace Update",
+    "summary": "A calmer Waypoint, faster navigation, and a RAVIN chat that stays beside your work.",
+    "groups": [
+      {
+        "label": "Workspace",
+        "items": [
+          "Waypoint now prioritizes a clear task list, filters, progress, and quick capture instead of decorative cards.",
+          "Staff, Orbit, and Dashboard are accessible from one role-aware control, with the staff layout cutoff corrected."
+        ]
+      },
+      {
+        "label": "RAVIN",
+        "items": [
+          "Quick RAVIN opens over your current work and can be moved, resized, or docked to any edge.",
+          "Switch between overlay and push layout without leaving your workspace. Motion respects reduced-motion preferences."
+        ]
+      },
+      {
+        "label": "ARROW",
+        "items": [
+          "What’s New lives in the ARROW panel, with Relay’s previous update history preserved.",
+          "Updates are announced once per account and remain available anytime from the ARROW control."
+        ]
+      }
+    ]
+  },
+  "history": [
+    {
+      "version": "1.1",
+      "status": "Public release",
+      "publishedAt": "2026-10-15T00:00:00Z",
+      "title": "Relay 1.1 · ARROW Update",
+      "summary": "Your daily workspace, connected to the complete ARROW suite with a refreshed RAVIN dashboard widget.",
+      "groups": [
+        {
+          "label": "RAVIN on your dashboard",
+          "items": [
+            "Write a multiline question, organize a brain dump, or start planning your day from the refreshed RAVIN widget.",
+            "Questions open as drafts in RAVIN so you can review them before sending. Public and beta open their matching RAVIN workspace."
+          ]
+        },
+        {
+          "label": "Connected ARROW",
+          "items": [
+            "The current integrated ARROW experience is available on public, including Orbit, Relay, Waypoint, Atlas, and RAVIN.",
+            "Request beta access from the public site, open the beta workspace when approved, and return to public from beta."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0.9",
+      "status": "Cleanup update",
+      "publishedAt": "2026-10-15T00:00:00Z",
+      "title": "Relay 1.0.9 · Cleanup & Polish",
+      "summary": "A recap of the cleanup work leading into 1.1: smoother navigation, simpler preferences, and more organized staff tools across ARROW.",
+      "groups": [
+        {
+          "label": "Everyday polish",
+          "items": [
+            "Cleaned up keyboard shortcut behavior and simplified appearance preferences by removing the oversized color selection.",
+            "Improved shared navigation, layout behavior, and consistency between Relay and the other ARROW workspaces."
+          ]
+        },
+        {
+          "label": "Staff workspace",
+          "items": [
+            "Moved staff controls into a dedicated Orbit workspace with clearer organization for owners, admins, and moderators.",
+            "Hardened role access and added owner experience previews for testing staff and normal-user views."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0.8",
+      "status": "Public release",
+      "publishedAt": "2026-09-28T01:00:00Z",
+      "title": "Relay 1.0.8",
+      "summary": "Relay 1.0.8 brings the current beta experience to public, opens Orbit from Relay, and rolls in the latest stability and interface fixes.",
+      "groups": [
+        {
+          "label": "ARROW and navigation",
+          "items": [
+            "Relay now opens Orbit from the ARROW control while public access stays scoped to Relay; Atlas, RAVIN, and Waypoint remain visible but unavailable for now.",
+            "Orbit navigation supports number shortcuts followed by Enter, and the shared ARROW control has been cleaned up to avoid duplicate mounts and clipped controls."
+          ]
+        },
+        {
+          "label": "Reliability and polish",
+          "items": [
+            "The old Relay startup and duplicate full-page transition systems were removed so the app opens more reliably and avoids stacked animations.",
+            "Public and beta now use the same hardened Relay shell, with improved cache behavior, account loading, support tools, and layout fixes carried forward from beta."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0.7",
+      "status": "Public release · Focus Update",
+      "publishedAt": "2026-09-21T03:00:00Z",
+      "title": "Focus Update",
+      "summary": "Relay 1.0.7 sharpens the daily workflow with Focus, cleaner communication and calendar layouts, safer connected-account handling, and a more adaptive dashboard.",
+      "groups": [
+        {
+          "label": "Focus and dashboard",
+          "items": [
+            "Focus adds a dedicated workspace for timed work sessions and quick access to the parts of Relay that matter while you are working.",
+            "Dashboard widgets now change their internal layout for each selected size instead of relying on internal scrollbars.",
+            "Compact, skinny, tall, wide, and large widget sizes preserve the useful controls and information that fit each shape."
+          ]
+        },
+        {
+          "label": "Calendar, chats, and navigation",
+          "items": [
+            "Calendar desktop spacing was tightened so all seven days remain visible without squeezing the main grid.",
+            "Chats use the available desktop width more effectively, Contacts sits beside Chats in navigation, and the dashboard is denser and easier to scan.",
+            "Mailbox access was removed from Relay while Calendar connections remain available through calendar-only permissions."
+          ]
+        },
+        {
+          "label": "Launch polish",
+          "items": [
+            "Owner account inspection now uses the renamed Calendar integration data without exposing raw database errors in the interface.",
+            "The Relay mark now uses the same high-quality silver vector shading as the app icon.",
+            "Emergency Mode is no longer exposed on the public release and remains available only on the Beta channel."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0.6",
+      "status": "Public release · Planning Update",
+      "publishedAt": "2026-09-14T01:30:00Z",
+      "title": "Planning Update",
+      "summary": "Relay 1.0.6 turns planning into a daily workflow with a real Schedule timeline, stronger Planner editing, and a more reliable dashboard experience.",
+      "groups": [
+        {
+          "label": "Schedule",
+          "items": [
+            "Schedule adds a vertical daily timeline with week navigation, a live NOW line, and a clear view of the day on desktop and mobile.",
+            "Timed Google, Microsoft, and Relay Planner events appear as fixed commitments while personal blocks and scheduled To-Dos stay flexible.",
+            "Give To-Dos an estimated duration, keep unfinished work in the Unscheduled tray, then drag tasks onto the timeline or use Next spot to find an open block.",
+            "Create personal Focus, Break, Routine, or Personal blocks and move flexible blocks as the day changes."
+          ]
+        },
+        {
+          "label": "Planner",
+          "items": [
+            "Plan creators can edit the plan name, notes, repeat pattern, weekdays, date range, and start/end times after creating it.",
+            "Custom-date plans use a compact month calendar where individual day boxes can be selected or removed with a click.",
+            "Editing preserves past occurrences and responses on unchanged future dates while only changing the future dates the creator actually edits."
+          ]
+        },
+        {
+          "label": "Dashboard and polish",
+          "items": [
+            "Dashboard timing widgets now share live upcoming-event logic so Next Up, Today, School Schedule, and Countdowns stop showing timed events after they begin.",
+            "Dashboard Studio uses independent desktop scroll panes for the live preview and customization inspector, with its controls kept in reach.",
+            "Focus, Assignments, Weather, sunrise/sunset, and other non-RAVIN widgets received a functionality and stale-data audit; unsupported placeholder widgets were removed for now.",
+            "Sign-in now clearly asks for a personal account and warns against school-administered, work-managed, or other administrator-controlled email accounts."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0.5",
+      "status": "Public release",
+      "publishedAt": "2026-09-13T20:35:00Z",
+      "title": "Your Relay, your layout",
+      "summary": "Relay 1.0.5 turns the dashboard into a real workspace, expands planning and Calendar intelligence, and gives desktop Relay more control without making mobile more complicated.",
+      "groups": [
+        {
+          "label": "Dashboard Studio",
+          "items": [
+            "Customize the dashboard in a dedicated full-screen Studio with a persistent live preview.",
+            "Drag widgets to reorder them, drag hidden widgets onto the canvas, and resize width or height on a 12-column snap grid.",
+            "Use built-in layouts or save your own reusable dashboard presets, including widget visibility, order, width, and height.",
+            "The expanded widget library includes Weather, Quick Note, Focus, Assignments, Day Progress, School Schedule, RAVIN previews, and more."
+          ]
+        },
+        {
+          "label": "Planning and Calendar",
+          "items": [
+            "Planner items can use real start and end times, and recurring plans present upcoming occurrences without cluttering the active view with past dates.",
+            "Planner creation, schedule summaries, occurrence selection, and overview cards are clearer and faster to scan.",
+            "Connected Google Calendar can discover subscribed and shared calendars, and all-day events stay truly all-day."
+          ]
+        },
+        {
+          "label": "Desktop and Still",
+          "items": [
+            "Desktop Relay supports Classic, Focus Rail, Topbar, and Floating Dock layouts while mobile keeps its stable navigation model.",
+            "Still has been rebuilt as a quiet structured experience with visible navigation, restrained motion, subtle hierarchy, and sparse accent signals.",
+            "Still keyboard shortcuts are scoped to Still itself, and its experience controls are easier to discover and exit."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0.4",
+      "status": "Public release",
+      "publishedAt": "2026-09-13T11:45:00-05:00",
+      "title": "Make Relay yours",
+      "summary": "Relay 1.0.4 brings the full Relay Experience system to public, expands color choices, improves particle continuity, and adds Emergency Mode as a resilient fallback.",
+      "groups": [
+        {
+          "label": "New",
+          "items": [
+            "Relay Experience lets you switch between Flow, Still, Nexus, Aura, Slate, Spark, Lucid, and Vivid.",
+            "A much larger color palette includes additional single colors and two-color combinations.",
+            "Vivid uses the selected primary color across panels, controls, borders, and particles in multiple shades.",
+            "Emergency Mode provides a lightweight fallback for essential Relay access if the main interface has trouble loading."
+          ]
+        },
+        {
+          "label": "Improved",
+          "items": [
+            "Landing, loading, and transition particles now keep your selected palette instead of snapping back to white.",
+            "Lucid keeps its glass depth without distorting panel geometry or clipping popovers.",
+            "Still and Slate keep controls readable on hover, and Slate adds the mouse-following sidebar accent rail.",
+            "The Experience picker is better organized and stays usable as the number of modes and palettes grows."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0.3",
+      "status": "Public release",
+      "publishedAt": "2026-09-10T10:30:00-05:00",
+      "title": "Notes arrive in Relay",
+      "summary": "Relay 1.0.3 added a dedicated private Notes workspace and clearer staff identities.",
+      "groups": [
+        {
+          "label": "New",
+          "items": [
+            "Notes have their own tab and sync privately with your Relay account.",
+            "Build notes from text, headings, lists, checkboxes, and quotes, with automatic saving, search, pinning, and block reordering.",
+            "Owner, Admin, and Moderator titles appear beside people across profiles, contacts, and chats."
+          ]
+        },
+        {
+          "label": "Foundation",
+          "items": [
+            "Notes use structured blocks and stable IDs so a future visual knowledge graph can connect notes, tasks, and files for RAVIN."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0.2",
+      "status": "Public release",
+      "publishedAt": "2026-09-10T10:00:00-05:00",
+      "title": "A clearer Relay update",
+      "summary": "Update history is built into Relay, returning users get a quick one-time update brief, and notification setup is easier to understand.",
+      "groups": [
+        {
+          "label": "New",
+          "items": [
+            "What’s New keeps Relay updates in one easy-to-find place.",
+            "Returning users get a one-time summary after Relay updates."
+          ]
+        },
+        {
+          "label": "Improved",
+          "items": [
+            "Notification setup reminds you to allow your browser in your device notification settings.",
+            "Release information uses simple wording instead of developer-style changelog language."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0.1",
+      "status": "Release candidate",
+      "publishedAt": "2026-09-10T09:00:00-05:00",
+      "title": "Public-release preparation",
+      "summary": "Relay 1.0.1 served as the notification and stability checkpoint leading into the 1.0.2 public release.",
+      "groups": [
+        {
+          "label": "Release focus",
+          "items": [
+            "Reliable device notifications for messages and requests.",
+            "Core messaging, planning, account, and navigation stability.",
+            "Final polish before opening Relay beyond the beta group."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "status": "Earlier build",
+      "publishedAt": "2026-09-01T00:00:00-05:00",
+      "title": "Relay beta foundation",
+      "summary": "The early Relay build established messaging, planning, connected services, profiles, and the core interface.",
+      "groups": [
+        {
+          "label": "Included",
+          "items": [
+            "Messaging, contacts, planner, to-do, calendar, and account views.",
+            "Profiles, account controls, staff tools, and the Relay dashboard."
+          ]
+        }
+      ]
+    }
+  ]
+}
