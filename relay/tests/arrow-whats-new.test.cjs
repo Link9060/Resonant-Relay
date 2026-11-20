@@ -67,7 +67,7 @@ test('an announcement appears once per signed-in account, closes into ARROW, and
     w.eval(src);
     await w.ArrowWhatsNew.checkOnce();
     assert.equal(w.document.querySelectorAll('[role="dialog"]').length,1);
-    assert.match(w.document.body.textContent,/Workspace Update/);
+    assert.ok(w.document.body.textContent.includes(release.current.title),'The announcement shows the current ARROW-wide release heading');
     w.document.querySelector('[data-arrow-release-close]').click();
     await new Promise(resolve=>setTimeout(resolve,0));
     assert.equal(w.document.querySelectorAll('[role="dialog"]').length,0);
