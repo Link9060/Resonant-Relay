@@ -3247,3 +3247,69 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
     display: none !important;
   }
 }
+
+
+/* Professional ARROW staff workspace: the content body owns the remaining
+   viewport height. Legacy 640px quick-panel caps must never clip a full page. */
+.arrow-os-panel.arrow-staff-page > .arrow-os-panel-body {
+  max-height:none!important;
+  min-height:0!important;
+  height:auto!important;
+  flex:1 1 auto!important;
+  overflow:hidden!important;
+  padding:0!important;
+}
+.arrow-os-panel.arrow-staff-page .arrow-staff-workspace {
+  min-height:0;
+  height:100%;
+  overflow:hidden;
+}
+.arrow-os-panel.arrow-staff-page .arrow-staff-content {
+  min-height:0;
+  min-width:0;
+  height:100%;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding-bottom:64px;
+}
+.arrow-os-panel.arrow-staff-page .arrow-staff-nav {
+  min-height:0;
+  overflow-y:auto;
+}
+.arrow-staff-page .arrow-staff-welcome {
+  background:var(--arrow-panel-soft);
+  border-radius:14px;
+}
+.arrow-staff-page .arrow-staff-welcome p { max-width:55ch; }
+@media (min-width:761px) {
+  .arrow-os-panel.arrow-staff-page {
+    display:flex!important;
+    flex-direction:column!important;
+  }
+  .arrow-os-panel.arrow-staff-page[hidden] { display:none!important; }
+}
+@media (max-width:760px) {
+  .arrow-os-panel.arrow-staff-page .arrow-staff-workspace {
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto minmax(0,1fr);
+  }
+  .arrow-os-panel.arrow-staff-page .arrow-staff-nav { overflow-x:auto;overflow-y:hidden; }
+}
+@media (prefers-reduced-motion:no-preference) {
+  .arrow-os-panel.arrow-staff-page[data-open="true"]:not([data-exiting="true"]) {
+    animation:staff-drawer-enter .48s cubic-bezier(.2,.8,.18,1) both;
+  }
+  .arrow-os-panel.arrow-staff-page[data-exiting="true"] {
+    animation:staff-drawer-exit .32s cubic-bezier(.55,0,.7,.2) both;
+  }
+  @keyframes staff-drawer-enter {
+    from { opacity:.48; translate:-22px 0; clip-path:inset(0 0 0 14% round 18px); }
+    to { opacity:1; translate:0 0; clip-path:inset(0 round 18px); }
+  }
+  @keyframes staff-drawer-exit {
+    to { opacity:0; translate:-25px 0; clip-path:inset(0 0 0 24% round 18px); }
+  }
+}
+:root[data-arrow-motion="reduce"] .arrow-os-panel.arrow-staff-page { animation:none!important; }
