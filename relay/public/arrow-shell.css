@@ -3439,3 +3439,15 @@ html[data-arrow-experience="quiet"] .arrow-os-root .arrow-os-content { backdrop-
 }
 @media(prefers-reduced-motion:reduce) {.arrow-quick-wave{display:none!important;}.arrow-quick-docks button{transition:none!important;}}
 :root[data-arrow-motion="reduce"] .arrow-quick-wave {display:none!important;}
+
+
+/* The workspace yields to a dock instead of jumping out of the way. */
+:root:not([data-arrow-motion="reduce"]) :is(.orbit-app,.waypoint-app,.beta-experience) {
+  transition:width 460ms cubic-bezier(.22,.8,.2,1),margin-left 460ms cubic-bezier(.22,.8,.2,1),
+    padding-top 460ms cubic-bezier(.22,.8,.2,1),padding-bottom 460ms cubic-bezier(.22,.8,.2,1);
+}
+@media(prefers-reduced-motion:reduce) {
+  :root:not([data-arrow-motion="full"]) :is(.orbit-app,.waypoint-app,.beta-experience) {
+    transition:none!important;
+  }
+}
