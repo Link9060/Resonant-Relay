@@ -56,6 +56,22 @@ function patchHtml(dir){for(const entry of readdirSync(dir,{withFileTypes:true})
   html=html.replace(/<head>/i,'<head><script src="'+base+'/arrow-beta-guard.js?v=review-20261006"></script><script defer src="'+base+'/arrow-whats-new.js"></script>');writeFileSync(file,html);
 }}}
 patchHtml(common);
+// Relay root routes share the same update announcement as Orbit, Waypoint,
+// Atlas and RAVIN. Do not inject an additional authentication guard.
+function injectWhatsNew(dir) {
+ for(const entry of readdirSync(dir,{withFileTypes:true})){
+  const file=path.join(dir,entry.name);
+  if(entry.isDirectory())injectWhatsNew(file);
+  else if(entry.name.endsWith('.html')){
+   let html=readFileSync(file,'utf8');
+   if(!html.includes('arrow-whats-new.js')) {
+     html=html.replace(/<\/head>/i,'<script defer src="'+base+'/arrow-whats-new.js"></script></head>');
+     writeFileSync(file,html);
+   }
+  }
+ }
+}
+injectWhatsNew(output);
 const betaPrefix='/Resonant-Relay';
 // Use content revisions so fresh markup cannot retain obsolete center stylesheets.
 function versionHtml(dir){for(const entry of readdirSync(dir,{withFileTypes:true})){
