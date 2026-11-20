@@ -20,6 +20,17 @@ test('ARROW owns one release log with the complete Relay history',()=>{
   assert.match(styles,/arrow-release-absorb/);
   assert.match(styles,/prefers-reduced-motion/);
 });
+test('release notes cover the full change since the previous public major release',()=>{
+  assert.equal(release.current.id,'arrow-workspace-nov-2026-complete-release-notes','Expanded announcement must have a new release ID so earlier readers see it again');
+  assert.ok(release.current.groups.length>=8,'The announcement needs comprehensive sections');
+  const descriptions=release.current.groups.flatMap(group=>group.items);
+  assert.ok(descriptions.length>=45,'The announcement should cover the shipped features extensively');
+  const all=descriptions.join(' ').toLowerCase();
+  for(const topic of ['core','bloom','haven','atelier','pulse','custom','dashboard','widget','weather','waypoint','capture','ravin','dock','atlas','relay','staff','what’s new']){
+    assert.ok(all.includes(topic),'Missing release feature area: '+topic);
+  }
+  assert.equal(release.history.length,11,'Historical Relay releases remain intact');
+});
 test('the old Relay-only sidebar action and modal are unmounted',()=>{
   const dock=fs.readFileSync('src/components/dock.tsx','utf8');
   assert.doesNotMatch(dock,/<WhatsNew\b/);
@@ -33,6 +44,8 @@ test('an announcement appears once per signed-in account, closes into ARROW, and
   const w=dom.window;
   let user='owner-1',openCount=0,puts=0;
   const meta=new Map();
+  // A user dismissed the original short announcement. The expanded version should still appear once.
+  meta.set('owner-1','arrow-workspace-nov-2026');
   w.matchMedia=()=>({matches:true,addEventListener(){}});
   w.AbortSignal.timeout=AbortSignal.timeout;
   w.BroadcastChannel=class {postMessage(){}addEventListener(){}close(){}};
@@ -56,7 +69,7 @@ test('an announcement appears once per signed-in account, closes into ARROW, and
     w.eval(src);
     await w.ArrowWhatsNew.checkOnce();
     assert.equal(w.document.querySelectorAll('[role="dialog"]').length,1);
-    assert.match(w.document.body.textContent,/Workspace Update/);
+    assert.ok(w.document.body.textContent.includes(release.current.title),'The announcement shows the current ARROW-wide release heading');
     w.document.querySelector('[data-arrow-release-close]').click();
     await new Promise(resolve=>setTimeout(resolve,0));
     assert.equal(w.document.querySelectorAll('[role="dialog"]').length,0);

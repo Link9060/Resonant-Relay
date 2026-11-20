@@ -2661,16 +2661,16 @@
   }
 
   let quickRavinLoad=null;
-  function openQuickRavin(module='orbit') {
-    if(!BETA_BASE){openPanel('ravin',module);return;}
-    if(window.ArrowQuickRavin?.open){window.ArrowQuickRavin.open(module);return;}
+  function openQuickRavin(module='orbit', prompt='') {
+    if(!(BETA_BASE || ON_ENTERARROW)){openPanel('ravin',module);return;}
+    if(window.ArrowQuickRavin?.open){window.ArrowQuickRavin.open(module,prompt);return;}
     if(!quickRavinLoad)quickRavinLoad=new Promise((resolve,reject)=>{
       const script=document.createElement('script');
       script.src=(BETA_BASE||'')+'/arrow-quick-ravin.js';
       script.async=true;script.onload=()=>resolve();script.onerror=()=>reject(new Error('Quick RAVIN failed to load.'));
       document.head.append(script);
     });
-    quickRavinLoad.then(()=>window.ArrowQuickRavin?.open(module)).catch(()=>{quickRavinLoad=null;openPanel('ravin',module);});
+    quickRavinLoad.then(()=>window.ArrowQuickRavin?.open(module,prompt)).catch(()=>{quickRavinLoad=null;openPanel('ravin',module);});
   }
 
   window.ArrowOS = {

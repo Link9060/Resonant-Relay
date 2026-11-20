@@ -73,7 +73,11 @@
       S.owner=session.user?.id||null;
       const fresh=session.expires_at*1000<Date.now()+30000&&window.ArrowOS?.refreshSession?
         await window.ArrowOS.refreshSession(session)||session:session;
-      const res=await fetch('https://ravin-hyeq.onrender.com/api/v2/chat/stream',{
+      // Public ARROW uses the gateway's existing same-origin RAVIN proxy.
+      // The beta keeps the existing RAVIN service endpoint.
+      const publicGateway=['enterarrow.com','www.enterarrow.com'].includes(location.hostname);
+      const endpoint=publicGateway?'/ravin/api/v2/chat/stream':'https://ravin-hyeq.onrender.com/api/v2/chat/stream';
+      const res=await fetch(endpoint,{
         method:'POST',
         signal:controller.signal,
         headers:{'Content-Type':'application/json',Authorization:'Bearer '+fresh.access_token},
