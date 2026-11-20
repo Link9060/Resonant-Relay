@@ -63,24 +63,67 @@
     input.value='';message('user',value);
     const responseEl=message('assistant','');
     S.busy=true;q('.arrow-quick-send').disabled=true;
-    q('.arrow-quick-status').textContent='Thinking…';
+    q('.arrow-quick-status').textContent='RAVIN is replying…';
+    const controller=new AbortController();
+    S.controller=controller;
     try{
-      const session=await window.ArrowOS?.getSession?.();
+      const session=window.ArrowOS?.getSession?.();
       if(!session?.access_token)throw Error('Sign in to ARROW first.');
       if(S.owner&&S.owner!==session.user?.id)throw Error('Account changed. Start a new chat.');
       S.owner=session.user?.id||null;
       const fresh=session.expires_at*1000<Date.now()+30000&&window.ArrowOS?.refreshSession?
         await window.ArrowOS.refreshSession(session)||session:session;
-      const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+fresh.access_token},
-        body:JSON.stringify({message:value,mode:'conversation',conversation_id:S.conversation})});
-      const data=await res.json().catch(()=>({}));
-      if(!res.ok)throw Error(data.error||'RAVIN is unavailable ('+res.status+').');
-      if(!data.reply)throw Error('RAVIN returned no message.');
-      S.conversation=data.conversation_id||S.conversation;
-      responseEl.textContent=data.reply;
+      const res=await fetch('https://ravin-hyeq.onrender.com/api/v2/chat/stream',{
+        method:'POST',
+        signal:controller.signal,
+        headers:{'Content-Type':'application/json',Authorization:'Bearer '+fresh.access_token},
+        body:JSON.stringify({message:value,mode:'conversation',surface:S.module,conversation_id:S.conversation})
+      });
+      if(!res.ok){
+        const data=await res.json().catch(()=>({}));
+        throw Error(data.error||'RAVIN is unavailable ('+res.status+').');
+      }
+      if(!res.body)throw Error('This browser cannot stream RAVIN responses.');
+      const reader=res.body.getReader(),decoder=new TextDecoder();
+      let pending='',done=false;
+      while(true){
+        const part=await reader.read();
+        if(part.done)break;
+        pending+=decoder.decode(part.value,{stream:true}).replace(/\r\n/g,'\n');
+        let index;
+        while((index=pending.indexOf('\n\n'))>=0){
+          const frame=pending.slice(0,index);
+          pending=pending.slice(index+2);
+          const lines=frame.split('\n');
+          const event=lines.find(line=>line.startsWith('event:'))?.slice(6).trim()||'message';
+          const json=lines.filter(line=>line.startsWith('data:')).map(line=>line.slice(5).trimStart()).join('\n');
+          let data={};try{data=JSON.parse(json);}catch{continue;}
+          if(event==='token'){
+            responseEl.textContent+=data.text||'';
+            q('.arrow-quick-messages').scrollTop=q('.arrow-quick-messages').scrollHeight;
+          }else if(event==='done'){
+            if(!responseEl.textContent)responseEl.textContent=data.reply||'';
+            S.conversation=data.conversation_id||S.conversation;
+            done=true;
+          }else if(event==='error'){
+            throw Error(data.message||'RAVIN could not respond.');
+          }
+        }
+      }
+      if(!done)throw Error('RAVIN connection ended before the answer completed.');
       q('.arrow-quick-status').textContent='';
-    }catch(e){responseEl.textContent=e?.message||'Unable to reach RAVIN.';q('.arrow-quick-status').textContent='Connection issue';}
-    finally{S.busy=false;q('.arrow-quick-send').disabled=false;q('.arrow-quick-input').focus({preventScroll:true});}
+    }catch(e){
+      if(e.name==='AbortError'){
+        if(!responseEl.textContent)responseEl.textContent='Cancelled.';
+      }else{
+        if(responseEl.textContent)responseEl.textContent+='\n';
+        responseEl.textContent+=e?.message||'Unable to reach RAVIN.';
+        q('.arrow-quick-status').textContent='Connection issue';
+      }
+    }finally{
+      S.busy=false;S.controller=null;q('.arrow-quick-send').disabled=false;
+      if(!S.el.hidden)q('.arrow-quick-input').focus({preventScroll:true});
+    }
   }
   function pointerDown(e,edge){
     if(e.button!==0)return;
