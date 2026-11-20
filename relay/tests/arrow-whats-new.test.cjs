@@ -21,7 +21,7 @@ test('ARROW owns one release log with the complete Relay history',()=>{
   assert.match(styles,/prefers-reduced-motion/);
 });
 test('release notes cover the full change since the previous public major release',()=>{
-  assert.equal(release.current.id,'arrow-workspace-nov-2026','An expanded description must not retrigger already-seen release notices');
+  assert.equal(release.current.id,'arrow-workspace-nov-2026-complete-release-notes','Expanded announcement must have a new release ID so earlier readers see it again');
   assert.ok(release.current.groups.length>=8,'The announcement needs comprehensive sections');
   const descriptions=release.current.groups.flatMap(group=>group.items);
   assert.ok(descriptions.length>=45,'The announcement should cover the shipped features extensively');
@@ -44,6 +44,8 @@ test('an announcement appears once per signed-in account, closes into ARROW, and
   const w=dom.window;
   let user='owner-1',openCount=0,puts=0;
   const meta=new Map();
+  // A user dismissed the original short announcement. The expanded version should still appear once.
+  meta.set('owner-1','arrow-workspace-nov-2026');
   w.matchMedia=()=>({matches:true,addEventListener(){}});
   w.AbortSignal.timeout=AbortSignal.timeout;
   w.BroadcastChannel=class {postMessage(){}addEventListener(){}close(){}};
