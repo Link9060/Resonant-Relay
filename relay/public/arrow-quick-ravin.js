@@ -50,9 +50,9 @@
     el.textContent=txt;q('.arrow-quick-messages').appendChild(el);
     q('.arrow-quick-messages').scrollTop=q('.arrow-quick-messages').scrollHeight;return el;
   }
-  function reset(){
+  function reset(clearStored=true){
     if(S.busy)return;
-    if(S.owner)try{sessionStorage.removeItem('arrow_quick_ravin:'+S.owner);}catch{}
+    if(clearStored && S.owner)try{sessionStorage.removeItem('arrow_quick_ravin:'+S.owner);}catch{}
     S.conversation=null;q('.arrow-quick-messages').replaceChildren();
     q('.arrow-quick-status').textContent='';
     message('assistant','How can I help?');
@@ -196,7 +196,7 @@
   }
   function open(module='orbit',prompt=''){
     ensure();const id=window.ArrowOS?.getSession?.()?.user?.id||null;
-    if(id!==S.owner){S.owner=id;if(!S.busy){reset();if(id)try{S.conversation=sessionStorage.getItem('arrow_quick_ravin:'+id)||null;}catch{}}}
+    if(id!==S.owner){S.owner=id;if(!S.busy){reset(false);if(id)try{S.conversation=sessionStorage.getItem('arrow_quick_ravin:'+id)||null;}catch{}}}
     S.module=module;S.el.hidden=false;
     q('[data-full]').href=window.ArrowOS?.resolveHref?.('/ravin/')||'/ravin/';
     apply();animateAttach('float');if(prompt)q('.arrow-quick-input').value=prompt;q('.arrow-quick-input').focus({preventScroll:true});
