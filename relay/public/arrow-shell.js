@@ -627,6 +627,12 @@
         const name = button.dataset.arrowPanel;
         state.lastFocused = button;
         state.panelAnchor = instance.trigger;
+        if (name === 'ravin' && BETA_BASE) {
+          closePanel(false);
+          instance.pinned=false;root.dataset.pinned='false';setOpen(instance,false);
+          openQuickRavin(module);
+          return;
+        }
         openPanel(name, module, button);
       });
     });
@@ -736,7 +742,15 @@
 
   function closePanel(restoreFocus = true) {
     if (!state.panelEl || state.panelEl.hidden) return;
-    if(state.panelEl.classList?.contains('arrow-staff-page')) { if(restoreFocus) location.assign(resolveHref('/orbit/')); return; }
+    if(state.panelEl.classList?.contains('arrow-staff-page')) {
+      if(restoreFocus){
+        state.panelEl.dataset.exiting='true';
+        const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.arrowMotion==='reduce';
+        if(reduced)location.assign(resolveHref('/orbit/?from=staff'));
+        else setTimeout(()=>location.assign(resolveHref('/orbit/?from=staff')),320);
+      }
+      return;
+    }
     state.panelEl.dataset.open = 'false';
     state.panelEl.hidden = true;
     state.renderVersion++;
@@ -2607,10 +2621,27 @@
   window.addEventListener('relay-role-preview-change',()=>{if(state.activePanel==='moderation')void renderModeration();void refreshStaffPreviewBar();});
   window.addEventListener('storage',event=>{if(event.key===STAFF_PREVIEW_KEY){if(state.activePanel==='moderation')void renderModeration();void refreshStaffPreviewBar();}});
 
+
+  let quickRavinLoad=null;
+  function openQuickRavin(module='orbit') {
+    if(!BETA_BASE){openPanel('ravin',module);return;}
+    if(window.ArrowQuickRavin?.open){window.ArrowQuickRavin.open(module);return;}
+    if(!quickRavinLoad)quickRavinLoad=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src=BETA_BASE+'/arrow-quick-ravin.js';
+      script.async=true;script.onload=()=>resolve();script.onerror=()=>reject(new Error('Quick RAVIN failed to load.'));
+      document.head.append(script);
+    });
+    quickRavinLoad.then(()=>window.ArrowQuickRavin?.open(module)).catch(()=>{quickRavinLoad=null;openPanel('ravin',module);});
+  }
+
   window.ArrowOS = {
     mountAll,
     openPanel,
+    openQuickRavin,
     closePanel,
+    getSession:readArrowSession,
+    refreshSession:refreshArrowSession,
     closeOverlays: closeSharedOverlays,
     applyTheme,
     applyMotion,
