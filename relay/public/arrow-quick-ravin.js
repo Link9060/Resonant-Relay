@@ -90,7 +90,7 @@
       S.float={x:rect.left,y:rect.top,w:Math.min(rect.width,Math.max(300,innerWidth-24)),h:Math.min(rect.height,Math.max(320,innerHeight-24))};
       S.dock=null;S.saved=null;apply();
     }
-    S.gesture={id:e.pointerId,edge,x:e.clientX,y:e.clientY,last:e.clientX,rect:{...S.float}};
+    S.gesture={id:e.pointerId,edge,x:e.clientX,y:e.clientY,last:e.clientX,lastY:e.clientY,rect:{...S.float}};
     S.el.classList.add('moving');
     e.currentTarget.setPointerCapture(e.pointerId);
   }
@@ -98,7 +98,8 @@
     const g=S.gesture;if(!g||e.pointerId!==g.id)return;
     const dx=e.clientX-g.x,dy=e.clientY-g.y,r={...g.rect},eName=g.edge;
     if(eName==='move'){r.x+=dx;r.y+=dy;
-      S.el.style.transform='skewX('+clamp((e.clientX-g.last)*-.22,-4,4)+'deg)';
+      const vx=e.clientX-g.last,vy=e.clientY-g.lastY;
+      S.el.style.transform='skewX('+clamp(vx*-.18,-3.5,3.5)+'deg) skewY('+clamp(vy*-.11,-2,2)+'deg) scale('+clamp(1+Math.abs(vx)*.0005,1,1.018)+','+clamp(1-Math.abs(vx)*.0003,.988,1)+')';
     }else{
       if(eName.includes('e'))r.w=g.rect.w+dx;
       if(eName.includes('s'))r.h=g.rect.h+dy;
@@ -109,7 +110,7 @@
       if(eName.includes('w'))r.x=g.rect.x+g.rect.w-r.w;
       if(eName.includes('n'))r.y=g.rect.y+g.rect.h-r.h;
     }
-    S.float=r;apply();g.last=e.clientX;
+    S.float=r;apply();g.last=e.clientX;g.lastY=e.clientY;
   }
   function pointerUp(e){
     if(!S.gesture||e.pointerId!==S.gesture.id)return;
@@ -149,12 +150,12 @@
     window.addEventListener('resize',apply,{passive:true});
     reset();
   }
-  function open(module='orbit'){
+  function open(module='orbit',prompt=''){
     ensure();const id=window.ArrowOS?.getSession?.()?.user?.id||null;
     if(id!==S.owner){S.owner=id;if(!S.busy)reset();}
     S.module=module;S.el.hidden=false;
     q('[data-full]').href=window.ArrowOS?.resolveHref?.('/ravin/')||'/ravin/';
-    apply();animateAttach('float');q('.arrow-quick-input').focus({preventScroll:true});
+    apply();animateAttach('float');if(prompt)q('.arrow-quick-input').value=prompt;q('.arrow-quick-input').focus({preventScroll:true});
   }
   function close(){if(!S.el)return;S.el.hidden=true;document.documentElement.dataset.ravinDocked='none';}
   window.ArrowQuickRavin={open,close};
