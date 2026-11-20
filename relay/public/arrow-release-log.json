@@ -5,28 +5,109 @@
     "version": "2026.11",
     "status": "Public release",
     "publishedAt": "2026-11-20T15:00:00Z",
-    "title": "ARROW · Workspace Update",
-    "summary": "A calmer Waypoint, faster navigation, and a RAVIN chat that stays beside your work.",
+    "title": "ARROW 2026.11 · A New Workspace",
+    "summary": "ARROW has been rebuilt across its five centers, with redesigned interfaces, deeper customization, a new widget dashboard, better planning, and RAVIN available alongside your work.",
     "groups": [
       {
-        "label": "Workspace",
+        "label": "A redesigned ARROW",
         "items": [
-          "Waypoint now prioritizes a clear task list, filters, progress, and quick capture instead of decorative cards.",
-          "Staff, Orbit, and Dashboard are accessible from one role-aware control, with the staff layout cutoff corrected."
+          "Orbit, RAVIN, Relay, Waypoint, and Atlas now share a more consistent, connected ARROW experience.",
+          "Five interface identities give the entire workspace a distinct look: Core, Bloom, Haven, Atelier, and Pulse.",
+          "Each identity changes more than its colors, with its own navigation, layouts, panels, and presentation across supported centers.",
+          "Navigation, controls, spacing, typography, and surfaces have been refined throughout ARROW.",
+          "Workspaces now adapt more cleanly to smaller screens, including redesigned mobile navigation where needed."
         ]
       },
       {
-        "label": "RAVIN",
+        "label": "Appearance and personalization",
         "items": [
-          "Quick RAVIN opens over your current work and can be moved, resized, or docked to any edge.",
-          "Switch between overlay and push layout without leaving your workspace. Motion respects reduced-motion preferences."
+          "Explore each of the five identities in a live interface preview before applying it.",
+          "Preview home and conversation layouts to see how your chosen identity feels across ARROW.",
+          "Choose a coordinated color palette for each identity, with colors saved separately for each one.",
+          "Create a custom accent color using a color picker or an exact HEX value.",
+          "Use one shared Light, Dark, or System appearance preference across ARROW's centers.",
+          "Refined color contrast, accent handling, and appearance consistency make buttons and text easier to read.",
+          "Adjust motion preferences in ARROW's appearance controls, including reduced-motion support."
         ]
       },
       {
-        "label": "ARROW",
+        "label": "Orbit and the new Dashboard",
         "items": [
-          "What’s New lives in the ARROW panel, with Relay’s previous update history preserved.",
-          "Updates are announced once per account and remain available anytime from the ARROW control."
+          "Switch between Orbit's interactive world and a full Dashboard built for everyday work.",
+          "Build a dashboard from a widget library with tasks, upcoming events, weather, chats, notes, RAVIN, focus tools, and more.",
+          "Add, remove, move, and resize widgets directly on a placement grid, with previews that show where each widget fits.",
+          "Choose from Balanced, School, Focus, Communication, and Blank Canvas dashboard starting layouts.",
+          "Save personal dashboard layouts and presets, with ARROW account synchronization where available.",
+          "Complete tasks, capture quick notes, and open relevant ARROW tools directly from supported widgets.",
+          "Use a richer weather view with current conditions, an hourly forecast, and a seven-day outlook.",
+          "Find weather by ZIP code or city, or choose approximate browser location when you want to.",
+          "Orbit's command panel and quick locations have been simplified for quicker navigation, including improved keyboard shortcuts."
+        ]
+      },
+      {
+        "label": "Waypoint, rebuilt for planning",
+        "items": [
+          "Waypoint's Today screen now emphasizes actual tasks instead of oversized decorative cards.",
+          "Filter your tasks by Open, All, or Done, with clear progress and due-date information.",
+          "Use Capture to turn free-form thoughts into organized suggestions with RAVIN.",
+          "Review, edit, and select Capture suggestions before any changes are applied to your workspace.",
+          "Move between six focused areas: Today, Capture, Plans, Calendar, Direction, and Review.",
+          "Keep projects, future tasks, goals, scheduled events, and saved notes visible in their relevant sections.",
+          "Preview proposed weekly schedules before making planning decisions.",
+          "Enjoy cleaner layout density, clearer labels, improved mobile navigation, and more consistent ARROW themes."
+        ]
+      },
+      {
+        "label": "RAVIN, wherever you work",
+        "items": [
+          "Open Quick RAVIN from the ARROW controls without leaving the center you're using.",
+          "Move the floating conversation window around your workspace and resize it from any edge or corner.",
+          "Dock RAVIN to the left, right, top, or bottom of the screen.",
+          "Choose whether a docked conversation overlays your workspace or makes room by shifting the page.",
+          "Docking and movement use elastic animations, with reduced-motion alternatives.",
+          "Continue an account-scoped Quick RAVIN conversation as you navigate within the same browser tab.",
+          "Use the refreshed full RAVIN interface with identity-specific message layouts and conversation controls.",
+          "Access a full RAVIN command strip for new chats, search, tasks, calendar, and focus mode."
+        ]
+      },
+      {
+        "label": "Atlas",
+        "items": [
+          "Atlas now participates in ARROW's five-identity appearance system.",
+          "Explore maps and connected information through redesigned layouts and canvas treatments.",
+          "Use improved map controls for selecting, focusing on, and navigating elements.",
+          "On smaller screens, open search and filters in a dedicated mobile drawer.",
+          "Map backgrounds, selection visuals, and controls respond to the active ARROW color choices."
+        ]
+      },
+      {
+        "label": "Relay and communication",
+        "items": [
+          "Relay messaging now better matches the ARROW identity you choose.",
+          "Message bubbles, conversation rows, writing areas, and tool panels use tailored layouts across the non-Core identities.",
+          "Chat presentation has been refined without changing existing conversations or permissions.",
+          "Responsive messaging layouts make conversations and controls easier to use on smaller screens.",
+          "Updated styling, surfaces, and accents bring Relay's workspace closer to Orbit, Waypoint, and RAVIN."
+        ]
+      },
+      {
+        "label": "Navigation, access, and reliability",
+        "items": [
+          "A shared Staff · Orbit · Dashboard control makes authorized staff tools more discoverable.",
+          "Staff remains role-gated for eligible owners, admins, and moderators.",
+          "The staff workspace has better scrolling and sizing, resolving the clipped owner dashboard area.",
+          "Orbit and Staff use coordinated directional transitions, with reduced-motion accommodations.",
+          "Cross-center navigation, account-aware preferences, and responsive layouts have received additional refinement.",
+          "Contrast and keyboard behavior have been improved in key menus, widgets, and dialogs."
+        ]
+      },
+      {
+        "label": "What’s New and update history",
+        "items": [
+          "What’s New has moved from Relay into ARROW's own Workspace panel, where it's available across the suite.",
+          "The release announcement is shown once per signed-in account for this release, with your history always available in the panel.",
+          "Closing the announcement sends it into the ARROW panel with a compact animated transition.",
+          "The previous eleven Relay release entries remain available in the history below."
         ]
       }
     ]
