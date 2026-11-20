@@ -39,7 +39,7 @@ run(process.execPath,['--test','tests/arrow-design-parity.test.cjs'],relay,{
  ARROW_ATLAS_SOURCE:atlas,ARROW_RAVIN_SOURCE:ravin,
 });
 const common=path.join(output,'arrow');
-for(const name of ['arrow-shell.js','arrow-shell.css'])cpSync(path.join(relay,'public',name),path.join(common,name));
+for(const name of ['arrow-shell.js','arrow-shell.css','arrow-quick-ravin.js'])cpSync(path.join(relay,'public',name),path.join(common,name));
 cpSync(path.join(relay,'public/arrow-beta-guard.js'),path.join(common,'arrow-beta-guard.js'));
 cpSync(path.join(ravin,'ravin/src/nextMove.js'),path.join(common,'next-move.js'));
 cpSync(path.join(ravin,'ravin/src/autoPlanner.js'),path.join(common,'autoPlanner.js'));
