@@ -51,6 +51,7 @@
     focus: 'Focus',
     calendar: 'Calendar',
     links: 'Links',
+    whatsnew: 'What’s New',
     appearance: 'Appearance',
     settings: 'Settings',
     notifications: 'Notifications',
@@ -467,6 +468,7 @@
       links: '<path d="M9.5 14.5 14.5 9.5M8 16l-1.2 1.2a3.1 3.1 0 0 1-4.4-4.4L6.2 9a3.1 3.1 0 0 1 4.4 0M16 8l1.2-1.2a3.1 3.1 0 0 1 4.4 4.4L17.8 15a3.1 3.1 0 0 1-4.4 0" fill="none"/>',
       appearance: '<circle cx="12" cy="12" r="7.2" fill="none"/><path d="M12 4.8a7.2 7.2 0 0 0 0 14.4V4.8Z" fill="currentColor" stroke="none"/>',
       settings: '<circle cx="12" cy="12" r="3" fill="none"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.5 1.5M16.5 16.5 18 18M18 6l-1.5 1.5M7.5 16.5 6 18" fill="none"/>',
+      whatsnew: '<rect x="4" y="4.5" width="16" height="15" rx="2" fill="none"/><path d="M8 9h8M8 12.5h8M8 16h5" fill="none"/>',
       ravin: '<circle cx="12" cy="12" r="2.4"/><circle cx="12" cy="12" r="6.8" fill="none"/><path d="M12 2.5v2M21.5 12h-2M12 21.5v-2M2.5 12h2" fill="none"/>',
       plus: '<path d="M12 5v14M5 12h14" fill="none"/>',
       trash: '<path d="M6 7h12M9 7V5h6v2M8 9l.6 9h6.8L16 9" fill="none"/>',
@@ -515,6 +517,7 @@
             controlButton('notes', 'Notes') + controlButton('tasks', 'Tasks') +
             controlButton('calendar', 'Calendar') + controlButton('focus', 'Focus', 'data-arrow-optional="true"') +
             controlButton('links', 'Links', 'data-arrow-optional="true"') +
+            controlButton('whatsnew', 'What’s New') +
           '</div></div>' +
           '<button type="button" class="arrow-os-more-tools" aria-expanded="false" aria-label="Show more ARROW tools"><span>More tools</span><span aria-hidden="true">⌄</span></button>' +
           '<div class="arrow-os-tray-section"><span class="arrow-os-tray-section-label">PERSONALIZE</span><div class="arrow-os-tray-grid">' +
@@ -627,7 +630,7 @@
         const name = button.dataset.arrowPanel;
         state.lastFocused = button;
         state.panelAnchor = instance.trigger;
-        if (name === 'ravin' && BETA_BASE) {
+        if (name === 'ravin' && (BETA_BASE || ON_ENTERARROW)) {
           closePanel(false);
           instance.pinned=false;root.dataset.pinned='false';setOpen(instance,false);
           openQuickRavin(module);
@@ -789,6 +792,7 @@
     if (name === 'tasks') renderTasks();
     if (name === 'calendar') renderCalendar();
     if (name === 'links') renderLinks();
+    if (name === 'whatsnew') renderWhatsNew();
     if (name === 'focus') renderFocus();
     if (name === 'appearance') { renderAppearance(); updateAppearanceState(); }
     if (name === 'settings') renderSettings();
@@ -2622,13 +2626,47 @@
   window.addEventListener('storage',event=>{if(event.key===STAFF_PREVIEW_KEY){if(state.activePanel==='moderation')void renderModeration();void refreshStaffPreviewBar();}});
 
 
+
+  function renderWhatsNew() {
+    if (window.ArrowWhatsNew?.renderInto) {
+      void window.ArrowWhatsNew.renderInto(state.panelBody);
+      return;
+    }
+    state.panelBody.innerHTML='<p class="arrow-release-loading" role="status">Loading updates…</p>';
+    const pending=document.querySelector('script[data-arrow-whats-new-loader]');
+    if(pending){
+      pending.addEventListener('load',()=>void window.ArrowWhatsNew?.renderInto?.(state.panelBody),{once:true});
+      return;
+    }
+    const script=document.createElement('script');
+    script.dataset.arrowWhatsNewLoader='true';
+    script.src=(BETA_BASE||'')+'/arrow-whats-new.js';
+    script.onload=()=>void window.ArrowWhatsNew?.renderInto?.(state.panelBody);
+    script.onerror=()=>{state.panelBody.textContent='What’s New is temporarily unavailable.';};
+    document.head.append(script);
+  }
+
+  function openTray() {
+    const instance=[...state.instances].find(value=>value.mount.isConnected && value.trigger.getBoundingClientRect().width>0) ||
+      [...state.instances][0];
+    if(!instance)return null;
+    state.instances.forEach(other=>{
+      if(other===instance)return;
+      other.pinned=false;other.root.dataset.pinned='false';setOpen(other,false);
+    });
+    instance.pinned=true;
+    instance.root.dataset.pinned='true';
+    setOpen(instance,true);
+    return instance.root.querySelector('[data-arrow-panel="whatsnew"]');
+  }
+
   let quickRavinLoad=null;
   function openQuickRavin(module='orbit') {
     if(!BETA_BASE){openPanel('ravin',module);return;}
     if(window.ArrowQuickRavin?.open){window.ArrowQuickRavin.open(module);return;}
     if(!quickRavinLoad)quickRavinLoad=new Promise((resolve,reject)=>{
       const script=document.createElement('script');
-      script.src=BETA_BASE+'/arrow-quick-ravin.js';
+      script.src=(BETA_BASE||'')+'/arrow-quick-ravin.js';
       script.async=true;script.onload=()=>resolve();script.onerror=()=>reject(new Error('Quick RAVIN failed to load.'));
       document.head.append(script);
     });
@@ -2638,6 +2676,7 @@
   window.ArrowOS = {
     mountAll,
     openPanel,
+    openTray,
     openQuickRavin,
     closePanel,
     getSession:readArrowSession,
