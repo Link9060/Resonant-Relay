@@ -18,6 +18,14 @@ test('ARROW quick chat is syntactically valid and packaged in the integrated bet
   assert.match(shell,/getSession:readArrowSession/);
   assert.match(shell,/refreshSession:refreshArrowSession/);
 });
+test('the public ARROW launcher opens Quick RAVIN instead of the obsolete RAVIN panel', () => {
+  assert.match(shell,/if\s*\(name === 'ravin' && \(BETA_BASE \|\| ON_ENTERARROW\)\)/);
+  assert.match(shell,/if\s*\(!\(BETA_BASE \|\| ON_ENTERARROW\)\)\s*\{openPanel\('ravin',module\);return;\}/);
+  assert.match(shell,/script\.src=\(BETA_BASE\|\|''\)\+'\/arrow-quick-ravin\.js'/);
+  assert.match(quick,/publicGateway\?'\/ravin\/api\/v2\/chat\/stream'/);
+  assert.match(quick,/https:\/\/ravin-hyeq\.onrender\.com\/api\/v2\/chat\/stream/);
+});
+
 test('chat is authenticated and sends conversation context to the RAVIN streaming API', () => {
   assert.match(quick,/\/api\/v2\/chat\/stream/);
   assert.match(quick,/Authorization:'Bearer '/);
