@@ -20,6 +20,17 @@ test('ARROW owns one release log with the complete Relay history',()=>{
   assert.match(styles,/arrow-release-absorb/);
   assert.match(styles,/prefers-reduced-motion/);
 });
+test('release notes cover the full change since the previous public major release',()=>{
+  assert.equal(release.current.id,'arrow-workspace-nov-2026','An expanded description must not retrigger already-seen release notices');
+  assert.ok(release.current.groups.length>=8,'The announcement needs comprehensive sections');
+  const descriptions=release.current.groups.flatMap(group=>group.items);
+  assert.ok(descriptions.length>=45,'The announcement should cover the shipped features extensively');
+  const all=descriptions.join(' ').toLowerCase();
+  for(const topic of ['core','bloom','haven','atelier','pulse','custom','dashboard','widget','weather','waypoint','capture','ravin','dock','atlas','relay','staff','what’s new']){
+    assert.ok(all.includes(topic),'Missing release feature area: '+topic);
+  }
+  assert.equal(release.history.length,11,'Historical Relay releases remain intact');
+});
 test('the old Relay-only sidebar action and modal are unmounted',()=>{
   const dock=fs.readFileSync('src/components/dock.tsx','utf8');
   assert.doesNotMatch(dock,/<WhatsNew\b/);
