@@ -289,3 +289,11 @@ test('Appearance restores first-class identity color palettes and HEX customizat
  assert.match(css,/\.arrow-os-palette-grid/);
  assert.doesNotThrow(()=>new Function(js));
 });
+
+// ARSI-008: prevent a keyboard-focus regression when mobile secondary tools collapse.
+test('mobile More tools restores focus before hiding the active optional control',()=>{
+ const js=read(path.join(root,'public/arrow-shell.js'));
+ assert.match(js,/if \(!expanded && document\.activeElement\?\.matches\('\.arrow-os-control\[data-arrow-optional="true"\]'\) && root\.contains\(document\.activeElement\)\)\s*\{\s*moreTools\.focus\(\{ preventScroll: true \}\);\s*\}/);
+ assert.match(js,/root\.dataset\.mobileExpanded = String\(expanded\)/);
+ assert.match(js,/moreTools\.setAttribute\('aria-expanded', String\(expanded\)\)/);
+});
